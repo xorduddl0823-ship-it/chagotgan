@@ -22,7 +22,7 @@ const db = createClient(
   { auth: { persistSession: false } },
 );
 
-const VER = "check-api v21 · 2026-10-11 (보험료 대조 — 차대번호 우선)";
+const VER = "check-api v22 · 2026-10-13 (경비실 명단으로 체크 권한 확인)";
 const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
 
 /* ───────── 작은 도구들 ───────── */
@@ -108,6 +108,26 @@ async function logout(ctx: Ctx, key: string) {
   void ctx; return { ok: true };
 }
 
+/** 체크를 써도 되는 계정인지 경비실 명단으로 확인합니다.
+ *  - 명단에 있으면: active 이고 products 에 check 가 있어야 통과
+ *  - 명단에 없으면: 체크 자체 로그인(chk_)은 예전처럼 통과, 워시 로그인 열쇠로는 거절
+ *    (워시만 가진 계정이 워시 열쇠로 체크를 부르는 길을 막습니다) */
+async function needCheck(phone: string, ownLogin: boolean) {
+  const { data: acc, error } = await db.from("cgg_access")
+    .select("products, active").eq("phone", phone).maybeSingle();
+  if (error) {
+    if (ownLogin) return;
+    throw new Error("서버 준비 중입니다 (cgg_access 표 없음). 대표님께 알려 주세요.");
+  }
+  if (!acc) {
+    if (ownLogin) return;
+    throw new Error("이 계정은 체크를 쓸 권한이 없습니다. 대표님께 권한을 받아 주세요.");
+  }
+  const list: string[] = Array.isArray(acc.products) ? acc.products : [];
+  if (acc.active === false || !list.includes("check"))
+    throw new Error("이 계정은 체크를 쓸 권한이 없습니다. 대표님께 권한을 받아 주세요.");
+}
+
 async function whoIs(shop: string, token: string) {
   const sid = S(token);
   if (!sid) throw new Error("로그인이 필요합니다.");
@@ -132,6 +152,9 @@ async function whoIs(shop: string, token: string) {
     phone = S(ses.phone).replace(/[^0-9]/g, "");
     isAdmin = S(ses.shop).toUpperCase() === "ADMIN";
   }
+
+  // ①-2 경비실 출입 명단(cgg_access) — 체크 권한이 있는 계정만 (v22)
+  if (!isAdmin) await needCheck(phone, sid.startsWith("chk_"));
 
   // ② 어느 검사소로 들어갈지 — 화면이 보낸 shop(검사소 코드)이 없으면 그 사람의 첫 검사소
   let office: any = null;
