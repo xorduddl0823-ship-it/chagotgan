@@ -1,0 +1,139 @@
+/* =========================================================
+   차곳간 공통 E안 스타일 (체크 · 워시 · 관리 공통)
+   - 각 제품 HTML 한 파일의 <style> 맨 위에 그대로 넣어 씁니다.
+   - 색과 크기는 아래 변수만 고칩니다. 화면 곳곳에 색 값을 직접 쓰지 않습니다.
+   - E안 = 회색 바탕 위 흰 카드 + 큰 숫자 + 촘촘한 표 + 맨 위 머리말 한 줄만 남색
+   ========================================================= */
+
+:root{
+  /* 차곳간 색 */
+  --cg-blue:#1668C4;      /* 파랑: 주 단추 · 선택된 탭 글자 */
+  --cg-navy:#0B2545;      /* 남색: 머리말 · 선택된 칩 */
+  --cg-sky:#8FC9F2;       /* 하늘: 남색 위 강조 · CI 바탕 */
+
+  /* 바탕 · 글자 */
+  --cg-bg:#F2F4F6;        /* 화면 바탕 (회색) */
+  --cg-surf:#FFFFFF;      /* 카드 · 표 바탕 (흰색) */
+  --cg-ink:#14202E;       /* 본문 글자 */
+  --cg-sub:#5B6B7E;       /* 보조 글자 */
+  --cg-line:#E5E8EB;      /* 입력칸 · 단추 테두리 */
+  --cg-tab-on:#E8F1FC;    /* 선택된 탭 바탕 */
+
+  /* 상태 색 (정해진 규격) */
+  --cg-run:#1668C4;  --cg-run-bg:#E6F0FB;   /* 하는 중 = 파랑 */
+  --cg-done:#1E9E5A; --cg-done-bg:#E4F5EC;  /* 끝남 = 초록 */
+  --cg-chk:#B26B00;  --cg-chk-bg:#FFF2DD;   /* 확인 필요 = 주황 */
+  --cg-stop:#D64545; --cg-stop-bg:#FDE8E8;  /* 막힘 = 빨강 */
+  --cg-warn:#E08A00;                        /* 할 일 띠 · 해결하러 가기 */
+  --cg-todo-bg:#FFF6E5;
+
+  /* 표 (B안처럼 촘촘하게) */
+  --cg-row-h:44px;
+  --cg-th-bg:#F6F8FA;
+  --cg-row-line:#EDF0F4;
+  --cg-col-line:#F1F3F6;
+  --cg-row-hover:#F5F9FE;
+
+  /* 모양 */
+  --cg-r-card:18px;       /* 카드 둥글기 */
+  --cg-r-table:14px;      /* 표 카드 둥글기 */
+  --cg-r-ctl:12px;        /* 입력칸 · 단추 둥글기 */
+  --cg-ctl-h:43px;        /* 도구줄 칸 · 단추 높이 (규격) */
+  --cg-gap:16px;          /* 칸 사이 간격 */
+
+  --cg-font:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+
+body{background:var(--cg-bg);color:var(--cg-ink);font-family:var(--cg-font)}
+
+/* ---------- 머리말 (남색 한 줄) ---------- */
+.cg-hdr{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 18px;background:var(--cg-navy);color:#fff}
+.cg-brand{display:flex;align-items:center;gap:10px;width:300px;min-width:0} /* 제품마다 같은 너비 */
+.cg-ci{width:34px;height:34px;border-radius:10px;background:var(--cg-sky);color:var(--cg-navy);display:grid;place-items:center;font-weight:900;flex:none}
+.cg-brand b{display:block;font-size:16px;font-weight:900}
+.cg-brand small{font-size:11.5px;opacity:.72}
+.cg-biz{font-size:12.5px;line-height:1.35}
+.cg-biz b{display:block;font-size:14px}
+.cg-biz span{opacity:.7}
+.cg-hdr-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cg-hbtn{height:32px;padding:0 10px;border-radius:var(--cg-r-ctl);border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.cg-live{font-size:12px;opacity:.85;display:inline-flex;align-items:center;gap:5px}
+.cg-live i{width:8px;height:8px;border-radius:50%;background:var(--cg-done)}
+.cg-me{height:36px;padding:0 12px 0 6px;border-radius:999px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;cursor:pointer}
+.cg-me .cg-av{width:26px;height:26px;border-radius:50%;background:var(--cg-sky);color:var(--cg-navy);display:grid;place-items:center;font-weight:900;font-size:12px}
+.cg-me small{opacity:.7;font-size:11px}
+
+/* ---------- 탭 (흰 바탕, 선택된 탭은 연한 파랑 알약) ---------- */
+.cg-tabs{display:flex;gap:4px;padding:8px 14px 10px;background:var(--cg-surf);overflow-x:auto;scrollbar-width:none}
+.cg-tab{flex:none;border:0;background:transparent;font:inherit;font-size:14px;color:#6B7684;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:500}
+.cg-tab.on{color:var(--cg-blue);background:var(--cg-tab-on);font-weight:700}
+
+/* ---------- 화면 본문 (일곱 칸) ---------- */
+.cg-body{padding:20px 18px 22px;display:flex;flex-direction:column;gap:var(--cg-gap)}
+.cg-title h2{margin:0;font-size:24px;font-weight:900;letter-spacing:-.4px}
+.cg-title p{margin:4px 0 0;color:var(--cg-sub);font-size:13.5px}
+
+/* 할 일 띠 */
+.cg-todo{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px;border-radius:var(--cg-r-card);background:var(--cg-todo-bg)}
+.cg-todo .tx{flex:1;min-width:200px;font-size:14px}
+.cg-todo .tx b{color:var(--cg-warn)}
+.cg-go{height:38px;padding:0 16px;border:0;border-radius:var(--cg-r-ctl);background:var(--cg-warn);color:#fff;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+
+/* 도구줄 (칸 · 단추 43px) */
+.cg-tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cg-field{height:var(--cg-ctl-h);border:1px solid var(--cg-line);border-radius:var(--cg-r-ctl);background:var(--cg-surf);padding:0 12px;font:inherit;font-size:14px;color:var(--cg-ink)}
+.cg-chip{height:var(--cg-ctl-h);padding:0 14px;border-radius:999px;border:1px solid var(--cg-line);background:var(--cg-surf);font:inherit;font-size:13.5px;cursor:pointer;color:var(--cg-ink)}
+.cg-chip.on{background:var(--cg-navy);color:#fff;border-color:transparent;font-weight:700}
+.cg-btn{height:var(--cg-ctl-h);padding:0 16px;border-radius:var(--cg-r-ctl);font:inherit;font-weight:700;font-size:14px;cursor:pointer;border:1px solid var(--cg-line);background:var(--cg-surf);color:var(--cg-ink)}
+.cg-btn.pri{background:var(--cg-blue);border-color:var(--cg-blue);color:#fff}
+.cg-btn:disabled{opacity:.45;cursor:default}
+
+/* 숫자 칸 4개 (가운데 · 자릿수 맞춤 · 큰 숫자) */
+.cg-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cg-num{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:20px 12px;text-align:center}
+.cg-num small{font-size:13px;color:var(--cg-sub)}
+.cg-num strong{display:block;font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;margin-top:4px;letter-spacing:-.5px}
+.cg-num strong em{font-style:normal;font-size:.55em;font-weight:700;margin-left:2px;color:var(--cg-sub)}
+
+/* 표 (촘촘하게 · 이름 칸 고정 · 큰 체크칸) */
+.cg-tcard{background:var(--cg-surf);border-radius:var(--cg-r-table);overflow:hidden}
+.cg-tscroll{overflow-x:auto}
+.cg-table{border-collapse:separate;border-spacing:0;width:100%;font-size:14px}
+.cg-table th,.cg-table td{padding:0 12px;height:var(--cg-row-h);text-align:left;white-space:nowrap;border-bottom:1px solid var(--cg-row-line);background:var(--cg-surf)}
+.cg-table td+td,.cg-table th+th{border-left:1px solid var(--cg-col-line)}
+.cg-table th{background:var(--cg-th-bg);color:var(--cg-sub);font-weight:700;font-size:12.5px;height:40px;cursor:pointer;user-select:none}
+.cg-table tr:hover td{background:var(--cg-row-hover)}
+.cg-table .n{text-align:right;font-variant-numeric:tabular-nums}
+.cg-table .cg-fix0{position:sticky;left:0;z-index:2;width:56px;text-align:center}          /* 체크칸 */
+.cg-table .cg-fix1{position:sticky;left:56px;z-index:2;font-weight:700;box-shadow:6px 0 6px -6px #0B254530} /* 이름 칸 */
+.cg-check{width:24px;height:24px;accent-color:var(--cg-blue);cursor:pointer}
+.cg-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--cg-sub)}
+.cg-pager select,.cg-pager button{height:34px;border-radius:8px;border:1px solid var(--cg-line);background:var(--cg-surf);font:inherit;color:var(--cg-ink)}
+.cg-pager button.on{background:var(--cg-blue);color:#fff;border-color:var(--cg-blue)}
+
+/* 상태 알약 */
+.cg-pill{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:700}
+.cg-pill.run{background:var(--cg-run-bg);color:var(--cg-run)}
+.cg-pill.done{background:var(--cg-done-bg);color:var(--cg-done)}
+.cg-pill.chk{background:var(--cg-chk-bg);color:var(--cg-chk)}
+.cg-pill.stop{background:var(--cg-stop-bg);color:var(--cg-stop)}
+
+/* 접힌 도움 카드 */
+.cg-help{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:0 16px}
+.cg-help summary{cursor:pointer;height:46px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--cg-sub)}
+.cg-help p{margin:0 0 14px;font-size:13.5px;color:var(--cg-sub);line-height:1.6}
+
+/* 가운데 팝업 (브라우저 기본 경고창 대신) */
+.cg-dim{position:fixed;inset:0;background:#0B254566;display:grid;place-items:center;padding:16px;z-index:50}
+.cg-modal{background:#fff;border-radius:18px;padding:22px;width:min(400px,100%);display:flex;flex-direction:column;gap:12px}
+.cg-modal h3{margin:0;font-size:18px}
+.cg-modal dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;background:var(--cg-bg);border-radius:12px;padding:12px 14px}
+.cg-modal dt{color:var(--cg-sub)} .cg-modal dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+.cg-modal .row{display:flex;gap:8px;justify-content:flex-end}
+
+/* 좁은 화면 (폰) */
+@media (max-width:600px){
+  :root{--cg-ctl-h:42px}
+  .cg-nums{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cg-num strong{font-size:24px}
+}

@@ -1,0 +1,1040 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>차곳간 정산 시안 F · G</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* ▼ 02_차곳간_공통_E안_스타일.css 그대로 ▼ */
+/* =========================================================
+   차곳간 공통 E안 스타일 (체크 · 워시 · 관리 공통)
+   - 각 제품 HTML 한 파일의 <style> 맨 위에 그대로 넣어 씁니다.
+   - 색과 크기는 아래 변수만 고칩니다. 화면 곳곳에 색 값을 직접 쓰지 않습니다.
+   - E안 = 회색 바탕 위 흰 카드 + 큰 숫자 + 촘촘한 표 + 맨 위 머리말 한 줄만 남색
+   ========================================================= */
+
+:root{
+  /* 차곳간 색 */
+  --cg-blue:#1668C4;      /* 파랑: 주 단추 · 선택된 탭 글자 */
+  --cg-navy:#0B2545;      /* 남색: 머리말 · 선택된 칩 */
+  --cg-sky:#8FC9F2;       /* 하늘: 남색 위 강조 · CI 바탕 */
+
+  /* 바탕 · 글자 */
+  --cg-bg:#F2F4F6;        /* 화면 바탕 (회색) */
+  --cg-surf:#FFFFFF;      /* 카드 · 표 바탕 (흰색) */
+  --cg-ink:#14202E;       /* 본문 글자 */
+  --cg-sub:#5B6B7E;       /* 보조 글자 */
+  --cg-line:#E5E8EB;      /* 입력칸 · 단추 테두리 */
+  --cg-tab-on:#E8F1FC;    /* 선택된 탭 바탕 */
+
+  /* 상태 색 (정해진 규격) */
+  --cg-run:#1668C4;  --cg-run-bg:#E6F0FB;   /* 하는 중 = 파랑 */
+  --cg-done:#1E9E5A; --cg-done-bg:#E4F5EC;  /* 끝남 = 초록 */
+  --cg-chk:#B26B00;  --cg-chk-bg:#FFF2DD;   /* 확인 필요 = 주황 */
+  --cg-stop:#D64545; --cg-stop-bg:#FDE8E8;  /* 막힘 = 빨강 */
+  --cg-warn:#E08A00;                        /* 할 일 띠 · 해결하러 가기 */
+  --cg-todo-bg:#FFF6E5;
+
+  /* 표 (B안처럼 촘촘하게) */
+  --cg-row-h:44px;
+  --cg-th-bg:#F6F8FA;
+  --cg-row-line:#EDF0F4;
+  --cg-col-line:#F1F3F6;
+  --cg-row-hover:#F5F9FE;
+
+  /* 모양 */
+  --cg-r-card:18px;       /* 카드 둥글기 */
+  --cg-r-table:14px;      /* 표 카드 둥글기 */
+  --cg-r-ctl:12px;        /* 입력칸 · 단추 둥글기 */
+  --cg-ctl-h:43px;        /* 도구줄 칸 · 단추 높이 (규격) */
+  --cg-gap:16px;          /* 칸 사이 간격 */
+
+  --cg-font:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+
+body{background:var(--cg-bg);color:var(--cg-ink);font-family:var(--cg-font)}
+
+/* ---------- 머리말 (남색 한 줄) ---------- */
+.cg-hdr{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 18px;background:var(--cg-navy);color:#fff}
+.cg-brand{display:flex;align-items:center;gap:10px;width:300px;min-width:0} /* 제품마다 같은 너비 */
+.cg-ci{width:34px;height:34px;border-radius:10px;background:var(--cg-sky);color:var(--cg-navy);display:grid;place-items:center;font-weight:900;flex:none}
+.cg-brand b{display:block;font-size:16px;font-weight:900}
+.cg-brand small{font-size:11.5px;opacity:.72}
+.cg-biz{font-size:12.5px;line-height:1.35}
+.cg-biz b{display:block;font-size:14px}
+.cg-biz span{opacity:.7}
+.cg-hdr-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cg-hbtn{height:32px;padding:0 10px;border-radius:var(--cg-r-ctl);border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.cg-live{font-size:12px;opacity:.85;display:inline-flex;align-items:center;gap:5px}
+.cg-live i{width:8px;height:8px;border-radius:50%;background:var(--cg-done)}
+.cg-me{height:36px;padding:0 12px 0 6px;border-radius:999px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;cursor:pointer}
+.cg-me .cg-av{width:26px;height:26px;border-radius:50%;background:var(--cg-sky);color:var(--cg-navy);display:grid;place-items:center;font-weight:900;font-size:12px}
+.cg-me small{opacity:.7;font-size:11px}
+
+/* ---------- 탭 (흰 바탕, 선택된 탭은 연한 파랑 알약) ---------- */
+.cg-tabs{display:flex;gap:4px;padding:8px 14px 10px;background:var(--cg-surf);overflow-x:auto;scrollbar-width:none}
+.cg-tab{flex:none;border:0;background:transparent;font:inherit;font-size:14px;color:#6B7684;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:500}
+.cg-tab.on{color:var(--cg-blue);background:var(--cg-tab-on);font-weight:700}
+
+/* ---------- 화면 본문 (일곱 칸) ---------- */
+.cg-body{padding:20px 18px 22px;display:flex;flex-direction:column;gap:var(--cg-gap)}
+.cg-title h2{margin:0;font-size:24px;font-weight:900;letter-spacing:-.4px}
+.cg-title p{margin:4px 0 0;color:var(--cg-sub);font-size:13.5px}
+
+/* 할 일 띠 */
+.cg-todo{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px;border-radius:var(--cg-r-card);background:var(--cg-todo-bg)}
+.cg-todo .tx{flex:1;min-width:200px;font-size:14px}
+.cg-todo .tx b{color:var(--cg-warn)}
+.cg-go{height:38px;padding:0 16px;border:0;border-radius:var(--cg-r-ctl);background:var(--cg-warn);color:#fff;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+
+/* 도구줄 (칸 · 단추 43px) */
+.cg-tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cg-field{height:var(--cg-ctl-h);border:1px solid var(--cg-line);border-radius:var(--cg-r-ctl);background:var(--cg-surf);padding:0 12px;font:inherit;font-size:14px;color:var(--cg-ink)}
+.cg-chip{height:var(--cg-ctl-h);padding:0 14px;border-radius:999px;border:1px solid var(--cg-line);background:var(--cg-surf);font:inherit;font-size:13.5px;cursor:pointer;color:var(--cg-ink)}
+.cg-chip.on{background:var(--cg-navy);color:#fff;border-color:transparent;font-weight:700}
+.cg-btn{height:var(--cg-ctl-h);padding:0 16px;border-radius:var(--cg-r-ctl);font:inherit;font-weight:700;font-size:14px;cursor:pointer;border:1px solid var(--cg-line);background:var(--cg-surf);color:var(--cg-ink)}
+.cg-btn.pri{background:var(--cg-blue);border-color:var(--cg-blue);color:#fff}
+.cg-btn:disabled{opacity:.45;cursor:default}
+
+/* 숫자 칸 4개 (가운데 · 자릿수 맞춤 · 큰 숫자) */
+.cg-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cg-num{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:20px 12px;text-align:center}
+.cg-num small{font-size:13px;color:var(--cg-sub)}
+.cg-num strong{display:block;font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;margin-top:4px;letter-spacing:-.5px}
+.cg-num strong em{font-style:normal;font-size:.55em;font-weight:700;margin-left:2px;color:var(--cg-sub)}
+
+/* 표 (촘촘하게 · 이름 칸 고정 · 큰 체크칸) */
+.cg-tcard{background:var(--cg-surf);border-radius:var(--cg-r-table);overflow:hidden}
+.cg-tscroll{overflow-x:auto}
+.cg-table{border-collapse:separate;border-spacing:0;width:100%;font-size:14px}
+.cg-table th,.cg-table td{padding:0 12px;height:var(--cg-row-h);text-align:left;white-space:nowrap;border-bottom:1px solid var(--cg-row-line);background:var(--cg-surf)}
+.cg-table td+td,.cg-table th+th{border-left:1px solid var(--cg-col-line)}
+.cg-table th{background:var(--cg-th-bg);color:var(--cg-sub);font-weight:700;font-size:12.5px;height:40px;cursor:pointer;user-select:none}
+.cg-table tr:hover td{background:var(--cg-row-hover)}
+.cg-table .n{text-align:right;font-variant-numeric:tabular-nums}
+.cg-table .cg-fix0{position:sticky;left:0;z-index:2;width:56px;text-align:center}          /* 체크칸 */
+.cg-table .cg-fix1{position:sticky;left:56px;z-index:2;font-weight:700;box-shadow:6px 0 6px -6px #0B254530} /* 이름 칸 */
+.cg-check{width:24px;height:24px;accent-color:var(--cg-blue);cursor:pointer}
+.cg-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--cg-sub)}
+.cg-pager select,.cg-pager button{height:34px;border-radius:8px;border:1px solid var(--cg-line);background:var(--cg-surf);font:inherit;color:var(--cg-ink)}
+.cg-pager button.on{background:var(--cg-blue);color:#fff;border-color:var(--cg-blue)}
+
+/* 상태 알약 */
+.cg-pill{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:700}
+.cg-pill.run{background:var(--cg-run-bg);color:var(--cg-run)}
+.cg-pill.done{background:var(--cg-done-bg);color:var(--cg-done)}
+.cg-pill.chk{background:var(--cg-chk-bg);color:var(--cg-chk)}
+.cg-pill.stop{background:var(--cg-stop-bg);color:var(--cg-stop)}
+
+/* 접힌 도움 카드 */
+.cg-help{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:0 16px}
+.cg-help summary{cursor:pointer;height:46px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--cg-sub)}
+.cg-help p{margin:0 0 14px;font-size:13.5px;color:var(--cg-sub);line-height:1.6}
+
+/* 가운데 팝업 (브라우저 기본 경고창 대신) */
+.cg-dim{position:fixed;inset:0;background:#0B254566;display:grid;place-items:center;padding:16px;z-index:50}
+.cg-modal{background:#fff;border-radius:18px;padding:22px;width:min(400px,100%);display:flex;flex-direction:column;gap:12px}
+.cg-modal h3{margin:0;font-size:18px}
+.cg-modal dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;background:var(--cg-bg);border-radius:12px;padding:12px 14px}
+.cg-modal dt{color:var(--cg-sub)} .cg-modal dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+.cg-modal .row{display:flex;gap:8px;justify-content:flex-end}
+
+/* 좁은 화면 (폰) */
+@media (max-width:600px){
+  :root{--cg-ctl-h:42px}
+  .cg-nums{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cg-num strong{font-size:24px}
+}
+/* ▼ 05_차곳간_공통_E안_추가분.css 그대로 ▼ */
+/* =========================================================
+   차곳간 공통 E안 — 추가분 (체크 · 워시 · 관리 공통)
+   - 02_차곳간_공통_E안_스타일.css 바로 아래에 이어 붙입니다.
+   - 02번에 없던 부품만 있습니다: 메뉴 · 홈 화면 · 표 열 너비 · 창 3종.
+   - 색 · 크기는 02번의 --cg-* 변수만 씁니다. 색 값을 새로 쓰지 않습니다.
+   ========================================================= */
+
+/* ---------- 02번 부품 보충 ---------- */
+.cg-find{width:220px}                    /* 도구줄 «표에서 찾기» 칸 */
+.cg-sp{flex:1}                           /* 도구줄 칩과 단추 사이 빈칸 — 단추는 늘 오른쪽 끝 */
+.cg-tabs::-webkit-scrollbar{display:none}
+.cg-field{display:inline-flex;align-items:center;gap:6px}
+.cg-field input{border:0;font:inherit;background:transparent;color:inherit;min-width:0}
+.cg-me{text-align:left;position:relative}
+.cg-pager button{min-width:34px;cursor:pointer}
+.cg-pager select{cursor:pointer}
+
+/* ---------- 스크롤 규칙 (모든 제품 같음) ----------
+   ① 세로 스크롤은 페이지 하나뿐
+   ② 탭 줄(☰ 전체 메뉴 + 맨 위 탭)은 화면 위에 붙어 있음 — 머리말은 같이 올라감
+   ③ 맨 위 탭 · 안쪽 작은 탭은 옆으로 밀림 (스크롤 막대 안 보임)
+   ④ 표가 넓으면 표 상자 안에서만 옆으로 밀림 — 이름 칸은 왼쪽에 붙어 있음
+   ⑤ 전체 메뉴 판 · 창은 그 안에서만 스크롤, 뒤 페이지는 멈춤
+   ⑥ 메뉴를 바꾸면 맨 위로, 표 쪽을 넘기면 표 머리로 (스크립트가 함) */
+.cg-navbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--cg-surf);
+  box-shadow:0 1px 0 var(--cg-row-line)}
+.cg-tscroll{scrollbar-width:thin}
+.cg-allmenu{max-height:calc(100vh - 140px);overflow:auto;overscroll-behavior:contain}
+.cg-modal{max-height:calc(100vh - 32px);overflow:auto;overscroll-behavior:contain}
+html.cg-lock{overflow:hidden}
+
+/* ---------- 제품 바꾸기 (한 계정이 여러 제품을 쓸 때만 보임) ---------- */
+.cg-hdr{z-index:25}
+.cg-prod{margin-left:6px;height:24px;padding:0 9px;border-radius:999px;border:1px solid #ffffff40;background:#ffffff1A;
+  color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;vertical-align:2px}
+.cg-proddrop{position:absolute;left:18px;top:calc(100% - 4px);z-index:30;background:var(--cg-surf);color:var(--cg-ink);
+  border-radius:14px;box-shadow:0 10px 30px #0B25452E;padding:8px;width:280px;display:flex;flex-direction:column}
+.cg-proddrop button{display:flex;align-items:center;gap:10px;text-align:left;border:0;background:transparent;font:inherit;
+  padding:9px 10px;border-radius:10px;cursor:pointer;color:var(--cg-ink)}
+.cg-proddrop button:hover{background:var(--cg-row-hover)}
+.cg-proddrop button.on{background:var(--cg-tab-on)}
+.cg-proddrop .cg-ci{width:30px;height:30px;font-size:13px}
+.cg-proddrop b{display:block;font-size:14px}
+.cg-proddrop small{display:block;font-size:12px;color:var(--cg-sub)}
+
+/* ---------- 메뉴 ①  맨 위 탭 앞 «☰ 전체 메뉴» ---------- */
+.cg-tab.cg-all{color:var(--cg-ink);font-weight:700}
+.cg-tabsep{flex:none;width:1px;margin:8px 6px;background:var(--cg-line)}
+
+/* ---------- 메뉴 ②  전체 메뉴 판 (모든 화면을 한 판에 · 메뉴 찾기) ---------- */
+.cg-allwrap{position:relative;height:0}
+.cg-allmenu{position:absolute;left:0;right:0;top:0;z-index:20;background:var(--cg-surf);
+  border-top:1px solid var(--cg-row-line);padding:16px 18px 20px;box-shadow:0 14px 24px -14px #0B254540}
+.cg-allmenu .cg-field{width:100%;max-width:360px}
+.cg-allgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px 16px;margin-top:14px}
+.cg-allgrid h4{margin:0 0 6px;padding:0 8px;font-size:13px;color:var(--cg-sub);font-weight:700}
+.cg-allgrid button{display:block;width:100%;text-align:left;border:0;background:transparent;font:inherit;
+  font-size:14px;color:var(--cg-ink);padding:7px 8px;border-radius:8px;cursor:pointer}
+.cg-allgrid button:hover,.cg-allgrid button.on{background:var(--cg-tab-on);color:var(--cg-blue)}
+.cg-allgrid mark{background:var(--cg-chk-bg);color:inherit;border-radius:3px}
+.cg-allnone{margin:14px 8px 0;color:var(--cg-sub);font-size:14px}
+
+/* ---------- 메뉴 ③  제목 위 길잡이 «묶음 ›» ---------- */
+.cg-crumb{font-size:12.5px;color:var(--cg-sub);margin:0 0 2px;font-weight:500}
+
+/* ---------- 메뉴 ④  화면 안쪽 작은 탭 (이름 = 그 화면 제목) — 맨 위 탭처럼 옆으로 밀림 ---------- */
+.cg-subtabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.cg-subtabs::-webkit-scrollbar{display:none}
+.cg-subtab{flex:none}
+.cg-subtab{height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--cg-line);background:var(--cg-surf);
+  font:inherit;font-size:13px;cursor:pointer;color:var(--cg-sub)}
+.cg-subtab.on{background:var(--cg-tab-on);color:var(--cg-blue);border-color:transparent;font-weight:700}
+
+/* ---------- 메뉴 ⑤  사람 단추 ▾ 펼침 (마이페이지 · 요금제 · 휴지통 · 화면 · 배치 · 로그아웃) ---------- */
+.cg-hdr{position:relative}
+.cg-badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+  background:var(--cg-stop);color:#fff;font-size:11px;font-weight:700;font-style:normal}
+.cg-me .cg-badge{position:absolute;top:-5px;left:20px}
+.cg-medrop{position:absolute;right:18px;top:calc(100% - 4px);z-index:30;background:var(--cg-surf);color:var(--cg-ink);
+  border-radius:14px;box-shadow:0 10px 30px #0B25452E;padding:8px;min-width:210px;display:flex;flex-direction:column}
+.cg-medrop button{display:flex;align-items:center;gap:6px;text-align:left;border:0;background:transparent;font:inherit;
+  font-size:14px;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--cg-ink)}
+.cg-medrop button:hover{background:var(--cg-row-hover)}
+.cg-medrop hr{border:0;border-top:1px solid var(--cg-row-line);margin:4px 0}
+
+/* ---------- 표 — 열 너비를 모든 표에서 같게 ----------
+   열 차례: ☐ → 이름(고정) → 구분 번호 → 내용 → 날짜 → 금액 → 상태          */
+.cg-table{table-layout:fixed;min-width:900px}
+.cg-table col.k-chk{width:56px}
+.cg-table col.k-name{width:180px}
+.cg-table col.k-id{width:130px}
+.cg-table col.k-date{width:96px}
+.cg-table col.k-money{width:130px}
+.cg-table col.k-state{width:104px}
+.cg-table col.k-time{width:84px}
+.cg-table td{overflow:hidden;text-overflow:ellipsis}
+.cg-table .c{text-align:center}
+.cg-link{border:0;background:transparent;font:inherit;font-weight:700;color:var(--cg-ink);cursor:pointer;padding:0;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.cg-link:hover{color:var(--cg-blue);text-decoration:underline}
+
+/* ---------- 타임테이블 (방 × 시간) — 표와 같은 카드 · 같은 스크롤 규칙 ----------
+   왼쪽 시간 칸은 표의 이름 칸처럼 왼쪽에 붙음 · 넓으면 카드 안에서만 옆으로 밀림
+   예약 칸 색 = 상태 색 (파랑 하는 중 · 초록 끝남 · 주황 확인 필요 · 빨강 막힘) */
+.cg-tt{display:grid;grid-template-columns:64px repeat(var(--cg-tt-n),minmax(180px,1fr));
+  grid-template-rows:40px repeat(var(--cg-tt-rows),26px);min-width:calc(64px + var(--cg-tt-n) * 180px);font-size:13px}
+.cg-tt .tt-h{grid-row:1;display:flex;align-items:center;padding:0 12px;background:var(--cg-th-bg);color:var(--cg-sub);
+  font-weight:700;font-size:12.5px;border-bottom:1px solid var(--cg-row-line);border-left:1px solid var(--cg-col-line)}
+.cg-tt .tt-h0{grid-column:1;position:sticky;left:0;z-index:3;border-left:0}
+.cg-tt .tt-t{grid-column:1;position:sticky;left:0;z-index:2;background:var(--cg-surf);color:var(--cg-sub);font-size:12px;
+  padding:4px 10px 0 0;text-align:right;font-variant-numeric:tabular-nums;box-shadow:6px 0 6px -6px #0B254530}
+.cg-tt .tt-c{border:0;border-left:1px solid var(--cg-col-line);background:var(--cg-surf);padding:0;cursor:pointer;font:inherit}
+.cg-tt .tt-c.hr{border-top:1px solid var(--cg-row-line)}
+.cg-tt .tt-c:hover{background:var(--cg-row-hover)}
+.cg-bk{z-index:1;margin:2px 6px;border:0;border-left:4px solid var(--cg-run);border-radius:10px;padding:5px 10px;
+  background:var(--cg-run-bg);color:var(--cg-ink);font:inherit;font-size:12.5px;text-align:left;cursor:pointer;
+  overflow:hidden;display:flex;flex-direction:column;gap:1px;min-height:0}
+.cg-bk b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cg-bk span{color:var(--cg-sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cg-bk.done{background:var(--cg-done-bg);border-left-color:var(--cg-done)}
+.cg-bk.chk{background:var(--cg-chk-bg);border-left-color:var(--cg-chk)}
+.cg-bk.stop{background:var(--cg-stop-bg);border-left-color:var(--cg-stop)}
+.cg-bk.dim{opacity:.25}
+.cg-now{z-index:1;border-top:2px solid var(--cg-stop);pointer-events:none;align-self:start;position:relative}
+.cg-now::before{content:"";position:absolute;left:-5px;top:-6px;width:10px;height:10px;border-radius:50%;background:var(--cg-stop)}
+
+/* ---------- 창 3종 — 모두 «제목 → 내용 → 오른쪽 아래 [취소][동작]» ----------
+   확인 창 400px (02번 .cg-modal 그대로) · 입력 창 560px · 자세히 창 오른쪽 520px */
+.cg-modal .cg-mdesc{margin:-6px 0 0;font-size:13.5px;color:var(--cg-sub);line-height:1.6}
+.cg-modal.form{width:min(560px,100%)}
+.cg-fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cg-fgrid label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--cg-sub);font-weight:700}
+.cg-fgrid .cg-field{width:100%}
+.cg-dim.side{place-items:stretch end;padding:0}
+.cg-modal.sheet{width:min(520px,100%);height:100%;max-height:100%;border-radius:18px 0 0 18px;overflow:auto}
+.cg-modal.sheet .row{margin-top:auto}
+.cg-modal .cg-btn.del{background:var(--cg-stop);border-color:var(--cg-stop);color:#fff}
+.cg-modal .cg-x{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:10px;border:0;
+  background:transparent;font:inherit;font-size:18px;color:var(--cg-sub);cursor:pointer}
+.cg-modal{position:relative}
+
+/* ---------- 홈 화면 (지금 배치 그대로 · 색과 모양만 E안) ---------- */
+.cg-card{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:16px 18px}
+.cg-card > h3{margin:0 0 12px;font-size:15px;font-weight:900;display:flex;align-items:center;gap:8px}
+.cg-card > h3 .cg-more{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--cg-blue);cursor:pointer;background:0;border:0;font-family:inherit}
+.cg-homegrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:stretch}
+/* 달력 카드 아래 끝 = 오른쪽 마지막 카드 아래 끝 (차이 0px) */
+.cg-hgL{display:flex;flex-direction:column}
+.cg-hgL > .cg-card{flex:1;display:flex;flex-direction:column}
+.cg-hgL .cg-cal{flex:1}
+.cg-hgR{display:flex;flex-direction:column;gap:14px}
+.cg-hgR > .cg-card:last-child{flex:1}
+.cg-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.cg-dow span{text-align:center;font-size:12px;color:var(--cg-sub);font-weight:700;padding:4px 0}
+.cg-cal{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(44px,1fr);gap:2px}
+.cg-cal b{position:relative;display:block;border-radius:8px;padding:5px 6px;font-size:12.5px;font-weight:500;
+  background:var(--cg-th-bg);cursor:pointer;min-height:44px}
+.cg-cal b.off{background:transparent;cursor:default}
+.cg-cal b.sun{color:var(--cg-stop)}
+.cg-cal b:hover:not(.off){background:var(--cg-row-hover)}
+.cg-cal b.today{background:var(--cg-tab-on)}
+.cg-cal b .td{display:inline-block;margin-left:4px;font-size:10px;font-weight:700;color:#fff;background:var(--cg-blue);
+  border-radius:999px;padding:1px 5px;vertical-align:1px}
+.cg-cal b i{display:block;font-style:normal;font-size:10.5px;font-weight:700;margin-top:3px;
+  color:var(--cg-blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cg-cal b i.g{color:var(--cg-done)}
+.cg-todolist{background:var(--cg-bg);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.cg-todolist div{background:var(--cg-surf);border-radius:9px;padding:9px 11px;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.cg-todolist div .cg-pill{margin-left:auto}
+.cg-rows{display:flex;flex-direction:column}
+.cg-rows div{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:9px 0;border-bottom:1px solid var(--cg-row-line)}
+.cg-rows div:last-child{border-bottom:0}
+.cg-rows div .n{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.cg-rows div .w{color:var(--cg-sub);font-size:12.5px}
+.cg-big{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.cg-big b{font-size:28px;font-weight:900;letter-spacing:-.5px}
+.cg-big span{font-size:13px;color:var(--cg-sub)}
+
+/* ---------- 폰 ---------- */
+@media (max-width:600px){
+  /* 도구줄: 찾기 → 날짜 → 상태 칩 → 단추, 한 줄씩 */
+  .cg-tool > .cg-field{flex:1 1 100%;width:auto}
+  .cg-sp{flex-basis:100%;height:0}
+  .cg-tool > .cg-btn{flex:1 1 0}
+  .cg-homegrid{grid-template-columns:minmax(0,1fr)}
+  .cg-brand{width:auto}
+  .cg-allgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cg-dim.side,.cg-dim.low{place-items:end stretch;padding:0}
+  .cg-modal.form,.cg-modal.sheet{width:100%;height:auto;max-height:88vh;border-radius:18px 18px 0 0}
+  .cg-fgrid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ════════ F안 · G안 시안 전용 — 고르시면 기준틀 05번으로 옮김 ════════
+   색은 02번 --cg-* 만 씀. 그래프 두 선만 새 색: 들어온 돈 = --cg-blue, 약속 금액 = #C2620F (색약 검사 통과) */
+:root{color-scheme:light;--fg-plan:#C2620F;--fg-wait:#C9D3DF}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0}
+:focus-visible{outline:3px solid var(--cg-sky);outline-offset:2px}
+.cg-table tfoot td{background:var(--cg-th-bg);font-weight:900;border-top:2px solid var(--cg-line);border-bottom:0}
+.cg-table tfoot td.cg-fix1{background:var(--cg-th-bg)}
+.fg-eyebrow{font-size:12.5px;font-weight:700;color:var(--cg-sub);margin:0}
+
+/* ── F안: 정산 한눈에 ── */
+.f-top{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px}
+.f-hero{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.f-hero .big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.f-hero .big strong{font-size:40px;font-weight:900;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1.1}
+.f-hero .big strong em{font-style:normal;font-size:.5em;color:var(--cg-sub);margin-left:3px}
+.f-hero .big span{font-size:13.5px;color:var(--cg-sub)}
+.f-bar{display:flex;gap:2px;height:14px;border-radius:7px;overflow:hidden;background:var(--cg-surf)}
+.f-bar i{display:block;height:100%;min-width:4px}
+.f-legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.f-legend div{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--cg-sub);min-width:0}
+.f-legend div span{display:flex;align-items:center;gap:6px}
+.f-legend div span i{width:10px;height:10px;border-radius:3px;flex:none}
+.f-legend b{font-size:16px;color:var(--cg-ink);font-variant-numeric:tabular-nums}
+.f-legend small{font-size:11.5px}
+.f-hero .foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--cg-row-line);padding-top:14px;font-size:13px;color:var(--cg-sub)}
+.f-hero .foot .cg-btn{margin-left:auto}
+.f-up h3,.f-chart h3,.f-heat h3{margin:0;font-size:15px;font-weight:900}
+.f-up .sub,.f-chart .sub,.f-heat .sub{margin:2px 0 12px;font-size:12.5px;color:var(--cg-sub)}
+.f-late{display:flex;align-items:center;gap:10px;background:var(--cg-stop-bg);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+.f-late b{color:var(--cg-stop)}
+.f-late .n{margin-left:auto;font-weight:900;font-variant-numeric:tabular-nums;color:var(--cg-stop)}
+.f-uprow{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--cg-row-line)}
+.f-uprow:last-child{border-bottom:0}
+.f-date{width:48px;height:48px;border-radius:12px;background:var(--cg-tab-on);color:var(--cg-blue);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.f-date b{font-size:18px;font-weight:900}
+.f-date small{font-size:11px;font-weight:700}
+.f-date.today{background:var(--cg-blue);color:#fff}
+.f-uprow .who{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f-uprow .who small{display:block;font-size:12px;font-weight:500;color:var(--cg-sub);margin-top:2px}
+.f-uprow .amt{text-align:right;font-weight:900;font-variant-numeric:tabular-nums;font-size:15px}
+.f-uprow .amt .cg-pill{margin-top:4px;height:22px;font-size:11.5px}
+.f-mid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px}
+.f-chart svg{display:block;width:100%;height:auto;overflow:visible}
+.f-chart .ax{font-size:11px;fill:var(--cg-sub)}
+.f-chart .grid line{stroke:var(--cg-row-line);stroke-width:1}
+.f-leg2{display:flex;gap:16px;font-size:12.5px;color:var(--cg-sub);margin:-4px 0 8px}
+.f-leg2 span{display:inline-flex;align-items:center;gap:6px}
+.f-leg2 i{width:18px;height:0;border-top:2px solid var(--cg-blue)}
+.f-leg2 i.p{border-top:2px dashed var(--fg-plan)}
+.f-tip{position:absolute;pointer-events:none;background:var(--cg-navy);color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.55;
+  white-space:nowrap;transform:translate(-50%,-110%);z-index:5;box-shadow:0 6px 16px #0B254540}
+.f-tip b{font-variant-numeric:tabular-nums}
+.f-chartwrap{position:relative}
+.f-heatgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.f-heatgrid .dw{text-align:center;font-size:11.5px;font-weight:700;color:var(--cg-sub)}
+.f-heatgrid button{height:40px;max-width:100%;border:0;border-radius:9px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;position:relative;
+  background:var(--cg-th-bg);color:var(--cg-ink);font-variant-numeric:tabular-nums}
+.f-heatgrid button.off{visibility:hidden}
+.f-heatgrid button.red{color:var(--cg-stop)}
+.f-heatgrid button.sel{box-shadow:0 0 0 2px var(--cg-surf),0 0 0 4px var(--cg-navy)}
+.f-heatgrid button.today::before{content:"오늘";position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-size:9.5px;background:var(--cg-navy);color:#fff;border-radius:6px;padding:0 4px;line-height:14px}
+.f-heatgrid button i{position:absolute;right:5px;bottom:5px;width:6px;height:6px;border-radius:50%;background:var(--cg-done);box-shadow:0 0 0 2px var(--cg-surf)}
+.f-heatleg{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--cg-sub);margin:10px 0 0}
+.f-heatleg span{width:16px;height:12px;border-radius:3px}
+.f-heatleg .gdot{width:8px;height:8px;border-radius:50%;background:var(--cg-done);margin-left:10px}
+.f-pick{margin-top:12px;background:var(--cg-bg);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.6}
+.f-pick b{font-variant-numeric:tabular-nums}
+.f-ttools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--cg-row-line)}
+.f-cols{position:relative}
+.f-colpop{position:absolute;right:0;top:calc(100% + 6px);z-index:10;background:var(--cg-surf);border-radius:12px;box-shadow:0 10px 30px #0B25452E;
+  padding:10px 12px;width:200px;display:flex;flex-direction:column;gap:2px}
+.f-colpop label{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:5px 2px;cursor:pointer}
+.f-colpop input{width:18px;height:18px;accent-color:var(--cg-blue)}
+
+/* ── G안: 입금 맞추기 받은편지함 ── */
+.g-split{display:grid;grid-template-columns:400px minmax(0,1fr);gap:14px;align-items:start}
+.g-inbox{background:var(--cg-surf);border-radius:var(--cg-r-card);overflow:hidden}
+.g-inbox .hd{padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--cg-row-line)}
+.g-inbox .hd .cg-field{width:100%;height:38px}
+.g-item{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--cg-row-line);
+  background:var(--cg-surf);padding:12px 14px 12px 12px;text-align:left;font:inherit;color:var(--cg-ink);cursor:pointer;border-left:3px solid transparent}
+.g-item:hover{background:var(--cg-row-hover)}
+.g-item.on{background:var(--cg-tab-on);border-left-color:var(--cg-blue)}
+.g-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:15px;background:var(--cg-done-bg);color:var(--cg-done)}
+.g-av.chk{background:var(--cg-chk-bg);color:var(--cg-chk)} .g-av.stop{background:var(--cg-stop-bg);color:var(--cg-stop)}
+.g-av.done{background:var(--cg-th-bg);color:var(--cg-sub)}
+.g-av.big{width:52px;height:52px;font-size:19px}
+.g-item b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g-item small{display:block;font-size:12px;color:var(--cg-sub);margin-top:2px}
+.g-item .amt{text-align:right;font-weight:900;font-size:15px;font-variant-numeric:tabular-nums}
+.g-item .amt small{font-weight:700}
+.g-item .amt small.ok{color:var(--cg-done)} .g-item .amt small.chk{color:var(--cg-chk)} .g-item .amt small.stop{color:var(--cg-stop)}
+.g-empty{padding:28px 16px;text-align:center;color:var(--cg-sub);font-size:13.5px}
+.g-detail{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:22px 24px;display:flex;flex-direction:column;gap:18px;position:sticky;top:64px}
+.g-dhead{display:flex;align-items:center;gap:14px}
+.g-dhead small{display:block;font-size:12.5px;color:var(--cg-sub)}
+.g-dhead b{display:block;font-size:16px;margin-top:2px}
+.g-dhead strong{margin-left:auto;font-size:32px;font-weight:900;letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+.g-dhead strong em{font-style:normal;font-size:.5em;color:var(--cg-sub);margin-left:2px}
+.g-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:0;counter-reset:s}
+.g-steps li{position:relative;padding-top:22px;font-size:12.5px;color:var(--cg-sub);text-align:center}
+.g-steps li::before{content:"";position:absolute;top:5px;left:50%;width:12px;height:12px;border-radius:50%;transform:translateX(-50%);background:var(--cg-surf);box-shadow:inset 0 0 0 2px var(--fg-wait);z-index:1}
+.g-steps li::after{content:"";position:absolute;top:10px;left:-50%;width:100%;height:2px;background:var(--fg-wait)}
+.g-steps li:first-child::after{display:none}
+.g-steps li.on{color:var(--cg-ink);font-weight:700}
+.g-steps li.on::before{background:var(--cg-done);box-shadow:none}
+.g-steps li.on::after{background:var(--cg-done)}
+.g-steps li.now::before{background:var(--cg-surf);box-shadow:inset 0 0 0 3px var(--cg-blue)}
+.g-match{border-radius:14px;background:var(--cg-bg);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.g-billcard{display:flex;align-items:center;gap:12px;background:var(--cg-surf);border-radius:12px;padding:12px 14px}
+.g-billcard b{font-size:15px}
+.g-billcard small{display:block;font-size:12px;color:var(--cg-sub);margin-top:2px}
+.g-billcard .n{margin-left:auto;text-align:right;font-weight:900;font-variant-numeric:tabular-nums}
+.g-billcard .n small{font-weight:500}
+.g-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.g-checks li{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;line-height:1.5}
+.g-checks li i{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:900;margin-top:1px}
+.g-checks li.ok i{background:var(--cg-done-bg);color:var(--cg-done)}
+.g-checks li.chk i{background:var(--cg-chk-bg);color:var(--cg-chk)}
+.g-checks li.stop i{background:var(--cg-stop-bg);color:var(--cg-stop)}
+.g-checks li b{min-width:34px}
+.g-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.g-keys{margin:-6px 0 0;font-size:12px;color:var(--cg-sub)}
+.g-keys kbd{font:inherit;font-size:11px;border:1px solid var(--cg-line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--cg-surf)}
+.g-who{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.g-wcard{border:0;background:var(--cg-surf);border-radius:var(--cg-r-card);padding:16px;text-align:left;font:inherit;color:var(--cg-ink);cursor:pointer;display:flex;flex-direction:column;gap:8px}
+.g-wcard:hover{box-shadow:inset 0 0 0 2px var(--cg-tab-on)}
+.g-wcard .top{display:flex;align-items:center;gap:8px}
+.g-wcard .top b{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g-wcard .top .cg-pill{margin-left:auto;height:22px;font-size:11.5px;flex:none}
+.g-wcard strong{font-size:22px;font-weight:900;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.g-wcard strong em{font-style:normal;font-size:.55em;color:var(--cg-sub);margin-left:2px}
+.g-prog{height:6px;border-radius:3px;background:var(--cg-th-bg);overflow:hidden}
+.g-prog i{display:block;height:100%;border-radius:3px;background:var(--cg-done)}
+.g-wcard small{font-size:12px;color:var(--cg-sub)}
+.g-whohead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.g-whohead h3{margin:0;font-size:16px;font-weight:900}
+.g-whohead span{font-size:13px;color:var(--cg-sub)}
+.g-whohead b{color:var(--cg-ink);font-variant-numeric:tabular-nums}
+.g-split2{display:flex;flex-direction:column;gap:8px}
+.g-split2 label{display:grid;grid-template-columns:22px minmax(0,1fr) 120px;align-items:center;gap:8px;font-size:13.5px}
+.g-split2 label small{display:block;color:var(--cg-sub);font-size:12px}
+.g-split2 input[type=number]{height:38px;border:1px solid var(--cg-line);border-radius:10px;padding:0 10px;font:inherit;text-align:right;width:100%}
+.g-split2 input[type=checkbox]{width:20px;height:20px;accent-color:var(--cg-blue)}
+.g-sum{display:flex;justify-content:space-between;font-size:14px;background:var(--cg-bg);border-radius:12px;padding:10px 14px}
+.g-sum b{font-variant-numeric:tabular-nums}
+.g-sum .bad{color:var(--cg-stop)} .g-sum .ok{color:var(--cg-done)}
+
+/* ── 시안 바깥 틀 ── */
+.pg{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:26px 56px}
+.pg > h1{font-size:23px;font-weight:900;margin:0 0 6px;letter-spacing:-.5px;text-wrap:balance}
+.pg > .lead{color:var(--cg-sub);font-size:14px;margin:0 0 18px;line-height:1.7;max-width:900px}
+.refs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.ref{background:var(--cg-surf);border:2px solid transparent;border-radius:16px;padding:16px 18px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:8px}
+.ref[aria-pressed="true"]{border-color:var(--cg-blue)}
+.ref .tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--cg-blue)}
+.ref .tag em{font-style:normal;background:var(--cg-navy);color:#fff;border-radius:8px;padding:2px 8px;font-size:13px}
+.ref b{font-size:17px;font-weight:900}
+.ref p{margin:0;font-size:13.5px;color:var(--cg-sub);line-height:1.65}
+.ref ul{margin:0;padding-left:18px;font-size:13px;color:var(--cg-sub);line-height:1.7}
+.ref ul b{font-size:13px;color:var(--cg-ink)}
+.ref .from{font-size:12px;color:var(--cg-sub)}
+.ref .from span{display:inline-block;background:var(--cg-th-bg);border-radius:6px;padding:1px 7px;margin:2px 2px 0 0}
+.pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.pick > span{font-size:13px;color:var(--cg-sub);width:44px;flex:none}
+.pb{height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--cg-line);background:var(--cg-surf);font:inherit;font-size:13.5px;cursor:pointer;color:var(--cg-ink)}
+.pb[aria-pressed="true"]{background:var(--cg-navy);color:#fff;border-color:var(--cg-navy);font-weight:700}
+.stage{position:relative;border-radius:18px;margin-top:12px}
+.stage.fit{overflow:hidden}
+.stage.fit .mock,.stage.full .mock{width:1280px}
+.stage.fit .mock{transform-origin:top left;position:absolute;top:0;left:0}
+.stage.full{overflow-x:auto}
+.stage.vm .mock{width:390px;margin:0 auto}
+.mock{background:var(--cg-bg);border-radius:18px;overflow:hidden;box-shadow:0 2px 22px #0B254514}
+.hint{font-size:12.5px;color:var(--cg-sub);margin:10px 2px 0;line-height:1.6}
+.note{background:var(--cg-surf);border-radius:16px;padding:18px 20px;margin-top:20px}
+.note h2{margin:0 0 10px;font-size:17px;font-weight:900}
+.note p,.note li{font-size:13.5px;color:var(--cg-sub);line-height:1.75}
+.note p{margin:0 0 8px}
+.note b{color:var(--cg-ink)}
+.note a{color:var(--cg-blue)}
+.cmp{overflow-x:auto}
+.cmp table{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+.cmp th,.cmp td{border-bottom:1px solid var(--cg-row-line);padding:9px 10px;text-align:left;vertical-align:top}
+.cmp th{background:var(--cg-th-bg);color:var(--cg-sub);font-size:12.5px;white-space:nowrap}
+.cmp td:first-child{font-weight:700;color:var(--cg-ink);white-space:nowrap}
+.rec{background:var(--cg-todo-bg);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.75;margin-top:10px}
+
+/* 폰 보기 흉내 (시안 전용 — 실제 제품에서는 @media 로 같은 일) */
+.mock.vm{--cg-ctl-h:42px}
+.mock.vm .cg-brand{width:auto}
+.mock.vm .cg-hdr{padding:10px 12px}
+.mock.vm .cg-body{padding:14px 12px 18px}
+.mock.vm .cg-title h2{font-size:21px}
+.mock.vm .f-top,.mock.vm .f-mid,.mock.vm .g-split{grid-template-columns:minmax(0,1fr)}
+.mock.vm .f-hero{padding:18px}
+.mock.vm .f-hero .big strong{font-size:32px}
+.mock.vm .f-legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mock.vm .g-detail{display:none}
+.mock.vm .g-who{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mock.vm .g-wcard strong{font-size:18px}
+.cg-dim.vm.side,.cg-dim.vm.low{place-items:end center;padding:0}
+.cg-dim.vm .cg-modal.form,.cg-dim.vm .cg-modal.sheet{width:390px;max-width:100%;height:auto;max-height:88vh;border-radius:18px 18px 0 0}
+.cg-modal.sheet .g-detail{position:static;padding:0}
+@media (max-width:720px){ .refs{grid-template-columns:minmax(0,1fr)} }
+</style>
+
+<div class="pg">
+  <h1>차곳간 정산 시안 F · G</h1>
+  <p class="lead">
+    E안 기준틀은 <b>그대로 두고 백업</b>했습니다. 정산 서비스 여덟 곳을 참고해 <b>두 가지를 더</b> 만들었습니다.
+    둘 다 워시 «입출금» 화면이고, 머리말 · 탭 · 색 · 글꼴 · 창은 기준틀과 같아서 고르시면 바로 끼울 수 있습니다.
+    두 안은 <b>같은 자료</b>를 씁니다 — G안에서 입금을 맞추면 F안 숫자도 같이 바뀝니다.
+  </p>
+
+  <div class="refs" role="group" aria-label="시안 고르기">
+    <button class="ref" data-plan="F" aria-pressed="true">
+      <span class="tag"><em>F안</em>정산 한눈에</span>
+      <b>받을 돈 한 숫자 · 색 막대 하나 · 다가오는 입금</b>
+      <p>사장님이 아침에 열어 «이번 달 얼마 받을 거고, 얼마 들어왔지?»를 3초 안에 보는 화면.</p>
+      <ul>
+        <li><b>큰 숫자 + 색 막대</b> — 맞춤 끝 · 들어온 듯 · 기다림 · 약속일 지남</li>
+        <li><b>다가오는 약속일</b> 목록 — 날짜 칩 · 상사 · 금액 · 상태</li>
+        <li><b>이번 달 흐름 그래프</b>(약속 금액 vs 들어온 돈) · <b>입금 달력</b>(진할수록 많이 들어올 날)</li>
+      </ul>
+      <span class="from">참고 <span>Stripe 잔액 · 다가오는 지급</span><span>토스페이먼츠 상점관리자</span><span>네이버 스마트스토어 정산 단계</span><span>쿠팡 윙 정산현황</span></span>
+    </button>
+    <button class="ref" data-plan="G" aria-pressed="false">
+      <span class="tag"><em>G안</em>입금 맞추기 받은편지함</span>
+      <b>들어온 돈을 메일 읽듯 한 건씩 «맞음 → 다음»</b>
+      <p>경리 담당이 통장 입금을 청구서와 빠르게 짝짓는 화면. 차곳간이 먼저 찾아 두고 사람은 확인만.</p>
+      <ul>
+        <li>왼쪽 <b>들어온 돈 목록</b> · 오른쪽 <b>한 건 자세히</b> (진행 3단계)</li>
+        <li>짝이 맞는 이유를 <b>✓ 금액 · ✓ 이름 · ✓ 날짜</b>로 · 키보드 <b>↑↓ · Enter</b></li>
+        <li>아래 <b>상사별 남은 돈</b> 카드 · 누르면 <b>원장</b></li>
+      </ul>
+      <span class="from">참고 <span>Mercury 거래 상세</span><span>Ramp 검토함</span><span>Xero 은행 대사</span><span>볼타 · 클로브 거래처 원장</span></span>
+    </button>
+  </div>
+
+  <div class="pick" role="group" aria-label="보기 방식">
+    <span>보기</span>
+    <button class="pb" data-v="fit" aria-pressed="true">PC 한눈에</button>
+    <button class="pb" data-v="full" aria-pressed="false">PC 원래 크기</button>
+    <button class="pb" data-v="vm" aria-pressed="false">폰 화면</button>
+    <button class="pb" id="resetBtn">처음 자료로</button>
+  </div>
+
+  <div class="stage fit" id="stage"><section class="mock" id="mock" aria-label="시안 화면"></section></div>
+  <p class="hint" id="hint">PC 화면(가로 1280)을 화면 폭에 맞춰 줄였어요. 글씨가 작으면 «PC 원래 크기»를 눌러 보세요. 이 시안은 «입출금» 화면만 그렸어요.</p>
+
+  <div class="note">
+    <h2>E · F · G 무엇이 다른가</h2>
+    <div class="cmp"><table>
+      <thead><tr><th></th><th>E안 (기준틀 — 백업함)</th><th>F안 정산 한눈에</th><th>G안 입금 맞추기 받은편지함</th></tr></thead>
+      <tbody>
+        <tr><td>참고</td><td>엔카 · 쏘카 · 헤이딜러 · 은행</td><td>Stripe · 토스페이먼츠 · 네이버 · 쿠팡 윙</td><td>Mercury · Ramp · Xero · 볼타 · 클로브</td></tr>
+        <tr><td>누가 주로 봄</td><td>모두</td><td>사장님 — 얼마 받을지</td><td>경리 — 들어온 돈 처리</td></tr>
+        <tr><td>첫눈에 보이는 것</td><td>할 일 띠 · 숫자 4칸 · 표</td><td><b>큰 숫자 하나 + 색 막대</b></td><td><b>처리할 입금 목록</b></td></tr>
+        <tr><td>새 부품</td><td>—</td><td>색 막대 · 다가오는 목록 · 흐름 그래프 · 입금 달력 · 표 설정 · 합계 줄</td><td>목록+자세히 나란히 · 진행 3단계 · ✓ 이유 · 키보드 · 남은 돈 카드</td></tr>
+        <tr><td>머리말 · 탭 · 창</td><td>기준</td><td>기준틀과 같음</td><td>기준틀과 같음</td></tr>
+        <tr><td>폰</td><td>탭 줄 위에 붙음</td><td>위아래 한 줄로</td><td>목록만 · 누르면 아래에서 자세히 창</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rec"><b>추천</b> — 둘 중 하나를 고르기보다 <b>둘 다 쓰는</b> 쪽입니다. «입출금» 첫 화면은 F안(사장님용 한눈에), 그 안쪽 작은 탭 «입금 맞추기»는 G안(경리용).
+      머리말 · 탭은 기준틀 그대로라 세 제품 모양이 깨지지 않습니다. 마음에 드는 부품만 골라 주셔도 됩니다.</div>
+  </div>
+
+  <div class="note">
+    <h2>참고한 곳</h2>
+    <p>
+      · Stripe — <a href="https://support.stripe.com/questions/understanding-changes-to-my-payout-delivery-date" target="_blank" rel="noopener">잔액 화면에 다가오는 지급 표시</a>,
+        <a href="https://edge-docs.stripe.com/connect/supported-embedded-components/balances" target="_blank" rel="noopener">잔액 요약 · 다가오는 지급 부품</a><br>
+      · 토스페이먼츠 — <a href="https://www.tosspayments.com/blog/articles/33913" target="_blank" rel="noopener">상점관리자 홈(정산 달력 · 입금 예정 정산액)</a>,
+        <a href="https://www.tosspayments.com/blog/articles/33909" target="_blank" rel="noopener">정산내역 일자별 탭 · 표 설정</a>,
+        <a href="https://www.tosspayments.com/blog/articles/53681" target="_blank" rel="noopener">결제부터 정산까지 돈의 흐름</a><br>
+      · 네이버 스마트스토어 — <a href="https://glasswallet.com/calculate/smartstore-fee/settlement-guide" target="_blank" rel="noopener">구매확정 → 정산 단계</a> · 쿠팡 윙 — <a href="https://www.windly.cc/blog/blog-coupangwing-fee-settlement-guide" target="_blank" rel="noopener">정산현황 · 지급 예정</a><br>
+      · Mercury — <a href="https://mercury.com/blog/new-transactions" target="_blank" rel="noopener">거래 상세 보기 · 금액을 이름 옆에</a>,
+        <a href="https://www.saasframe.io/examples/mercury-transactions-details" target="_blank" rel="noopener">거래 상세 화면 예시</a>,
+        <a href="https://mercury.com/blog/august-2025-product-updates" target="_blank" rel="noopener">받은편지함 검토</a><br>
+      · Xero — <a href="https://www.xero.com/accounting-software/bank-reconciliation/" target="_blank" rel="noopener">은행 대사 · 금액 · 날짜 · 거래처로 짝 제안</a> ·
+        볼타 — <a href="https://bolta.io/insight/%EA%B1%B0%EB%9E%98%EB%82%B4%EC%97%AD-%EB%A7%A4%EC%B9%AD" target="_blank" rel="noopener">입출금 자동 연결</a> ·
+        클로브 — <a href="https://clobe.ai/blog/customer-ledger-receivables-management-guide" target="_blank" rel="noopener">거래처 원장</a>
+    </p>
+    <p>화면 속 상사 · 금액은 모두 예시입니다. 그래프 두 선 색은 색약 검사를 통과한 색입니다.</p>
+  </div>
+</div>
+
+<div class="cg-dim" id="dim" hidden></div>
+
+<script>
+/* ═════════ 같은 자료 — F · G 둘 다 이것을 봅니다 ═════════ */
+var TODAY="10.13";
+function seed(){ return {
+  BILLS:[
+    {id:"b1", who:"한빛모터스",      ceo:"박성우", ym:"10월", amt:1980000, due:"10.10", paid:1980000},
+    {id:"b2", who:"오토플러스",      ceo:"정우진", ym:"10월", amt:640000,  due:"10.15", paid:0},
+    {id:"b3", who:"대성상사",        ceo:"정민수", ym:"10월", amt:1250000, due:"10.15", paid:600000},
+    {id:"b4", who:"서울카",          ceo:"한지호", ym:"10월", amt:2310000, due:"10.20", paid:0},
+    {id:"b5", who:"미래자동차",      ceo:"오세진", ym:"9월",  amt:880000,  due:"09.30", paid:0},
+    {id:"b6", who:"새한모터스",      ceo:"윤대호", ym:"10월", amt:420000,  due:"10.13", paid:0},
+    {id:"b7", who:"솜카",            ceo:"김영",   ym:"10월", amt:176000,  due:"10.13", paid:0},
+    {id:"b8", who:"무결점 카모터스", ceo:"이상혁", ym:"10월", amt:176000,  due:"10.25", paid:0},
+    {id:"b9", who:"두드림자동차",    ceo:"강준혁", ym:"10월", amt:165000,  due:"10.25", paid:0},
+    {id:"b10",who:"가온 광택센터",   ceo:"임도현", ym:"10월", amt:330000,  due:"10.31", paid:0}],
+  DONE:[{day:"10.05", at:"13:10", name:"대성상사", amt:600000, bill:"b3"},
+        {day:"10.10", at:"09:40", name:"한빛모터스", amt:1980000, bill:"b1"}],
+  DEPS:[{id:"d1", day:"10.13", at:"09:12", name:"김영",            amt:176000,  bill:"b7", lv:"ok"},
+        {id:"d2", day:"10.13", at:"10:40", name:"새한모터스",      amt:420000,  bill:"b6", lv:"ok"},
+        {id:"d3", day:"10.12", at:"16:05", name:"(주)오토플러스",  amt:640000,  bill:"b2", lv:"ok"},
+        {id:"d4", day:"10.12", at:"11:30", name:"대성상사 정민수", amt:650000,  bill:"b3", lv:"ok"},
+        {id:"d5", day:"10.10", at:"09:03", name:"서울카",          amt:1155000, bill:"b4", lv:"chk"},
+        {id:"d6", day:"10.11", at:"14:21", name:"유현호",          amt:1000000, bill:null, lv:"stop"}],
+  NOTBILL:[] }; }
+var D=seed();
+
+/* ═════════ 공통 도우미 ═════════ */
+var $=function(id){ return document.getElementById(id); };
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function won(n){ return (Number(n)||0).toLocaleString("ko-KR"); }
+function man(n){ return n>=10000 ? (Math.round(n/10000)).toLocaleString("ko-KR")+"만" : won(n); }
+function each(sel, fn, root){ Array.prototype.forEach.call((root||document).querySelectorAll(sel), fn); }
+function bill(id){ for(var i=0;i<D.BILLS.length;i++) if(D.BILLS[i].id===id) return D.BILLS[i]; return null; }
+function left(b){ return b.amt-b.paid; }
+function cand(b){ return Math.min(left(b), D.DEPS.filter(function(d){ return d.bill===b.id; }).reduce(function(a,d){ return a+d.amt; },0)); }
+function billState(b){ if(left(b)<=0) return "끝남"; if(b.due<TODAY) return "막힘"; if(b.paid>0) return "확인 필요"; return "하는 중"; }
+var PILL={"하는 중":"run","끝남":"done","확인 필요":"chk","막힘":"stop"};
+function pill(s,txt){ return '<span class="cg-pill '+PILL[s]+'">'+esc(txt||s)+'</span>'; }
+function sum(a,f){ return a.reduce(function(x,y){ return x+f(y); },0); }
+var WD=["일","월","화","수","목","금","토"];
+function wd(day){ var p=day.split("."); return WD[new Date(2026,+p[0]-1,+p[1]).getDay()]; }
+function dnum(day){ return +day.split(".")[1]; }
+function between(a,b){ var p=a.split("."), q=b.split("."); return Math.round((new Date(2026,+q[0]-1,+q[1])-new Date(2026,+p[0]-1,+p[1]))/864e5); }
+
+/* 머리말 · 탭 — 기준틀과 같음 (워시) */
+function head(){
+  return '<header class="cg-hdr"><div class="cg-brand"><div class="cg-ci">차</div><div><b>차곳간<button class="cg-prod">워시 ▾</button></b><small>광택·세차 관리 · 워시 v111 · UI 2.1</small></div></div>'
+    + '<div class="cg-biz"><b>브라더 광택/세차</b><span>876-12-02709 · 대표 정대봉</span></div>'
+    + '<div class="cg-hdr-right"><button class="cg-hbtn">현장 화면</button><button class="cg-hbtn">공지</button><button class="cg-hbtn">도움말</button><button class="cg-hbtn">주소 복사</button><button class="cg-hbtn">↻ 새로고침</button>'
+    + '<span class="cg-live"><i></i>30초마다 · 연결됨</span>'
+    + '<button class="cg-me"><span class="cg-av">정</span><i class="cg-badge">3</i><span>정 대표<br><small>마이페이지 · 휴지통 ▾</small></span></button></div></header>';
+}
+function tabs(){
+  return '<div class="cg-navbar"><nav class="cg-tabs"><button class="cg-tab cg-all">☰ 전체 메뉴</button><span class="cg-tabsep"></span>'
+    + ["홈","매출","일감","청구서","입출금","세금계산서","자재","설정"].map(function(m){ return '<button class="cg-tab'+(m==="입출금"?' on':'')+'">'+m+'</button>'; }).join("")+'</nav></div>';
+}
+function subtabs(on){
+  return '<div class="cg-subtabs">'+["정산 한눈에","입금 맞추기","입·출금","받아야 할 금액"].map(function(s){
+    return '<button class="cg-subtab'+(s===on?' on':'')+'"'+(s==="정산 한눈에"?' data-plan-go="F"':s==="입금 맞추기"?' data-plan-go="G"':'')+'>'+s+'</button>'; }).join("")+'</div>';
+}
+
+/* ═════════ F안 — 정산 한눈에 ═════════ */
+var F={day:"10.15", tab:"day", per:"month", hide:{}, pop:false};
+var HOL={"10.03":"개천절","10.09":"한글날"};
+function fParts(){
+  var paid=sum(D.BILLS,function(b){return b.paid;}), c=sum(D.BILLS,cand);
+  var late=sum(D.BILLS.filter(function(b){return b.due<TODAY;}),function(b){return left(b)-cand(b);});
+  var total=sum(D.BILLS,function(b){return b.amt;});
+  return {total:total, paid:paid, cand:c, late:late, wait:total-paid-c-late, left:total-paid};
+}
+function renderF(){
+  var P=fParts();
+  var segs=[["맞춤 끝",P.paid,"var(--cg-done)","청구서와 짝지은 돈"],["들어온 듯",P.cand,"var(--cg-blue)","통장엔 왔고 맞추기만"],
+            ["기다림",P.wait,"var(--fg-wait)","약속일이 아직"],["약속일 지남",P.late,"var(--cg-stop)","연락이 필요해요"]];
+  var nomatch=D.DEPS.filter(function(d){ return !d.bill; });
+  return head()+tabs()+'<main class="cg-body">'
+   + '<div class="cg-title"><div class="cg-crumb">입출금 ›</div><h2>정산 한눈에</h2><p>이번 달 받을 돈이 얼마고, 언제 들어오고, 얼마나 맞췄는지 한 화면에서 봐요.</p></div>'
+   + subtabs("정산 한눈에")
+   + '<div class="cg-todo"><span class="tx">통장엔 왔는데 안 맞춘 입금 <b>'+D.DEPS.length+'건</b> · 약속일 지난 상사 <b>'+D.BILLS.filter(function(b){return left(b)>0&&b.due<TODAY;}).length+'곳</b></span><button class="cg-go" data-plan-go="G">해결하러 가기</button></div>'
+   + '<div class="f-top">'
+   +   '<section class="f-hero" aria-label="받을 돈">'
+   +     '<p class="fg-eyebrow">받을 돈 · 10월 13일 기준</p>'
+   +     '<div class="big"><strong>'+won(P.left)+'<em>원</em></strong><span>청구한 '+won(P.total)+'원 중 '+Math.round(P.paid/P.total*100)+'% 받음</span></div>'
+   +     '<div class="f-bar" role="img" aria-label="'+segs.map(function(s){return s[0]+' '+won(s[1])+'원';}).join(', ')+'">'
+   +       segs.map(function(s){ return s[1]>0?'<i style="flex:'+s[1]+';background:'+s[2]+'" title="'+s[0]+' '+won(s[1])+'원"></i>':''; }).join("")+'</div>'
+   +     '<div class="f-legend">'+segs.map(function(s){ return '<div><span><i style="background:'+s[2]+'"></i>'+s[0]+'</span><b>'+won(s[1])+'원</b><small>'+s[3]+'</small></div>'; }).join("")+'</div>'
+   +     '<div class="foot">'+(nomatch.length?'짝 못 찾은 입금 <b style="color:var(--cg-stop)">'+nomatch.length+'건 · '+won(sum(nomatch,function(d){return d.amt;}))+'원</b> (청구서와 상관없는 돈일 수도 있어요)':'짝 못 찾은 입금이 없어요')
+   +       '<button class="cg-btn pri" data-plan-go="G">입금 맞추러 가기 ('+D.DEPS.length+'건)</button></div>'
+   +   '</section>'
+   +   fUpcoming()
+   + '</div>'
+   + '<div class="f-mid">'+fChart()+fHeat()+'</div>'
+   + fTable()
+   + '<details class="cg-help"><summary>도움말 ▸ 정산 한눈에 화면 쓰는 법</summary><p>맨 위 큰 숫자는 아직 짝을 못 지은 받을 돈이에요. 색 막대는 그 돈이 어디쯤 와 있는지 보여 줘요 — 초록은 끝, 파랑은 통장엔 들어와서 맞추기만 남은 돈, 회색은 약속일이 아직인 돈, 빨강은 약속일이 지난 돈이에요.</p></details>'
+   + '</main>';
+}
+function fUpcoming(){
+  var late=D.BILLS.filter(function(b){ return b.due<TODAY && left(b)-cand(b)>0; });
+  var days={}; D.BILLS.forEach(function(b){ if(b.due>=TODAY && left(b)>0){ (days[b.due]=days[b.due]||[]).push(b); } });
+  var keys=Object.keys(days).sort();
+  return '<section class="cg-card f-up" aria-label="다가오는 약속일"><h3>다가오는 약속일</h3><p class="sub">상사가 돈을 보내기로 한 날</p>'
+    + late.map(function(b){ return '<div class="f-late"><span>⚠</span><span><b>'+esc(b.who)+'</b> · '+esc(b.ym)+' 청구 · 약속일 '+esc(b.due)+' ('+between(b.due,TODAY)+'일 지남)</span><span class="n">'+won(left(b)-cand(b))+'원</span></div>'; }).join("")
+    + keys.slice(0,5).map(function(k){
+        var bs=days[k], amt=sum(bs,left), c=sum(bs,cand), st=c>=amt?["끝남","들어온 듯"]:c>0?["확인 필요","일부 들어옴"]:["하는 중","기다림"];
+        return '<div class="f-uprow"><span class="f-date'+(k===TODAY?' today':'')+'"><b>'+dnum(k)+'</b><small>'+(k===TODAY?'오늘':wd(k))+'</small></span>'
+          + '<span class="who">'+esc(bs.map(function(b){return b.who;}).join(", "))+'<small>'+bs.length+'건 · '+(k===TODAY?'오늘':between(TODAY,k)+'일 뒤')+'</small></span>'
+          + '<span class="amt">'+won(amt)+'원<br>'+pill(st[0],st[1])+'</span></div>'; }).join("")
+    + '</section>';
+}
+/* 이번 달 흐름 — 약속 금액 누적(점선) vs 들어온 돈 누적(실선). 한 축 · 계단선 */
+function fSeries(){
+  var plan=[], got=[], p=0, g=0;
+  for(var d=1; d<=31; d++){
+    var day="10."+(d<10?"0":"")+d;
+    p+=sum(D.BILLS.filter(function(b){return b.due===day;}),function(b){return b.amt;});
+    g+=sum(D.DONE.filter(function(x){return x.day===day;}),function(x){return x.amt;})+sum(D.DEPS.filter(function(x){return x.day===day;}),function(x){return x.amt;});
+    plan.push(p); got.push(d<=dnum(TODAY)?g:null);
+  }
+  return {plan:plan, got:got};
+}
+function fChart(){
+  var S=fSeries(), W=700, H=300, L=52, R=96, T=14, B=26, max=9000000;
+  var x=function(d){ return L+(d-1)/30*(W-L-R); }, y=function(v){ return T+(1-v/max)*(H-T-B); };
+  var step=function(arr){ var s="", last=null; arr.forEach(function(v,i){ if(v==null) return; var X=x(i+1), Y=y(v); s+= s?("H"+X.toFixed(1)+"V"+Y.toFixed(1)):("M"+X.toFixed(1)+","+Y.toFixed(1)); last=[X,Y]; }); return {d:s,last:last}; };
+  var pl=step(S.plan), gl=step(S.got), td=dnum(TODAY);
+  var area=gl.d+"V"+y(0).toFixed(1)+"H"+x(1).toFixed(1)+"Z";
+  var grid=[0,3000000,6000000,9000000].map(function(v){ return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'"/>'; }).join("");
+  var yl=[0,3000000,6000000,9000000].map(function(v){ return '<text class="ax" x="'+(L-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+(v?man(v):"0")+'</text>'; }).join("");
+  var xl=[1,8,15,22,29].map(function(d){ return '<text class="ax" x="'+x(d)+'" y="'+(H-6)+'" text-anchor="middle">'+d+'일</text>'; }).join("");
+  return '<section class="cg-card f-chart" aria-label="이번 달 흐름"><h3>10월 돈 흐름</h3><p class="sub">약속한 금액과 실제로 들어온 돈을 날짜마다 쌓아서 봐요</p>'
+    + '<div class="f-leg2"><span><i></i>들어온 돈 (통장)</span><span><i class="p"></i>약속 금액 (청구서 약속일)</span></div>'
+    + '<div class="f-chartwrap"><svg id="fsvg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="10월 누적: 약속 '+won(S.plan[30])+'원, 13일까지 들어온 돈 '+won(S.got[td-1])+'원">'
+    +   '<g class="grid">'+grid+'</g>'+yl+xl
+    +   '<line x1="'+x(td)+'" x2="'+x(td)+'" y1="'+T+'" y2="'+y(0)+'" stroke="var(--cg-navy)" stroke-width="1" stroke-dasharray="2 3" opacity=".5"/>'
+    +   '<text class="ax" x="'+x(td)+'" y="'+(T-2)+'" text-anchor="middle" style="fill:var(--cg-navy);font-weight:700">오늘</text>'
+    +   '<path d="'+area+'" fill="var(--cg-blue)" opacity=".1"/>'
+    +   '<path d="'+pl.d+'" fill="none" stroke="var(--fg-plan)" stroke-width="2" stroke-dasharray="5 4" stroke-linejoin="round"/>'
+    +   '<path d="'+gl.d+'" fill="none" stroke="var(--cg-blue)" stroke-width="2" stroke-linejoin="round"/>'
+    +   '<circle cx="'+gl.last[0]+'" cy="'+gl.last[1]+'" r="4.5" fill="var(--cg-blue)" stroke="var(--cg-surf)" stroke-width="2"/>'
+    +   '<text x="'+(gl.last[0]+10)+'" y="'+(gl.last[1]+4)+'" style="font-size:12px;font-weight:700;fill:var(--cg-ink)">들어옴 '+man(S.got[td-1])+'</text>'
+    +   '<text x="'+(pl.last[0]+8)+'" y="'+(pl.last[1]+4)+'" style="font-size:12px;font-weight:700;fill:var(--cg-ink)">약속 '+man(S.plan[30])+'</text>'
+    +   '<line id="fx" x1="0" x2="0" y1="'+T+'" y2="'+y(0)+'" stroke="var(--cg-sub)" stroke-width="1" opacity="0"/>'
+    +   '<circle id="fpa" r="4" fill="var(--fg-plan)" stroke="var(--cg-surf)" stroke-width="2" opacity="0"/><circle id="fpb" r="4" fill="var(--cg-blue)" stroke="var(--cg-surf)" stroke-width="2" opacity="0"/>'
+    +   '<rect id="fhit" x="'+L+'" y="'+T+'" width="'+(W-L-R)+'" height="'+(H-T-B)+'" fill="transparent"/>'
+    + '</svg><div class="f-tip" id="ftip" hidden></div></div></section>';
+}
+function fHeat(){
+  var first=new Date(2026,9,1).getDay(), cells=WD.map(function(d){ return '<div class="dw">'+d+'</div>'; }).join("");
+  var amts={}; D.BILLS.forEach(function(b){ if(b.due.indexOf("10.")===0) amts[b.due]=(amts[b.due]||0)+b.amt; });
+  var gotd={}; D.DONE.concat(D.DEPS).forEach(function(x){ gotd[x.day]=1; });
+  var lv=function(a){ return !a?0: a<300000?1: a<1000000?2: a<2000000?3:4; };
+  var bg=["var(--cg-th-bg)","#DCE9F8","#A9CAF0","#5F9BE0","#1668C4"];
+  for(var i=0;i<first;i++) cells+='<button class="off" tabindex="-1" aria-hidden="true"></button>';
+  for(var n=1;n<=31;n++){
+    var day="10."+(n<10?"0":"")+n, w=(first+n-1)%7, l=lv(amts[day]);
+    cells+='<button data-day="'+day+'" class="'+((w===0||w===6||HOL[day])&&l<3?'red ':'')+(day===TODAY?'today ':'')+(day===F.day?'sel':'')+'" style="background:'+bg[l]+(l>=3?';color:#fff':'')+'" aria-label="10월 '+n+'일 '+(amts[day]?'들어올 돈 '+won(amts[day])+'원':'')+'">'+n+(gotd[day]?'<i></i>':'')+'</button>';
+  }
+  var bs=D.BILLS.filter(function(b){ return b.due===F.day; }), gs=D.DONE.concat(D.DEPS).filter(function(x){ return x.day===F.day; });
+  return '<section class="cg-card f-heat" aria-label="입금 달력"><h3>입금 달력</h3><p class="sub">진할수록 많이 들어올 날 · 초록 점은 실제로 들어온 날</p>'
+    + '<div class="f-heatgrid">'+cells+'</div>'
+    + '<div class="f-heatleg">적음'+bg.slice(1).map(function(c){ return '<span style="background:'+c+'"></span>'; }).join("")+'많음<i class="gdot"></i>들어온 날</div>'
+    + '<div class="f-pick"><b>10월 '+dnum(F.day)+'일 '+wd(F.day)+'요일'+(HOL[F.day]?' · '+HOL[F.day]:'')+'</b><br>'
+    + (bs.length?'들어올 돈 <b>'+won(sum(bs,function(b){return b.amt;}))+'원</b> — '+esc(bs.map(function(b){return b.who;}).join(", ")):'약속된 돈 없음')+'<br>'
+    + (gs.length?'들어온 돈 <b>'+won(sum(gs,function(x){return x.amt;}))+'원</b> — '+esc(gs.map(function(x){return x.name;}).join(", ")):'들어온 돈 없음')+'</div></section>';
+}
+var FCOLS={
+  day:{cols:["날짜","약속 건수","들어올 돈","들어온 돈","차이","상태"], kinds:["name","id","money","money","money","state"]},
+  bill:{cols:["상사명","청구 달","약속일","청구액","받은 돈","남은 돈","상태"], kinds:["name","id","date","money","money","money","state"]}};
+function fRows(){
+  var range={today:["10.13","10.13"], week:["10.11","10.17"], month:["10.01","10.31"], last:["09.01","09.30"]}[F.per];
+  var inR=function(d){ return d>=range[0] && d<=range[1]; };
+  if(F.tab==="bill") return D.BILLS.filter(function(b){ return inR(b.due); }).map(function(b){ return [b.who,b.ym,b.due,b.amt,b.paid,left(b),billState(b)]; });
+  var days={};
+  D.BILLS.forEach(function(b){ if(inR(b.due)) days[b.due]=1; });
+  D.DONE.concat(D.DEPS).forEach(function(d){ if(inR(d.day)) days[d.day]=1; });
+  return Object.keys(days).sort().map(function(day){
+    var due=D.BILLS.filter(function(b){return b.due===day;}), dA=sum(due,function(b){return b.amt;});
+    var iA=sum(D.DONE.concat(D.DEPS).filter(function(x){return x.day===day;}),function(x){return x.amt;});
+    var s = dA && iA>=dA ? "끝남" : day>TODAY ? "하는 중" : (dA && !iA) ? "막힘" : dA ? "확인 필요" : "끝남";
+    return [day+" ("+wd(day)+")", due.length+"건", dA, iA, iA-dA, s];
+  });
+}
+function fTable(){
+  var C=FCOLS[F.tab], rows=fRows(), vis=C.cols.map(function(c,k){ return k===0 || !F.hide[F.tab+k]; });
+  var mon=function(v){ return '<td class="n"'+(v<0?' style="color:var(--cg-stop)"':'')+'>'+(v<0?'−':'')+won(Math.abs(v))+'원</td>'; };
+  var td=function(v,k){ var kd=C.kinds[k]; if(kd==="state") return '<td class="c">'+pill(v)+'</td>'; if(kd==="money") return mon(v);
+    if(kd==="name") return '<td class="cg-fix1">'+esc(v)+'</td>'; return '<td>'+esc(v)+'</td>'; };
+  var foot=C.cols.map(function(c,k){ if(!vis[k]) return ""; if(k===0) return '<td class="cg-fix1">합계 '+rows.length+'줄</td>';
+    return C.kinds[k]==="money" ? mon(sum(rows,function(r){return r[k];})) : '<td></td>'; }).join("");
+  return '<div class="cg-tcard"><div class="f-ttools">'
+    + '<div class="cg-subtabs"><button class="cg-subtab'+(F.tab==="day"?' on':'')+'" data-ftab="day">일자별</button><button class="cg-subtab'+(F.tab==="bill"?' on':'')+'" data-ftab="bill">건별</button></div>'
+    + '<span class="cg-tabsep" style="height:24px"></span>'
+    + [["today","오늘"],["week","이번 주"],["month","이번 달"],["last","지난달"]].map(function(p){ return '<button class="cg-chip'+(F.per===p[0]?' on':'')+'" data-per="'+p[0]+'" style="height:34px">'+p[1]+'</button>'; }).join("")
+    + '<span class="cg-sp"></span>'
+    + '<span class="f-cols"><button class="cg-btn" id="colBtn" style="height:34px" aria-expanded="'+F.pop+'">표 설정</button>'
+    + (F.pop?'<div class="f-colpop">'+C.cols.map(function(c,k){ return k===0?'':'<label><input type="checkbox" data-col="'+k+'"'+(vis[k]?' checked':'')+'>'+esc(c)+'</label>'; }).join("")+'</div>':'')+'</span>'
+    + '<button class="cg-btn" style="height:34px">엑셀로 받기</button></div>'
+    + '<div class="cg-tscroll"><table class="cg-table" style="min-width:760px"><colgroup><col class="k-chk">'+C.kinds.map(function(k,i){ return vis[i]?'<col class="k-'+k+'">':''; }).join("")+'</colgroup>'
+    + '<thead><tr><th class="cg-fix0"><input type="checkbox" class="cg-check" aria-label="모두 고르기"></th>'+C.cols.map(function(c,k){ return vis[k]?'<th class="'+(k===0?'cg-fix1 ':'')+(C.kinds[k]==="money"?'n':C.kinds[k]==="state"?'c':'')+'">'+esc(c)+'</th>':''; }).join("")+'</tr></thead>'
+    + '<tbody>'+(rows.length?rows.map(function(r){ return '<tr><td class="cg-fix0"><input type="checkbox" class="cg-check" aria-label="고르기"></td>'+r.map(function(v,k){ return vis[k]?td(v,k):''; }).join("")+'</tr>'; }).join(""):'<tr><td colspan="9" style="text-align:center;color:var(--cg-sub)">이 기간에는 없어요</td></tr>')+'</tbody>'
+    + (rows.length?'<tfoot><tr><td class="cg-fix0"></td>'+foot+'</tr></tfoot>':'')
+    + '</table></div></div>';
+}
+function wireF(){
+  each("[data-day]", function(b){ b.onclick=function(){ F.day=b.getAttribute("data-day"); draw(); }; }, $("mock"));
+  each("[data-ftab]", function(b){ b.onclick=function(){ F.tab=b.getAttribute("data-ftab"); F.pop=false; draw(); }; }, $("mock"));
+  each("[data-per]", function(b){ b.onclick=function(){ F.per=b.getAttribute("data-per"); draw(); }; }, $("mock"));
+  $("colBtn").onclick=function(e){ e.stopPropagation(); F.pop=!F.pop; draw(); };
+  each("[data-col]", function(c){ c.onchange=function(){ F.hide[F.tab+c.getAttribute("data-col")]=!c.checked; draw(); }; }, $("mock"));
+  /* 그래프 — 마우스를 올리면 그 날 값 */
+  var S=fSeries(), svg=$("fsvg"), hit=$("fhit"), tip=$("ftip"), W=700, H=300, L=52, R=96, T=14, B=26, max=9000000;
+  var x=function(d){ return L+(d-1)/30*(W-L-R); }, y=function(v){ return T+(1-v/max)*(H-T-B); };
+  function show(ev){
+    var r=svg.getBoundingClientRect(), sx=(ev.clientX-r.left)/r.width*W, d=Math.max(1,Math.min(31,Math.round((sx-L)/(W-L-R)*30)+1));
+    $("fx").setAttribute("x1",x(d)); $("fx").setAttribute("x2",x(d)); $("fx").setAttribute("opacity",".6");
+    $("fpa").setAttribute("cx",x(d)); $("fpa").setAttribute("cy",y(S.plan[d-1])); $("fpa").setAttribute("opacity","1");
+    if(S.got[d-1]!=null){ $("fpb").setAttribute("cx",x(d)); $("fpb").setAttribute("cy",y(S.got[d-1])); $("fpb").setAttribute("opacity","1"); } else $("fpb").setAttribute("opacity","0");
+    var wr=svg.parentNode.getBoundingClientRect(), k=wr.width/svg.parentNode.offsetWidth;
+    tip.hidden=false; tip.style.left=((x(d)/W*r.width)/k)+"px"; tip.style.top=((Math.min(y(S.plan[d-1]), S.got[d-1]!=null?y(S.got[d-1]):999)/H*r.height)/k)+"px";
+    tip.innerHTML='<b>10월 '+d+'일 '+WD[new Date(2026,9,d).getDay()]+'요일</b><br>약속 누적 <b>'+won(S.plan[d-1])+'원</b><br>'+(S.got[d-1]!=null?'들어온 누적 <b>'+won(S.got[d-1])+'원</b>':'아직 오지 않은 날');
+  }
+  hit.onmousemove=show; hit.onmouseenter=show;
+  hit.onmouseleave=function(){ tip.hidden=true; ["fx","fpa","fpb"].forEach(function(i){ $(i).setAttribute("opacity","0"); }); };
+}
+
+/* ═════════ G안 — 입금 맞추기 받은편지함 ═════════ */
+var G={box:"todo", sel:"d1"};
+function gList(){
+  if(G.box==="done") return D.DONE.map(function(d,i){ return {key:"x"+i, name:d.name, day:d.day, at:d.at, amt:d.amt, lv:"done", to:bill(d.bill).who, ref:d, idx:i}; }).reverse();
+  if(G.box==="not") return D.NOTBILL.map(function(d,i){ return {key:"n"+i, name:d.name, day:d.day, at:d.at, amt:d.amt, lv:"stop", to:"청구 아님", ref:d, idx:i}; });
+  return D.DEPS.map(function(d){ return {key:d.id, name:d.name, day:d.day, at:d.at, amt:d.amt, lv:d.lv, to:d.bill?bill(d.bill).who:"짝 못 찾음", ref:d}; });
+}
+function checks(d, b){
+  var out=[], l=left(b);
+  out.push(d.amt===l ? ["ok","금액","보낸 돈 "+won(d.amt)+"원 = 남은 돈 "+won(l)+"원"]
+        : d.amt<l ? ["chk","금액","보낸 돈 "+won(d.amt)+"원이 남은 돈 "+won(l)+"원보다 "+won(l-d.amt)+"원 적어요 — 나눠 낸 것 같아요"]
+        : ["chk","금액","보낸 돈이 남은 돈보다 "+won(d.amt-l)+"원 많아요"]);
+  var nm=d.name.replace(/\(주\)|주식회사|\s/g,"");
+  out.push(nm.indexOf(b.who.replace(/\s/g,""))>=0 && nm.length===b.who.replace(/\s/g,"").length ? ["ok","이름","보낸 사람 «"+d.name+"» = 상사 이름"]
+        : nm.indexOf(b.ceo)>=0 && nm.indexOf(b.who.replace(/\s/g,""))<0 ? ["ok","이름","보낸 사람 «"+d.name+"» = "+b.who+" 대표 "+b.ceo]
+        : ["ok","이름","보낸 사람 «"+d.name+"» ≈ "+b.who+" (글자 조금 다름)"]);
+  var g=between(b.due, d.day);
+  out.push(g===0 ? ["ok","날짜","약속일("+b.due+") 당일"] : g<0 ? ["ok","날짜","약속일("+b.due+")보다 "+(-g)+"일 먼저"] : ["chk","날짜","약속일("+b.due+")보다 "+g+"일 늦게"]);
+  return out;
+}
+function gDetail(it){
+  if(!it) return '<section class="g-detail"><div class="g-empty">왼쪽에서 입금을 고르세요.</div></section>';
+  var d=it.ref, ini=esc(it.name.replace(/\(주\)/,"").trim().charAt(0));
+  var headH='<div class="g-dhead"><span class="g-av big '+(it.lv==="ok"?"":it.lv)+'">'+ini+'</span><div><small>10월 '+dnum(it.day)+'일 '+wd(it.day)+'요일 '+esc(it.at)+' · 신한 ···9012</small><b>'+esc(it.name)+' 님이 보낸 돈</b></div><strong>'+won(it.amt)+'<em>원</em></strong></div>';
+  var steps=function(n){ return '<ol class="g-steps">'+["통장에 들어옴","차곳간이 짝 찾음","맞춤"].map(function(s,i){ return '<li class="'+(i<n?'on':'')+(i===n?' now':'')+'">'+s+'</li>'; }).join("")+'</ol>'; };
+  if(G.box==="done"){
+    var b=bill(d.bill);
+    return '<section class="g-detail">'+headH+steps(3)
+      + '<div class="g-match"><p class="fg-eyebrow">맞춘 청구서</p><div class="g-billcard"><span><b>'+esc(b.who)+'</b><small>'+esc(b.ym)+' 청구서 · 약속일 '+esc(b.due)+'</small></span><span class="n">남은 돈 '+won(left(b))+'원<small><br>'+pill(billState(b))+'</small></span></div></div>'
+      + '<div class="g-acts"><button class="cg-btn" data-ledger="'+b.id+'">'+esc(b.who)+' 원장 보기</button>'+(d.from?'<span class="cg-sp"></span><button class="cg-btn" data-undo="'+it.idx+'">되돌리기</button>':'')+'</div></section>';
+  }
+  if(G.box==="not"){
+    return '<section class="g-detail">'+headH+steps(1)+'<div class="g-match"><p class="fg-eyebrow">청구 아님으로 둔 돈</p><p style="margin:0;font-size:13.5px;color:var(--cg-sub)">청구서와 상관없는 돈이라 받을 돈 계산에서 뺐어요.</p></div>'
+      + '<div class="g-acts"><span class="cg-sp"></span><button class="cg-btn" data-unnot="'+it.idx+'">되돌리기</button></div></section>';
+  }
+  if(!d.bill){
+    return '<section class="g-detail">'+headH+steps(1)
+      + '<div class="g-match"><p class="fg-eyebrow">차곳간이 찾은 청구서</p><div class="g-billcard" style="background:var(--cg-stop-bg)"><span><b>짝을 못 찾았어요</b><small>금액이 같은 청구서도, «'+esc(d.name)+'»라는 거래처도 없어요</small></span></div>'
+      + '<ul class="g-checks"><li class="stop"><i>!</i><b>금액</b><span>'+won(d.amt)+'원과 같은 남은 돈이 없어요</span></li><li class="stop"><i>!</i><b>이름</b><span>«'+esc(d.name)+'» — 거래처 · 대표 이름에 없어요</span></li></ul></div>'
+      + '<div class="g-acts"><button class="cg-btn" data-notbill="'+d.id+'">청구 아님</button><button class="cg-btn" data-split="'+d.id+'">나눠 맞추기</button><button class="cg-btn">새 거래처로 적기</button></div></section>';
+  }
+  var b2=bill(d.bill), cs=checks(d,b2);
+  return '<section class="g-detail">'+headH+steps(2)
+    + '<div class="g-match"><p class="fg-eyebrow">차곳간이 찾은 청구서</p>'
+    + '<div class="g-billcard"><span><b>'+esc(b2.who)+'</b><small>'+esc(b2.ym)+' 청구서 · 대표 '+esc(b2.ceo)+' · 약속일 '+esc(b2.due)+'</small></span><span class="n">남은 돈<br>'+won(left(b2))+'원</span></div>'
+    + '<ul class="g-checks">'+cs.map(function(c){ return '<li class="'+c[0]+'"><i>'+(c[0]==="ok"?"✓":"!")+'</i><b>'+c[1]+'</b><span>'+esc(c[2])+'</span></li>'; }).join("")+'</ul></div>'
+    + '<div class="g-acts"><button class="cg-btn" data-notbill="'+d.id+'">청구 아님</button><button class="cg-btn" data-split="'+d.id+'">'+(d.lv==="chk"?"나눠 맞추기":"다른 청구서")+'</button><span class="cg-sp"></span>'
+    + '<button class="cg-btn pri" data-ok="'+d.id+'">맞음 · 다음 건</button></div>'
+    + '<p class="g-keys"><kbd>↑</kbd> <kbd>↓</kbd> 다른 입금 · <kbd>Enter</kbd> 맞음</p></section>';
+}
+function renderG(){
+  var L=gList(); if(!L.some(function(it){ return it.key===G.sel; })) G.sel=L.length?L[0].key:null;
+  var cur=L.filter(function(it){ return it.key===G.sel; })[0];
+  var rows=D.BILLS.slice().sort(function(a,b){ return left(b)-left(a); });
+  return head()+tabs()+'<main class="cg-body">'
+   + '<div class="cg-title"><div class="cg-crumb">입출금 ›</div><h2>입금 맞추기</h2><p>통장에 들어온 돈을 청구서와 짝지어요. 차곳간이 금액 · 이름 · 날짜로 먼저 찾아 둡니다.</p></div>'
+   + subtabs("입금 맞추기")
+   + '<div class="cg-todo"><span class="tx">바로 맞출 수 있는 입금 <b>'+D.DEPS.filter(function(d){return d.lv==="ok";}).length+'건</b> · 확인할 입금 <b>'+D.DEPS.filter(function(d){return d.lv!=="ok";}).length+'건</b></span><button class="cg-go" id="goChk">해결하러 가기</button></div>'
+   + '<div class="g-split">'
+   +   '<section class="g-inbox" aria-label="들어온 돈"><div class="hd">'
+   +     '<div class="cg-subtabs">'+[["todo","확인할 것",D.DEPS.length],["done","맞춘 것",D.DONE.length],["not","청구 아님",D.NOTBILL.length]].map(function(b){ return '<button class="cg-subtab'+(G.box===b[0]?' on':'')+'" data-box="'+b[0]+'">'+b[1]+' '+b[2]+'</button>'; }).join("")+'</div>'
+   +     '<label class="cg-field">🔍 <input placeholder="보낸 사람 · 금액 찾기" aria-label="입금 찾기" style="width:100%"></label></div>'
+   +     (L.length ? L.map(function(it){ return '<button class="g-item'+(it.key===G.sel?' on':'')+'" data-sel="'+it.key+'"><span class="g-av '+(it.lv==="ok"?"":it.lv)+'">'+esc(it.name.replace(/\(주\)/,"").trim().charAt(0))+'</span>'
+          + '<span><b>'+esc(it.name)+'</b><small>'+esc(it.day)+' '+esc(it.at)+' · 신한 ···9012</small></span>'
+          + '<span class="amt">'+won(it.amt)+'원<small class="'+(it.lv==="done"?"ok":it.lv)+'">'+(it.lv==="done"?"✓ ":"→ ")+esc(it.to)+'</small></span></button>'; }).join("")
+          : '<div class="g-empty">'+(G.box==="todo"?"맞출 입금이 없어요. 다 맞췄어요!":"아직 없어요.")+'</div>')
+   +   '</section>'
+   +   gDetail(cur)
+   + '</div>'
+   + '<div class="g-whohead"><h3>상사별 남은 돈</h3><span>'+rows.filter(function(b){return left(b)>0;}).length+'곳 · 합계 <b>'+won(sum(rows,left))+'원</b> · 카드를 누르면 원장이 열려요</span></div>'
+   + '<div class="g-who">'+rows.map(function(b){ var p=Math.round(b.paid/b.amt*100);
+       return '<button class="g-wcard" data-ledger="'+b.id+'"><span class="top"><b>'+esc(b.who)+'</b>'+pill(billState(b))+'</span>'
+         + '<strong>'+won(left(b))+'<em>원 남음</em></strong><span class="g-prog" aria-hidden="true"><i style="width:'+p+'%"></i></span>'
+         + '<small>받은 '+won(b.paid)+' / 청구 '+won(b.amt)+' · 약속일 '+esc(b.due)+'</small></button>'; }).join("")+'</div>'
+   + '<details class="cg-help"><summary>도움말 ▸ 입금 맞추기 화면 쓰는 법</summary><p>왼쪽에서 입금을 고르면 오른쪽에 차곳간이 찾은 청구서와 그 이유(✓ 금액 · 이름 · 날짜)가 나와요. 맞으면 «맞음 · 다음 건»을 누르거나 Enter. 한 입금을 여러 청구서에 나눠 넣으려면 «나눠 맞추기». 청구서와 상관없는 돈이면 «청구 아님».</p></details>'
+   + '</main>';
+}
+function matchDep(id, plan){
+  var i=D.DEPS.map(function(d){return d.id;}).indexOf(id); if(i<0) return;
+  var d=D.DEPS[i]; plan=plan||[{bill:d.bill, amt:Math.min(d.amt,left(bill(d.bill)))}];
+  plan.forEach(function(p){ var b=bill(p.bill); b.paid=Math.min(b.amt, b.paid+p.amt); D.DONE.push({day:d.day, at:d.at, name:d.name, amt:p.amt, bill:p.bill, from:d}); });
+  D.DEPS.splice(i,1);
+  G.sel = D.DEPS[i] ? D.DEPS[i].id : (D.DEPS[i-1] ? D.DEPS[i-1].id : null);
+}
+function gSelect(key){ G.sel=key; if(view==="vm"){ var it=gList().filter(function(x){ return x.key===key; })[0]; openWin("sheet", '<div class="cg-modal sheet" role="dialog" aria-modal="true" aria-label="입금 자세히"><button class="cg-x" data-close aria-label="닫기">✕</button>'+gDetail(it)+'</div>'); wireDetail($("dim")); } else draw(); }
+function wireDetail(root){
+  each("[data-ok]", function(b){ b.onclick=function(){ closeWinQuiet(); matchDep(b.getAttribute("data-ok")); draw(); }; }, root);
+  each("[data-split]", function(b){ b.onclick=function(){ openSplit(b.getAttribute("data-split")); }; }, root);
+  each("[data-notbill]", function(b){ b.onclick=function(){ var id=b.getAttribute("data-notbill"), d=D.DEPS.filter(function(x){return x.id===id;})[0];
+    confirmWin("청구 아님으로 둘까요?", [["누가 보냄",d.name],["총 몇 건","1건"],["총 얼마",won(d.amt)+"원"]], "청구 아님", function(){
+      D.DEPS=D.DEPS.filter(function(x){return x.id!==id;}); D.NOTBILL.push(d); draw(); }); }; }, root);
+  each("[data-ledger]", function(b){ b.onclick=function(){ openLedger(b.getAttribute("data-ledger")); }; }, root);
+  each("[data-undo]", function(b){ b.onclick=function(){ var k=+b.getAttribute("data-undo"), x=D.DONE[k]; bill(x.bill).paid-=x.amt; D.DONE.splice(k,1);
+    if(!D.DONE.some(function(y){ return y.from===x.from; })) D.DEPS.unshift(x.from); closeWinQuiet(); G.box="todo"; G.sel=x.from.id; draw(); }; }, root);
+  each("[data-unnot]", function(b){ var k=+b.getAttribute("data-unnot"); b.onclick=function(){ var x=D.NOTBILL.splice(k,1)[0]; D.DEPS.push(x); closeWinQuiet(); G.box="todo"; G.sel=x.id; draw(); }; }, root);
+}
+function wireG(){
+  var M=$("mock");
+  each("[data-box]", function(b){ b.onclick=function(){ G.box=b.getAttribute("data-box"); G.sel=null; draw(); }; }, M);
+  each("[data-sel]", function(b){ b.onclick=function(){ gSelect(b.getAttribute("data-sel")); }; }, M);
+  wireDetail(M);
+  $("goChk").onclick=function(){ G.box="todo"; var t=D.DEPS.filter(function(d){return d.lv!=="ok";})[0]; if(t) gSelect(t.id); };
+}
+document.addEventListener("keydown", function(e){
+  if(plan!=="G" || !$("dim").hidden || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  var L=gList(), i=L.map(function(x){return x.key;}).indexOf(G.sel);
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); var n=L[Math.max(0,Math.min(L.length-1,i+(e.key==="ArrowDown"?1:-1)))]; if(n){ G.sel=n.key; draw(); var el=$("mock").querySelector('[data-sel="'+n.key+'"]'); if(el) el.focus(); } }
+  if(e.key==="Enter" && G.box==="todo" && e.target.closest && !e.target.closest(".cg-btn")){ var d=D.DEPS.filter(function(x){return x.id===G.sel;})[0]; if(d && d.bill){ e.preventDefault(); matchDep(d.id); draw(); var el2=$("mock").querySelector('.g-item.on'); if(el2) el2.focus(); } }
+});
+
+/* ═════════ 창 — 기준틀과 같은 틀 ═════════ */
+var lastFocus=null;
+function openWin(kind, html){
+  lastFocus=document.activeElement; var d=$("dim");
+  d.className="cg-dim"+(kind==="sheet"?" side":kind==="form"?" low":"")+(view==="vm"?" vm":"");
+  d.innerHTML=html; d.hidden=false; document.documentElement.classList.add("cg-lock");
+  each("[data-close]", function(b){ b.onclick=closeWin; }, d);
+  var f=d.querySelector("[data-first],input,.cg-btn.pri"); if(f) f.focus();
+}
+function closeWinQuiet(){ $("dim").hidden=true; $("dim").innerHTML=""; document.documentElement.classList.remove("cg-lock"); }
+function closeWin(){ closeWinQuiet(); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+$("dim").addEventListener("click", function(e){ if(e.target===$("dim")) closeWin(); });
+document.addEventListener("keydown", function(e){ if(e.key==="Escape" && !$("dim").hidden) closeWin(); });
+function confirmWin(title, dl, act, fn){
+  openWin("confirm", '<div class="cg-modal" role="dialog" aria-modal="true" aria-labelledby="wt"><h3 id="wt">'+esc(title)+'</h3>'
+    + '<dl>'+dl.map(function(x){ return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>'; }).join("")+'</dl>'
+    + '<div class="row"><button class="cg-btn" data-close>취소</button><button class="cg-btn pri" id="wYes" data-first>'+esc(act)+'</button></div></div>');
+  $("wYes").onclick=function(){ closeWinQuiet(); fn(); };
+}
+function openSplit(id){
+  var d=D.DEPS.filter(function(x){return x.id===id;})[0];
+  var cs=D.BILLS.filter(function(b){ return left(b)>0; }).sort(function(a,b){ return (b.id===d.bill)-(a.id===d.bill); });
+  openWin("form", '<div class="cg-modal form" role="dialog" aria-modal="true" aria-labelledby="wt"><button class="cg-x" data-close aria-label="닫기">✕</button>'
+    + '<h3 id="wt">나눠 맞추기</h3><p class="cg-mdesc">'+esc(d.day)+' '+esc(d.name)+' 님이 보낸 <b>'+won(d.amt)+'원</b>을 어느 청구서에 얼마씩 넣을지 적어요.</p>'
+    + '<div class="g-split2">'+cs.map(function(b){ var pre=b.id===d.bill?Math.min(d.amt,left(b)):0;
+        return '<label><input type="checkbox" data-sb="'+b.id+'"'+(pre?' checked':'')+'><span><b>'+esc(b.who)+'</b><small>'+esc(b.ym)+' · 남은 돈 '+won(left(b))+'원</small></span>'
+          + '<input type="number" min="0" step="1000" data-sa="'+b.id+'" value="'+(pre||"")+'" placeholder="0" aria-label="'+esc(b.who)+'에 넣을 금액"></label>'; }).join("")+'</div>'
+    + '<div class="g-sum"><span>넣은 금액 <b id="sIn">0</b>원 / 입금 '+won(d.amt)+'원</span><b id="sLeft"></b></div>'
+    + '<div class="row"><button class="cg-btn" data-close>취소</button><button class="cg-btn pri" id="sSave" disabled>저장</button></div></div>');
+  function calc(){ var tot=0; each("[data-sa]", function(i){ if($("dim").querySelector('[data-sb="'+i.getAttribute("data-sa")+'"]').checked) tot+=(+i.value||0); }, $("dim"));
+    $("sIn").textContent=won(tot); var r=d.amt-tot; $("sLeft").className=r===0?"ok":"bad"; $("sLeft").textContent=r===0?"딱 맞아요":(r>0?won(r)+"원 남음":won(-r)+"원 넘음"); $("sSave").disabled=r!==0; }
+  each("input", function(i){ i.oninput=i.onchange=calc; }, $("dim")); calc();
+  $("sSave").onclick=function(){ var pl=[]; each("[data-sa]", function(i){ var bid=i.getAttribute("data-sa"); if($("dim").querySelector('[data-sb="'+bid+'"]').checked && +i.value) pl.push({bill:bid, amt:+i.value}); }, $("dim"));
+    closeWinQuiet(); matchDep(id, pl); draw(); };
+}
+function openLedger(bid){
+  var b=bill(bid), bal=0, lines=[{day:b.ym==="9월"?"09.01":"10.01", what:b.ym+" 청구서", inc:b.amt, out:0}];
+  D.DONE.filter(function(d){ return d.bill===bid; }).forEach(function(d){ lines.push({day:d.day, what:"입금 · "+d.name, inc:0, out:d.amt}); });
+  lines.sort(function(x,y){ return x.day<y.day?-1:1; });
+  openWin("sheet", '<div class="cg-modal sheet" role="dialog" aria-modal="true" aria-labelledby="wt"><button class="cg-x" data-close aria-label="닫기">✕</button>'
+    + '<h3 id="wt">'+esc(b.who)+' 원장</h3><div>'+pill(billState(b))+'</div>'
+    + '<dl><dt>대표</dt><dd>'+esc(b.ceo)+'</dd><dt>약속일</dt><dd>'+esc(b.due)+'</dd><dt>남은 돈</dt><dd>'+won(left(b))+'원</dd></dl>'
+    + '<div class="cg-tcard" style="box-shadow:inset 0 0 0 1px var(--cg-row-line)"><table class="cg-table" style="min-width:0;table-layout:auto"><thead><tr><th>날짜</th><th>내용</th><th class="n">청구</th><th class="n">입금</th><th class="n">남은 돈</th></tr></thead><tbody>'
+    + lines.map(function(l){ bal+=l.inc-l.out; return '<tr><td>'+esc(l.day)+'</td><td>'+esc(l.what)+'</td><td class="n">'+(l.inc?won(l.inc):'')+'</td><td class="n">'+(l.out?won(l.out):'')+'</td><td class="n"><b>'+won(bal)+'</b></td></tr>'; }).join("")
+    + '</tbody></table></div>'
+    + '<div class="row"><button class="cg-btn" data-close data-first>닫기</button><button class="cg-btn pri" data-close>청구서 다시 보내기</button></div></div>');
+}
+
+/* ═════════ 그리기 · 시안 고르기 ═════════ */
+var plan="F", view="fit";
+function draw(){
+  $("mock").innerHTML = plan==="F" ? renderF() : renderG();
+  $("mock").className = "mock" + (view==="vm"?" vm":"");
+  if(plan==="F") wireF(); else wireG();
+  each("[data-plan-go]", function(b){ b.onclick=function(){ setPlan(b.getAttribute("data-plan-go")); }; }, $("mock"));
+  fit();
+}
+function setPlan(p){ plan=p; each("[data-plan]", function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-plan")===p ? "true":"false"); }); draw(); }
+each("[data-plan]", function(b){ b.onclick=function(){ setPlan(b.getAttribute("data-plan")); }; });
+document.addEventListener("click", function(e){ if(F.pop && !e.target.closest(".f-cols")){ F.pop=false; draw(); } });
+var HINTS={ fit:"PC 화면(가로 1280)을 화면 폭에 맞춰 줄였어요. 글씨가 작으면 «PC 원래 크기»를 눌러 보세요. 이 시안은 «입출금» 화면만 그렸어요.",
+            full:"PC 화면을 실제 크기로 보여 줘요. 옆으로 밀어서 보세요.", vm:"폰(가로 390)에서 열었을 때 모습이에요. G안은 입금을 누르면 아래에서 자세히 창이 올라와요." };
+each("[data-v]", function(b){ b.onclick=function(){ each("[data-v]", function(x){ x.setAttribute("aria-pressed", x===b?"true":"false"); });
+  view=b.getAttribute("data-v"); $("stage").className="stage "+view; $("hint").textContent=HINTS[view]; draw(); }; });
+$("resetBtn").onclick=function(){ D=seed(); F.day="10.15"; G.box="todo"; G.sel="d1"; draw(); };
+function fit(){
+  var stage=$("stage"), mock=$("mock");
+  if(stage.classList.contains("fit")){ var k=Math.min(1, stage.clientWidth/1280); mock.style.transform="scale("+k+")"; stage.style.height=(mock.offsetHeight*k)+"px"; }
+  else { mock.style.transform=""; stage.style.height=""; }
+}
+try{ new ResizeObserver(fit).observe($("mock")); new ResizeObserver(fit).observe($("stage")); }catch(e){ window.addEventListener("resize", fit); }
+draw();
+</script>

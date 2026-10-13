@@ -1,0 +1,199 @@
+/* ════════════════════════════════════════════════════════════════════
+   차곳간 공통 UI 규격  ·  cgg-ui 1.1  ·  2026-10-12
+   워시 · 체크 · 관리가 똑같이 쓰는 한 벌입니다.
+
+   새 디자인을 입히실 때는 이 파일만 갈아 끼우면 됩니다.
+   아래 「이름표」를 그대로 쓰시면 세 제품이 한 번에 맞습니다.
+
+     머리말    .bizname b / .bizname small / #hVer · #hdVer / #btnTrash / .trbdg
+     홈 격자   .dash.homegrid > .hgL / .hgR
+     달력      .dow / .cal / .cal .d / .cal .n / .cal .todaytag / .cal .amt
+               .cal .cars / .cal .bar / .cal .memo / .legend
+     할 일     .todo > button / .cnt / .tx / .go / .imp / .imptag
+               .memo-todo / .todoMore
+     카드      .card / .card h2 · h3 / .csub / .rt
+     숫자 칸   .sums / .sums.c5 / .sum / .sum span / .sum b / .sum.bad
+     줄        .kv / .mini-row / .prog / .legend / .sumline
+     표        .tablebox / thead th / td / .c-name / .c-chk / .num / .mid
+               .ar / .pager / .pager .pg / .empty
+   ════════════════════════════════════════════════════════════════════ */
+
+
+/* ───────── 1. 머리말 ───────── */
+.bizname b{font-size:19px;font-weight:900;letter-spacing:-.03em;line-height:1.25;
+  -webkit-text-stroke:0;paint-order:normal}
+.bizname small{font-size:11.5px;line-height:1.35;opacity:.78}
+#hVer,#hdVer{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+#hdWho{display:none!important}                 /* 사람 글씨는 마이페이지 안으로 */
+#btnTrash{background:var(--brand-soft);border-color:#C6E0F8;color:#10508F;font-weight:700}
+.trbdg{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 5px;
+  margin-left:3px;border-radius:9px;background:var(--danger);color:#fff;
+  font-size:10.5px;font-weight:900;line-height:1}
+
+
+/* ───────── 2. 홈 머리 ───────── */
+.dashhead{margin:0 0 14px}
+.dashhead .dh-row{display:flex;align-items:center;gap:10px}
+.dashhead h2{font-size:26px;font-weight:900;letter-spacing:-.03em;margin:0}
+.dashhead .sub2,.sub2{font-size:13px;color:var(--muted);margin-top:2px}
+
+
+/* ───────── 3. 홈 격자 ─────────
+   왼쪽 = 일정(달력) 한 장, 오른쪽 = 오늘 할 일 · 이번 달 수금 · 이번 달 일감.
+   일정 카드가 오른쪽 줄 «아래 끝»까지 내려오고, 남는 높이는 달력 칸이 나눠 갖습니다. */
+.dash,.homegrid{margin-bottom:14px}
+.dash{align-items:stretch}
+.dash>div:first-child{display:flex;flex-direction:column}
+.dash>div:first-child>.card:first-child{flex:1 1 auto;display:flex;flex-direction:column;
+  margin-bottom:0}
+.dash>div:first-child>.card:first-child .cal{flex:1 1 auto}
+.homegrid{align-items:stretch}
+.homegrid>.hgL,.homegrid>.hgR{display:grid;gap:14px;min-width:0}
+.homegrid>.hgR{align-content:start}
+.homegrid>.hgL{display:flex;flex-direction:column}
+.homegrid>.hgL>.card{flex:1 1 auto;display:flex;flex-direction:column;margin-bottom:0}
+.homegrid>.hgL .cal{flex:1 1 auto}
+/* 두 칸의 마지막 카드 아래 여백을 없애 끝선을 딱 맞춥니다 */
+.hgR>.card:last-child,.dash>div:last-child>.card:last-child{margin-bottom:0}
+
+
+/* ───────── 4. 달력 ─────────
+   요일 줄은 격자 «밖». 칸은 최소 44px, 남는 높이는 고르게 나눠 가집니다. */
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:10px 0 6px}
+.dow span{text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
+.dow .sun{color:var(--danger)}
+.dow .sat{color:var(--brand)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:0;
+  grid-auto-rows:minmax(44px,1fr)}
+.cal .d{display:block;height:auto;min-height:44px;border:1px solid var(--line);
+  border-radius:10px;padding:6px 7px;background:var(--surface2);cursor:pointer;overflow:hidden}
+.cal .d.blank,.cal .d.out{border:0;background:transparent;cursor:default}
+.cal .d:hover{border-color:var(--brand)}
+.cal .d.today{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-soft);
+  background:var(--brand-soft)}
+.cal .n{font-size:12px;font-weight:800;color:var(--muted)}
+.cal .n.sun{color:var(--danger)}
+.cal .n.sat{color:var(--brand)}
+.cal .todaytag{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:5px;
+  background:#FFE9BF;color:#7A5410;font-size:10px;font-weight:800;vertical-align:1px}
+.cal .amt{font-size:13.5px;font-weight:900;margin-top:5px;letter-spacing:-.02em}
+.cal .cars{font-size:11px;color:var(--muted);margin-top:1px}
+.cal .bar{height:3px;border-radius:2px;background:var(--brand);margin-top:4px;opacity:.85}
+.cal .memo{display:block;font-size:11px;font-weight:700;color:#8a4a00;background:#fff1e0;
+  border-radius:6px;padding:1px 5px;margin-top:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .memo.done{color:var(--muted);background:var(--surface2);
+  text-decoration:line-through;font-weight:500}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend b{color:var(--text)}
+
+
+/* ───────── 5. 오늘 할 일 ─────────
+   바깥은 회색 바탕, 항목은 흰색. 급한 것은 빨강 + 「중요」, 메모는 주황.
+   세 개만 보이고 나머지는 「모두 보기」로 가운데 창에 띄웁니다. */
+.todo{display:grid;grid-template-columns:1fr;gap:8px;align-items:stretch;
+  background:#F4F6F9;border:1px solid var(--line);border-radius:12px;padding:10px}
+.todo button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  font-family:inherit;background:#fff;border:1px solid var(--line);
+  border-radius:12px;padding:12px 14px;cursor:pointer;color:var(--text)}
+.todo button:hover{border-color:var(--brand)}
+.todo button.imp{background:#fdecec;border:2px solid #d93025;
+  box-shadow:0 2px 10px rgba(217,48,37,.15)}
+.todo button.imp .cnt{color:#c5221f;font-size:24px}
+.todo button.imp .tx b{color:#a50e0e;font-size:15.5px}
+.todo button.memo-todo{background:#fff7ec;border-color:#f0c48a}
+.todo button.memo-todo .cnt{color:#b45309;font-size:15px}
+.todo .cnt{font-size:20px;font-weight:900;min-width:38px;text-align:center;color:var(--brand)}
+.todo .tx{flex:1;min-width:0}
+.todo .tx b{display:block;font-size:14.5px;font-weight:800}
+.todo .tx span{font-size:12px;color:var(--muted)}
+.todo .go{color:var(--muted);font-size:18px}
+.imptag{display:inline-block;background:#d93025;color:#fff;font-size:11px;font-weight:900;
+  border-radius:6px;padding:1px 7px;margin-right:6px;vertical-align:2px}
+.todoMore{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;
+  height:40px;border:1px solid var(--line);border-radius:12px;background:#fff;
+  color:var(--muted);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.todoMore b{color:var(--brand)}
+.todoMore:hover{border-color:var(--brand);color:var(--brand)}
+#sheet .todolist,#sheet>.todo{display:flex;flex-direction:column;gap:7px;
+  max-height:58vh;overflow:auto}
+#sheet .todolist>.todo{max-height:none;overflow:visible}
+#sheet .daylist{max-height:40vh;overflow:auto}
+
+
+/* ───────── 6. 카드 · 숫자 칸 · 줄 ───────── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow,0 1px 2px rgba(16,32,56,.05));padding:16px;margin-bottom:14px}
+.card h2,.card h3{font-size:15px;margin:0 0 12px;font-weight:800;display:flex;
+  align-items:center;gap:8px;min-height:26px}
+.card .csub{margin:-6px 0 10px;color:var(--muted);font-size:12px;line-height:1.6}
+.card h2 .rt,.card h3 .rt{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted)}
+
+.sums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.sums.c5{grid-template-columns:repeat(5,1fr)}
+.sum{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:11px 12px;text-align:center}
+.sum span{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.sum b{font-size:17px;font-weight:900;letter-spacing:-.02em}
+.sum.bad b,.sum b .rd,.rd{color:var(--danger)}
+
+.kv,.mini-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;
+  border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child,.mini-row:last-child{border-bottom:0}
+.kv span{color:var(--muted);font-weight:700}
+.prog{height:12px;border-radius:7px;background:var(--surface2);overflow:hidden;margin:10px 0 6px}
+.prog i{display:block;height:100%;background:var(--good)}
+.sumline,.callegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;
+  color:var(--muted);margin-top:6px}
+.sumline b{color:var(--text)}
+
+
+/* ───────── 7. 표 ─────────
+   머리 고정 · 이름 칸 틀고정 · 큰 체크칸 · 쪽 넘김 「처음 이전 N/M 다음 맨뒤」 */
+.tablebox{border:1px solid var(--line);border-radius:12px;overflow:auto;background:var(--surface)}
+.tablebox table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tablebox th,.tablebox td{padding:10px 12px;text-align:left;white-space:nowrap;
+  border-bottom:1px solid var(--line)}
+.tablebox thead th{position:sticky;top:0;z-index:2;background:var(--surface2);
+  font-size:11.5px;font-weight:800;color:var(--muted);cursor:pointer;user-select:none}
+.tablebox thead th .ar{opacity:.45;font-size:10px;margin-left:2px}
+.tablebox thead th.on .ar{opacity:1;color:var(--brand)}
+.tablebox tbody tr:last-child td{border-bottom:0}
+.tablebox tbody tr:hover td{background:var(--surface2)}
+.tablebox th.num,.tablebox td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablebox th.mid,.tablebox td.mid{text-align:center}
+.tablebox th.c-name,.tablebox td.c-name{position:sticky;z-index:1;background:var(--surface)}
+.tablebox thead th.c-name{z-index:3;background:var(--surface2)}
+.tablebox tbody tr:hover td.c-name{background:var(--surface2)}
+.tablebox th.c-chk,.tablebox td.c-chk{width:46px;text-align:center;position:sticky;left:0;
+  z-index:1;background:var(--surface)}
+.tablebox thead th.c-chk{z-index:3;background:var(--surface2)}
+.tablebox input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand);cursor:pointer}
+.pager{display:flex;gap:6px;align-items:center;justify-content:center;padding:11px 0;flex-wrap:wrap}
+.pager .btn{padding:7px 12px;font-size:13px;min-width:44px}
+.pager .btn:disabled{opacity:.45;cursor:default}
+.pager .pg{font-size:12.5px;color:var(--muted);padding:0 8px;font-variant-numeric:tabular-nums}
+.tablebox .empty,.empty{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
+
+/* 표 안 숫자 자리 맞추기 · 늘고 줆 색 (늘면 초록 ▲ · 줄면 빨강 ▼) */
+td.num{font-variant-numeric:tabular-nums}
+td .nn{font-variant-numeric:tabular-nums}
+td .nn em,td .nn i{font-style:normal;font-weight:700;font-size:11.5px;
+  color:var(--muted);margin-left:1px}
+td.num .b,.gtag{display:inline-block;min-width:64px;margin:0 0 0 9px;text-align:right;
+  font-size:11.5px;font-weight:800;color:var(--muted);vertical-align:baseline;
+  font-variant-numeric:tabular-nums}
+td.num .b.up,.gtag.up{color:var(--good)}
+td.num .b.dn,.gtag.dn{color:var(--danger)}
+td.num .b.same,.gtag.same{color:var(--muted)}
+.rowbar{display:flex;height:9px;border-radius:3px;overflow:hidden;
+  background:var(--surface2);min-width:24px}
+.rowbar i{display:block}
+.rowbar i.pd{background:var(--good)}
+.rowbar i.du{background:var(--brand-soft)}
+
+
+/* ───────── 8. 글 ─────────
+   한글은 낱말 중간에서 자르지 않습니다. */
+body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflow-wrap:break-word}
+.who .mypglb{font-weight:800;font-size:12px;white-space:nowrap}

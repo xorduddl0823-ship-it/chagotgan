@@ -1,0 +1,845 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>차곳간 E안 샘플 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* =========================================================
+   차곳간 E안 샘플 시안
+   체크 · 워시 · 관리 세 제품을 "같은 코드 한 벌"로 그립니다.
+   아래 cg- 스타일은 02_차곳간_공통_E안_스타일.css 와 글자까지 같습니다.
+   그 아래 «E안 추가분» 만 이번에 새로 더한 것입니다.
+   ========================================================= */
+
+/* ───────── 시안 바깥 틀 (제품 화면 아님) ───────── */
+:root{ color-scheme:light }
+[hidden]{display:none!important}
+.pg{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:26px 56px;
+    font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    color:#14202E;background:#EEF2F7}
+body{background:#EEF2F7;margin:0}
+.pg h1{font-size:23px;font-weight:900;margin:0 0 6px;letter-spacing:-.5px;text-wrap:balance}
+.pg .lead{color:#5B6B7E;font-size:14px;margin:0 0 20px;line-height:1.6}
+.pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.pick > span{font-size:13px;color:#5B6B7E;width:62px;flex:none}
+.pb{height:38px;padding:0 14px;border-radius:999px;border:1px solid #D9E1EA;background:#fff;
+    font:inherit;font-size:13.5px;cursor:pointer;color:#14202E}
+.pb[aria-pressed="true"]{background:#0B2545;color:#fff;border-color:#0B2545;font-weight:700}
+.pb:focus-visible{outline:3px solid #8FC9F2;outline-offset:2px}
+.stage{position:relative;border-radius:18px;margin-top:14px}
+.stage.fit{overflow:hidden}
+.stage.fit .mock,.stage.full .mock{width:1280px}
+.stage.fit .mock{transform-origin:top left;position:absolute;top:0;left:0}
+.stage.full{overflow-x:auto}
+.stage.vm .mock{width:390px;margin:0 auto}
+.hint{font-size:12.5px;color:#5B6B7E;margin:10px 2px 0;line-height:1.6}
+.note{background:#fff;border-radius:16px;padding:18px 20px;margin-top:22px}
+.note h2{margin:0 0 10px;font-size:17px;font-weight:900}
+.note p{margin:0 0 10px;font-size:13.5px;color:#5B6B7E;line-height:1.7}
+.note table{border-collapse:collapse;width:100%;font-size:13px;margin:4px 0 12px}
+.note th,.note td{border-bottom:1px solid #EDF0F4;padding:8px 10px;text-align:left;vertical-align:top}
+.note th{background:#F6F8FA;color:#5B6B7E;font-weight:700;font-size:12.5px;white-space:nowrap}
+.note code{background:#F2F4F6;border-radius:6px;padding:1px 6px;font-size:12.5px;
+           font-family:ui-monospace,Consolas,"D2Coding",monospace}
+.note pre{background:#0B2545;color:#D8E7F7;border-radius:12px;padding:14px 16px;overflow-x:auto;
+          font-size:12.5px;line-height:1.7;margin:0 0 12px;
+          font-family:ui-monospace,Consolas,"D2Coding",monospace}
+.note pre b{color:#8FC9F2;font-weight:700}
+.ask{background:#FFF6E5;border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.7;margin:0 0 10px}
+.ask b{color:#B26B00}
+.scrollx{overflow-x:auto}
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.map > div{background:#F6F8FA;border-radius:12px;padding:12px 14px;min-width:0}
+.map h3{margin:0;font-size:15px;font-weight:900;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.map .ok,.map .bad{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+.map .ok{background:#E4F5EC;color:#1E9E5A}
+.map .bad{background:#FDE8E8;color:#D64545}
+.map .cnt{margin:4px 0 0;font-size:12.5px;color:#5B6B7E}
+.map ol{margin:8px 0 0;padding-left:22px;font-size:13.5px;line-height:1.75}
+.map ol small{display:block;color:#5B6B7E;font-size:12px;line-height:1.55;margin-bottom:3px}
+.map .mv{color:#B26B00;font-weight:700}
+
+/* =========================================================
+   ↓↓↓ 여기부터 02_차곳간_공통_E안_스타일.css 와 동일 ↓↓↓
+   ========================================================= */
+.mock{
+  /* 차곳간 색 */
+  --cg-blue:#1668C4;      /* 파랑: 주 단추 · 선택된 탭 글자 */
+  --cg-navy:#0B2545;      /* 남색: 머리말 · 선택된 칩 */
+  --cg-sky:#8FC9F2;       /* 하늘: 남색 위 강조 · CI 바탕 */
+
+  /* 바탕 · 글자 */
+  --cg-bg:#F2F4F6;        /* 화면 바탕 (회색) */
+  --cg-surf:#FFFFFF;      /* 카드 · 표 바탕 (흰색) */
+  --cg-ink:#14202E;       /* 본문 글자 */
+  --cg-sub:#5B6B7E;       /* 보조 글자 */
+  --cg-line:#E5E8EB;      /* 입력칸 · 단추 테두리 */
+  --cg-tab-on:#E8F1FC;    /* 선택된 탭 바탕 */
+
+  /* 상태 색 (정해진 규격) */
+  --cg-run:#1668C4;  --cg-run-bg:#E6F0FB;   /* 하는 중 = 파랑 */
+  --cg-done:#1E9E5A; --cg-done-bg:#E4F5EC;  /* 끝남 = 초록 */
+  --cg-chk:#B26B00;  --cg-chk-bg:#FFF2DD;   /* 확인 필요 = 주황 */
+  --cg-stop:#D64545; --cg-stop-bg:#FDE8E8;  /* 막힘 = 빨강 */
+  --cg-warn:#E08A00;                        /* 할 일 띠 · 해결하러 가기 */
+  --cg-todo-bg:#FFF6E5;
+
+  /* 표 (촘촘하게) */
+  --cg-row-h:44px;
+  --cg-th-bg:#F6F8FA;
+  --cg-row-line:#EDF0F4;
+  --cg-col-line:#F1F3F6;
+  --cg-row-hover:#F5F9FE;
+
+  /* 모양 */
+  --cg-r-card:18px;       /* 카드 둥글기 */
+  --cg-r-table:14px;      /* 표 카드 둥글기 */
+  --cg-r-ctl:12px;        /* 입력칸 · 단추 둥글기 */
+  --cg-ctl-h:43px;        /* 도구줄 칸 · 단추 높이 (규격) */
+  --cg-gap:16px;          /* 칸 사이 간격 */
+
+  --cg-font:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+
+  background:var(--cg-bg);color:var(--cg-ink);font-family:var(--cg-font);
+  border-radius:18px;overflow:hidden;box-shadow:0 2px 22px #0B254514
+}
+.mock *{box-sizing:border-box}
+
+/* ---------- 머리말 (남색 한 줄) ---------- */
+.cg-hdr{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 18px;background:var(--cg-navy);color:#fff}
+.cg-brand{display:flex;align-items:center;gap:10px;width:300px;min-width:0}
+.cg-ci{width:34px;height:34px;border-radius:10px;background:var(--cg-sky);color:var(--cg-navy);display:grid;place-items:center;font-weight:900;flex:none}
+.cg-brand b{display:block;font-size:16px;font-weight:900}
+.cg-brand small{font-size:11.5px;opacity:.72}
+.cg-biz{font-size:12.5px;line-height:1.35}
+.cg-biz b{display:block;font-size:14px}
+.cg-biz span{opacity:.7}
+.cg-hdr-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cg-hbtn{height:32px;padding:0 10px;border-radius:var(--cg-r-ctl);border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.cg-live{font-size:12px;opacity:.85;display:inline-flex;align-items:center;gap:5px}
+.cg-live i{width:8px;height:8px;border-radius:50%;background:var(--cg-done)}
+.cg-me{height:36px;padding:0 12px 0 6px;border-radius:999px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.cg-me .cg-av{width:26px;height:26px;border-radius:50%;background:var(--cg-sky);color:var(--cg-navy);display:grid;place-items:center;font-weight:900;font-size:12px;flex:none}
+.cg-me small{opacity:.7;font-size:11px}
+
+/* ---------- 탭 (흰 바탕, 선택된 탭은 연한 파랑 알약) ---------- */
+.cg-tabs{display:flex;gap:4px;padding:8px 14px 10px;background:var(--cg-surf);overflow-x:auto;scrollbar-width:none}
+.cg-tabs::-webkit-scrollbar{display:none}
+.cg-tab{flex:none;border:0;background:transparent;font:inherit;font-size:14px;color:#6B7684;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:500}
+.cg-tab.on{color:var(--cg-blue);background:var(--cg-tab-on);font-weight:700}
+
+/* ---------- 화면 본문 (일곱 칸) ---------- */
+.cg-body{padding:20px 18px 22px;display:flex;flex-direction:column;gap:var(--cg-gap)}
+.cg-title h2{margin:0;font-size:24px;font-weight:900;letter-spacing:-.4px}
+.cg-title p{margin:4px 0 0;color:var(--cg-sub);font-size:13.5px}
+
+/* 할 일 띠 */
+.cg-todo{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px;border-radius:var(--cg-r-card);background:var(--cg-todo-bg)}
+.cg-todo .tx{flex:1;min-width:200px;font-size:14px}
+.cg-todo .tx b{color:var(--cg-warn)}
+.cg-go{height:38px;padding:0 16px;border:0;border-radius:var(--cg-r-ctl);background:var(--cg-warn);color:#fff;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+
+/* 도구줄 (칸 · 단추 43px) */
+.cg-tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cg-field{height:var(--cg-ctl-h);border:1px solid var(--cg-line);border-radius:var(--cg-r-ctl);background:var(--cg-surf);padding:0 12px;font:inherit;font-size:14px;color:var(--cg-ink);display:inline-flex;align-items:center;gap:6px}
+.cg-chip{height:var(--cg-ctl-h);padding:0 14px;border-radius:999px;border:1px solid var(--cg-line);background:var(--cg-surf);font:inherit;font-size:13.5px;cursor:pointer;color:var(--cg-ink)}
+.cg-chip.on{background:var(--cg-navy);color:#fff;border-color:transparent;font-weight:700}
+.cg-btn{height:var(--cg-ctl-h);padding:0 16px;border-radius:var(--cg-r-ctl);font:inherit;font-weight:700;font-size:14px;cursor:pointer;border:1px solid var(--cg-line);background:var(--cg-surf);color:var(--cg-ink)}
+.cg-btn.pri{background:var(--cg-blue);border-color:var(--cg-blue);color:#fff}
+.cg-btn:disabled{opacity:.45;cursor:default}
+
+/* 숫자 칸 4개 */
+.cg-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cg-num{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:20px 12px;text-align:center}
+.cg-num small{font-size:13px;color:var(--cg-sub)}
+.cg-num strong{display:block;font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;margin-top:4px;letter-spacing:-.5px}
+.cg-num strong em{font-style:normal;font-size:.55em;font-weight:700;margin-left:2px;color:var(--cg-sub)}
+
+/* 표 */
+.cg-tcard{background:var(--cg-surf);border-radius:var(--cg-r-table);overflow:hidden}
+.cg-tscroll{overflow-x:auto}
+.cg-table{border-collapse:separate;border-spacing:0;width:100%;font-size:14px;min-width:780px}
+.cg-table th,.cg-table td{padding:0 12px;height:var(--cg-row-h);text-align:left;white-space:nowrap;border-bottom:1px solid var(--cg-row-line);background:var(--cg-surf)}
+.cg-table td+td,.cg-table th+th{border-left:1px solid var(--cg-col-line)}
+.cg-table th{background:var(--cg-th-bg);color:var(--cg-sub);font-weight:700;font-size:12.5px;height:40px;cursor:pointer;user-select:none}
+.cg-table tr:hover td{background:var(--cg-row-hover)}
+.cg-table .n{text-align:right;font-variant-numeric:tabular-nums}
+.cg-table .cg-fix0{position:sticky;left:0;z-index:2;width:56px;text-align:center}
+.cg-table .cg-fix1{position:sticky;left:56px;z-index:2;font-weight:700;box-shadow:6px 0 6px -6px #0B254530}
+.cg-check{width:24px;height:24px;accent-color:var(--cg-blue);cursor:pointer;vertical-align:middle}
+.cg-pager{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--cg-sub)}
+.cg-pager select,.cg-pager button{height:34px;border-radius:8px;border:1px solid var(--cg-line);background:var(--cg-surf);font:inherit;color:var(--cg-ink);min-width:34px;cursor:pointer}
+.cg-pager button.on{background:var(--cg-blue);color:#fff;border-color:var(--cg-blue)}
+
+/* 상태 알약 */
+.cg-pill{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:700}
+.cg-pill.run{background:var(--cg-run-bg);color:var(--cg-run)}
+.cg-pill.done{background:var(--cg-done-bg);color:var(--cg-done)}
+.cg-pill.chk{background:var(--cg-chk-bg);color:var(--cg-chk)}
+.cg-pill.stop{background:var(--cg-stop-bg);color:var(--cg-stop)}
+
+/* 접힌 도움 카드 */
+.cg-help{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:0 16px}
+.cg-help summary{cursor:pointer;height:46px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--cg-sub)}
+.cg-help p{margin:0 0 14px;font-size:13.5px;color:var(--cg-sub);line-height:1.6}
+
+/* 가운데 팝업 */
+.cg-dim{position:fixed;inset:0;background:#0B254566;display:grid;place-items:center;padding:16px;z-index:50}
+.cg-modal{background:#fff;border-radius:18px;padding:22px;width:min(400px,100%);display:flex;flex-direction:column;gap:12px;
+          font-family:"Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;color:#14202E}
+.cg-modal h3{margin:0;font-size:18px}
+.cg-modal dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;background:#F2F4F6;border-radius:12px;padding:12px 14px}
+.cg-modal dt{color:#5B6B7E} .cg-modal dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+.cg-modal .row{display:flex;gap:8px;justify-content:flex-end}
+.cg-modal .cg-btn{height:43px;padding:0 16px;border-radius:12px;font:inherit;font-weight:700;font-size:14px;
+                  cursor:pointer;border:1px solid #E5E8EB;background:#fff;color:#14202E}
+.cg-modal .cg-btn.pri{background:#1668C4;border-color:#1668C4;color:#fff}
+
+/* =========================================================
+   ↑↑↑ 02번 파일과 동일한 부분 끝 ↑↑↑
+   ↓↓↓ E안 추가분 — 홈 화면용. 02번 css 맨 아래에 붙이면 됩니다 ↓↓↓
+   ========================================================= */
+.cg-card{background:var(--cg-surf);border-radius:var(--cg-r-card);padding:16px 18px}
+.cg-card > h3{margin:0 0 12px;font-size:15px;font-weight:900;display:flex;align-items:center;gap:8px}
+.cg-card > h3 .cg-more{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--cg-blue);cursor:pointer;background:0;border:0;font-family:inherit}
+.cg-homegrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:stretch}
+/* 달력 카드 아래 끝 = 오른쪽 마지막 카드 아래 끝 (차이 0px) — 양쪽 다 늘어나게 */
+.cg-hgL{display:flex;flex-direction:column}
+.cg-hgL > .cg-card{flex:1;display:flex;flex-direction:column}
+.cg-hgL .cg-cal{flex:1}
+.cg-hgR{display:flex;flex-direction:column;gap:14px}
+.cg-hgR > .cg-card:last-child{flex:1}
+.cg-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.cg-dow span{text-align:center;font-size:12px;color:var(--cg-sub);font-weight:700;padding:4px 0}
+.cg-cal{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(44px,1fr);gap:2px}
+.cg-cal b{position:relative;display:block;border-radius:8px;padding:5px 6px;font-size:12.5px;font-weight:500;
+          background:#FAFBFC;cursor:pointer;min-height:44px}
+.cg-cal b.off{background:transparent;color:#C3CBD5;cursor:default}
+.cg-cal b.sun{color:#D64545}
+.cg-cal b:hover:not(.off){background:var(--cg-row-hover)}
+.cg-cal b.today{background:var(--cg-tab-on)}
+.cg-cal b .td{display:inline-block;margin-left:4px;font-size:10px;font-weight:700;color:#fff;background:var(--cg-blue);
+              border-radius:999px;padding:1px 5px;vertical-align:1px}
+.cg-cal b i{display:block;font-style:normal;font-size:10.5px;font-weight:700;margin-top:3px;
+            color:var(--cg-blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cg-cal b i.g{color:var(--cg-done)}
+.cg-todolist{background:#F4F6F9;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.cg-todolist div{background:#fff;border-radius:9px;padding:9px 11px;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.cg-todolist div .cg-pill{margin-left:auto}
+.cg-rows{display:flex;flex-direction:column}
+.cg-rows div{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:9px 0;border-bottom:1px solid var(--cg-row-line)}
+.cg-rows div:last-child{border-bottom:0}
+.cg-rows div .n{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.cg-rows div .w{color:var(--cg-sub);font-size:12.5px}
+.cg-big{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.cg-big b{font-size:28px;font-weight:900;letter-spacing:-.5px}
+.cg-big span{font-size:13px;color:var(--cg-sub)}
+.cg-subtabs{display:flex;gap:6px;flex-wrap:wrap}
+.cg-subtab{height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--cg-line);background:var(--cg-surf);
+           font:inherit;font-size:13px;cursor:pointer;color:var(--cg-sub)}
+.cg-subtab.on{background:var(--cg-tab-on);color:var(--cg-blue);border-color:transparent;font-weight:700}
+
+/* 폰 */
+@media (max-width:600px){ .mock{--cg-ctl-h:42px} }
+.mock.vm{--cg-ctl-h:42px}
+.mock.vm .cg-nums{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mock.vm .cg-num strong{font-size:24px}
+.mock.vm .cg-homegrid{grid-template-columns:minmax(0,1fr)}
+.mock.vm .cg-brand{width:auto}
+.mock.vm .cg-body{padding:14px 12px 18px}
+.mock.vm .cg-hdr{padding:10px 12px}
+.mock.vm .cg-title h2{font-size:21px}
+</style>
+
+<div class="pg">
+  <h1>차곳간 E안 샘플 시안</h1>
+  <p class="lead">
+    체크 · 워시 · 관리 <b>세 제품이 코드 한 벌</b>로 그려집니다. 아래 «제품»을 바꿔 보세요 —
+    바뀌는 건 맨 위 설정 덩어리(이름 · 탭 목록 · 표 내용)뿐이고, 뼈대 · 스타일 · 표 함수는 글자까지 같습니다.
+  </p>
+
+  <div class="pick" role="group" aria-label="제품 고르기">
+    <span>제품</span>
+    <button class="pb" data-app="wash" aria-pressed="true">워시</button>
+    <button class="pb" data-app="check" aria-pressed="false">체크</button>
+    <button class="pb" data-app="admin" aria-pressed="false">관리</button>
+  </div>
+  <div class="pick" role="group" aria-label="탭 배치 고르기">
+    <span>탭 배치</span>
+    <button class="pb" data-lay="rec" aria-pressed="true">추천안 — 여덟 자리 + 안쪽 작은 탭</button>
+    <button class="pb" data-lay="keep" aria-pressed="false">비교용 — 지금 탭 수 그대로</button>
+  </div>
+  <div class="pick" role="group" aria-label="화면 고르기">
+    <span>바로 가기</span>
+    <button class="pb" data-scr="home" aria-pressed="false">홈</button>
+    <button class="pb" data-scr="work" aria-pressed="true">그날 일</button>
+    <button class="pb" data-scr="tax" aria-pressed="false">세금계산서</button>
+  </div>
+  <div class="pick" role="group" aria-label="보기 방식">
+    <span>보기</span>
+    <button class="pb" data-v="fit" aria-pressed="true">PC 한눈에</button>
+    <button class="pb" data-v="full" aria-pressed="false">PC 원래 크기</button>
+    <button class="pb" data-v="vm" aria-pressed="false">폰 화면</button>
+  </div>
+
+  <div class="stage fit" id="stage">
+    <section class="mock" id="mock" aria-label="시안 화면"></section>
+  </div>
+  <p class="hint" id="hint">PC 화면(가로 1280)을 화면 폭에 맞춰 줄였어요. 글씨가 작으면 «PC 원래 크기»를 눌러 옆으로 밀어 보세요.</p>
+
+  <div class="note">
+    <h2>뼈대가 같다는 증거</h2>
+    <p>세 제품 화면은 아래 함수 <b>한 개</b>가 그립니다. 제품마다 다른 건 <code>APP.wash</code> · <code>APP.check</code> · <code>APP.admin</code> 설정 덩어리뿐입니다.</p>
+<pre>function draw(){                      <b>// 세 제품 공통 — 글자 하나까지 같음</b>
+  var A = APP[app], N = NAV[app];     <b>// ← 여기서만 제품이 갈림</b>
+  mock.innerHTML =
+      cgHead(A)                       <b>// ① 머리말 (남색 한 줄)</b>
+    + cgTabs(N, cur)                  <b>// ② 탭 (목록만 제품마다 다름)</b>
+    + '&lt;div class="cg-body"&gt;'
+    +   cgTitle(P)                    <b>// ③ 제목 + 설명 한 줄</b>
+    +   cgSubTabs(subs, sub)          <b>//    └ 안쪽 작은 탭</b>
+    +   cgTodo(P)                     <b>// ④ 할 일 띠 + 해결하러 가기</b>
+    +   cgTool(P)                     <b>// ⑤ 도구줄 (칸·단추 43px)</b>
+    +   cgNums(P)                     <b>// ⑥ 숫자 칸 4개</b>
+    +   cgTable(P)                    <b>// ⑦ 표 (정렬·찾기·쪽넘김)</b>
+    +   cgHelp(P)                     <b>// ⑧ 접힌 도움 카드</b>
+    + '&lt;/div&gt;';
+}</pre>
+    <p>표 규격도 한 벌입니다 — 줄 높이 44px · 머리줄 <code>#F6F8FA</code> · 체크칸 24px · 이름 칸 틀고정 ·
+       오름/내림 정렬 · 찾기 · 보기 개수 5/10/20/30/50 · <code>처음 · 이전 · N/M · 다음 · 맨뒤</code>.</p>
+  </div>
+
+  <div class="note">
+    <h2 id="mapTitle">탭 지도</h2>
+    <p>세 제품은 하는 일이 달라서 <b>탭 이름 · 개수는 제품마다 다릅니다.</b> 대신 <b>자리 차례</b>(홈 → 일감 → 기록 → 월별 청구서 → 입·출금 내역 → 세금계산서 → 제품 전용 → 설정 ▸)와 <b>모양 · 코드</b>는 같습니다.
+       <span style="color:#B26B00;font-weight:700">↘ 안으로</span> 표시는 원래 맨 위 탭이었다가 안쪽 작은 탭으로 들어간 것입니다. 아래 «빠진 탭» 수는 원본 소스의 탭 목록과 자동으로 맞춰 본 결과입니다.</p>
+    <div class="map" id="map"></div>
+  </div>
+
+  <div class="note">
+    <h2>정해 주신 것 · 제가 정한 것</h2>
+    <p>✔ <b>체크 2번 자리는 «정산 기록» 그대로</b> 둡니다.<br>
+       ✔ 탭은 제품마다 다르게, <b>디자인 · 파일 뼈대는 같게</b> 갑니다.</p>
+    <div class="ask">
+      <b>추천안에서 제가 자리를 정한 곳</b> — 마음에 안 드시면 말씀만 주세요. 설정 덩어리 한 줄만 고치면 됩니다.<br>
+      · <b>체크 보험료 대조 → «입·출금 내역» 안</b> — 체크 소스에 이미 «보험료 미납 대조는 입금 내역 안쪽 작은 탭으로 들어갑니다»라는 주석이 있어 그대로 따랐습니다.<br>
+      · <b>체크 재검사 알림 → «정산 기록» 안</b> — 재검사할 차는 검사 기록에서 나오므로 같이 두었습니다.<br>
+      · <b>워시 출고 기록 → «일감» 안</b>, <b>자재 → «현장 화면» 안</b> — 자재는 현장 폰에서 쓴 양을 적는 기능과 이어져 있어서입니다.<br>
+      · <b>워시 3번 자리 = «매출 내역»</b> — 체크와 같은 자리에 같은 이름이 오도록 맞췄습니다.<br>
+      · <b>관리</b> — 운영 상태 → 홈 안, 잠금·차단 → 업체 안, 가입 코드 → 계정 안, 요금제·결제·충전·카드 결제 → 받는 돈, 정산·유지비 → 내는 돈, 공지사항·기한 안내 문자 → 알림, 보안·내 계정 → 설정 ▸.<br>
+      · <b>휴지통</b> — E안대로 사람 단추 안에 넣고, 체크 · 워시 «설정 ▸» 안에 있던 휴지통도 그대로 둡니다.
+    </div>
+  </div>
+
+  <div class="note">
+    <h2>이 시안에서 확인하실 것</h2>
+    <p>
+      ① 머리말 세 구역 — CI+차곳간(300px 고정) · 업체 이름 · 오른쪽 단추들. 업체 이름이 가운데에 오지 않습니다.<br>
+      ② 사람 단추 안에 «마이페이지 · 휴지통 ▾» 가 보입니다. 배치 · 로그아웃 · 화면(밝기)도 그 안으로 들어갑니다.<br>
+      ③ 화면 일곱 칸 차례가 세 제품 모두 같습니다.<br>
+      ④ «선택 발급»을 눌러 보세요 — 되돌리기 어려운 일은 가운데 팝업으로 «누구에게 · 총 몇 건 · 총 얼마»를 먼저 보여 줍니다.<br>
+      ⑤ 홈 화면은 지금 쓰는 달력 배치를 그대로 두고 색 · 모양만 E안으로 입혔습니다. 달력 카드 아래 끝과 오른쪽 마지막 카드 아래 끝이 맞습니다.
+    </p>
+  </div>
+</div>
+
+<div class="cg-dim" id="dim" hidden><div class="cg-modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+  <h3 id="mt">발급할까요?</h3>
+  <dl id="mdl"></dl>
+  <div class="row"><button class="cg-btn" id="mno">취소</button><button class="cg-btn pri" id="myes">발급</button></div>
+</div></div>
+
+<script>
+/* =========================================================
+   ① 제품마다 다른 것 — 이 덩어리만 제품별로 갈립니다
+   ========================================================= */
+var APP = {
+wash:{
+  ci:"차", name:"차곳간", sub:"광택·세차 관리 · 워시 v111 · UI 1.1",
+  biz:{name:"브라더 광택/세차", no:"876-12-02709", ceo:"정대봉"},
+  me:{av:"정", name:"정 대표"},
+  page:{
+    home:{ title:"홈", desc:"오늘 할 일과 이번 달 일감을 한눈에 봐요.",
+           todo:"출고 확인이 필요한 차 <b>3대</b> · 미수금 상사 <b>2곳</b>",
+           cal:"일정", cash:"이번 달 수금", job:"이번 달 일감",
+           todos:[["한빛모터스 12가 3456 출고 확인","chk"],["대성상사 10월 청구서 보내기","run"],["미래자동차 미수금 2건 전화","stop"]],
+           todoN:7,
+           cash1:"4,820,000", cash2:"받을 돈 1,160,000원 남음",
+           jobs:[["광택","68건","9,180,000"],["세차","41건","1,640,000"],["실내","22건","2,420,000"],["기타","9건","310,000"]],
+           days:{7:["광택 4대",""],12:["입고 8대","출고 5대"],15:["세차 6대",""],21:["광택 3대",""],28:["청구서 발송",""]} },
+    work:{ title:"일감", desc:"오늘 들어온 차와 작업 상태를 한눈에 봐요.",
+           todo:"출고 확인이 필요한 차 <b>3대</b> · 미수금 상사 <b>2곳</b>",
+           chips:["전체","하는 중","확인 필요","끝남"],
+           btn1:"선택 출고 처리", btn2:"+ 새 일감", ask:"출고 처리", askTo:"상사",
+           nums:[["오늘 입고","8","대"],["작업 중","5","대"],["출고 대기","3","대"],["이번 달 청구","4,820,000","원"]],
+           cols:["상사명","차량번호","차종","작업","상태","금액","입고일"],
+           rows:[["한빛모터스","12가 3456","그랜저 IG","광택","하는 중",180000,"10.12"],
+                 ["오토플러스","34나 7788","쏘렌토 MQ4","세차","끝남",40000,"10.12"],
+                 ["대성상사","56다 1122","K5 3세대","광택","확인 필요",150000,"10.11"],
+                 ["서울카","78라 9090","BMW 520d","광택+실내","하는 중",250000,"10.12"],
+                 ["한빛모터스","90마 4545","카니발 4세대","세차","끝남",50000,"10.11"],
+                 ["미래자동차","11바 2323","GV80","광택","막힘",300000,"10.10"],
+                 ["오토플러스","22사 6767","아반떼 CN7","세차","끝남",35000,"10.12"],
+                 ["대성상사","33아 8181","팰리세이드","광택","확인 필요",220000,"10.11"],
+                 ["새한모터스","44자 1919","레이","세차","하는 중",30000,"10.12"],
+                 ["서울카","55차 2828","벤츠 E220d","광택","확인 필요",260000,"10.10"],
+                 ["미래자동차","66카 3737","셀토스","세차","끝남",40000,"10.12"],
+                 ["새한모터스","77타 4646","스포티지","광택","하는 중",170000,"10.12"]],
+           help:["도움말 ▸ 일감 화면 쓰는 법",
+                 "차가 들어오면 «+ 새 일감»으로 적어요. 끝난 차를 골라 «선택 출고 처리»를 누르면 딜러에게 출고 알림이 가요."] }
+  }
+},
+check:{
+  ci:"차", name:"차곳간", sub:"성능점검 정산 · 체크 v21 · UI 1.1",
+  biz:{name:"무결점 카모터스", no:"215-27-20186", ceo:"이상혁"},
+  me:{av:"이", name:"이 소장"},
+  page:{
+    home:{ title:"홈", desc:"오늘 할 일과 이번 달 검사를 한눈에 봐요.",
+           todo:"보험료가 안 맞는 건 <b>4건</b> · 재검사 안내 보낼 차 <b>6대</b>",
+           cal:"일정", cash:"이번 달 수금", job:"이번 달 검사",
+           todos:[["솜카 10월 청구서 보내기","run"],["보험료 대조 안 맞음 4건","chk"],["재검사 안내 문자 6건","stop"]],
+           todoN:9,
+           cash1:"6,310,000", cash2:"받을 돈 1,980,000원 남음",
+           jobs:[["성능점검","124건","4,340,000"],["재검사","31건","930,000"],["튜닝","12건","680,000"],["기타","7건","360,000"]],
+           days:{7:["점검 11대",""],12:["점검 14대","정산 마감"],15:["재검사 5대",""],21:["점검 9대",""],28:["청구서 발송",""]} },
+    work:{ title:"정산 기록", desc:"오늘 들어온 검사와 정산 상태를 한눈에 봐요.",
+           todo:"보험료가 안 맞는 건 <b>4건</b> · 재검사 안내 보낼 차 <b>6대</b>",
+           chips:["전체","하는 중","확인 필요","끝남"],
+           btn1:"선택 정산 처리", btn2:"+ 새 검사", ask:"정산 처리", askTo:"거래처",
+           nums:[["오늘 접수","14","대"],["점검 중","6","대"],["정산 대기","4","대"],["이번 달 청구","6,310,000","원"]],
+           cols:["거래처","차량번호","차종","검사","상태","금액","검사일"],
+           rows:[["솜카","12가 3456","그랜저 IG","성능점검","하는 중",44000,"10.12"],
+                 ["두드림자동차","34나 7788","쏘렌토 MQ4","성능점검","끝남",44000,"10.12"],
+                 ["무결점 카모터스","56다 1122","K5 3세대","재검사","확인 필요",30000,"10.11"],
+                 ["한빛모터스","78라 9090","BMW 520d","성능점검","하는 중",55000,"10.12"],
+                 ["솜카","90마 4545","카니발 4세대","성능점검","끝남",44000,"10.11"],
+                 ["대성상사","11바 2323","GV80","성능점검","막힘",55000,"10.10"],
+                 ["두드림자동차","22사 6767","아반떼 CN7","성능점검","끝남",38000,"10.12"],
+                 ["한빛모터스","33아 8181","팰리세이드","재검사","확인 필요",30000,"10.11"],
+                 ["새한모터스","44자 1919","레이","성능점검","하는 중",33000,"10.12"],
+                 ["대성상사","55차 2828","벤츠 E220d","성능점검","확인 필요",55000,"10.10"],
+                 ["솜카","66카 3737","셀토스","성능점검","끝남",38000,"10.12"],
+                 ["새한모터스","77타 4646","스포티지","재검사","하는 중",30000,"10.12"]],
+           help:["도움말 ▸ 정산 기록 화면 쓰는 법",
+                 "검사 차가 들어오면 «+ 새 검사»로 적어요. 끝난 차를 골라 «선택 정산 처리»를 누르면 거래처 장부에 바로 올라가요."] }
+  }
+},
+admin:{
+  ci:"차", name:"차곳간", sub:"전체 관리 · 관리 v1 · UI 1.1",
+  biz:{name:"티와이컴퍼니", no:"304-32-00956", ceo:"유현호"},
+  me:{av:"유", name:"유 대표"},
+  page:{
+    home:{ title:"홈", desc:"오늘 들어온 돈과 손봐야 할 업체를 한눈에 봐요.",
+           todo:"요금 기한 지난 업체 <b>3곳</b> · 결제 실패 <b>2건</b>",
+           cal:"일정", cash:"이번 달 받는 돈", job:"제품별 업체 수",
+           todos:[["브라더 광택/세차 요금 기한 지남","stop"],["솜카 카드 결제 실패 2건","chk"],["10월 정산서 보내기","run"]],
+           todoN:5,
+           cash1:"12,640,000", cash2:"못 받은 돈 1,430,000원 남음",
+           jobs:[["워시","37곳","5,920,000"],["체크","44곳","6,160,000"],["딜러","8곳","480,000"],["시험 중","6곳","0"]],
+           days:{7:["결제일 12곳",""],12:["가입 3곳","해지 1곳"],15:["정산 마감",""],21:["결제일 9곳",""],28:["세금계산서 발급",""]} },
+    work:{ title:"업체", desc:"쓰고 있는 업체와 요금 상태를 한눈에 봐요.",
+           todo:"요금 기한 지난 업체 <b>3곳</b> · 결제 실패 <b>2건</b>",
+           chips:["전체","하는 중","확인 필요","끝남"],
+           btn1:"선택 잠금 해제", btn2:"+ 새 업체", ask:"잠금 해제", askTo:"업체",
+           nums:[["쓰는 업체","89","곳"],["이번 달 가입","7","곳"],["기한 지남","3","곳"],["이번 달 받는 돈","12,640,000","원"]],
+           cols:["업체명","제품","요금제","계정","상태","월 요금","가입일"],
+           rows:[["브라더 광택/세차","워시","표준","4개","막힘",99000,"24.03.11"],
+                 ["솜카","체크","표준","3개","확인 필요",99000,"24.05.02"],
+                 ["무결점 카모터스","체크","넉넉","6개","하는 중",149000,"23.11.20"],
+                 ["두드림자동차","체크","표준","2개","끝남",99000,"25.01.14"],
+                 ["한빛모터스","워시","넉넉","7개","하는 중",149000,"24.08.09"],
+                 ["대성상사","워시","표준","3개","확인 필요",99000,"25.02.27"],
+                 ["오토플러스","워시","가벼움","1개","끝남",59000,"25.06.03"],
+                 ["서울카","체크","넉넉","5개","하는 중",149000,"24.12.18"],
+                 ["미래자동차","워시","표준","4개","막힘",99000,"25.04.21"],
+                 ["새한모터스","체크","가벼움","2개","끝남",59000,"25.09.07"],
+                 ["가온 광택센터","워시","표준","3개","하는 중",99000,"25.07.30"],
+                 ["제일카월드","딜러","가벼움","1개","끝남",59000,"26.01.05"]],
+           help:["도움말 ▸ 업체 화면 쓰는 법",
+                 "요금 기한이 지나면 상태가 «막힘»으로 바뀌고 그 업체 화면이 잠깁니다. 입금을 확인했으면 골라서 «선택 잠금 해제»를 누르세요."] }
+  }
+}
+};
+
+/* 세금계산서 화면 — 세 제품이 같은 일을 하므로 글·열까지 같습니다 */
+var TAXROWS = {
+wash:[["김영","솜카","304-32-00956",160000,16000,"끝남","10.31"],
+      ["이상혁","무결점 카모터스","215-27-20186",160000,16000,"끝남","10.31"],
+      ["강준혁","두드림자동차","",150000,15000,"막힘","10.31"],
+      ["박성우","한빛모터스","118-81-29312",320000,32000,"하는 중","10.31"],
+      ["최민","대성상사","220-86-11043",480000,48000,"확인 필요","10.31"],
+      ["정우진","오토플러스","312-05-77810",210000,21000,"끝남","10.31"],
+      ["한지호","서울카","405-88-20917",640000,64000,"하는 중","10.31"],
+      ["오세진","미래자동차","",390000,39000,"막힘","10.31"],
+      ["윤대호","새한모터스","617-23-45102",270000,27000,"끝남","10.31"],
+      ["임도현","가온 광택센터","129-44-80215",180000,18000,"확인 필요","10.31"]],
+check:[["김영","솜카","304-32-00956",440000,44000,"끝남","10.31"],
+      ["이상혁","무결점 카모터스","215-27-20186",682000,68200,"끝남","10.31"],
+      ["강준혁","두드림자동차","",330000,33000,"막힘","10.31"],
+      ["박성우","한빛모터스","118-81-29312",550000,55000,"하는 중","10.31"],
+      ["최민","대성상사","220-86-11043",418000,41800,"확인 필요","10.31"],
+      ["정우진","오토플러스","312-05-77810",264000,26400,"끝남","10.31"],
+      ["한지호","서울카","405-88-20917",737000,73700,"하는 중","10.31"],
+      ["오세진","미래자동차","",396000,39600,"막힘","10.31"],
+      ["윤대호","새한모터스","617-23-45102",308000,30800,"끝남","10.31"],
+      ["임도현","가온 광택센터","129-44-80215",154000,15400,"확인 필요","10.31"]],
+admin:[["정대봉","브라더 광택/세차","876-12-02709",90000,9000,"막힘","10.31"],
+      ["김영","솜카","304-32-00956",90000,9000,"확인 필요","10.31"],
+      ["이상혁","무결점 카모터스","215-27-20186",135455,13545,"끝남","10.31"],
+      ["강준혁","두드림자동차","",90000,9000,"끝남","10.31"],
+      ["박성우","한빛모터스","118-81-29312",135455,13545,"하는 중","10.31"],
+      ["최민","대성상사","220-86-11043",90000,9000,"확인 필요","10.31"],
+      ["정우진","오토플러스","312-05-77810",53636,5364,"끝남","10.31"],
+      ["한지호","서울카","405-88-20917",135455,13545,"하는 중","10.31"],
+      ["오세진","미래자동차","",90000,9000,"막힘","10.31"],
+      ["윤대호","새한모터스","617-23-45102",53636,5364,"끝남","10.31"]]
+};
+function taxPage(key){
+  var r = TAXROWS[key].map(function(x){ return [x[1],x[0],x[2]||"없음",x[3],x[4],x[3]+x[4],x[5],x[6]]; });
+  return { title:"세금계산서", desc:"이번 달 끊을 계산서를 모아서 보여 줘요.",
+    todo:"사업자번호가 없어 못 끊는 곳 <b>"+r.filter(function(x){return x[2]==="없음";}).length+"곳</b> · 아직 안 끊은 건 <b>"+
+         r.filter(function(x){return x[6]!=="끝남";}).length+"건</b>",
+    chips:["전체","하는 중","확인 필요","끝남"],
+    btn1:"선택 발급", btn2:"엑셀로 받기", ask:"발급", askTo:"받는 곳",
+    nums:[["끊을 곳",String(r.length),"곳"],["공급가액",won(r.reduce(function(a,x){return a+x[3];},0)),"원"],
+          ["세액",won(r.reduce(function(a,x){return a+x[4];},0)),"원"],
+          ["합계",won(r.reduce(function(a,x){return a+x[5];},0)),"원"]],
+    cols:["받는 곳","담당자","사업자번호","공급가액","세액","합계","상태","작성일"],
+    num:[3,4,5], st:6, rows:r,
+    help:["도움말 ▸ 세금계산서 화면 쓰는 법",
+          "끊을 곳을 고르고 «선택 발급»을 누르면 팝빌로 한 번에 나갑니다. 사업자번호가 없으면 끊을 수 없으니 먼저 거래처에 번호를 받아 적어 주세요."] };
+}
+APP.wash.page.tax  = taxPage("wash");
+APP.check.page.tax = taxPage("check");
+APP.admin.page.tax = taxPage("admin");
+
+/* 탭 배치 — 제품마다 다른 것.  [탭 이름, [안쪽 작은 탭…], 그림 있는 화면]
+   rec  = 추천안 (여덟 자리 + 안쪽 작은 탭)
+   keep = 비교용 (지금 탭 수 그대로, 차례만 돈 도는 순서)
+   orig = 원본 소스의 맨 위 탭 목록 — 하나도 빠지면 안 됩니다 */
+var WSET=["우리 사업장","QR 코드","백업 · 기기","출고 지연 기준","거래처","직원 계정","작업 항목 · 단가표",
+          "배달 도착지","입금 자동 확인","알림","발송함","휴지통"];                       /* 워시 SETSUB */
+var CSET=["자료 올리기","단가표","거래처","팝빌 연동","검사자 수수료","문자 자동수집","알림 소리",
+          "백업 설정","휴지통","도움말"];                                                   /* 체크 SETS */
+var CBILL=["월별 청구서","청구처 묶음","알림톡 템플릿"];                                    /* 체크 BILLSUB */
+var CDELIV=["배달 기록","목적지별","목적지 관리","문구 · 발송 설정","기사 계정","휴지통"];   /* 체크 DELIVSUB */
+var WMONEY=["입·출금","받아야 할 금액"];                                                    /* 워시 mnTabs */
+var NAV = {
+wash:{
+  src:"PTABS (3019줄)",
+  orig:["홈","매출 내역","입출고 내역","출고 기록","월별 청구서","입·출금 내역","세금계산서","자재","설정"],
+  note:{"현장 화면":"원래 머리말의 «현장 화면 / PC 화면» 바꾸기 단추였어요. 탭 자리로 옮겼습니다."},
+  rec:[["홈",[],"home"],["일감",["입출고 내역","출고 기록"],"work"],["매출 내역",[]],["월별 청구서",[]],
+       ["입·출금 내역",WMONEY],["세금계산서",[],"tax"],["현장 화면",["현장 화면","자재"]],["설정 ▸",WSET]],
+  keep:[["홈",[],"home"],["입출고 내역",[],"work"],["출고 기록",[]],["매출 내역",[]],["월별 청구서",[]],
+       ["입·출금 내역",WMONEY],["세금계산서",[],"tax"],["자재",[]],["현장 화면",[]],["설정 ▸",WSET]]
+},
+check:{
+  src:"JOBS (1957줄)",
+  orig:["홈","매출 내역","정산 기록","월별 청구서","입·출금 내역","세금계산서","보험료 대조","재검사 알림","차량 배달 알림","설정"],
+  note:{"보험료 대조":"원래 맨 위 탭이었어요. 소스 주석 «보험료 미납 대조는 입금 내역 안쪽 작은 탭으로 들어갑니다»대로 «입·출금 내역» 안으로 옮겼습니다."},
+  rec:[["홈",[],"home"],["정산 기록",["정산 기록","재검사 알림"],"work"],["매출 내역",[]],["월별 청구서",CBILL],
+       ["입·출금 내역",["입금 내역","보험료 대조"]],["세금계산서",[],"tax"],["차량 배달 알림",CDELIV],["설정 ▸",CSET]],
+  keep:[["홈",[],"home"],["정산 기록",[],"work"],["매출 내역",[]],["월별 청구서",CBILL],["입·출금 내역",[]],
+       ["세금계산서",[],"tax"],["보험료 대조",[]],["재검사 알림",[]],["차량 배달 알림",CDELIV],["설정 ▸",CSET]]
+},
+admin:{
+  src:"TABS (3645줄)",
+  orig:["홈","운영 상태","가입 코드","계정","업체","요금제","결제","충전","정산","유지비","세금계산서",
+        "카드 결제","기한 안내 문자","잠금·차단","공지사항","보안","내 계정"],
+  note:{},
+  rec:[["홈",["홈","운영 상태"],"home"],["업체",["업체","잠금·차단"],"work"],["계정",["계정","가입 코드"]],
+       ["받는 돈",["요금제","결제","충전","카드 결제"]],["내는 돈",["정산","유지비"]],["세금계산서",[],"tax"],
+       ["알림",["공지사항","기한 안내 문자"]],["설정 ▸",["보안","내 계정"]]],
+  keep:[["홈",[],"home"],["운영 상태",[]],["업체",[],"work"],["잠금·차단",[]],["계정",[]],["가입 코드",[]],
+       ["요금제",[]],["결제",[]],["충전",[]],["카드 결제",[]],["정산",[]],["유지비",[]],["세금계산서",[],"tax"],
+       ["공지사항",[]],["기한 안내 문자",[]],["보안",[]],["내 계정",[]]]
+}
+};
+function bare(t){ return String(t).replace(/\s*▸$/,""); }
+/* 원본 탭이 새 배치에서 어디에도 없으면 «빠짐» */
+function missing(key, lay){
+  var N=NAV[key], seen={};
+  N[lay].forEach(function(T){ seen[bare(T[0])]=1; T[1].forEach(function(x){ seen[x]=1; }); });
+  return N.orig.filter(function(o){ return !seen[o]; });
+}
+function whereFrom(key, T, name){
+  var N=NAV[key];
+  if(N.note[name]) return N.note[name];
+  var top=N.orig.indexOf(name)>=0, slot=bare(T[0]);
+  if(top && name===slot) return "원래도 맨 위 탭 «"+name+"»이었어요. 자리 그대로입니다.";
+  if(top) return "원래 맨 위 탭 «"+name+"»이었어요. 이제 «"+slot+"» 안쪽 작은 탭입니다.";
+  if(N.orig.indexOf(slot)>=0) return "원래도 «"+slot+"» 안쪽에 있던 작은 탭이에요. 그대로입니다.";
+  return "«"+slot+"» 자리를 새로 묶으면서 안쪽 작은 탭이 되었어요.";
+}
+
+/* =========================================================
+   ② 공통 뼈대 — 세 제품이 글자까지 같이 씁니다
+   ========================================================= */
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function won(n){ return (Number(n)||0).toLocaleString("ko-KR"); }
+var PILL = {"하는 중":"run","끝남":"done","확인 필요":"chk","막힘":"stop"};
+
+/* ① 머리말 */
+function cgHead(A){
+  return '<header class="cg-hdr">'
+    + '<div class="cg-brand"><div class="cg-ci">'+esc(A.ci)+'</div>'
+    +   '<div><b>'+esc(A.name)+'</b><small>'+esc(A.sub)+'</small></div></div>'
+    + '<div class="cg-biz"><b>'+esc(A.biz.name)+'</b><span>'+esc(A.biz.no)+' · 대표 '+esc(A.biz.ceo)+'</span></div>'
+    + '<div class="cg-hdr-right">'
+    +   '<button class="cg-hbtn">📢 공지</button><button class="cg-hbtn">❓ 도움말</button>'
+    +   '<button class="cg-hbtn">🔗 주소</button><button class="cg-hbtn">↻ 새로고침</button>'
+    +   '<span class="cg-live"><i></i>30초마다 · 연결됨</span>'
+    +   '<button class="cg-me"><span class="cg-av">'+esc(A.me.av)+'</span>'
+    +     '<span>'+esc(A.me.name)+'<br><small>마이페이지 · 휴지통 ▾</small></span></button>'
+    + '</div></header>';
+}
+/* ② 탭 */
+function cgTabs(N, on){
+  return '<nav class="cg-tabs" aria-label="메뉴">'+N.map(function(T,i){
+    return '<button class="cg-tab'+(i===on?' on':'')+'" data-tab="'+i+'">'+esc(T[0])+'</button>'; }).join("")+'</nav>';
+}
+/* ②-1 안쪽 작은 탭 (두 개 이상일 때만) */
+function cgSubTabs(subs, on){
+  if(!subs || subs.length<2) return "";
+  return '<div class="cg-subtabs">'+subs.map(function(s,i){
+    return '<button class="cg-subtab'+(i===on?' on':'')+'" data-sub="'+i+'">'+esc(s)+'</button>'; }).join("")+'</div>';
+}
+/* 시안에서 그림을 안 넣은 화면 — 자리만 보여 줍니다 */
+function cgPlace(T, name, from){
+  return '<div class="cg-card"><h3>«'+esc(name)+'» 화면</h3>'
+    + '<p style="margin:0 0 8px;font-size:14px;line-height:1.7">'+esc(from)+'</p>'
+    + '<p style="margin:0;font-size:13.5px;color:var(--cg-sub);line-height:1.7">지금 화면의 내용 · 단추 · 문구를 그대로 옮기고, 모양만 E안(흰 카드 · 43px 도구줄 · 44px 표)으로 바꿉니다. '
+    + '이 시안에는 «홈 · 그날 일 · 세금계산서» 세 화면만 그려 두었어요.</p></div>';
+}
+/* ③ 제목 + 설명 */
+function cgTitle(P){ return '<div class="cg-title"><h2>'+esc(P.title)+'</h2><p>'+esc(P.desc)+'</p></div>'; }
+/* ④ 할 일 띠 */
+function cgTodo(P){
+  return '<div class="cg-todo"><span class="tx">'+P.todo+'</span><button class="cg-go">해결하러 가기</button></div>';
+}
+/* ⑤ 도구줄 */
+function cgTool(P){
+  return '<div class="cg-tool">'
+    + '<input class="cg-field" id="q" type="search" placeholder="🔍 표에서 찾기" aria-label="표에서 찾기" style="width:220px">'
+    + '<label class="cg-field">📅 <input id="d" type="date" value="2026-10-12" style="border:0;font:inherit;background:transparent;color:inherit"></label>'
+    + P.chips.map(function(c,i){ return '<button class="cg-chip'+(i===0?' on':'')+'" data-s="'+(i?esc(c):'')+'">'+esc(c)+'</button>'; }).join("")
+    + '<span style="flex:1"></span>'
+    + '<button class="cg-btn" id="doBtn" disabled>'+esc(P.btn1)+'</button>'
+    + '<button class="cg-btn pri">'+esc(P.btn2)+'</button></div>';
+}
+/* ⑥ 숫자 칸 4개 */
+function cgNums(P){
+  return '<div class="cg-nums">'+P.nums.map(function(n){
+    return '<div class="cg-num"><small>'+esc(n[0])+'</small><strong>'+esc(n[1])+'<em>'+esc(n[2])+'</em></strong></div>';
+  }).join("")+'</div>';
+}
+/* ⑦ 표 */
+function cgTable(P){
+  return '<div class="cg-tcard"><div class="cg-tscroll"><table class="cg-table">'
+    + '<thead><tr id="th"></tr></thead><tbody id="tb"></tbody></table></div>'
+    + '<div class="cg-pager"><label>보기 <select id="sz">'
+    +   [5,10,20,30,50].map(function(v){ return '<option'+(v===10?' selected':'')+'>'+v+'</option>'; }).join("")
+    + '</select> 개</label><span id="cnt"></span><span style="flex:1"></span><span id="pg"></span></div></div>';
+}
+/* ⑧ 접힌 도움 카드 */
+function cgHelp(P){
+  return '<details class="cg-help"><summary>'+esc(P.help[0])+'</summary><p>'+esc(P.help[1])+'</p></details>';
+}
+
+/* ─── 홈 화면 (지금 쓰는 배치 그대로, 색·모양만 E안) ─── */
+function cgHome(P){
+  var d=new Date(2026,9,1), first=d.getDay(), last=31, today=12, cell="";
+  for(var i=0;i<first;i++) cell+='<b class="off"></b>';
+  for(var n=1;n<=last;n++){
+    var ev=P.days[n]||[], cls=(n===today?" today":"")+(((first+n-1)%7===0)?" sun":"");
+    cell+='<b class="'+cls.trim()+'">'+n+(n===today?'<span class="td">오늘</span>':'')
+        + (ev[0]?'<i>'+esc(ev[0])+'</i>':'') + (ev[1]?'<i class="g">'+esc(ev[1])+'</i>':'') + '</b>';
+  }
+  return '<div class="cg-homegrid">'
+    + '<div class="cg-hgL"><div class="cg-card"><h3>📅 '+esc(P.cal)+' <span style="font-size:12.5px;color:var(--cg-sub);font-weight:500">2026년 10월</span></h3>'
+    +   '<div class="cg-dow"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>'
+    +   '<div class="cg-cal">'+cell+'</div></div></div>'
+    + '<div class="cg-hgR">'
+    +   '<div class="cg-card"><h3>오늘 할 일<button class="cg-more">할 일 '+P.todoN+'건 모두 보기</button></h3>'
+    +     '<div class="cg-todolist">'+P.todos.map(function(t){
+            return '<div>'+esc(t[0])+'<span class="cg-pill '+t[1]+'">'+
+              ({run:"하는 중",done:"끝남",chk:"확인 필요",stop:"막힘"})[t[1]]+'</span></div>'; }).join("")+'</div></div>'
+    +   '<div class="cg-card"><h3>'+esc(P.cash)+'</h3>'
+    +     '<div class="cg-big"><b>'+esc(P.cash1)+'</b><span>원</span></div>'
+    +     '<div style="margin-top:6px;font-size:13px;color:var(--cg-sub)">'+esc(P.cash2)+'</div></div>'
+    +   '<div class="cg-card"><h3>'+esc(P.job)+'</h3><div class="cg-rows">'+P.jobs.map(function(j){
+          return '<div><span>'+esc(j[0])+'</span><span class="w">'+esc(j[1])+'</span><span class="n">'+esc(j[2])+'원</span></div>';
+        }).join("")+'</div></div>'
+    + '</div></div>';
+}
+
+/* =========================================================
+   ③ 그리기 — 세 제품 공통
+   ========================================================= */
+var app="wash", lay="rec", cur=1, sub=0, view="fit";
+var st={q:"",s:"",k:0,dir:1,size:10,page:1,sel:{}};
+var cp=null;                       /* 지금 그리는 화면 설정 */
+function P(){ return cp; }
+function stIdx(p){ return p.st==null?4:p.st; }
+function numIdx(p){ return p.num||[5]; }
+
+function draw(){
+  var A=APP[app], N=NAV[app][lay];
+  if(cur>=N.length) cur=0;
+  var T=N[cur], subs=T[1], key=T[2];
+  if(sub>=Math.max(1,subs.length)) sub=0;
+  var name = subs.length ? subs[sub] : bare(T[0]);
+  var rich = key && sub===0;
+  st={q:"",s:"",k:0,dir:1,size:10,page:1,sel:{}};
+  cp = rich ? Object.assign({}, A.page[key], {title:bare(T[0])}) : null;
+
+  var html = cgHead(A) + cgTabs(N, cur) + '<div class="cg-body">';
+  if(rich && key==="home"){
+    html += cgTitle(cp) + cgSubTabs(subs, sub) + cgTodo(cp) + cgHome(cp)
+          + '<details class="cg-help"><summary>도움말 ▸ 홈 화면 쓰는 법</summary>'
+          + '<p>달력에서 날을 누르면 그 날 일감이 가운데 창에 뜹니다. 할 일은 오늘 것 3개만 보이고, 나머지는 «모두 보기»를 누르면 전부 나옵니다.</p></details>';
+  }else if(rich){
+    html += cgTitle(cp) + cgSubTabs(subs, sub) + cgTodo(cp) + cgTool(cp) + cgNums(cp) + cgTable(cp) + cgHelp(cp);
+  }else{
+    html += cgTitle({title:bare(T[0]), desc:"«"+name+"» 화면 자리예요."}) + cgSubTabs(subs, sub)
+          + cgPlace(T, name, whereFrom(app, T, name))
+          + cgHelp({help:["도움말 ▸ «"+name+"» 화면 쓰는 법","지금 쓰는 도움말 글을 그대로 옮깁니다."]});
+  }
+  $("mock").innerHTML = html + '</div>';
+  $("mock").className = "mock" + (view==="vm"?" vm":"");
+  Array.prototype.forEach.call($("mock").querySelectorAll("[data-tab]"), function(b){
+    b.onclick=function(){ cur=+b.getAttribute("data-tab"); sub=0; draw(); }; });
+  Array.prototype.forEach.call($("mock").querySelectorAll("[data-sub]"), function(b){
+    b.onclick=function(){ sub=+b.getAttribute("data-sub"); draw(); }; });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-scr]"), function(b){
+    b.setAttribute("aria-pressed", (rich && b.getAttribute("data-scr")===key) ? "true":"false"); });
+  if(rich && key!=="home"){ wire(); drawTable(); }
+  drawMap();
+  fit();
+}
+
+/* 탭 지도 — 세 제품 나란히, 빠진 탭 자동 검사 */
+function drawMap(){
+  $("mapTitle").textContent = "탭 지도 — " + (lay==="rec" ? "추천안 (여덟 자리 + 안쪽 작은 탭)" : "비교용 (지금 탭 수 그대로)");
+  var NAME={wash:"워시",check:"체크",admin:"관리"};
+  $("map").innerHTML = ["wash","check","admin"].map(function(k){
+    var N=NAV[k], L=N[lay], miss=missing(k, lay);
+    return '<div><h3>'+NAME[k]+(miss.length
+        ? '<span class="bad">빠진 탭 '+miss.length+'개: '+esc(miss.join(", "))+'</span>'
+        : '<span class="ok">빠진 탭 0개</span>')+'</h3>'
+      + '<p class="cnt">원본 '+esc(N.src)+' 맨 위 탭 '+N.orig.length+'개 → 이제 맨 위 '+L.length+'개</p>'
+      + '<ol>'+L.map(function(T){
+          var moved=T[1].filter(function(x){ return N.orig.indexOf(x)>=0 && x!==bare(T[0]); });
+          return '<li><b>'+esc(T[0])+'</b>'
+            + (moved.length ? ' <span class="mv">↘ 안으로: '+esc(moved.join(", "))+'</span>' : '')
+            + (T[1].length>1 ? '<small>'+esc(T[1].join(" · "))+'</small>' : '')
+            + '</li>'; }).join("")+'</ol></div>';
+  }).join("");
+}
+
+function list(){
+  var p=P(), si=stIdx(p), q=st.q.trim();
+  var r=p.rows.map(function(x,i){ return {x:x,i:i}; }).filter(function(o){
+    return (!st.s || o.x[si]===st.s) && (!q || o.x.join(" ").indexOf(q)>=0); });
+  r.sort(function(a,b){ var A=a.x[st.k],B=b.x[st.k];
+    return (A>B?1:A<B?-1:0)*st.dir; });
+  return r;
+}
+function drawTable(){
+  var p=P(), si=stIdx(p), ni=numIdx(p);
+  $("th").innerHTML = '<th class="cg-fix0"><input type="checkbox" class="cg-check" id="all" aria-label="모두 고르기"></th>'
+    + p.cols.map(function(t,k){
+        return '<th data-k="'+k+'" class="'+(k===0?'cg-fix1 ':'')+(ni.indexOf(k)>=0?'n':'')+'">'+esc(t)
+             + ' <span style="opacity:'+(st.k===k?1:.35)+'">'+(st.k===k?(st.dir>0?'▲':'▼'):'↕')+'</span></th>'; }).join("");
+  var r=list(), pages=Math.max(1,Math.ceil(r.length/st.size));
+  if(st.page>pages) st.page=pages;
+  var view_=r.slice((st.page-1)*st.size, st.page*st.size);
+  $("tb").innerHTML = view_.map(function(o){
+    return '<tr><td class="cg-fix0"><input type="checkbox" class="cg-check" data-i="'+o.i+'"'
+      + (st.sel[o.i]?' checked':'')+' aria-label="'+esc(o.x[0])+' 고르기"></td>'
+      + o.x.map(function(v,k){
+          if(k===si) return '<td><span class="cg-pill '+(PILL[v]||"run")+'">'+esc(v)+'</span></td>';
+          if(ni.indexOf(k)>=0) return '<td class="n">'+won(v)+'원</td>';
+          return '<td'+(k===0?' class="cg-fix1"':'')+'>'+esc(v)+'</td>'; }).join("")
+      + '</tr>'; }).join("")
+    || '<tr><td colspan="'+(p.cols.length+1)+'" style="text-align:center;color:var(--cg-sub)">찾는 것이 없어요</td></tr>';
+  $("cnt").textContent = "총 "+r.length+"건";
+  var btns='<button data-p="1">처음</button><button data-p="'+Math.max(1,st.page-1)+'">이전</button>'
+    + '<span style="padding:0 6px">'+st.page+' / '+pages+'</span>'
+    + '<button data-p="'+Math.min(pages,st.page+1)+'">다음</button><button data-p="'+pages+'">맨뒤</button>';
+  $("pg").innerHTML = btns;
+  $("all").checked = view_.length>0 && view_.every(function(o){ return st.sel[o.i]; });
+  var n=Object.keys(st.sel).filter(function(k){ return st.sel[k]; }).length;
+  $("doBtn").disabled = !n;
+  $("doBtn").textContent = n ? p.btn1+" ("+n+")" : p.btn1;
+}
+function wire(){
+  $("th").onclick=function(e){ var t=e.target.closest("th[data-k]"); if(!t) return;
+    var k=+t.getAttribute("data-k"); st.dir = (st.k===k) ? -st.dir : 1; st.k=k; drawTable(); };
+  $("tb").onchange=function(e){ var i=e.target.getAttribute("data-i"); if(i==null) return;
+    st.sel[i]=e.target.checked; drawTable(); };
+  $("mock").onchange=function(e){
+    if(e.target.id!=="all") return;
+    list().slice((st.page-1)*st.size, st.page*st.size).forEach(function(o){ st.sel[o.i]=e.target.checked; });
+    drawTable(); };
+  $("pg").onclick=function(e){ var b=e.target.closest("button"); if(b){ st.page=+b.getAttribute("data-p"); drawTable(); } };
+  $("sz").onchange=function(e){ st.size=+e.target.value; st.page=1; drawTable(); };
+  $("q").oninput=function(e){ st.q=e.target.value; st.page=1; drawTable(); };
+  Array.prototype.forEach.call($("mock").querySelectorAll(".cg-chip"), function(c){
+    c.onclick=function(){
+      Array.prototype.forEach.call($("mock").querySelectorAll(".cg-chip"), function(x){ x.classList.toggle("on", x===c); });
+      st.s=c.getAttribute("data-s"); st.page=1; drawTable(); }; });
+  $("doBtn").onclick=function(){
+    var p=P(), ni=numIdx(p), money=ni[ni.length-1];
+    var sel=Object.keys(st.sel).filter(function(k){ return st.sel[k]; }).map(function(i){ return p.rows[i]; });
+    if(!sel.length) return;
+    var who=sel.map(function(x){ return x[0]; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+    $("mt").textContent = p.ask+"할까요?";
+    $("myes").textContent = p.ask;
+    $("mdl").innerHTML = '<dt>누구에게</dt><dd>'+esc(who.slice(0,3).join(", "))+(who.length>3?" 외 "+(who.length-3)+"곳":"")+'</dd>'
+      + '<dt>총 몇 건</dt><dd>'+sel.length+'건</dd>'
+      + '<dt>총 얼마</dt><dd>'+won(sel.reduce(function(a,x){ return a+(Number(x[money])||0); },0))+'원</dd>';
+    $("dim").hidden=false; $("myes").focus(); };
+}
+$("mno").onclick=function(){ $("dim").hidden=true; };
+$("myes").onclick=function(){ $("dim").hidden=true; st.sel={}; drawTable(); };
+
+/* ─── 시안 고르는 단추들 ─── */
+var HINTS={ fit:"PC 화면(가로 1280)을 화면 폭에 맞춰 줄였어요. 글씨가 작으면 «PC 원래 크기»를 눌러 옆으로 밀어 보세요.",
+            full:"PC 화면을 실제 크기로 보여 줘요. 화면을 옆으로 밀어서 보세요.",
+            vm:"폰(가로 390)에서 열었을 때 모습이에요." };
+function press(sel, el){ Array.prototype.forEach.call(document.querySelectorAll(sel), function(b){
+  b.setAttribute("aria-pressed", b===el ? "true":"false"); }); }
+/* 지금 보던 화면 종류(홈·그날 일·세금계산서)를 새 배치에서도 찾아 갑니다 */
+function goKey(key){
+  var N=NAV[app][lay];
+  for(var i=0;i<N.length;i++) if(N[i][2]===key){ cur=i; sub=0; return; }
+  cur=0; sub=0;
+}
+function curKey(){ var T=NAV[app][lay][cur]; return (T && sub===0) ? T[2] : null; }
+Array.prototype.forEach.call(document.querySelectorAll("[data-app]"), function(b){
+  b.onclick=function(){ press("[data-app]", b); var k=curKey()||"work"; app=b.getAttribute("data-app"); goKey(k); draw(); }; });
+Array.prototype.forEach.call(document.querySelectorAll("[data-lay]"), function(b){
+  b.onclick=function(){ press("[data-lay]", b); var k=curKey()||"work"; lay=b.getAttribute("data-lay"); goKey(k); draw(); }; });
+Array.prototype.forEach.call(document.querySelectorAll("[data-scr]"), function(b){
+  b.onclick=function(){ goKey(b.getAttribute("data-scr")); draw(); }; });
+Array.prototype.forEach.call(document.querySelectorAll("[data-v]"), function(b){
+  b.onclick=function(){ press("[data-v]", b); view=b.getAttribute("data-v");
+    $("stage").className="stage "+view; $("hint").textContent=HINTS[view]; draw(); }; });
+
+function fit(){
+  var stage=$("stage"), mock=$("mock");
+  if(stage.classList.contains("fit")){
+    var s=Math.min(1, stage.clientWidth/1280);
+    mock.style.transform="scale("+s+")";
+    stage.style.height=(mock.offsetHeight*s)+"px";
+  } else { mock.style.transform=""; stage.style.height=""; }
+}
+try{ new ResizeObserver(fit).observe($("mock")); new ResizeObserver(fit).observe($("stage")); }
+catch(e){ window.addEventListener("resize", fit); }
+draw();
+</script>
