@@ -1,23 +1,27 @@
 # -*- coding: utf-8 -*-
 # 하나의 통합 index — 0_차곳간_통합_index.html
-#   세 제품(워시·체크·관리) 파일을 그대로 품고, 계정에 따라 열 수 있는 제품만 띄웁니다.
+#   사용자 제품(워시·체크) 파일을 그대로 품고, 계정에 따라 열 수 있는 제품만 띄웁니다.
+#   관리는 넣지 않습니다 (규칙 1-3: 관리는 주소·배포·로그인을 따로 둠).
 #   python build_shell.py        → 진짜 파일
 #   python build_shell.py test   → 시험용 사본 (_시험_통합.html, 모든 서버 주소 → 가짜 서버)
-import io, sys, base64
-D = r"C:\Users\admin\Downloads\차곳간_통합UI_시작꾸러미" + "\\"
+import io, os, sys, base64
+# 저장소 기준 경로: 이 파일은 홈페이지/통합입구/도구/조립도구/ 에 있습니다.
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."))
+OUT = os.path.join(ROOT, "홈페이지", "통합입구")
 TEST = len(sys.argv) > 1 and sys.argv[1] == "test"
 SB = "https://ybfpxmmjofyvfprtvmhj.supabase.co"
-SRC = {"wash": "1_차곳간_워시_index.html", "check": "2_차곳간_체크_index.html", "admin": "3_차곳간_관리_index.html"}
+SRC = {"wash": os.path.join(ROOT, "워시", "1_차곳간_워시_index.html"),
+       "check": os.path.join(ROOT, "체크", "2_차곳간_체크_index.html")}
 
 def pkg(code):
-    t = io.open(D + SRC[code], encoding="utf-8").read()
+    t = io.open(SRC[code], encoding="utf-8").read()
     if TEST:
         n = t.count(SB)
         t = t.replace(SB, "http://127.0.0.1:8898/sb")
         print(code, "서버 주소 바꿈", n)
     return base64.b64encode(t.encode("utf-8")).decode("ascii")
 
-API = ("http://127.0.0.1:8898/sb" if TEST else SB) + "/functions/v1/wash-api?forceFunctionRegion=ap-northeast-2"
+API = ("http://127.0.0.1:8898/sb" if TEST else SB) + "/functions/v1/cgg-api?forceFunctionRegion=ap-northeast-2"
 
 S_IN  = "width:100%;box-sizing:border-box;padding:15px 14px;font-size:17px;border-radius:12px;border:1px solid var(--line,#dde3ec);background:var(--surface,#fff);color:var(--text,#14202e);margin-top:7px"
 S_BTN = "width:100%;padding:16px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:var(--brand,#0b5d8f);color:#fff;cursor:pointer;margin-top:16px"
@@ -74,7 +78,7 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
   <div style="width:100%;max-width:400px">
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:30px;font-weight:800;letter-spacing:-1px">차곳간</div>
-      <div style="font-size:13px;color:var(--muted,#667389);margin-top:4px">광택·세차 · 성능점검 · 본사 관리</div>
+      <div style="font-size:13px;color:var(--muted,#667389);margin-top:4px">광택·세차 · 성능점검</div>
     </div>
     <div style="background:var(--surface,#fff);border:1px solid var(--line,#dde3ec);border-radius:var(--r,14px);padding:22px 20px;box-shadow:var(--shadow,0 2px 10px rgba(16,32,52,.08))">
       <h2 style="margin:0 0 4px;font-size:20px">로그인</h2>
@@ -111,7 +115,6 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
 <!-- ═══ 세 제품 — 파일 그대로 품어 둡니다 (고치지 않은 원본, base64) ═══ -->
 <script type="application/octet-stream" id="pkg-wash">@@WASH@@</script>
 <script type="application/octet-stream" id="pkg-check">@@CHECK@@</script>
-<script type="application/octet-stream" id="pkg-admin">@@ADMIN@@</script>
 
 <script>
 (function(){
@@ -121,20 +124,19 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
    ─────────────────────────────────────────────────────────────────────
    ① 로그인은 여기 한 곳에서 합니다 (서버 창구 cggLogin → 필요하면 cggLogin2).
    ② 서버가 «이 계정이 열 수 있는 제품»(products)을 알려 줍니다.
-        A 계정 → 체크만 / B 계정 → 워시만 / 대표 → 워시·체크·관리 모두
-   ③ 제품마다 저장 칸을 따로 씁니다 (cgg.wash.* / cgg.check.* / cgg.admin.*).
+        A 계정 → 체크만 / B 계정 → 워시만 / 둘 다 허락된 계정 → 워시·체크
+   ③ 제품마다 저장 칸을 따로 씁니다 (cgg.wash.* / cgg.check.*).
       워시와 체크가 같은 이름(ccw_sid 등)을 써도 서로 덮어쓰지 않습니다.
    ④ 제품 화면은 원본 파일 그대로 띄웁니다 — 한 글자도 바꾸지 않습니다.
    ===================================================================== */
-var SHELL_VER = "통합 v1 · UI 1.1 · 2026-10-12";
+var SHELL_VER = "통합 v2 · UI 1.1 · 2026-10-13";
 var API = "@@API@@";
 var PRODUCTS = {
   wash:  { name:"워시", keys:function(p){ return { ccw_sid:p.sid, ccw_shop:p.shop }; },           sid:"ccw_sid" },
   check: { name:"체크", keys:function(p){ return { cgg_key:p.sid, cgg_shop:p.shop, cgg_role:p.role||"owner",
-                                                   cgg_who:p.who||"", cgg_shopname:p.shopName||"" }; }, sid:"cgg_key" },
-  admin: { name:"관리", keys:function(p){ return { cgg_admin_sid:p.sid }; },                       sid:"cgg_admin_sid" }
+                                                   cgg_who:p.who||"", cgg_shopname:p.shopName||"" }; }, sid:"cgg_key" }
 };
-var ORDER = ["wash","check","admin"];
+var ORDER = ["wash","check"];
 var SKEY = "cgg_sid";
 var ME = null, CUR = "", FRAMES = {};
 
@@ -299,7 +301,7 @@ window.CGG_SHELL = { ver:SHELL_VER, me:function(){ return ME; }, cur:function(){
 </html>
 '''
 out = (HTML.replace("@@IN@@", S_IN).replace("@@BTN@@", S_BTN).replace("@@GHOST@@", S_GHOST).replace("@@LAB@@", S_LAB)
-       .replace("@@API@@", API).replace("@@WASH@@", pkg("wash")).replace("@@CHECK@@", pkg("check")).replace("@@ADMIN@@", pkg("admin")))
-name = "시험용/_시험_통합.html" if TEST else "0_차곳간_통합_index.html"
-io.open(D + name, "w", encoding="utf-8").write(out)
+       .replace("@@API@@", API).replace("@@WASH@@", pkg("wash")).replace("@@CHECK@@", pkg("check")))
+name = os.path.join("도구", "시험용", "_시험_통합.html") if TEST else "0_차곳간_통합_index.html"
+io.open(os.path.join(OUT, name), "w", encoding="utf-8").write(out)
 print(name, len(out.encode("utf-8")), "bytes")
