@@ -29,11 +29,11 @@ const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const db = createClient(SUPA_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   { auth: { persistSession: false } });
 
-const VER = "cgg-api v1 · 2026-10-13 (경비실 첫판)";
+const VER = "cgg-api v1.1 · 2026-10-14 (보안 검사 반영: 잠금 횟수 원자적 증가)";
 const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
 const WASH_API = () => SUPA_URL + "/functions/v1/wash-api";
 const DAYS = 14;                 // 로그인 유지 기간 (체크와 같음)
-const MAX_FAIL = 5, LOCK_MIN = 10;
+const LOCK_MIN = 10;                 // 잠금 안내 문구용 (실제 기준은 SQL 함수 cgg_attempt)
 const TICK_MIN = 5, TICK_TRIES = 5;
 const PRODUCTS = ["wash", "check"] as const;
 
@@ -135,11 +135,15 @@ function grantsOf(acc: any): string[] {
   const list: string[] = Array.isArray(acc?.products) ? acc.products : [];
   return PRODUCTS.filter((p) => list.includes(p));
 }
-async function failBump(acc: any) {
-  const n = (Number(acc.fail_count) || 0) + 1;
-  const patch: any = { fail_count: n, updated_at: later(0) };
-  if (n >= MAX_FAIL) { patch.fail_count = 0; patch.locked_until = later(LOCK_MIN * 60000); }
-  await db.from("cgg_access").update(patch).eq("phone", acc.phone);
+/** 비밀번호를 보기 전에 시도 횟수를 데이터베이스 안에서 한 번에 올립니다 (동시에 여러 번 보내도 새지 않음).
+ *  false 면 잠긴 상태. 성공하면 attemptOk 로 0 으로 되돌립니다. 기준(5번 · 10분)은 SQL 함수 cgg_attempt 에 있음 */
+async function attempt(phone: string) {
+  const { data, error } = await db.rpc("cgg_attempt", { p_phone: phone });
+  if (error) throw new Error("경비실 준비가 덜 됐습니다 (cgg_attempt 없음). SQL 을 먼저 실행해 주세요.");
+  return data !== false;
+}
+async function attemptOk(phone: string) {
+  await db.from("cgg_access").update({ fail_count: 0, locked_until: null }).eq("phone", phone);
 }
 
 /* ───────── 문자 (솔라피 · two_step 계정만) ───────── */
@@ -243,7 +247,7 @@ async function cggLogin(idRaw: unknown, pwRaw: unknown) {
 
   const acc = await accessOf(phone);
   if (!acc || acc.active === false || !grantsOf(acc).length) throw new Error(NO_ENTRY);
-  if (acc.locked_until && !gone(acc.locked_until))
+  if (!(await attempt(phone)))
     throw new Error(`비밀번호를 여러 번 틀려 ${LOCK_MIN}분 동안 잠겼습니다. 잠시 뒤 다시 해 주세요.`);
 
   const grants = grantsOf(acc);
@@ -254,9 +258,8 @@ async function cggLogin(idRaw: unknown, pwRaw: unknown) {
       if (S(u.pw_hash) && await pwOk(pw, u.pw_hash)) { proven = true; break; }
     }
   }
-  if (!proven) { await failBump(acc); throw new Error(NO_ENTRY); }
-  if (acc.fail_count || acc.locked_until)
-    await db.from("cgg_access").update({ fail_count: 0, locked_until: null }).eq("phone", phone);
+  if (!proven) throw new Error(NO_ENTRY);
+  await attemptOk(phone);
 
   if (acc.two_step) {
     const tick = "t_" + rnd(16);

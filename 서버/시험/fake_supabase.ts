@@ -43,5 +43,23 @@ class Q {
 }
 
 export function createClient(..._a: any[]) {
-  return { from: (t: string) => new Q(t), rpc: async () => ({ data: true, error: null }) };
+  return { from: (t: string) => new Q(t), rpc: async (fn: string, a: any) => rpc(fn, a) };
+}
+
+/* SQL 함수 흉내 — 서버/sql/01 의 cgg_attempt 와 같은 규칙 (한 번에 처리되므로 동시에 불러도 안 샘) */
+function rpc(fn: string, a: any) {
+  if (fn === "cgg_attempt") {
+    if (!store.cgg_access) return { data: null, error: { message: "function does not exist" } };
+    const r = store.cgg_access.find((x) => x.phone === a.p_phone);
+    if (!r) return { data: false, error: null };
+    const now = Date.now();
+    const expired = r.locked_until != null && new Date(r.locked_until).getTime() <= now;
+    const next = expired ? 1 : (Number(r.fail_count) || 0) + 1;
+    r.locked_until = expired ? null
+      : r.locked_until != null ? r.locked_until
+      : next >= 5 ? new Date(now + 600000).toISOString() : null;
+    r.fail_count = next;
+    return { data: next <= 5, error: null };
+  }
+  return { data: true, error: null };
 }

@@ -1715,15 +1715,17 @@ async function deliv_signup(_c: Ctx, companyPin: string, name: string, pw: strin
   }
   if (!off) throw new Error("회사 기사 비밀번호가 맞지 않습니다. 사무실에 물어 보세요.");
   const h = await pwHash(p);
-  const { data: had } = await db.from("check_deliv_driver").select("*").eq("name", nm).maybeSingle();
+  /* v22: 이름은 이 검사소 안에서만 찾고, 가입한 계정은 사무실이 [사용]으로 바꿔 줄 때까지 멈춰 둡니다.
+     (회사 기사 비밀번호만 알면 아무나 기사 열쇠를 받아 배달 목록을 보던 길을 막음) */
+  const { data: had } = await db.from("check_deliv_driver").select("*")
+    .eq("office_id", off.id).eq("name", nm).maybeSingle();
   if (had && S(had.pw_hash)) throw new Error("이미 있는 이름입니다. [로그인]으로 들어가세요.");
-  const tk = tokenOf(nm, h);
   if (had) {
-    await db.from("check_deliv_driver").update({ pw_hash: h, token: tk, active: true }).eq("id", had.id);
+    await db.from("check_deliv_driver").update({ pw_hash: h, token: null, active: false }).eq("id", had.id);
   } else {
-    await db.from("check_deliv_driver").insert({ office_id: off.id, name: nm, pw_hash: h, token: tk });
+    await db.from("check_deliv_driver").insert({ office_id: off.id, name: nm, pw_hash: h, token: null, active: false });
   }
-  return { ok: true, name: nm, token: tk };
+  throw new Error("가입 신청이 됐습니다. 사무실에서 [사용]으로 바꿔 주면 [로그인]으로 들어올 수 있어요.");
 }
 async function deliv_changePw(_c: Ctx, token: string, oldPw: string, newPw: string) {
   const w = await delivWho(token);

@@ -45,6 +45,30 @@ create table if not exists cgg_tick (
   created_at  timestamptz not null default now()
 );
 
+-- ④ 로그인 시도 횟수 — 비밀번호를 보기 전에 한 번에 올립니다 (동시에 보내도 새지 않음)
+--    5번까지는 시도 가능, 5번째에 10분 잠금. 로그인 성공하면 서버가 0으로 되돌림.
+--    돌려주는 값: true = 시도해도 됨, false = 잠김 / 명단에 없음
+create or replace function cgg_attempt(p_phone text) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare n int; expired boolean;
+begin
+  select (locked_until is not null and locked_until <= now()) into expired
+    from cgg_access where phone = p_phone for update;
+  if not found then return false; end if;
+  update cgg_access set
+      fail_count   = case when expired then 1 else fail_count + 1 end,
+      locked_until = case
+                       when expired then null
+                       when locked_until is not null then locked_until
+                       when fail_count + 1 >= 5 then now() + interval '10 minutes'
+                       else null end,
+      updated_at   = now()
+    where phone = p_phone
+    returning fail_count into n;
+  return n <= 5;
+end $$;
+revoke all on function cgg_attempt(text) from public, anon, authenticated;
+
 -- 표 보안(RLS) 켜기 — 정책을 하나도 만들지 않으므로
 -- 브라우저(공개 열쇠)로는 아무도 못 읽고, 서버 함수(서비스 열쇠)만 읽습니다.
 alter table cgg_access  enable row level security;

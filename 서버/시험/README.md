@@ -9,4 +9,4 @@ deno run -A --no-lock --import-map=서버/시험/import_map.json 서버/시험/�
 
 - `fake_supabase.ts` — 가짜 수파베이스 (두 서버가 쓰는 만큼만 흉내)
 - `import_map.json` — 서버 코드의 수파베이스 불러오기를 가짜로 바꿔 끼움
-- `경비실_시험.ts` — 시험 34개 (2026-10-13 전부 통과)
+- `경비실_시험.ts` — 시험 41개 (2026-10-14 전부 통과)
