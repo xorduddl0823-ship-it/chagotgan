@@ -49,7 +49,7 @@ function kpiRow(nums){
 }
 /* 표 — 열 차례 규칙(☐ → 이름 → 번호 → 내용 → 날짜 → 금액 → 상태) 그대로. 폰은 목록 */
 function gtable(k, cols, rows, mline, chips){
-  var sel=gsel(k), WD={name:180,id:130,text:0,date:120,money:130,state:110,num:90};
+  var sel=gsel(k), WD={name:180,id:130,text:0,date:96,time:120,money:130,state:110,num:90};
   return '<div class="j-card">'+(chips?'<div class="j-filters">'+chips.map(function(c,i){ return '<button class="j-fp'+(i?'':' on')+'">'+c+'</button>'; }).join("")+'<span class="sp"></span><label class="j-find">'+ic("search")+'<input placeholder="검색" aria-label="검색"></label></div>':'')
     + '<div class="j-twrap"><table class="j-table"><colgroup><col style="width:52px">'+cols.map(function(c){ return '<col'+(WD[c[1]]?' style="width:'+WD[c[1]]+'px"':'')+'>'; }).join("")+'</colgroup>'
     + '<thead><tr><th class="fx0"><input type="checkbox" data-gall="'+k+'" aria-label="전체 선택"'+(rows.length&&rows.every(function(x,i){return sel[i];})?' checked':'')+'></th>'
@@ -96,7 +96,7 @@ function outlog(){ var n=gselN("outlog");
       '<button class="j-btn">'+ic("down")+'엑셀 다운로드</button><button class="j-btn pri"'+(n?'':' disabled')+'>선택한 차 알림 다시 보내기'+(n?' ('+n+')':'')+'</button>')
     + subtabs()
     + kpiRow([["오늘 출고","3","대","+1","",[2,4,3,5,2,3],"#1E9E5A","어제보다"],["알림 보냄","5","건","","",null,"#1668C4"],["알림 실패","1","건","","",null,"#D64545"]])
-    + gtable("outlog", [["상사","name"],["차량번호","id"],["차종 · 목적지","text"],["출고 시각","date"],["금액","money"],["알림","state"]], OUTL, function(x){ return x[2]+' · '+x[3]; },
+    + gtable("outlog", [["상사","name"],["차량번호","id"],["차종 · 목적지","text"],["출고 시각","time"],["금액","money"],["알림","state"]], OUTL, function(x){ return x[2]+' · '+x[3]; },
         ["오늘","어제","최근 7일","이번 달","지난 달"])
     + '<details class="j-card j-help"><summary>출고 문자 설정</summary><p>출고할 때 딜러에게 자동으로 나가는 문자의 문구와 보내는 방식(사진 + 글자 · 사진만 · 글자만 · 간단히)을 여기서 고쳐요. 목적지에 주소가 있으면 지도 링크도 붙일 수 있어요. 내 번호로 먼저 시험해 볼 수 있어요.</p></details>'
     + helpH("알림이 «실패»인 차를 선택하고 «선택한 차 알림 다시 보내기»를 누르면 같은 문자를 다시 보내요.");
@@ -112,7 +112,7 @@ function bill(){ var n=gselN("bill");
     + '<label>청구 기준<span class="w-seg"><button class="on">딜러별</button><button>매매상사별</button></span></label>'
     + '<label>금액 없는 곳<span class="w-seg"><button class="on">빼기</button><button>넣기</button></span></label>'
     + '<label>어떤 차까지<span class="w-seg"><button class="on">출고된 차만</button><button>작업 중인 차도</button></span></label>'
-    + '<button class="j-btn pri">청구서 만들기</button></div></div>'
+    + '<button class="j-btn">청구서 만들기</button></div></div>'
     + kpiRow([["청구 금액","5,990,000","원","+12%","",[4.2,4.6,4.9,5.3,5.99],"#0B2545"],["청구 대수","36","대","+4","",[28,30,33,32,36],"#1668C4"],["안 보낸 곳","4","곳","","",null,"#E08A00"]])
     + gtable("bill", [["상사","name"],["받는 분","id"],["작업 내역","text"],["대수","num"],["금액","money"],["보낸 상태","state"]], BILL, function(x){ return x[3]+' · '+x[2]; })
     + '<details class="j-card j-help"><summary><span class="w-step">2</span>청구서 보내기 — 문구 · 입금 계좌 · 예약 발송</summary><p>왼쪽에서 문구를 고치면 오른쪽 문자 모양이 바로 바뀌어요. 넣을 수 있는 값: {업체} {받는분} {기간} {대수} {금액} {계좌}. 내 번호로 먼저 시험하거나, 보낼 날을 정해 예약 발송할 수 있어요.</p></details>'
@@ -234,6 +234,24 @@ PG = '''<div class="pg">
     </ul>
     <p><b>지킨 것</b> — 탭 순서 그대로 · 표 열 차례(☐ → 이름 → 번호 → 내용 → 날짜 → 금액 → 상태) · 해요체 쉬운 말 · J안 색과 크기만 사용 · 폰은 표 대신 목록.
       공통 틀과 스타일은 디자인 방 것이라 고치지 않았어요. 새로 넣은 부품(매출 막대 · 두 칸 버튼 · 단계 번호)은 디자인 방에 공통 부품으로 넣을지 물어볼게요.</p>
+  </div>
+  <div class="note">
+    <h2>말 바꾼 곳 (지금 워시 → 시안)</h2>
+    <p>J안 «말 바꾼 곳» 29줄 규칙을 따랐어요. 마음에 안 드는 줄은 말씀만 주세요.</p>
+    <div class="wt"><table><thead><tr><th>어디</th><th>지금 워시</th><th>시안</th></tr></thead><tbody>
+    <tr><td>모든 화면</td><td class="old">엑셀로 받기</td><td class="new">엑셀 다운로드</td></tr>
+    <tr><td>출고 기록</td><td class="old">선택항목 재발송</td><td class="new">선택한 차 알림 다시 보내기</td></tr>
+    <tr><td>출고 기록</td><td class="old">…알림이 나갔는지 한눈에 봅니다.</td><td class="new">…알림이 나갔는지 한눈에 봐요.</td></tr>
+    <tr><td>출고 기록</td><td class="old">출고 문자 — 문구와 보내는 방식</td><td class="new">출고 문자 설정 (접힌 카드)</td></tr>
+    <tr><td>월별 청구서</td><td class="old">딜러별로 청구 · 매매상사별로 청구</td><td class="new">청구 기준: 딜러별 · 매매상사별</td></tr>
+    <tr><td>월별 청구서</td><td class="old">금액 없는 청구처 제외하기 · 포함하기</td><td class="new">금액 없는 곳: 빼기 · 넣기</td></tr>
+    <tr><td>월별 청구서</td><td class="old">출고된 차만 · 작업 중인 차도 포함</td><td class="new">어떤 차까지: 출고된 차만 · 작업 중인 차도</td></tr>
+    <tr><td>월별 청구서</td><td class="old">청구서 미리보기 · 인쇄 / 🖼 청구서 JPG로 받기 (청구처별)</td><td class="new">미리보기 · 인쇄 / JPG로 다운로드</td></tr>
+    <tr><td>월별 청구서</td><td class="old">선택항목 보내기 · 선택항목 보냄 표시 지우기</td><td class="new">선택한 곳 보내기 (보냄 표시 지우기는 실제 반영 때 «더보기» 안에 둘 예정)</td></tr>
+    <tr><td>자재</td><td class="old">＋ 자재 추가 · 📩 부족 자재 주문 문자 · ⚙ 자재 설정</td><td class="new">자재 추가 · 선택한 자재 주문 문자 · 자재 설정 (그림 문자 뺌)</td></tr>
+    <tr><td>자재</td><td class="old">🏪 도매상 목록 · 최근 들어오고 나간 기록</td><td class="new">접힌 카드 «도매상 목록 · 최근 들어오고 나간 기록»</td></tr>
+    <tr><td>설정</td><td class="old">설정 › 휴지통</td><td class="new">사람 버튼 ▾ › 휴지통 (대표님 「나」안)</td></tr>
+    </tbody></table></div>
   </div>
 </div>
 
