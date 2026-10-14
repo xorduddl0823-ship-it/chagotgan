@@ -1,0 +1,375 @@
+<title>차곳간 딜러앱 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --blue:#1668C4; --navy:#0B2545; --sky:#8FC9F2;
+  --bg:#EEF3F9; --card:#FFFFFF; --ink:#0B2545; --sub:#5A6B82; --line:#DCE5F0;
+  --tint:#E6F0FB; --good:#16865A; --goodbg:#E3F5EC; --warn:#B26A00; --warnbg:#FFF2DC;
+  --bad:#C62828; --badbg:#FDE8E8; --stage:#fff; --shadow:0 1px 2px rgba(11,37,69,.06),0 4px 14px rgba(11,37,69,.06);
+  --outer:#DDE6F1;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;--bg:#0A1628;--card:#122238;--ink:#E7EEF7;--sub:#9DB0C8;--line:#22385A;--tint:#16304F;
+  --goodbg:#113A2A;--good:#5CD19A;--warnbg:#3D2B0A;--warn:#F1B45A;--badbg:#431818;--bad:#FF8A8A;--outer:#060E1A;--blue:#3D8BE0;
+  --shadow:0 1px 2px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{
+  color-scheme:dark;--bg:#0A1628;--card:#122238;--ink:#E7EEF7;--sub:#9DB0C8;--line:#22385A;--tint:#16304F;
+  --goodbg:#113A2A;--good:#5CD19A;--warnbg:#3D2B0A;--warn:#F1B45A;--badbg:#431818;--bad:#FF8A8A;--outer:#060E1A;--blue:#3D8BE0;
+  --shadow:0 1px 2px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+body{background:var(--outer);color:var(--ink);font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;padding-inline:16px;padding-block:16px 40px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* 시안 안내 줄 */
+.guide{max-width:420px;margin:0 auto 12px}
+.guide h1{font-size:17px;margin:0 0 4px;font-weight:900;letter-spacing:-.3px}
+.guide p{margin:0 0 10px;color:var(--sub);font-size:13px;line-height:1.5}
+.jump{display:flex;flex-wrap:wrap;gap:6px}
+.jump button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px}
+.jump button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* 휴대폰 */
+.phone{max-width:420px;margin:0 auto;background:var(--bg);border-radius:28px;overflow:hidden;box-shadow:0 10px 40px rgba(11,37,69,.18);position:relative;min-height:760px;display:flex;flex-direction:column}
+.top{background:var(--navy);color:#fff;padding:14px 18px 16px;display:flex;align-items:center;gap:10px}
+.top .logo{width:30px;height:30px;flex:none}
+.top .t1{font-weight:900;font-size:17px;letter-spacing:-.3px}
+.top .t2{font-size:12px;color:var(--sky)}
+.top .back{background:none;border:0;color:#fff;font-size:22px;padding:0 6px 0 0;line-height:1}
+.top .bell{margin-left:auto;background:rgba(255,255,255,.1);border:0;border-radius:10px;padding:6px 10px;color:#fff;font-size:13px;position:relative}
+.dot{position:absolute;top:-4px;right:-4px;background:#FF5A5A;color:#fff;font-size:11px;border-radius:999px;min-width:18px;height:18px;display:grid;place-items:center;padding:0 4px}
+.body{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(8px + env(safe-area-inset-bottom,0px))}
+.tabs button{background:none;border:0;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:var(--sub)}
+.tabs button svg{width:22px;height:22px}
+.tabs button[aria-current="page"]{color:var(--blue);font-weight:700}
+
+.card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+.sec{font-size:13px;color:var(--sub);font-weight:700;margin:4px 2px -4px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.summary .card b{display:block;font-size:22px;font-weight:900;margin-top:2px}
+.summary .card span{font-size:12px;color:var(--sub)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chips button{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:13px}
+.chips button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.search input{border:0;background:none;flex:1;padding:12px 0;font:inherit;color:var(--ink);outline:none}
+
+/* 번호판 */
+.plate{display:inline-flex;align-items:center;border:2px solid var(--navy);background:#fff;color:#0B2545;border-radius:6px;padding:2px 9px;font-weight:900;font-size:16px;letter-spacing:.5px;font-variant-numeric:tabular-nums}
+:root[data-theme="dark"] .plate{border-color:#fff}
+.car{display:flex;flex-direction:column;gap:10px;text-align:left;border:0;width:100%}
+.car .row1{display:flex;align-items:center;gap:10px}
+.car .model{font-size:13px;color:var(--sub)}
+.pill{margin-left:auto;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.p-in{background:var(--tint);color:var(--blue)}
+.p-work{background:var(--warnbg);color:var(--warn)}
+.p-out{background:var(--goodbg);color:var(--good)}
+.p-done{background:var(--line);color:var(--sub)}
+.where{font-size:14px}
+.where b{color:var(--blue)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.steps i{height:6px;border-radius:3px;background:var(--line)}
+.steps i.on{background:var(--blue)}
+.steps-l{display:grid;grid-template-columns:repeat(4,1fr);font-size:11px;color:var(--sub);margin-top:-4px}
+
+/* 타임라인 */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:grid;grid-template-columns:18px 1fr;gap:10px;position:relative;padding-bottom:16px}
+.tl li:before{content:"";position:absolute;left:8px;top:18px;bottom:0;width:2px;background:var(--line)}
+.tl li:last-child:before{display:none}
+.tl .d{width:18px;height:18px;border-radius:50%;border:3px solid var(--blue);background:var(--card);margin-top:2px}
+.tl li.now .d{background:var(--blue);box-shadow:0 0 0 4px var(--tint)}
+.tl li.ext .d{border-color:var(--sub);border-style:dashed}
+.tl .co{font-weight:700}
+.tl .ev{font-size:13px;color:var(--sub);margin-top:2px}
+.tl .amt{font-size:13px;margin-top:4px}
+.photo{height:150px;border-radius:12px;background:linear-gradient(135deg,#1F4E86,#0B2545);display:grid;place-items:center;color:#cfe3f7;font-size:13px;position:relative;overflow:hidden}
+.photo svg{width:62%;opacity:.9}
+.photo small{position:absolute;bottom:8px;right:10px;font-size:11px;opacity:.8}
+
+.btn{border:0;border-radius:12px;padding:14px;font-weight:700;font-size:15px;width:100%}
+.btn.pri{background:var(--blue);color:#fff}
+.btn.sec2{background:var(--tint);color:var(--blue)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* 알림 */
+.noti{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:start}
+.noti .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:12px;font-weight:900}
+.noti .tt{font-weight:700;font-size:14px}
+.noti .ds{font-size:13px;color:var(--sub);margin-top:2px;line-height:1.45}
+.noti .tm{font-size:12px;color:var(--sub);margin-top:4px}
+.noti.unread .tt:after{content:"";display:inline-block;width:7px;height:7px;background:#FF5A5A;border-radius:50%;margin-left:6px;vertical-align:middle}
+.via{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px;color:var(--sub)}
+
+/* 청구서 */
+.inv{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center}
+.chk{width:30px;height:30px;accent-color:var(--blue);margin:0}
+.inv .co{font-weight:700}
+.inv .ds{font-size:12px;color:var(--sub);margin-top:2px}
+.inv .am{font-weight:900;font-size:16px;text-align:right}
+.tax{font-size:11px;font-weight:700;border-radius:6px;padding:2px 6px;display:inline-block;margin-top:4px}
+.tax.y{background:var(--tint);color:var(--blue)}
+.tax.n{background:var(--badbg);color:var(--bad)}
+.paybar{position:sticky;bottom:0;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.paybar .lbl{font-size:12px;color:var(--sub)}
+.paybar .tot{font-size:20px;font-weight:900}
+.paybar .btn{width:auto;margin-left:auto;padding:12px 18px}
+
+/* 시트 */
+.sheet-wrap{position:absolute;inset:0;background:rgba(6,14,26,.5);display:flex;align-items:flex-end;z-index:5}
+.sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:18px 18px 22px;display:flex;flex-direction:column;gap:12px}
+.sheet h3{margin:0;font-size:17px}
+.split{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:14px}
+.split .h{color:var(--sub);font-size:12px}
+.split .tot{border-top:1px solid var(--line);padding-top:8px;font-weight:900}
+.note{font-size:12px;color:var(--sub);line-height:1.5;background:var(--tint);border-radius:10px;padding:10px}
+
+/* 카히스토리 */
+.bal{background:linear-gradient(135deg,var(--blue),var(--navy));color:#fff;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.bal b{font-size:28px;font-weight:900}
+.bal span{font-size:12px;color:var(--sky)}
+.charge{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.charge button{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;border-radius:10px;padding:10px 0;font-weight:700;font-size:14px}
+.field{display:flex;gap:8px}
+.field input{flex:1;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font:inherit;min-width:0}
+.field .btn{width:auto;padding:12px 16px}
+.res{display:grid;grid-template-columns:1fr auto;gap:8px;font-size:14px}
+.res dt{color:var(--sub)} .res dd{margin:0;font-weight:700;text-align:right}
+.ex{font-size:11px;background:var(--warnbg);color:var(--warn);border-radius:6px;padding:2px 6px;font-weight:700}
+
+/* 내 정보 */
+.set{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;gap:12px}
+.set:last-child{border-bottom:0}
+.set small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
+.sw{position:relative;width:50px;height:30px;flex:none}
+.sw input{opacity:0;width:100%;height:100%;margin:0;position:absolute;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.2s}
+.sw span:after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw input:checked+span{background:var(--blue)}
+.sw input:checked+span:after{left:23px}
+
+/* 로그인 */
+.login{flex:1;display:flex;flex-direction:column;gap:14px;padding:28px 22px;background:var(--bg)}
+.login h2{font-size:24px;font-weight:900;margin:20px 0 0;letter-spacing:-.5px;text-wrap:balance}
+.login p{margin:0;color:var(--sub);font-size:14px;line-height:1.5}
+.login label{font-size:13px;font-weight:700;color:var(--sub)}
+.login input{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:14px;font:inherit;font-size:17px;letter-spacing:.5px}
+.otp{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.otp input{text-align:center;padding:14px 0;font-weight:900}
+.toast{position:absolute;left:16px;right:16px;bottom:86px;background:var(--navy);color:#fff;border-radius:12px;padding:12px 14px;font-size:14px;z-index:9;box-shadow:var(--shadow)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="guide">
+  <h1>차곳간 딜러앱 화면 시안</h1>
+  <p>딜러 휴대폰에서 보이는 화면입니다. 아래 단추나 앱 안의 메뉴를 눌러 보세요. 차량·금액·업체는 모두 <b>예시</b>입니다.</p>
+  <div class="jump" id="jump"></div>
+</div>
+
+<div class="phone" id="phone"></div>
+
+<script>
+const LOGO = `<svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><path d="M4 18 20 6l16 12" fill="none" stroke="#8FC9F2" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="17" width="24" height="17" rx="2.5" fill="#1668C4"/><path d="M12 29.5h16M13.5 29.5l2-5h9l2 5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 20.5l2.4 2.2 4.6-4.4" fill="none" stroke="#8FC9F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ICON = {
+  car:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16v-3l2-5h14l2 5v3"/><path d="M3 16h18v2H3z"/><circle cx="7.5" cy="16" r="1.6"/><circle cx="16.5" cy="16" r="1.6"/></svg>',
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+  bill:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+  hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v3l2 1.5"/></svg>',
+  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+};
+const CARSVG = '<svg viewBox="0 0 200 80" fill="none" stroke="#8FC9F2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 58V46l16-6 22-18h66l26 18 30 6 12 6v6"/><path d="M14 58h172"/><circle cx="52" cy="60" r="11" fill="#0B2545"/><circle cx="150" cy="60" r="11" fill="#0B2545"/><path d="M60 40h40V26M104 40h40l-22-14h-18"/></svg>';
+
+// ---- 예시 자료 ----
+const STAGES = ['입고','작업 중','출고','도착'];
+const S = {
+  tab:'cars', screen:null, carId:null, filter:'전체', q:'',
+  unread:3, credits:3, paid:{}, sel:{}, sheet:null, toast:'', histResult:null, loginStep:1,
+  cars:[
+    {id:1, plate:'123가4567', model:'현대 그랜저 IG 2019', stage:1, at:'브라더광택', since:'오늘 09:40',
+      tl:[{co:'가온진단평가',ev:'성능검사 완료 · 9/22 10:12',amt:30000},{co:'리페어',ev:'입고 9/22 13:40 → 출고 9/24 17:05 · 앞범퍼 판금도색',amt:250000},{co:'브라더광택',ev:'입고 오늘 09:40 · 광택+실내크리닝 작업 중',amt:null,now:true}]},
+    {id:2, plate:'45나6789', model:'기아 쏘렌토 MQ4 2021', stage:3, at:'수원오토갤러리 주차장', since:'어제 16:20',
+      tl:[{co:'가온진단평가',ev:'성능검사 완료 · 9/20 11:03',amt:30000},{co:'대경광택',ev:'입고 9/21 → 출고·도착 어제 16:20',amt:180000,now:true}]},
+    {id:3, plate:'201머3344', model:'BMW 520i 2020', stage:2, at:'리페어 → 브라더광택 이동 중', since:'오늘 11:15',
+      tl:[{co:'가온진단평가',ev:'성능검사 완료 · 9/23 09:30 (수입차)',amt:40000},{co:'리페어',ev:'입고 9/23 → 출고 오늘 11:15 · 휠 복원',amt:120000,now:true},{co:'외부 업체',ev:'차곳간을 쓰지 않는 곳은 "외부"로 표시',amt:null,ext:true}]},
+    {id:4, plate:'78두9012', model:'제네시스 G80 2018', stage:0, at:'가온진단평가', since:'오늘 08:55',
+      tl:[{co:'가온진단평가',ev:'입고 오늘 08:55 · 성능검사 대기',amt:null,now:true}]},
+  ],
+  notis:[
+    {k:'in',t:'브라더광택 입고',d:'123가4567 그랜저가 브라더광택에 입고됐어요.',tm:'오늘 09:40',via:'앱',un:true},
+    {k:'bill',t:'9월 청구서 도착 — 리페어',d:'2대 · 370,000원. 청구서 탭에서 확인하세요.',tm:'오늘 09:00',via:'앱+문자',un:true},
+    {k:'out',t:'리페어 출고',d:'201머3344 BMW 520i가 출고돼 브라더광택으로 이동 중이에요.',tm:'오늘 11:15',via:'앱',un:true},
+    {k:'arr',t:'목적지 도착',d:'45나6789 쏘렌토가 수원오토갤러리 주차장에 도착했어요. 사진 2장',tm:'어제 16:20',via:'앱',un:false},
+    {k:'re',t:'재검사 안내 — 가온진단평가',d:'62허1188 성능검사 유효기간(120일)이 7일 남았어요.',tm:'9/23',via:'문자',un:false},
+  ],
+  bills:[
+    {id:'b1',co:'리페어',m:'9월',cars:2,amt:370000,tax:true},
+    {id:'b2',co:'가온진단평가',m:'9월 검사비',cars:4,amt:140000,tax:true},
+    {id:'b3',co:'브라더광택',m:'9월',cars:3,amt:300000,tax:false},
+    {id:'b4',co:'대경광택',m:'9월',cars:1,amt:198000,tax:true},
+  ],
+};
+S.sel = {b1:true,b2:true,b3:true};
+const won = n => n.toLocaleString('ko-KR')+'원';
+const NK = {in:['입고','var(--tint)','var(--blue)'],out:['출고','var(--goodbg)','var(--good)'],arr:['도착','var(--goodbg)','var(--good)'],bill:['청구','var(--warnbg)','var(--warn)'],re:['재검','var(--badbg)','var(--bad)']};
+const PILL = ['p-in','p-work','p-out','p-done'];
+
+function topBar(title, sub, back){
+  return `<div class="top">${back?`<button class="back" data-act="back" aria-label="뒤로">‹</button>`:LOGO}
+  <div><div class="t1">${title}</div>${sub?`<div class="t2">${sub}</div>`:''}</div>
+  <button class="bell" data-act="tab" data-v="noti">알림${S.unread?`<span class="dot">${S.unread}</span>`:''}</button></div>`;
+}
+function tabs(){
+  const T=[['cars','내 차','car'],['noti','알림','bell'],['bills','청구서','bill'],['hist','카히스토리','hist'],['me','내 정보','me']];
+  return `<nav class="tabs">${T.map(([k,l,i])=>`<button data-act="tab" data-v="${k}" ${S.tab===k&&!S.screen?'aria-current="page"':''}>${ICON[i]}${l}</button>`).join('')}</nav>`;
+}
+function carsView(){
+  const F=['전체',...STAGES];
+  const list=S.cars.filter(c=>(S.filter==='전체'||STAGES[c.stage]===S.filter)&&(!S.q||c.plate.includes(S.q)||c.model.includes(S.q)));
+  const unpaid=S.bills.filter(b=>!S.paid[b.id]).reduce((a,b)=>a+b.amt,0);
+  return `<div class="summary"><div class="card"><span>상품화 진행 중</span><b class="num">${S.cars.length}대</b></div>
+    <button class="card" style="border:0;text-align:left" data-act="tab" data-v="bills"><span>결제할 청구서</span><b class="num" style="color:var(--blue)">${won(unpaid)}</b></button></div>
+  <label class="search">${ICON.hist.replace('<svg','<svg width="18" height="18"')}<input id="q" placeholder="차량번호나 차종으로 찾기" value="${S.q}" aria-label="차 검색"></label>
+  <div class="chips">${F.map(f=>`<button data-act="filter" data-v="${f}" aria-pressed="${S.filter===f}">${f}</button>`).join('')}</div>
+  ${list.map(c=>`<button class="card car" data-act="car" data-v="${c.id}">
+    <div class="row1"><span class="plate">${c.plate}</span><span class="pill ${PILL[c.stage]}">${STAGES[c.stage]}</span></div>
+    <div class="model">${c.model}</div>
+    <div class="where">지금 <b>${c.at}</b> · ${c.since}</div>
+    <div class="steps">${STAGES.map((_,i)=>`<i class="${i<=c.stage?'on':''}"></i>`).join('')}</div>
+    <div class="steps-l">${STAGES.map(s=>`<span>${s}</span>`).join('')}</div></button>`).join('') || '<div class="card" style="color:var(--sub)">찾는 차가 없어요.</div>'}`;
+}
+function carView(){
+  const c=S.cars.find(x=>x.id===S.carId); const sum=c.tl.reduce((a,x)=>a+(x.amt||0),0);
+  return `<div class="photo">${CARSVG}<small>입고 사진 3장 · 예시</small></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:8px">
+    <div class="row1" style="display:flex;align-items:center;gap:10px"><span class="plate">${c.plate}</span><span class="pill ${PILL[c.stage]}">${STAGES[c.stage]}</span></div>
+    <div style="font-size:13px;color:var(--sub)">${c.model}</div>
+    <div class="where">지금 <b style="color:var(--blue)">${c.at}</b></div>
+  </div>
+  <div class="sec">상품화 진행 기록</div>
+  <div class="card"><ol class="tl">${c.tl.map(x=>`<li class="${x.now?'now':''} ${x.ext?'ext':''}"><span class="d"></span><div><div class="co">${x.co}</div><div class="ev">${x.ev}</div>${x.amt?`<div class="amt num">${won(x.amt)}</div>`:''}</div></li>`).join('')}</ol>
+  <div style="display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:10px;font-size:14px"><span style="color:var(--sub)">지금까지 들어간 금액</span><b class="num">${won(sum)}</b></div></div>
+  <div class="two"><button class="btn sec2" data-act="tab" data-v="hist">카히스토리 조회</button><button class="btn pri" data-act="finish">상품화 완료</button></div>`;
+}
+function notiView(){
+  return `<div class="chips"><button aria-pressed="true">전체</button><button>입고·출고</button><button>도착</button><button>청구서</button><button>재검사</button></div>
+  ${S.notis.map(n=>{const [l,bg,fg]=NK[n.k];return `<div class="card noti ${n.un?'unread':''}"><div class="ic" style="background:${bg};color:${fg}">${l}</div>
+  <div><div class="tt">${n.t}</div><div class="ds">${n.d}</div><div class="tm">${n.tm}<span class="via">${n.via}</span></div></div></div>`}).join('')}
+  <div class="note">앱 알림을 받는 딜러에게는 문자를 보내지 않아 업체의 문자 비용이 줄어요. 앱 알림이 실패하면 문자로 다시 보내요. 청구서는 앱과 문자로 같이 갑니다.</div>`;
+}
+function billsView(){
+  const open=S.bills.filter(b=>!S.paid[b.id]), done=S.bills.filter(b=>S.paid[b.id]);
+  const tot=open.filter(b=>S.sel[b.id]).reduce((a,b)=>a+b.amt,0);
+  const n=open.filter(b=>S.sel[b.id]).length;
+  return `<div class="sec">결제할 청구서 · 여러 곳을 골라 한 번에 결제</div>
+  ${open.map(b=>`<label class="card inv"><input type="checkbox" class="chk" id="c-${b.id}" data-act="sel" data-v="${b.id}" ${S.sel[b.id]?'checked':''}>
+    <div><div class="co">${b.co}</div><div class="ds">${b.m} · ${b.cars}대</div><span class="tax ${b.tax?'y':'n'}">${b.tax?'계산서 발급':'계산서 미발급'}</span></div>
+    <div class="am num">${won(b.amt)}</div></label>`).join('') || '<div class="card" style="color:var(--sub)">결제할 청구서가 없어요.</div>'}
+  ${done.length?`<div class="sec">결제 완료</div>${done.map(b=>`<div class="card inv" style="opacity:.75"><span class="pill p-out" style="margin:0">완료</span><div><div class="co">${b.co}</div><div class="ds">${b.m} · 업체 계좌로 입금 예정</div></div><div class="am num">${won(b.amt)}</div></div>`).join('')}`:''}
+  ${open.length?`<div class="paybar"><div><div class="lbl">${n}곳 선택</div><div class="tot num">${won(tot)}</div></div><button class="btn pri" data-act="pay" ${n?'':'disabled'}>한 번에 결제</button></div>`:''}`;
+}
+function payShown(){
+  const sel=S.bills.filter(b=>!S.paid[b.id]&&S.sel[b.id]); const tot=sel.reduce((a,b)=>a+b.amt,0);
+  return `<div class="sheet-wrap" data-act="close"><div class="sheet" data-stop>
+    <h3>한 번에 결제</h3>
+    <div class="split"><span class="h">업체</span><span class="h">나눠 들어가는 금액</span>
+    ${sel.map(b=>`<span>${b.co}</span><span class="num" style="text-align:right">${won(b.amt)}</span>`).join('')}
+    <span class="tot">결제 합계</span><span class="tot num" style="text-align:right">${won(tot)}</span></div>
+    <div class="note">카드나 계좌이체로 한 번 결제하면, 결제사(지급대행)가 업체마다 자기 계좌로 나눠 보냅니다. 결제 즉시 업체 장부에 «수금 완료»가 표시돼요.</div>
+    <div class="two"><button class="btn sec2" data-act="close">취소</button><button class="btn pri" data-act="paydo">결제하기</button></div>
+  </div></div>`;
+}
+function histView(){
+  const r=S.histResult;
+  return `<div class="bal"><span>남은 조회</span><b class="num">${S.credits}건</b><span>조회할 때마다 1건씩 빠져요 · 앱은 무료</span>
+    <div class="charge"><button data-act="charge" data-v="5">5건 충전</button><button data-act="charge" data-v="10">10건 충전</button><button data-act="charge" data-v="30">30건 충전</button></div></div>
+  <div class="sec">카히스토리 조회 (사고·보험 이력)</div>
+  <div class="field"><input id="hp" placeholder="차량번호 예: 123가4567" value="123가4567" aria-label="조회할 차량번호"><button class="btn pri" data-act="look" ${S.credits?'':'disabled'}>조회</button></div>
+  ${S.credits?'':'<div class="note" style="background:var(--badbg);color:var(--bad)">남은 조회가 없어요. 충전 후 사용하세요.</div>'}
+  ${r?`<div class="card" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><span class="plate">${r}</span><span class="ex">예시 결과</span></div>
+    <dl class="res"><dt>내 차 피해</dt><dd>1회 · 1,240,000원</dd><dt>상대 차 피해</dt><dd>없음</dd><dt>소유자 변경</dt><dd>2회</dd><dt>번호 변경</dt><dd>없음</dd><dt>침수·전손</dt><dd>없음</dd><dt>렌트·영업 이력</dt><dd>없음</dd></dl>
+    <div style="font-size:12px;color:var(--sub)">조회한 결과는 이 차에 저장돼서 다시 볼 때는 무료예요.</div></div>`:''}
+  <div class="sec">최근 조회</div>
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center"><span class="plate">45나6789</span><span style="font-size:13px;color:var(--sub)">9/21 조회 · 다시 보기 무료</span></div>`;
+}
+function meView(){
+  const sw=(id,on)=>`<span class="sw"><input type="checkbox" id="${id}" ${on?'checked':''} aria-label="켜기"><span></span></span>`;
+  return `<div class="card"><div style="font-weight:900;font-size:18px">김민수 딜러</div><div style="color:var(--sub);font-size:13px;margin-top:2px">수원오토갤러리 · 010-1234-5678 (예시)</div></div>
+  <div class="sec">알림 받기</div>
+  <div class="card" style="padding-block:4px">
+    <div class="set"><div>입고·출고 알림<small>업체에 들어가고 나올 때</small></div>${sw('n1',1)}</div>
+    <div class="set"><div>목적지 도착 알림<small>사진과 함께</small></div>${sw('n2',1)}</div>
+    <div class="set"><div>청구서 알림<small>앱과 문자로 같이 받기</small></div>${sw('n3',1)}</div>
+    <div class="set"><div>재검사 안내<small>성능검사 유효기간 120일</small></div>${sw('n4',1)}</div>
+  </div>
+  <div class="sec">번호</div>
+  <div class="card" style="padding-block:4px">
+    <div class="set"><div>010-1234-5678<small>대표 번호 · 청구서 받음</small></div><span class="pill p-in">대표</span></div>
+    <div class="set"><div>010-9876-5432<small>직원 · 입출고 알림만</small></div><span class="pill p-done">직원</span></div>
+  </div>
+  <button class="btn sec2" data-act="logout">로그아웃</button>`;
+}
+function loginView(){
+  const s=S.loginStep;
+  return `<div class="login">${LOGO.replace('class="logo"','style="width:56px;height:56px"')}
+  <h2>${s===1?'휴대폰 번호로<br>시작하기':'인증번호 6자리를<br>입력하세요'}</h2>
+  <p>${s===1?'업체에 알려 준 번호로 들어오면 내 차가 자동으로 보여요. 비밀번호는 필요 없어요.':'010-1234-5678 로 문자를 보냈어요. 3분 안에 입력하세요.'}</p>
+  ${s===1?`<label for="ph">휴대폰 번호</label><input id="ph" inputmode="numeric" value="010-1234-5678">
+  <button class="btn pri" data-act="otp">인증번호 받기</button>`:
+  `<div class="otp">${[4,8,2,6,1,9].map((d,i)=>`<input id="o${i}" inputmode="numeric" maxlength="1" value="${d}" aria-label="${i+1}번째 숫자">`).join('')}</div>
+  <button class="btn pri" data-act="enter">확인하고 들어가기</button><button class="btn sec2" data-act="otpback">번호 다시 입력</button>`}
+  <p style="margin-top:auto;font-size:12px">처음 들어오면 이용약관·개인정보 동의 화면이 한 번 나와요.</p></div>`;
+}
+function logoutSheet(){
+  return `<div class="sheet-wrap" data-act="close"><div class="sheet" data-stop><h3>로그아웃할까요?</h3>
+  <p style="margin:0;color:var(--sub);font-size:14px">다시 들어올 때 인증번호를 한 번 더 받아요.</p>
+  <div class="two"><button class="btn sec2" data-act="close">취소</button><button class="btn pri" data-act="logoutdo">로그아웃</button></div></div></div>`;
+}
+
+const TITLES={cars:['내 차','수원오토갤러리 · 김민수'],noti:['알림',''],bills:['청구서','여러 업체 한 번에 결제'],hist:['카히스토리','사고·보험 이력 조회'],me:['내 정보','']};
+function render(){
+  const ph=document.getElementById('phone'); let h='';
+  if(S.screen==='login'){ h=loginView(); }
+  else if(S.screen==='car'){ h=topBar('차 상세','상품화 진행 과정',true)+`<div class="body">${carView()}</div>`+tabs(); }
+  else { const [t,s]=TITLES[S.tab]; const V={cars:carsView,noti:notiView,bills:billsView,hist:histView,me:meView}[S.tab];
+    h=topBar(t,s)+`<div class="body">${V()}</div>`+tabs(); }
+  if(S.sheet==='pay') h+=payShown(); if(S.sheet==='logout') h+=logoutSheet();
+  if(S.toast) h+=`<div class="toast" role="status">${S.toast}</div>`;
+  ph.innerHTML=h;
+  const J=[['login','로그인'],['cars','내 차'],['car','차 상세'],['noti','알림'],['bills','청구서·일괄결제'],['hist','카히스토리'],['me','내 정보']];
+  const cur=S.screen==='login'?'login':S.screen==='car'?'car':S.tab;
+  document.getElementById('jump').innerHTML=J.map(([k,l])=>`<button data-j="${k}" aria-pressed="${cur===k}">${l}</button>`).join('');
+  const q=document.getElementById('q'); if(q){q.oninput=e=>{S.q=e.target.value.trim();const p=q.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(p,p);};}
+}
+let tt; function toast(m){S.toast=m;render();clearTimeout(tt);tt=setTimeout(()=>{S.toast='';render();},2200);}
+
+document.addEventListener('click',e=>{
+  const j=e.target.closest('[data-j]');
+  if(j){const k=j.dataset.j;S.sheet=null;if(k==='login'){S.screen='login';S.loginStep=1;}else if(k==='car'){S.screen='car';S.carId=1;}else{S.screen=null;S.tab=k;}render();return;}
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  if(el.dataset.act==='close' && e.target.closest('[data-stop]') && !e.target.closest('button[data-act="close"]')) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a==='sel') return; // 체크박스는 change에서
+  if(a==='tab'){S.tab=v;S.screen=null;if(v==='noti'){render();S.unread=0;setTimeout(()=>{S.notis.forEach(n=>n.un=false);},1500);}}
+  else if(a==='back'){S.screen=null;}
+  else if(a==='filter'){S.filter=v;}
+  else if(a==='car'){S.screen='car';S.carId=+v;}
+  else if(a==='finish'){S.screen=null;S.tab='cars';toast('상품화 완료! 이제 «내 차 관리»에서 볼 수 있어요.');return;}
+  else if(a==='pay'){S.sheet='pay';}
+  else if(a==='paydo'){S.bills.forEach(b=>{if(S.sel[b.id])S.paid[b.id]=true;});S.sheet=null;toast('결제 완료 — 업체마다 나눠 입금돼요.');return;}
+  else if(a==='close'){S.sheet=null;}
+  else if(a==='charge'){S.credits+=+v;toast(v+'건 충전됐어요. (시안이라 실제 결제는 없어요)');return;}
+  else if(a==='look'){const p=(document.getElementById('hp').value||'').trim()||'123가4567';S.credits--;S.histResult=p;toast('1건 사용 · 남은 조회 '+S.credits+'건');return;}
+  else if(a==='logout'){S.sheet='logout';}
+  else if(a==='logoutdo'){S.sheet=null;S.screen='login';S.loginStep=1;}
+  else if(a==='otp'){S.loginStep=2;}
+  else if(a==='otpback'){S.loginStep=1;}
+  else if(a==='enter'){S.screen=null;S.tab='cars';toast('어서 오세요, 김민수 딜러님');return;}
+  render();
+});
+document.addEventListener('change',e=>{const el=e.target.closest('[data-act="sel"]');if(el){S.sel[el.dataset.v]=el.checked;render();}});
+render();
+</script>
