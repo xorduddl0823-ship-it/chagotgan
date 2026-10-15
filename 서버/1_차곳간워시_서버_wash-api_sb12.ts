@@ -10,7 +10,16 @@
 //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
 //     └ 관제센터 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
 // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
-// sb12 (2026-10-15 · 만드는 중) 관리 한곳에서 (설계 14) — 아래는 먼저 넣은 것
+// sb12 (2026-10-15) 관리 한곳에서 (설계 14 · 보안 방 설계 검토 조건 1~5 반영) · 먼저 서버/sql/08 실행
+//   · hqPayResults([시작일, 끝일, 꼬리표]) — 카드 주문·장부·자동 결제·환불·홈페이지·딜러 청구서(참고 금액)를 한 목록으로
+//   · hqPerson([휴대폰 11자리]) · hqPersonAct([휴대폰, 동작, 대상, 확인]) · hqAudit([휴대폰?]) — 모든 제품 계정을 한곳에서
+//     지킴: 본사 사람·본인 번호 제외 · 본사 한 명 시간당 30번(넘으면 멈추고 대표님 문자) · 바뀐 당사자에게 안내 문자 ·
+//     기록(hq_audit)은 지우거나 고치는 창구 없음 · 체크 비밀번호 비우기는 관리 스위치(check_first_pw_sms)가 켜졌을 때만 ·
+//     기사 임시 비밀번호는 10자 무작위로 그 기사 번호에 문자로만(응답·기록에 안 남김) + 바로 바꾸게(must_change · 체크 v30)
+//   · 옛 «로그인 전 가입 결제» payStart([휴대폰, 상호, 요금제]) 는 끔 — 가입(로그인) 먼저, 로그인한 결제 창구로
+//   · 체크 화면의 잠금 안내·공지(lockInfo·paidSay·noticeList·noticeHide)도 체크 열쇠로 워시 서버에서
+//   · 장부(wash_payments) 줄에 주문번호(order_id)·어디서(source) — SQL 08 전이면 예전처럼 씀
+//   아래는 먼저 넣은 것
 //   · hqCheckWallets 줄마다 검사소 사업자번호(bizNo)·대표(ceo) — 관리 화면이 워시 업체와 나란히 비교(같은 회사만 잇기)
 //   · 체크에서 만든 카드 주문은 who = "check:<검사소코드>" (관리 결제 목록의 «체크 · 검사소» 꼬리표)
 // sb11 (2026-10-15) 고침: 로그인한 화면의 카드 결제 payStart 가 홈페이지 가입용 payStart 에 가려져 있던 것 (열쇠가 있으면 로그인 쪽)
@@ -179,8 +188,10 @@ async function needWash(phone: string) {
 
 /* ---------- sb11: 체크 로그인으로 결제 창구 부르기 ----------
    체크 화면은 체크 열쇠(chk_)만 가짐 → 체크 세션·검사소 대표인지 확인 → 그 검사소에 이어 둔 워시 지갑으로 처리 */
-const CHECK_PAY: Record<string, number> = { cashInfo: 1, payDue: 1, payStart: 1, payConfirm: 1, payMine: 1, cashAsk: 1 };
-async function checkPaySs(token: string, officeCode: string) {
+const CHECK_PAY: Record<string, number> = { cashInfo: 1, payDue: 1, payStart: 1, payConfirm: 1, payMine: 1, cashAsk: 1, paidSay: 1 };
+/* sb12: 대표가 아니어도 볼 수 있는 것 — 잠금 안내 · 공지 */
+const CHECK_VIEW: Record<string, number> = { lockInfo: 1, noticeList: 1, noticeHide: 1 };
+async function checkPaySs(token: string, officeCode: string, needOwner = true) {
   const { data: cs } = await sb.from("check_session").select("sid,phone,office_id,role,expires_at").eq("sid", token).maybeSingle();
   if (!cs || (cs.expires_at && new Date(String(cs.expires_at)).getTime() < Date.now()))
     throw new Error("로그인이 풀렸습니다. 다시 로그인해 주세요.");
@@ -197,9 +208,183 @@ async function checkPaySs(token: string, officeCode: string) {
   if (!office) throw new Error("검사소를 찾지 못했습니다.");
   const { data: me } = await sb.from("check_user").select("role,active").eq("office_id", office.id).eq("phone", phone).maybeSingle();
   if (!me || me.active === false) throw new Error("이 검사소에 들어갈 권한이 없습니다.");
-  if (String(me.role) !== "owner") throw new Error("결제·캐시는 검사소 대표만 할 수 있습니다");
+  if (needOwner && String(me.role) !== "owner") throw new Error("결제·캐시는 검사소 대표만 할 수 있습니다");
   const wallet = String(office.wallet_shop || "");
-  return { wallet, office: String(office.code), ss: { sid: token, phone, shop: wallet, role: "owner", via: "check", office: String(office.code) } };
+  return { wallet, office: String(office.code),
+    ss: { sid: token, phone, shop: wallet, role: needOwner ? "owner" : String(me.role || "staff"), via: "check", office: String(office.code) } };
+}
+
+/* sb12: 자동 결제 실패 중이면 다음 시도일 (D+1·3·5 · 마지막 뒤엔 "") */
+function billNextTry(row: any) {
+  if (!row || row.status !== "on" || !row.first_fail_at) return "";
+  const first = ymd10(row.first_fail_at), today = new Date(kstToday()).toISOString().slice(0, 10);
+  for (const d of [1, 3, 5]) { const t = ymdAdd(first, d); if (t >= today) return t; }
+  return "";
+}
+/* ---------- sb12: 관리 한곳에서 — 도우미 ---------- */
+function fullPhone(v: unknown) {
+  const p = digits(String(v || ""));
+  if (!/^01\d{8,9}$/.test(p)) throw new Error("휴대폰 번호 전체(01012345678)를 넣어 주세요");
+  return p;
+}
+async function hqAuditLog(ss: any, action: string, target: string, product: string, result: string, detail?: unknown) {
+  try {
+    await sb.from("hq_audit").insert({ who: digits(ss && ss.phone), sid_tail: String((ss && ss.sid) || "").slice(-6),
+      ip: String((ss && ss.ip) || "").slice(0, 64), ua: String((ss && ss.ua) || "").slice(0, 200),
+      action, target_phone: target, product, result: String(result).slice(0, 120), detail: detail ?? null });
+  } catch (_) { /* 기록 표가 없으면(SQL 08 전) 넘어감 */ }
+}
+async function checkPwSmsOn() {
+  try { const { data } = await sb.from("wash_hq").select("check_first_pw_sms").eq("id", 1).maybeSingle(); return !!(data && data.check_first_pw_sms); }
+  catch (_) { return false; }
+}
+const hexOf = (b: Uint8Array) => Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
+async function chkPwHash(pw: string) {     // 체크 서버와 같은 모양 (소금 16바이트 hex $ PBKDF2-SHA256 120000)
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 120000, hash: "SHA-256" }, key, 256);
+  return hexOf(salt) + "$" + hexOf(new Uint8Array(bits));
+}
+function tempPw(n = 10) {
+  const A = "abcdefghjkmnpqrstuvwxyz23456789";               // 헷갈리는 글자(0 o 1 l i) 뺌
+  const r = crypto.getRandomValues(new Uint8Array(n));
+  return Array.from(r).map((x) => A[x % A.length]).join("");
+}
+async function personOf(phone: string) {
+  const safe = async (f: () => Promise<any>, d: any) => { try { return await f(); } catch (_) { return d; } };
+  const wash = await safe(async () => (await sb.from("wash_users").select("shop,name,role,active,last_login").eq("phone", phone)).data || [], []);
+  const owns = await safe(async () => (await sb.from("wash_shops").select("shop,name,active").eq("owner_phone", phone)).data || [], []);
+  const offices: Record<string, any> = {};
+  const cu = await safe(async () => (await sb.from("check_user").select("office_id,name,role,active,pw_hash").eq("phone", phone)).data || [], []);
+  const dr = await safe(async () => (await sb.from("check_deliv_driver").select("id,office_id,name,active,last_in,must_change").eq("tel", phone)).data || [], []);
+  const offIds = Array.from(new Set([...cu, ...dr].map((x: any) => x.office_id)));
+  if (offIds.length) {
+    const of = await safe(async () => (await sb.from("check_office").select("id,code,name").in("id", offIds)).data || [], []);
+    of.forEach((o: any) => (offices[o.id] = o));
+  }
+  const check = cu.map((u: any) => ({ office: offices[u.office_id]?.code || "", officeName: offices[u.office_id]?.name || "",
+    name: u.name || "", role: u.role || "", active: u.active !== false, pwSet: !!u.pw_hash }));
+  const drivers = dr.map((d: any) => ({ id: String(d.id), office: offices[d.office_id]?.code || "", officeName: offices[d.office_id]?.name || "",
+    name: d.name || "", active: d.active !== false, lastIn: d.last_in || "", mustChange: d.must_change === true }));
+  const du = await safe(async () => (await sb.from("dealer_users").select("name,active,withdrawn_at,last_login").eq("phone", phone).maybeSingle()).data, null);
+  const ca = await safe(async () => (await sb.from("cgg_access").select("name,products,active,two_step,fail_count,locked_until").eq("phone", phone).maybeSingle()).data, null);
+  const now = new Date().toISOString();
+  const cnt = async (t: string) => await safe(async () => ((await sb.from(t).select("sid").eq("phone", phone).gt("expires_at", now)).data || []).length, 0);
+  const pwfail = await safe(async () => ((await sb.from("wash_rate").select("key").eq("key", "pwfail:" + phone)).data || []).length > 0, false);
+  const ckfail = await safe(async () => ((await sb.from("check_deliv_fail").select("key,locked_until").in("key", ["office:" + phone, "pwcode:" + phone])).data || []), []);
+  return {
+    wash, washOwnerOf: owns, check, drivers,
+    dealer: du ? { name: du.name || "", active: du.active !== false, withdrawn: !!du.withdrawn_at, lastLogin: du.last_login || "" } : null,
+    cgg: ca ? { name: ca.name || "", products: ca.products || [], active: ca.active !== false, twoStep: !!ca.two_step,
+      locked: !!(ca.locked_until && String(ca.locked_until) > now) } : null,
+    locks: { wash: pwfail, check: ckfail.some((k: any) => k.locked_until && String(k.locked_until) > now), cgg: !!(ca && ca.locked_until && String(ca.locked_until) > now) },
+    sessions: { wash: await cnt("wash_sessions"), check: await cnt("check_session"), cgg: await cnt("cgg_session"), dealer: await cnt("dealer_sessions") },
+  };
+}
+async function officeIdOf(code: string) {
+  const { data } = await sb.from("check_office").select("id").eq("code", String(code || "").toUpperCase()).maybeSingle();
+  if (!data) throw new Error("검사소를 찾지 못했습니다: " + code);
+  return String(data.id);
+}
+async function personAct(phone: string, act: string, target: string, confirmed: boolean): Promise<any> {
+  const now = new Date().toISOString();
+  const kick = async (what: string) => {
+    if (what === "wash" || what === "all") await sb.from("wash_sessions").delete().eq("phone", phone);
+    if (what === "check" || what === "all") await sb.from("check_session").delete().eq("phone", phone);
+    if (what === "cgg" || what === "all") await sb.from("cgg_session").delete().eq("phone", phone);
+    if (what === "dealer" || what === "all") await sb.from("dealer_sessions").delete().eq("phone", phone);
+    if (what === "driver" || what === "all") await sb.from("check_deliv_driver").update({ token: null }).eq("tel", phone);
+  };
+  const [kind, arg] = target.split(":");
+  if (act === "stop" || act === "resume") {
+    const on = act === "resume";
+    const all = target === "all";
+    if (all || kind === "wash") { await sb.from("wash_users").update({ active: on }).eq("phone", phone).neq("shop", "ADMIN"); if (!on) await kick("wash"); }
+    if (all || kind === "check") {
+      let q = sb.from("check_user").update({ active: on }).eq("phone", phone);
+      if (!all) q = q.eq("office_id", await officeIdOf(arg));
+      await q; if (!on) await kick("check");
+    }
+    if (all || kind === "driver") {
+      let q = sb.from("check_deliv_driver").update(on ? { active: true } : { active: false, token: null }).eq("tel", phone);
+      if (!all) q = q.eq("id", arg);
+      await q;
+    }
+    if (all || kind === "dealer") { await sb.from("dealer_users").update({ active: on }).eq("phone", phone); if (!on) await kick("dealer"); }
+    if (all || kind === "cgg") { await sb.from("cgg_access").update({ active: on }).eq("phone", phone); if (!on) await kick("cgg"); }
+    if (!all && ["wash", "check", "driver", "dealer", "cgg"].indexOf(kind) < 0) throw new Error("대상을 고르세요");
+    return {};
+  }
+  if (act === "kick") {
+    if (["wash", "check", "cgg", "dealer", "driver", "all"].indexOf(kind) < 0) throw new Error("대상을 고르세요");
+    await kick(kind);
+    return {};
+  }
+  if (act === "unlock") {
+    const all = target === "all";
+    if (all || kind === "wash") await sb.from("wash_rate").delete().eq("key", "pwfail:" + phone);
+    if (all || kind === "check") await sb.from("check_deliv_fail").delete().in("key", ["office:" + phone, "pwcode:" + phone]);
+    if (all || kind === "driver") {
+      const { data: ds } = await sb.from("check_deliv_driver").select("office_id,name").eq("tel", phone);
+      const keys = (ds || []).map((d: any) => String(d.office_id) + ":" + String(d.name));
+      if (keys.length) await sb.from("check_deliv_fail").delete().in("key", keys);
+    }
+    if (all || kind === "cgg") await sb.from("cgg_access").update({ fail_count: 0, locked_until: null }).eq("phone", phone);
+    if (all || kind === "dealer") await sb.from("dealer_otp").update({ tries: 0 }).eq("phone", phone);
+    return {};
+  }
+  if (act === "pwReset") {
+    if (kind === "wash") {
+      /* 못 쓰는 값으로 바꾸고 끊음 → 본인이 «비밀번호 찾기»(문자 인증)로 새로 정함 */
+      await sb.from("wash_users").update({ pw_hash: await pwHash(randHex(24)) }).eq("phone", phone).neq("shop", "ADMIN");
+      await kick("wash");
+      return { note: "본인이 «비밀번호 찾기»(문자 인증)로 새로 정합니다" };
+    }
+    if (kind === "check") {
+      if (!await checkPwSmsOn())
+        throw new Error("체크 첫 비밀번호 문자 확인(체크 서버 v26 이상)이 운영 중일 때만 됩니다. 관리 설정에서 먼저 켜 주세요");
+      const oid = await officeIdOf(arg);
+      await sb.from("check_user").update({ pw_hash: null }).eq("phone", phone).eq("office_id", oid);
+      try { await sb.from("check_pw_first").delete().eq("phone", phone); } catch (_) { /* */ }
+      await kick("check");
+      return { note: "다음 로그인 때 본인 휴대폰 확인 번호로 새 비밀번호를 정합니다" };
+    }
+    if (kind === "driver") {
+      const { data: d } = await sb.from("check_deliv_driver").select("id,tel").eq("id", arg).eq("tel", phone).maybeSingle();
+      if (!d) throw new Error("이 번호의 기사를 찾지 못했습니다");
+      const pw = tempPw(10);
+      const { error } = await sb.from("check_deliv_driver").update({ pw_hash: await chkPwHash(pw), token: null, must_change: true }).eq("id", d.id);
+      if (error) throw new Error("기사 표에 칸이 없습니다 (서버/sql/08 을 먼저 실행해 주세요)");
+      /* 임시 비밀번호는 그 기사 번호에 문자로만 — 응답·기록에 안 남김 */
+      await noticeSms(phone, "[차곳간체크] 임시 비밀번호 " + pw + " — 로그인하면 바로 새 비밀번호로 바꿔 주세요.");
+      return { note: "임시 비밀번호를 기사 휴대폰으로 보냈습니다", sent: true };
+    }
+    throw new Error("대상을 고르세요");
+  }
+  if (act === "grant" || act === "revoke") {
+    if (kind !== "wash" && kind !== "check") throw new Error("열고 닫을 수 있는 제품은 워시·체크뿐입니다");
+    const { data: ca } = await sb.from("cgg_access").select("products").eq("phone", phone).maybeSingle();
+    const list: string[] = ca && Array.isArray(ca.products) ? ca.products.map(String) : [];
+    if (act === "grant") {
+      if (!ca) {
+        if (!confirmed) {
+          const other = kind === "wash" ? "체크" : "워시";
+          return { confirm: true, why: "출입 명단에 처음 넣으면 " + other + " 는 막힙니다. 둘 다 쓰는 분이면 둘 다 열어 주세요." };
+        }
+        const { error } = await sb.from("cgg_access").insert({ phone, products: [kind], active: true, two_step: false, fail_count: 0 });
+        if (error) throw new Error("출입 명단에 넣지 못했습니다");
+        return {};
+      }
+      if (list.indexOf(kind) < 0) await sb.from("cgg_access").update({ products: list.concat([kind]) }).eq("phone", phone);
+      return {};
+    }
+    if (!ca) return {};
+    await sb.from("cgg_access").update({ products: list.filter((x) => x !== kind) }).eq("phone", phone);
+    await kick(kind === "wash" ? "wash" : "check");
+    return {};
+  }
+  void now;
+  throw new Error("동작을 고르세요");
 }
 
 /* ---------- 업체 열쇠 확인 (1분 동안 기억) ---------- */
@@ -786,10 +971,11 @@ async function payDone(shop: string, kind: string, full: number, useCash: number
       sms_used: 0, tax_used: 0, spare_used: 0, warn_at: null, stop_warn_at: null,
     }).eq("shop", shop);
     try {
-      await sb.from("wash_payments").insert({
-        shop, amount: full, status: "paid", paid_at: today, period,
-        memo: orderName + " · " + method + (useCash ? (" · 캐시 " + wonTxt2(useCash)) : ""),
-      });
+      const row: any = { shop, amount: full, status: "paid", paid_at: today, period,
+        memo: orderName + " · " + method + (useCash ? (" · 캐시 " + wonTxt2(useCash)) : "") };
+      /* sb12: 장부 줄에 주문번호 — 관리 결제 목록에서 카드 주문과 겹쳐 보이지 않게 (SQL 08 전이면 칸 없이) */
+      const { error: le } = await sb.from("wash_payments").insert(orderId ? Object.assign({ order_id: orderId, source: "card" }, row) : row);
+      if (le && orderId) await sb.from("wash_payments").insert(row);
     } catch (_) { /* */ }
   }
   /* sb5: 업체 대표에게 알림톡 (코드가 있을 때만 · 새 안내라 문자로는 보내지 않음) */
@@ -1112,7 +1298,8 @@ function lockMsg(st: any) {
 
 /* 잠금 중에도 쓸 수 있는 기능 — 보기 · 내려받기 · 결제만 열어 둡니다 */
 const LOCK_OK: Record<string, number> = {
-  apiVer: 1, ping: 1, apiStamp: 1, apiLoad: 1, shotLinks: 1,   // sb4: 잠긴 업체도 사진은 보기 driveText: 1, driveB64: 1, aiReady: 1,
+  apiVer: 1, ping: 1, apiStamp: 1, apiLoad: 1, shotLinks: 1,   // sb4: 잠긴 업체도 사진은 보기
+  driveText: 1, driveB64: 1, aiReady: 1,                       // sb12: sb4 주석에 묻혀 꺼져 있던 것 되살림 (보안 방 발견)
   payStart: 1, payConfirm: 1, billStart: 1, billIssue: 1, billInfo: 1, billOff: 1, payMine: 1, payDue: 1, cashInfo: 1, cashAsk: 1,
   pbCheck: 1, pbReady: 1, viewLink: 1, viewBill: 1, cancelSchedule: 1, lockInfo: 1, paidSay: 1, noticeList: 1, noticeHide: 1,
   inviteList: 1, userList: 1,
@@ -1262,8 +1449,9 @@ const ATA_TPL: Record<string, { name: string; vars: string[]; sms: string }> = {
 };
 /* sb10: 자동 결제 안내 (서버만 보냄 · 새 템플릿 초안 — 알림톡 방이 문안 다듬고 심사 뒤 코드 넣기. 코드 없으면 안 보냄) */
 Object.assign(ATA_TPL, {
+  /* 알림톡/02 새 G (알림톡 방) — #{카드} 는 카드사 이름만 */
   bill_on: { name: "차곳간_자동결제등록", vars: ["업체명", "카드", "다음결제일"],
-             sms: "[차곳간] #{업체명} 자동 결제 카드가 등록되었습니다(#{카드}). 다음 결제일 #{다음결제일}. 문의 010-9559-3663" },
+             sms: "[차곳간] #{업체명} 자동 결제 카드 등록(#{카드}). 다음 결제일 #{다음결제일}. 문의 010-9559-3663" },
   /* 알림톡/02 새 F (알림톡 방 초안 · 결제 방과 맞춘 변수) — D+5 마지막 실패에는 안 보냄 */
   bill_fail: { name: "차곳간_자동결제실패", vars: ["업체명", "결제일", "요금제", "금액", "사유", "다음시도일"],
              sms: "[차곳간] #{업체명} 이용요금 자동 결제 실패(#{사유}). 다음 시도 #{다음시도일}. 문의 010-9559-3663" },
@@ -1525,6 +1713,8 @@ function billSnap(v: any) {
     amount: num(v.amount), paid: num(v.paid), due: num(v.due),
     taxOn: !!v.taxOn, workText: txt(v.workText, 300),
     bank: txt(v.bank, 120), madeAt: new Date().toISOString(), rows,
+    /* sb12: 입금 기한 (YYYY-MM-DD 일 때만) — 딜러앱 myBills 가 보여 줌 */
+    dueDate: /^\d{4}-\d{2}-\d{2}$/.test(String(v.dueDate || "")) ? String(v.dueDate) : "",
   };
 }
 
@@ -2058,7 +2248,7 @@ const FN: Record<string, Fn> = {
       const { data: sh } = await sb.from("wash_shops").select("name,owner_phone,paid_until").eq("shop", s).maybeSingle();
       if (sh && sh.owner_phone)
         await noticeAta(String(sh.owner_phone), "bill_on", { 업체명: sh.name || s,
-          카드: (company || "카드") + (last4 ? " 끝 " + last4 : ""), 다음결제일: korDay(ymd10(sh.paid_until)) || "-" });
+          카드: company || "카드", 다음결제일: korDay(ymd10(sh.paid_until)) || "-" });   // sb12: 카드사 이름만 (잠금 화면에 보임)
     } catch (_) { /* */ }
     return { ok: true, cardCompany: company, last4 };
   },
@@ -2072,6 +2262,8 @@ const FN: Record<string, Fn> = {
     return { ok: true, open: on, on: !!(row && row.status === "on"),
       cardCompany: String((row && row.card_company) || ""), last4: String((row && row.card_last4) || ""),
       nextAt: row && row.status === "on" ? ymd10(sh && sh.paid_until) : "",
+      /* sb12: 실패 중이면 다음 자동 결제 시도일 (첫 실패일 + 1·3·5일) */
+      nextTry: billNextTry(row),
       failCount: Number((row && row.fail_count) || 0), lastFail: String((row && row.last_fail_msg) || "") };
   },
   /* 자동 결제 끄기 — 빌링키를 토스와 우리 쪽에서 지움. 이번 기간은 끝까지 사용 */
@@ -3027,6 +3219,9 @@ const OPEN: Record<string, (a: any[], ctx?: any) => Promise<unknown>> = {
      PG(결제사)가 붙기 전까지는 «준비 중»으로 돌려보냅니다.
      붙은 뒤에는 여기서 결제창 정보를 만들어 내려주면 됩니다. */
   payStart: async (a) => {
+    /* sb12: 로그인 전 결제는 하지 않아요 (총괄·결제 방 결정) — 가입(로그인) 먼저, 로그인한 결제 창구 payStart(["plan",0,0]) 로 */
+    if (env("OLD_JOIN_PAY", "") !== "1")
+      return { ok: true, ready: false, login: true, message: "가입(로그인)을 먼저 하신 뒤 결제해 주세요." };
     const phone = normPhone(a[0]);
     const bizName = String(a[1] || "").trim();
     const plan = String(a[2] || "");
@@ -4110,6 +4305,130 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
   },
 
   /* sb10: 자동 결제 켜기·끄기 스위치 (본사) — [true|false] */
+  /* ===== sb12: 관리 한곳에서 — 결제 결과 모으기 (설계 14 · 결제 방 03) ===== */
+  hqPayResults: async (shop, a, ss) => {
+    hqOnly(shop, ss);
+    const from = String(a[0] || "").slice(0, 10) || ymdAdd(kstYmd(), -90);
+    const to = String(a[1] || "").slice(0, 10) || kstYmd();
+    const want = String(a[2] || "");
+    const fromIso = from + "T00:00:00+09:00", toIso = ymdAdd(to, 1) + "T00:00:00+09:00";
+    const { data: shops } = await sb.from("wash_shops").select("shop,name");
+    const sn: Record<string, string> = {}; (shops || []).forEach((x: any) => (sn[x.shop] = x.name));
+    let offices: Record<string, string> = {};
+    try { const { data: of } = await sb.from("check_office").select("code,name"); (of || []).forEach((o: any) => (offices[o.code] = o.name)); }
+    catch (_) { offices = {}; }
+    const rows: any[] = [];
+    const { data: ords } = await sb.from("wash_pay_order")
+      .select("order_id,shop,kind,amount,use_cash,status,period,method,who,created_at,paid_at,canceled_at")
+      .gte("created_at", fromIso).lt("created_at", toIso).limit(3000);
+    const cardIds: Record<string, number> = {};
+    /* 첫 결제인지 연장인지 — 그 업체의 월 요금 결제 중 가장 이른 것이 첫 결제 */
+    const firstPlan: Record<string, string> = {};
+    try {
+      const { data: pp } = await sb.from("wash_pay_order").select("order_id,shop,paid_at").eq("kind", "plan").eq("status", "paid")
+        .order("paid_at", { ascending: true }).limit(20000);
+      (pp || []).forEach((o: any) => { if (!firstPlan[o.shop]) firstPlan[o.shop] = String(o.order_id); });
+    } catch (_) { /* */ }
+    (ords || []).forEach((o: any) => {
+      cardIds[String(o.order_id)] = 1;
+      const who = String(o.who || "");
+      let tag = "워시", from2 = "워시", office = "";
+      if (who === "billing") tag = "자동 결제";
+      else if (who.startsWith("check:")) { office = who.slice(6); tag = "체크 · " + (offices[office] || office); from2 = "체크"; }
+      else if (who.startsWith("join:")) { tag = "홈페이지"; from2 = "홈페이지"; }
+      rows.push({ tag, at: String(o.paid_at || o.created_at || ""), shop: o.shop, shopName: sn[o.shop] || o.shop,
+        kind: o.kind === "plan" ? "월 요금" : "캐시", method: String(o.method || "카드"), amount: Number(o.amount) || 0,
+        useCash: Number(o.use_cash) || 0, status: String(o.status || ""), period: String(o.period || ""),
+        orderId: String(o.order_id), from: from2, office,
+        first: o.kind === "plan" && o.status === "paid" ? firstPlan[o.shop] === String(o.order_id) : undefined });
+    });
+    const { data: led } = await sb.from("wash_payments").select("*").gte("created_at", fromIso).lt("created_at", toIso).limit(3000);
+    (led || []).forEach((p: any) => {
+      if (p.order_id && cardIds[String(p.order_id)]) return;               // 카드 주문 줄과 같은 건
+      const refund = String(p.status) === "refunded";
+      const homepage = !p.shop && !!p.phone;
+      rows.push({ tag: refund ? "환불" : homepage ? "홈페이지" : "계좌 입금", at: String(p.paid_at || p.created_at || ""),
+        shop: p.shop || "", shopName: sn[p.shop] || p.biz_name || "", kind: p.plan ? "월 요금" : "", method: String(p.method || (refund ? "카드 환불" : "계좌이체")),
+        amount: Number(p.amount) || 0, status: String(p.status || ""), period: String(p.period || ""),
+        orderId: String(p.order_id || p.id || ""), from: homepage ? "홈페이지" : "관리" });
+    });
+    /* 딜러 청구서 — 업체가 딜러에게 받는 돈(차곳간을 거치지 않음) → 상태와 참고 금액만 · 딜러 번호 없음 */
+    try {
+      const { data: vb } = await sb.from("wash_viewcode").select("shop,data,created_at,kind")
+        .eq("kind", "bill").gte("created_at", fromIso).lt("created_at", toIso).limit(3000);
+      (vb || []).forEach((v: any) => {
+        const b = v.data || {}; const amt = Math.round(Number(b.amount) || 0), paid = Math.round(Number(b.paid) || 0);
+        rows.push({ tag: "딜러 청구서", at: String(v.created_at || ""), shop: v.shop, shopName: sn[v.shop] || v.shop,
+          kind: "청구서", dealer: String(b.name || ""), month: String(b.month || ""), amount: amt, refOnly: true,
+          status: amt > 0 && paid >= amt ? "입금 확인됨" : "입금 전" });
+      });
+    } catch (_) { /* */ }
+    const list = rows.filter((r) => !want || r.tag === want || String(r.tag).startsWith(want))
+      .sort((x, y) => (String(y.at) > String(x.at) ? 1 : -1));
+    const sum = list.filter((r) => !r.refOnly && (r.status === "paid")).reduce((t, r) => t + (Number(r.amount) || 0), 0);
+    const refunds = list.filter((r) => r.tag === "환불").reduce((t, r) => t + (Number(r.amount) || 0), 0);
+    return { ok: true, from, to, list, sum, refunds };
+  },
+
+  /* ===== sb12: 관리 한곳에서 — 계정 (휴대폰 번호 11자리로만) ===== */
+  hqPerson: async (shop, a, ss) => {
+    hqOnly(shop, ss);
+    const phone = fullPhone(a[0]);
+    const p = await personOf(phone);
+    await hqAuditLog(ss, "view", phone, "", "ok");
+    return Object.assign({ ok: true, phone }, p);
+  },
+  hqPersonAct: async (shop, a, ss) => {
+    hqOnly(shop, ss);
+    const phone = fullPhone(a[0]);
+    const act = String(a[1] || ""), target = String(a[2] || "");
+    if (["stop", "resume", "pwReset", "unlock", "kick", "grant", "revoke"].indexOf(act) < 0) throw new Error("동작을 고르세요");
+    if (ss && digits(ss.phone) === phone) throw new Error("지금 로그인한 본인 번호는 여기서 바꿀 수 없습니다");
+    const { data: adm } = await sb.from("wash_users").select("shop").eq("phone", phone).eq("shop", "ADMIN").maybeSingle();
+    if (adm) throw new Error("본사 계정은 여기서 바꿀 수 없습니다");
+    /* 본사 한 명당 시간당 30번 — 넘으면 멈추고 대표님께 문자 한 번 */
+    const hour = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 13);
+    if (!await rateOk("hqact:" + digits(ss && ss.phone) + ":" + hour, Number(env("HQ_ACT_MAX_HOUR", "30")))) {
+      if (await rateOk("hqact-warn:" + digits(ss && ss.phone) + ":" + hour, 1)) {
+        try { const admin = (await hqCfg()).adminPhone; if (admin) await noticeSms(admin, "[차곳간] 관리 계정 바꾸기가 한 시간에 너무 많아 멈췄습니다 (" + digits(ss && ss.phone).slice(-4) + ")"); }
+        catch (_) { /* */ }
+      }
+      await hqAuditLog(ss, act, phone, target, "too many");
+      throw new Error("한 시간에 바꿀 수 있는 횟수를 넘었습니다. 잠시 뒤 다시 해 주세요");
+    }
+    let r: any;
+    try { r = await personAct(phone, act, target, a[3] === true); }
+    catch (e) { await hqAuditLog(ss, act, phone, target, "error: " + (e instanceof Error ? e.message : "").slice(0, 80)); throw e; }
+    await hqAuditLog(ss, act, phone, target, r.confirm ? "confirm" : "ok", r.note ? { note: r.note } : undefined);
+    if (!r.confirm) {
+      /* 바뀐 당사자에게 안내 (정보성) */
+      const what: Record<string, string> = { stop: "이용 멈춤", resume: "이용 다시 열기", pwReset: "비밀번호 초기화", unlock: "로그인 잠금 풀기",
+        kick: "접속 끊기", grant: "이용 권한 열기", revoke: "이용 권한 닫기" };
+      try { await noticeSms(phone, "[차곳간] 관리자가 회원님 계정의 «" + what[act] + "»을 처리했습니다. 본인이 요청하지 않았다면 010-9559-3663 으로 알려 주세요."); }
+      catch (_) { /* */ }
+    }
+    return Object.assign({ ok: true }, r);
+  },
+  /* 기록 보기 — 지우거나 고치는 창구는 없습니다 */
+  hqAudit: async (shop, a, ss) => {
+    hqOnly(shop, ss);
+    let q = sb.from("hq_audit").select("at,who,sid_tail,ip,ua,action,target_phone,product,result,detail").order("at", { ascending: false }).limit(300);
+    const ph = digits(String(a[0] || ""));
+    if (ph) q = q.eq("target_phone", ph);
+    const { data, error } = await q;
+    if (error) throw new Error("기록 표가 없습니다 (서버/sql/08 을 먼저 실행해 주세요)");
+    return { ok: true, list: data || [] };
+  },
+  /* 체크 첫 비밀번호 문자 확인이 운영 중인지 (체크 서버 v26 이상) — 켜져 있어야 체크 비밀번호 비우기가 됨 */
+  hqCheckPwSms: async (shop, a, ss) => {
+    hqOnly(shop, ss);
+    if (a[0] === undefined) return { ok: true, on: await checkPwSmsOn() };
+    const { error } = await sb.from("wash_hq").update({ check_first_pw_sms: !!a[0] }).eq("id", 1);
+    if (error) throw new Error("칸이 없습니다 (서버/sql/08 을 먼저 실행해 주세요)");
+    await hqAuditLog(ss, "checkPwSms", "", String(!!a[0]), "ok");
+    return { ok: true, on: !!a[0] };
+  },
+
   /* sb11: 체크 검사소 ↔ 워시 지갑 잇기 (본사) — [검사소코드, 업체코드 | ""(끊기)] */
   hqCheckWallet: async (shop, a, ss) => {
     hqOnly(shop, ss);
@@ -5259,6 +5578,12 @@ Deno.serve(async (req) => {
 
     // sb11: 체크 열쇠로 결제 창구 — 검사소에 이어 둔 워시 지갑으로만
     const tk = String(body.token || "");
+    if (tk.startsWith("chk_") && CHECK_VIEW[fn]) {
+      /* sb12: 체크 화면 잠금 안내·공지 — 검사소 사람 누구나. 지갑이 없으면 잠금은 «없음» */
+      const cv = await checkPaySs(tk, shop, false);
+      if (fn === "lockInfo" && !cv.wallet) return out({ result: { state: "ok", msg: "", notLinked: true } });
+      return out({ result: await FN[fn](cv.wallet, args, cv.ss) });
+    }
     if (tk.startsWith("chk_") && CHECK_PAY[fn]) {
       const cp = await checkPaySs(tk, shop);
       if (!cp.wallet) return out({ result: { ok: false, off: true, notLinked: true,
@@ -5267,7 +5592,8 @@ Deno.serve(async (req) => {
     }
 
     // 열쇠 확인 — 로그인해서 받은 임시 열쇠도 통합니다
-    const ss = await sessionOf(tk);
+    const ss: any = await sessionOf(tk);
+    if (ss) { ss.ip = ipOf(req); ss.ua = String(req.headers.get("user-agent") || "").slice(0, 200); }   // sb12: 관리 기록용
     if (ss) {
       if (ss.shop !== shop) throw new Error("다른 업체의 자료는 볼 수 없습니다");
       if (ss.shop !== "ADMIN") await needWash(ss.phone);     // sb2: 경비실 명단에서 워시를 빼면 바로 막힘

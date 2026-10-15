@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.2 (2026-10-15, 디자인 방)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.4 (2026-10-15, 디자인 방)
    ① 메뉴 배치 셋 (가로 · 세로 · 아이콘)  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)
    ⑤ 체험 모드 — 미리 써 보기(가입 전) · 체험판(결제 전) 띠 · 자물쇠 · 3번 표시 · 기능 카드 (1.2)
+   ⑥ 화면 일곱 칸 본문 — 화면 머리 · 버튼 · 숫자 카드 4개 · 데이터 카드(상태 탭 · 거르기 · 표 · 폰 목록 · 쪽) · 도움 카드 · 창 3종 · 알림 글 (1.3)
    + 한국어 낱말 단위 줄바꿈 (keep-all)
    바탕: 관리 v4.0 의 관리/v4재료/j4.css (값 그대로). 관리 전용 id(#app · #nav · #setSub · #main)를
          모든 제품이 붙일 수 있는 이름표(class)로 바꿨어요.
@@ -146,6 +147,115 @@
   .cgg-trial{flex-wrap:wrap;gap:8px 10px;padding:12px;border-radius:14px}
   .cgg-trial .tx{flex-basis:calc(100% - 70px)} .cgg-trial .go{width:100%;height:38px}
   .cgg-clsrow{flex-wrap:wrap;gap:8px 12px} .cgg-clsrow .nm{flex:1 1 calc(100% - 76px)} .cgg-clsrow button,.cgg-clsrow .st{margin-left:64px}
+}
+
+/* ═══════════ ⑥ 화면 일곱 칸 본문 (1.3) — J안 4판 값 그대로 ═══════════ */
+/* ② 화면 머리: 묶음 › 화면 + 말하는 제목 + 설명 한 줄 + 오른쪽 버튼 */
+.cgg-head{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 18px}
+.cgg-head .hello{min-width:0;flex:1 1 320px}
+.cgg-head .hello small{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.cgg-head .hello h1{margin:0;font-size:28px;font-weight:900;letter-spacing:-.8px;line-height:1.3;text-wrap:balance}
+.cgg-head .hello h1 em{font-style:normal;color:var(--blue)}
+.cgg-head .hello p{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.cgg-head .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+/* 버튼 — 높이 43 · 모서리 12 · 파란 버튼은 한 화면에 하나 */
+.cgg-btn{height:var(--ctl);padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--ln2);background:var(--surface);font:inherit;font-weight:700;font-size:14px;color:var(--btn-ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.cgg-btn:hover{border-color:var(--muted)}
+.cgg-btn.pri{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 6px 16px -8px #1668C4cc}
+.cgg-btn:disabled{opacity:.45;cursor:default}
+.cgg-btn svg.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cgg-card{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);margin:0 0 16px}
+/* ⑤ 숫자 카드 4개 — 큰 숫자 + 작은 그래프 + 지난주보다 */
+.cgg-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.cgg-kpi{position:relative;padding:18px 20px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);min-width:0}
+.cgg-kpi small{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding-right:80px}
+.cgg-kpi small i{width:10px;height:10px;border-radius:3px;flex:none}
+.cgg-kpi strong{display:block;font-size:30px;font-weight:900;letter-spacing:-.8px;margin-top:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cgg-kpi strong em{font-style:normal;font-size:14px;color:var(--muted);font-weight:700;margin-left:3px}
+.cgg-kpi .tr{font-size:12.5px;font-weight:700;color:var(--done);margin-top:4px;display:block} .cgg-kpi .tr.dn{color:var(--stop)} .cgg-kpi .tr span{color:var(--muted);font-weight:500}
+.cgg-kpi svg.sp{position:absolute;right:18px;top:18px;width:72px;height:26px}
+/* ⑥ 데이터 카드 — 상태 탭+개수 · 거르기 알약 · 검색 · 표(머리 40 · 줄 50) · 쪽 */
+.cgg-tabsH{display:flex;gap:2px;padding:4px 16px 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.cgg-tabsH button{border:0;background:transparent;font:inherit;font-size:14px;color:var(--muted);padding:13px 10px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.cgg-tabsH button b{margin-left:5px;font-size:12px;font-weight:700;color:var(--muted);background:var(--bg);border-radius:999px;padding:1px 8px}
+.cgg-tabsH button[aria-selected="true"]{color:var(--blue);border-bottom-color:var(--blue);font-weight:700}
+.cgg-tabsH button[aria-selected="true"] b{background:var(--tabon);color:var(--blue)}
+.cgg-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.cgg-fp{height:32px;border:1px dashed var(--ln2);border-radius:999px;padding:0 13px;font:inherit;font-size:13px;color:var(--btn-ink);background:var(--surface);cursor:pointer}
+.cgg-fp.on{border-style:solid;color:var(--blue);background:var(--tabon);font-weight:700}
+.cgg-filters .sp{flex:1}
+.cgg-find{height:36px;border:1px solid var(--ln2);border-radius:10px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;color:var(--muted);background:var(--surface)}
+.cgg-find input{border:0;font:inherit;font-size:13.5px;width:170px;background:transparent;color:var(--text);outline:0}
+.cgg-twrap{overflow-x:auto}
+.cgg-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;min-width:900px;table-layout:fixed}
+.cgg-table th{height:40px;padding:0 14px;text-align:left;font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap;cursor:pointer;user-select:none}
+.cgg-table td{height:50px;padding:0 14px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--surface)}
+.cgg-table tbody tr:hover td{background:var(--hov)}
+.cgg-table .n{text-align:right;font-variant-numeric:tabular-nums} .cgg-table .c{text-align:center}
+.cgg-table .fx0{position:sticky;left:0;z-index:1;text-align:center;width:56px}
+.cgg-table .fx1{position:sticky;left:56px;z-index:1;font-weight:700;box-shadow:6px 0 6px -6px #0B254522}
+.cgg-table .nm{border:0;background:transparent;font:inherit;font-weight:700;color:inherit;cursor:pointer;padding:0;text-align:left}
+.cgg-table .nm:hover{color:var(--blue);text-decoration:underline}
+.cgg-app input[type=checkbox],.cgg-dlg input[type=checkbox]{appearance:none;-webkit-appearance:none;margin:0;width:20px;height:20px;border:1.5px solid var(--ln2);border-radius:6px;background:var(--surface);display:inline-grid;place-content:center;cursor:pointer;vertical-align:middle}
+.cgg-app input[type=checkbox]::after,.cgg-dlg input[type=checkbox]::after{content:"";width:10px;height:6px;border:2.2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.cgg-app input[type=checkbox]:checked,.cgg-dlg input[type=checkbox]:checked{background:var(--blue);border-color:var(--blue)}
+.cgg-app input[type=checkbox]:checked::after,.cgg-dlg input[type=checkbox]:checked::after{opacity:1}
+/* 상태 칩 4가지 (진행 중 · 완료 · 확인 필요 · 보류) */
+.cgg-st{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:6px;font-size:12px;font-weight:700;white-space:nowrap}
+.cgg-st.run{background:var(--run-bg);color:var(--run)} .cgg-st.done{background:var(--done-bg);color:var(--done)} .cgg-st.chk{background:var(--chk-bg);color:var(--chk)} .cgg-st.stop{background:var(--stop-bg);color:var(--stop)}
+.cgg-pager{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.cgg-pager .sp{flex:1} .cgg-pager .cgg-btn{height:34px;padding:0 12px;font-size:13px}
+.cgg-pager select,.cgg-mhead select{height:34px;border:1px solid var(--ln2);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;padding:0 10px}
+.cgg-empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:14px}
+/* 줄 버튼 (1.4) — 표 맨 오른쪽 «할 일» 칸. 작은 흰 버튼, 한 줄에 둘까지. 파란 버튼은 줄 안에 쓰지 않아요 */
+.cgg-btn.sm{height:32px;padding:0 10px;font-size:12.5px;border-radius:9px}
+.cgg-btn.danger{color:var(--stop)}
+.cgg-acts-cell{white-space:nowrap} .cgg-acts-cell .cgg-btn+.cgg-btn{margin-left:4px}
+.cgg-mlist{display:none}
+/* ⑦ 도움 카드 (접힘) */
+.cgg-help{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:0 20px;margin:0 0 16px}
+.cgg-help summary{height:50px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
+.cgg-help p{margin:0 0 16px;font-size:14px;color:var(--muted);line-height:1.7}
+/* 창 3종 — 확인 400 · 입력 560 · 자세히 520(오른쪽) · 폰은 아래에서 올라옴 */
+.cgg-dim{position:fixed;inset:0;z-index:var(--z-dialog);background:#0B254573;display:grid;place-items:center;padding:16px}
+.cgg-dim[hidden]{display:none}
+.cgg-dlg{box-sizing:border-box;background:var(--surface);color:var(--text);border-radius:22px;width:min(400px,100%);padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 60px #0B254559;max-height:calc(100vh - 32px);overflow:auto;word-break:keep-all}
+.cgg-dlg.form{width:min(560px,100%)}
+.cgg-dim.side{place-items:stretch end;padding:0}
+.cgg-dlg.detail{width:min(520px,100%);height:100%;max-height:none;border-radius:22px 0 0 22px}
+.cgg-dlg h3{margin:0;font-size:18px;font-weight:900;letter-spacing:-.3px}
+.cgg-dlg .desc{margin:-8px 0 0;font-size:13.5px;color:var(--muted)}
+.cgg-dlg dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:10px 16px;font-size:14.5px;background:var(--bg);border-radius:14px;padding:16px 18px}
+.cgg-dlg dt{color:var(--muted)} .cgg-dlg dd{margin:0;font-weight:800;font-variant-numeric:tabular-nums}
+.cgg-dlg .ft{display:flex;gap:8px;justify-content:flex-end;margin-top:auto}
+.cgg-dlg .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cgg-dlg label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
+.cgg-dlg input:not([type=checkbox]),.cgg-dlg select,.cgg-dlg textarea{height:var(--ctl);border:1px solid var(--ln2);border-radius:12px;padding:0 12px;font:inherit;font-size:14.5px;background:var(--surface);color:var(--text)}
+.cgg-dlg .x{position:absolute;right:14px;top:14px}
+/* 알림 글 (토스트) */
+.cgg-toastbox{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:var(--z-toast);background:var(--navy);color:#fff;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:700;box-shadow:0 12px 30px #0B254540;max-width:calc(100vw - 32px)}
+.cgg-toastbox[hidden]{display:none}
+@media (max-width:1100px){ .cgg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:600px){
+  .cgg-head{margin-bottom:12px;gap:10px} .cgg-head .hello h1{font-size:19px;letter-spacing:-.5px;line-height:1.35} .cgg-head .hello p{font-size:12.5px;margin-top:3px} .cgg-head .hello small{font-size:11.5px;margin-bottom:3px}
+  .cgg-head .acts{margin-left:0;width:100%;gap:6px;flex-wrap:nowrap} .cgg-head .acts .cgg-btn{flex:1;height:38px;padding:0 8px;font-size:12.5px;border-radius:10px;min-width:0} .cgg-head .acts .cgg-btn svg{display:none}
+  .cgg-btn{height:38px;font-size:13px}
+  .cgg-card,.cgg-help{border-radius:14px;margin-bottom:10px}
+  .cgg-kpis{gap:8px;margin-bottom:10px} .cgg-kpi{padding:11px 12px;border-radius:14px} .cgg-kpi small{font-size:11.5px;gap:6px;padding-right:46px} .cgg-kpi strong{font-size:19px;margin-top:4px;letter-spacing:-.4px} .cgg-kpi strong em{font-size:11.5px} .cgg-kpi .tr{font-size:11px;margin-top:1px} .cgg-kpi svg.sp{width:44px;height:16px;right:10px;top:12px}
+  .cgg-tabsH{padding:0 8px} .cgg-tabsH button{font-size:13px;padding:10px 7px} .cgg-tabsH button b{font-size:11px;padding:0 6px;margin-left:3px}
+  .cgg-filters{padding:8px 10px;gap:6px} .cgg-fp{height:28px;font-size:12px;padding:0 10px} .cgg-filters .sp{display:none} .cgg-find{order:-1;width:100%} .cgg-find input{width:100%}
+  .cgg-twrap{display:none} .cgg-mlist{display:block}
+  .cgg-mhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)} .cgg-mhead select{margin-left:auto;height:30px;font-size:12.5px}
+  .cgg-mrow{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
+  .cgg-mrow .t{min-width:0} .cgg-mrow .t b{font-size:13.5px} .cgg-mrow .t b span{font-weight:500;color:var(--muted);font-size:12.5px;margin-left:6px}
+  .cgg-mrow .t small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cgg-mrow .r{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px} .cgg-mrow .ra{grid-column:2 / -1;display:flex;gap:6px;justify-content:flex-end} .cgg-mrow .ra .cgg-btn.sm{height:30px} .cgg-mrow .r b{font-size:13.5px;font-variant-numeric:tabular-nums} .cgg-mrow .cgg-st{height:20px;font-size:11px;padding:0 7px}
+  .cgg-pager{padding:8px 12px;font-size:12px;gap:6px} .cgg-pager .cgg-btn{height:30px;padding:0 10px;font-size:12px;border-radius:8px}
+  .cgg-help{padding:0 14px} .cgg-help summary{height:42px;font-size:13px} .cgg-help p{font-size:13px;margin-bottom:12px}
+  .cgg-dim,.cgg-dim.side{place-items:end stretch;padding:0}
+  .cgg-dlg,.cgg-dlg.form,.cgg-dlg.detail{width:100%;height:auto;max-height:88vh;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+  .cgg-dlg h3{font-size:17px} .cgg-dlg .fg{grid-template-columns:1fr} .cgg-dlg .cgg-btn{height:42px;flex:1}
+  .cgg-toastbox{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 }
 
 /* ───────── 화면 설정 — 메뉴 배치 고르기 ───────── */

@@ -121,7 +121,7 @@ FAKE = r'''<script>
       return new Promise(function(res){ setTimeout(function(){
         res(new Response(JSON.stringify(out), {status:200, headers:{"Content-Type":"application/json"}})); }, 60); });
     }
-    if(/^https?:/i.test(u) && u.indexOf(location.host) < 0) return Promise.reject(new TypeError("미리보기: 바깥 연결 안 함"));
+    if(/^https?:/i.test(u) && (!location.host || u.indexOf(location.host) < 0)) return Promise.reject(new TypeError("미리보기: 바깥 연결 안 함"));
     return realFetch ? realFetch(url, opt) : Promise.reject(new TypeError("no fetch"));
   };
 })();
@@ -134,5 +134,18 @@ import re
 s = re.sub(r"<title>[^<]*</title>", "<title>체크 %s 미리보기</title>" % VER, s, count=1)
 k = s.index("<body>") + len("<body>")
 s = s[:k] + '\n<div style="position:sticky;top:0;z-index:100000;background:#FFF2DD;color:#7A4A00;font:600 12.5px/1.5 \'Noto Sans KR\',sans-serif;padding:6px 14px;text-align:center">미리보기 — 지어낸 자료예요. 실제 서버에 연결하지 않고, 저장해도 이 창 안에서만 바뀌어요.</div>' + s[k:]
+# 공통 부품 1.2 가 있으면 «미리 써 보기» 띠(CGG.trial)를 본문 맨 위에 — 디자인/02 연출 기준
+TRIAL = """
+<script>
+(function(){ function put(){ try{
+  if(!window.CGG || !CGG.trial) return; var m=document.querySelector(".cgg-main"); if(!m || m.querySelector(".cgg-trial")) return;
+  CGG.trial.init("preview"); var d=document.createElement("div"); d.innerHTML=CGG.trial.band({title:"예시 검사소 자료로 체크의 모든 화면을 둘러보고 있어요."});
+  m.insertBefore(d.firstChild, m.firstChild);
+  var go=m.querySelector("[data-cgg-cta]"); if(go) go.onclick=function(){ try{ (window.top||window).postMessage({cgg:"start"},"*"); }catch(e){} };
+}catch(e){} } setTimeout(put, 900); })();
+</script>
+"""
+k = s.rindex("</body>")
+s = s[:k] + TRIAL + s[k:]
 open(OUT, "w", encoding="utf-8").write(s)
 print("OK", OUT, len(s))

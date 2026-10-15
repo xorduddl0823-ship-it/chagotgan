@@ -1,0 +1,183 @@
+/* ═══════ J안 4판 덮개 — 관리 v4.3 (2026-10-15) · 공통 부품 cgg-j4 1.3 위에 관리만 있는 것 ═══════
+   디자인 서랍 08_차곳간_합친디자인_J.html 의 값을 그대로 씁니다. (기준서 2장)
+   이 블록이 맨 마지막에 있어서 앞의 UI 1.1 값을 덮어씁니다.
+   틀: #app.lay-top(가로 메뉴) · lay-side(세로 메뉴) · lay-icon(아이콘 메뉴) — 셋 다 남색 틀, 본문은 똑같음
+   폰(600px 이하): 배치와 상관없이 남색 윗줄 48 + 아래 탭바 56 */
+:root{
+  --blue:#1668C4; --navy:#0B2545; --sky:#8FC9F2;
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface2:#F7F9FC; --text:#101828; --muted:#667085;
+  --line:#EAECF0; --ln2:#E3E8EE; --hov:#F7F9FC; --tabon:#E8F1FC;
+  --brand:#1668C4; --brand-soft:#E8F1FC; --accent:#0B2545;
+  --run:#1668C4; --run-bg:#E6F0FB; --done:#1E9E5A; --done-bg:#E4F5EC;
+  --chk:#B26B00; --chk-bg:#FFF2DD; --stop:#D64545; --stop-bg:#FDE8E8;
+  --good:#1E9E5A; --good-soft:#E4F5EC; --warn:#B26B00; --warn-soft:#FFF2DD; --danger:#D64545; --danger-soft:#FDE8E8;
+  --btn-ink:#344054; --r:18px; --r-card:18px; --r-ctl:12px; --ctl:43px;
+  --shadow:0 1px 2px #1018280d,0 12px 32px -20px #0B254540; --sh:var(--shadow);
+  font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;
+  --hov:#1d2733;--tabon:#102B47;--brand:#5FA8E8;--brand-soft:#102B47;--blue:#5FA8E8;
+  --run:#5FA8E8;--run-bg:#102B47;--done:#4ad48f;--done-bg:#12312a;--chk:#f0a95e;--chk-bg:#332412;--stop:#ff8b82;--stop-bg:#331614;
+  --good:#4ad48f;--good-soft:#12312a;--warn:#f0a95e;--warn-soft:#332412;--danger:#ff8b82;--danger-soft:#331614;
+  --shadow:0 2px 10px rgba(0,0,0,.4);--btn-ink:#d0d8e2;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;
+  --hov:#1d2733;--tabon:#102B47;--brand:#5FA8E8;--brand-soft:#102B47;--blue:#5FA8E8;
+  --run:#5FA8E8;--run-bg:#102B47;--done:#4ad48f;--done-bg:#12312a;--chk:#f0a95e;--chk-bg:#332412;--stop:#ff8b82;--stop-bg:#331614;
+  --good:#4ad48f;--good-soft:#12312a;--warn:#f0a95e;--warn-soft:#332412;--danger:#ff8b82;--danger-soft:#331614;
+  --shadow:0 2px 10px rgba(0,0,0,.4);--btn-ink:#d0d8e2;color-scheme:dark}
+body{background:var(--bg);color:var(--text);font-size:15px}
+svg.ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+
+/* ───────── 머리말 — 관리만 있는 것 (틀 · 메뉴 · 배치 · 탭바 · 할 일 카드 · 사람 단추 ▾는 공통 부품 cgg-j4 1.2) ───────── */
+.cgg-hdr{color:#fff}
+.j-ci{font-size:15px}
+.jh-brand b{display:flex;align-items:center;gap:6px;color:#fff}
+.jh-prod{height:24px;padding:0 9px;border-radius:999px;border:1px solid #ffffff40;background:#ffffff1a;color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center}
+.jh-brand small #hVer{display:inline;font-size:inherit;opacity:1;max-width:none}
+#hBiz.jh-biz{color:#fff;max-width:none}
+#hBiz.jh-biz b{font-weight:700;color:inherit;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hBiz.jh-biz small{display:block;font-size:12px;opacity:.7}
+.jhb{height:32px;padding:0 11px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.jhb:hover{background:#ffffff22}
+.jhb svg.ic{width:15px;height:15px}
+.jh-me{height:38px;padding:0 12px 0 6px;border-radius:999px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;cursor:pointer;position:relative;text-align:left;line-height:1.2}
+.jh-me b{display:block;font-size:13px;font-weight:700}
+.jh-me small{display:block;opacity:.7;font-size:11px}
+.j-av{width:28px;height:28px;border-radius:50%;background:var(--sky);color:var(--navy);display:grid;place-items:center;font-weight:900;font-size:12px;flex:none}
+.jh-me .car{opacity:.8;font-size:11px}
+.cgg-nav button{min-width:0;box-shadow:none}
+.cgg-sub{background:var(--bg)}
+.cgg-sub[hidden]{display:none}
+.cgg-sub button{min-width:0;font-weight:500;box-shadow:none}
+.cgg-sub button[aria-selected="true"]{font-weight:700}
+.cgg-act .ar{color:#98A2B3}
+@media (min-width:1000px){
+  .lay-side .jhb,.lay-icon .jhb{height:40px;border-radius:12px;border:1px solid var(--ln2);background:var(--surface);color:var(--btn-ink);font-size:13px}
+  .lay-side .jh-me,.lay-icon .jh-me{border-color:var(--ln2);background:var(--surface);color:var(--text)}
+  .lay-side #hBiz.jh-biz{color:#ffffffb3}
+  .lay-side #hBiz.jh-biz b{color:#fff;font-size:13.5px;white-space:normal}
+  .lay-icon #hBiz.jh-biz{color:var(--text)}
+  .lay-icon #hBiz.jh-biz b{color:var(--text);font-size:15px}
+  .lay-icon #hBiz.jh-biz small{color:var(--muted);opacity:1}
+}
+
+/* ───────── 본문 머리 (② 묶음 › 제목 + 설명) ───────── */
+.jcrumb{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.dashhead{margin:0 0 18px}
+.dashhead h2{font-size:28px;font-weight:900;letter-spacing:-.8px;line-height:1.3;text-wrap:balance}
+.dashhead .sub2,.sub2{font-size:14px;color:var(--muted);margin-top:6px}
+.dashhead h2 em,.jtalk em{font-style:normal;color:var(--blue)}
+
+/* ───────── 카드 · 숫자 칸 ───────── */
+.card{background:var(--surface);border:0;border-radius:var(--r-card);box-shadow:var(--sh);padding:20px 22px;margin-bottom:16px}
+.card h2,.card h3{font-size:16px;font-weight:900}
+.sums{gap:12px;margin-bottom:16px}
+.sum{background:var(--surface);border:0;border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px;text-align:left}
+.sum span{font-size:13px;color:var(--muted);font-weight:500}
+.sum b{display:block;font-size:26px;font-weight:900;letter-spacing:-.6px;margin-top:6px;font-variant-numeric:tabular-nums}
+
+/* ───────── 버튼 · 입력 칸 (높이 43, 모서리 12) ───────── */
+button.btn{height:var(--ctl);padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--ln2);background:var(--surface);font-size:14px;font-weight:700;color:var(--btn-ink);display:inline-flex;align-items:center;justify-content:center;gap:6px}
+button.btn:hover{border-color:#C9D2DC}
+button.btn.pri,button.btn.primary,button.btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 6px 16px -8px #1668C4cc}
+input[type=text],input[type=tel],input[type=number],input[type=password],input[type=date],select,textarea{border-radius:var(--r-ctl);border-color:var(--ln2);background:var(--surface)}
+.tools > input[type=date],.tools > input[type=text],.tools > select,.tools > button.btn,.tools > label.chip{height:var(--ctl)}
+.mini{border-radius:10px;border-color:var(--ln2)}
+
+/* ───────── 표 (머리 40 · 줄 50 · 가로선만 · 선택 네모 20) ───────── */
+.tablebox{border:0;border-radius:var(--r-card);box-shadow:var(--sh);background:var(--surface)}
+.tablebox table{font-size:14px}
+.tablebox th,.tablebox td{padding:0 14px;border-bottom:1px solid #F0F2F5}
+.tablebox thead th{height:40px;background:var(--surface);font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line)}
+.tablebox td{height:50px}
+.tablebox tbody tr:hover td{background:var(--hov)}
+.tablebox thead th.c-name,.tablebox thead th.c-chk{background:var(--surface)}
+.tablebox th.c-chk,.tablebox td.c-chk{width:56px}
+.tablebox td.c-name{font-weight:700;box-shadow:6px 0 6px -6px #0B254522}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;margin:0;width:20px;height:20px;border:1.5px solid #C5CED8;border-radius:6px;
+  background:#fff;display:inline-grid;place-content:center;cursor:pointer;vertical-align:middle;color-scheme:light}
+input[type=checkbox]::after{content:"";width:10px;height:6px;border:2.2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--blue);border-color:var(--blue)}
+input[type=checkbox]:checked::after{opacity:1}
+.tablebox input[type=checkbox]{width:20px;height:20px}
+.pager .btn{height:34px;padding:0 12px;font-size:13px}
+
+/* ───────── 상태 표시 (진행 중 · 완료 · 확인 필요 · 보류) ───────── */
+.pill{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:6px;font-size:12px;font-weight:700}
+.pill.run{background:var(--run-bg);color:var(--run)}
+.pill.ok{background:var(--done-bg);color:var(--done)}
+.pill.wait{background:var(--chk-bg);color:var(--chk)}
+.pill.off{background:var(--stop-bg);color:var(--stop)}
+
+.j-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.j-kpi{position:relative;padding:18px 20px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);min-width:0}
+.j-kpi small{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.j-kpi small i{width:10px;height:10px;border-radius:3px}
+.j-kpi strong{display:block;font-size:30px;font-weight:900;letter-spacing:-.8px;margin-top:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.j-kpi strong em{font-style:normal;font-size:14px;color:var(--muted);font-weight:700;margin-left:3px}
+.j-kpi .tr{font-size:12.5px;font-weight:500;color:var(--muted);margin-top:4px;display:block}
+.j-kpi .tr.bad{color:var(--stop);font-weight:700}
+@media (max-width:1100px){ .j-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+/* 도움 카드 (⑦ 이 화면 사용법) */
+.j-help{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:0 20px;margin-top:16px}
+.j-help summary{height:50px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
+.j-help p{margin:0 0 16px;font-size:14px;color:var(--muted);line-height:1.7}
+
+/* 창 (확인 400 · 입력 560) */
+.askbox{border-radius:var(--r-card);max-width:400px}
+.sheet{border-radius:var(--r-card) var(--r-card) 0 0}
+@media (min-width:700px){ .sheet{max-width:560px;border-radius:var(--r-card)} }
+
+
+/* ───────── 폰 (600px 이하) — 관리 본문 ───────── */
+@media (max-width:600px){
+  body{font-size:13.5px}
+  .jh-prod{height:22px;font-size:11px;padding:0 8px}
+  #btnReload{height:28px;padding:0 9px;font-size:12px;border-radius:8px}
+  #btnReload .lbl{display:none}
+  .jh-me{height:30px;padding:0;border:0;background:transparent}
+  .jh-me .wt,.jh-me .car{display:none}
+  .dashhead h2{font-size:19px;letter-spacing:-.5px;line-height:1.35}
+  .dashhead .sub2{font-size:12.5px;margin-top:3px}
+  .jcrumb{font-size:11.5px;margin-bottom:3px}
+  .card{border-radius:14px;padding:14px 14px;margin-bottom:10px}
+  .sums{gap:8px;margin-bottom:10px}
+  .sum{border-radius:14px;padding:11px 12px}
+  .sum span{font-size:11.5px}
+  .sum b{font-size:19px;margin-top:4px}
+  button.btn{height:38px;font-size:13px;padding:0 12px}
+  .tools > input[type=date],.tools > input[type=text],.tools > select,.tools > button.btn,.tools > label.chip{height:38px}
+  .tablebox{border-radius:14px}
+  .j-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  .j-kpi{padding:11px 12px;border-radius:14px}
+  .j-kpi small{font-size:11.5px;gap:6px}
+  .j-kpi strong{font-size:19px;margin-top:4px;letter-spacing:-.4px}
+  .j-kpi strong em{font-size:11.5px}
+  .j-kpi .tr{font-size:11px;margin-top:1px}
+  .askbox{max-width:calc(100vw - 24px)}
+}
+
+/* 「전체 메뉴」 창 (폰 아래 탭바 «전체») */
+.j-allm{display:grid;gap:14px}
+.j-allm h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700}
+.j-allm .row{display:flex;flex-wrap:wrap;gap:6px}
+.j-allm .row button{height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--ln2);background:var(--surface);font:inherit;font-size:13.5px;color:var(--text);cursor:pointer}
+.j-allm .row button.on{background:var(--tabon);color:var(--blue);border-color:transparent;font-weight:700}
+
+/* ═══ 공통 부품 1.3 에 맞춘 관리 몫 ═══ */
+/* 창 · 묻는 창 · 알림 글 — 층은 이름(--z-…)만 써요 */
+.sheetbg,.sheet{z-index:var(--z-dialog)}
+.sheet{border-radius:22px 22px 0 0}
+@media (min-width:700px){ .sheet{border-radius:22px} }
+.sheetx svg.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.cgg-dlg .jask{white-space:pre-wrap;font-size:14.5px;line-height:1.6;color:var(--text);margin:-4px 0 0}
+.cgg-dlg .cgg-btn.pri.danger{background:var(--stop);border-color:var(--stop);box-shadow:none}
+.cgg-toastbox.bad{background:var(--stop)}
+/* 글 속 작은 선 아이콘 (예전 그림 문자 자리) */
+.jic{display:inline-flex;vertical-align:-2px} .jic svg.ic{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* 화면 머리 — 관리 제목은 h2 · 설명은 .sub2 로 남겨 두고 공통 칸 안에 넣어요 */
+.dashhead.cgg-head .hello h2{margin:0}
+.dashhead.cgg-head .acts .btn{white-space:nowrap}

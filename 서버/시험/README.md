@@ -141,3 +141,20 @@ deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시
 ```
 
 - 21개 (2026-10-15 전부 통과 · sb10 이면 14개 실패) — 체크 대표만 · 이어 둔 지갑만 · 다른 창구 못 부름 · 워시 카드 payStart 가려짐 고침
+
+관리 한곳에서 (워시 sb12) · 기사 임시 비밀번호 (체크 v30):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/관리_통합_시험.ts
+deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/시험/체크v30_기사임시비번_시험.ts
+```
+
+- 46개 · 7개 (2026-10-15 전부 통과 · sb11 / v29 면 실패)
+
+홈페이지 첫 결제 (워시 sb13):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/홈페이지_첫결제_시험.ts
+```
+
+- 51개 (2026-10-15 전부 통과 · sb12 면 실패) — 결제 대기 · 체험판 예시 칸 · 3번/AI 3번 · 바꿔치기 막기 · 결제 대기 목록 · 돌아 들어오는 길
