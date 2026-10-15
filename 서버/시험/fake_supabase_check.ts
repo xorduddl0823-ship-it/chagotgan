@@ -8,9 +8,9 @@ export const store: Record<string, Row[]> = g.__DB;
 
 class Q {
   op = "select"; payload: any = null; filters: ((r: Row) => boolean)[] = [];
-  one = false; lim = 0; cols = "*"; conflict = ""; ord = "";
+  one = false; lim = 0; cols = "*"; conflict = ""; ord = ""; ret = false;
   constructor(public t: string) {}
-  select(c = "*") { if (this.op === "select") this.cols = c; return this; }
+  select(c = "*") { if (this.op === "select") this.cols = c; else this.ret = true; return this; }
   insert(p: any) { this.op = "insert"; this.payload = p; return this; }
   upsert(p: any, o: { onConflict?: string } = {}) { this.op = "upsert"; this.payload = p; this.conflict = o.onConflict ?? "id"; return this; }
   update(p: any) { this.op = "update"; this.payload = p; return this; }
@@ -19,6 +19,9 @@ class Q {
   is(k: string, v: any) { this.filters.push((r) => (r[k] ?? null) === v); return this; }
   in(k: string, v: any[]) { this.filters.push((r) => v.includes(r[k])); return this; }
   gt(k: string, v: any) { this.filters.push((r) => r[k] > v); return this; }
+  gte(k: string, v: any) { this.filters.push((r) => r[k] >= v); return this; }
+  lte(k: string, v: any) { this.filters.push((r) => r[k] <= v); return this; }
+  neq(k: string, v: any) { this.filters.push((r) => r[k] !== v); return this; }
   order(k: string) { this.ord = k; return this; }
   limit(n: number) { this.lim = n; return this; }
   maybeSingle() { this.one = true; return this; }
@@ -29,8 +32,10 @@ class Q {
     if (!tbl) return { data: null, error: { message: `relation "${this.t}" does not exist` } };
     const hit = tbl.filter((r) => this.filters.every((f) => f(r)));
     if (this.op === "insert") {
-      for (const p of [].concat(this.payload)) tbl.push({ ...p });
-      return { data: null, error: null };
+      /* insert().select() 이면 번호(id)를 붙여 돌려줌 (알림톡 체크 시험 · 도착 등록) */
+      const got: Row[] = [];
+      for (const p of [].concat(this.payload) as Row[]) { const r = this.ret ? { id: crypto.randomUUID(), ...p } : { ...p }; tbl.push(r); got.push({ ...r }); }
+      return { data: this.ret ? (this.one ? got[0] : got) : null, error: null };
     }
     if (this.op === "upsert") {
       const keys = this.conflict.split(",").map((k) => k.trim());

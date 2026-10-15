@@ -30,7 +30,7 @@ const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const db = createClient(SUPA_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   { auth: { persistSession: false } });
 
-const VER = "cgg-api v1.3 · 2026-10-15 (워시와 확인하는 열쇠를 전용 비밀값으로)";
+const VER = "cgg-api v1.4 · 2026-10-15 (확인 번호 알림톡 먼저)";
 const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
 const WASH_API = () => SUPA_URL + "/functions/v1/wash-api";
 const DAYS = 14;                 // 로그인 유지 기간 (체크와 같음)
@@ -165,9 +165,28 @@ async function solapiAuth() {
   const sig = b2hex(new Uint8Array(await crypto.subtle.sign("HMAC", k, te.encode(date + salt))));
   return `HMAC-SHA256 apiKey=${key}, date=${date}, salt=${salt}, signature=${sig}`;
 }
+/* v1.4 규칙 5-6: 확인 번호는 알림톡 먼저 (차곳간_인증번호 · 코드는 관제센터 설정 wash_hq.ata_cfg.tpl.auth), 안 되면 문자.
+   보내는 번호는 CGG_SMS_FROM → 없으면 SMS_FROM (워시와 같은 대표번호) */
 async function sendCode(to: string, code: string) {
-  const from = digits(Deno.env.get("CGG_SMS_FROM"));
+  const from = digits(Deno.env.get("CGG_SMS_FROM")) || digits(Deno.env.get("SMS_FROM"));
   if (!from) throw new Error("문자 보내는 번호(CGG_SMS_FROM)가 서버에 없습니다.");
+  let c: any = {};
+  try { const { data } = await db.from("wash_hq").select("ata_cfg").eq("id", 1).maybeSingle(); c = (data && data.ata_cfg) || {}; }
+  catch (_) { /* 칸이 없으면 문자 */ }
+  const pf = S(c.pfId) || S(Deno.env.get("PF_ID")), tpl = S(c.tpl && c.tpl.auth);
+  if (pf && tpl) {
+    try {
+      const r = await fetch("https://api.solapi.com/messages/v4/send-many/detail", {
+        method: "POST", headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ to, from, text: `[차곳간] 인증번호 ${code} (5분 안에 입력)`,
+          kakaoOptions: { pfId: pf, templateId: tpl, disableSms: false,
+            variables: { "#{인증번호}": code, "#{유효시간}": "5" } } }] }),
+      });
+      const j: any = await r.json().catch(() => ({}));
+      if (r.status < 300 && !((j && j.failedMessageList) || []).length) return;
+      console.error("cgg ata failed", r.status, JSON.stringify(((j && j.failedMessageList) || [])[0] || {}).slice(0, 200));
+    } catch (e) { console.error("cgg ata", e); }
+  }
   const res = await fetch("https://api.solapi.com/messages/v4/send-many/detail", {
     method: "POST", headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
     body: JSON.stringify({ messages: [{ to, from, type: "SMS", text: `[차곳간] 확인 번호 ${code} (5분 안에 넣어 주세요)` }] }),

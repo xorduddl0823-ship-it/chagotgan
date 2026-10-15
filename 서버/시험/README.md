@@ -88,10 +88,22 @@ deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/�
 
 - 워시 10개 (sb3 면 8개 실패) · 딜러 4개 (d3 면 3개 실패) — 2026-10-15 전부 통과
 
-알림톡 전환 시험 (워시 sb6 noticeAta · 확정본 변수):
+알림톡 전환 시험 (워시 sb7 noticeAta · 확정본 변수 · 가짜 링크 막기):
 
 ```
 deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/알림톡_워시_시험.ts
 ```
 
 - `알림톡_워시_시험.ts` — 시험 26개 (2026-10-15 전부 통과 · 워시 sb7 · sb6 으로 돌리면 22개 실패)
+
+알림톡 먼저 시험 (체크 v29 차량 도착·첫 비밀번호 / 딜러 d5 인증번호 / 경비실 v1.4 확인 번호):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/시험/알림톡_체크_시험.ts
+deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/시험/알림톡_딜러_시험.ts
+deno run -A --no-lock --import-map=서버/시험/import_map.json 서버/시험/알림톡_경비실_시험.ts
+```
+
+- 체크 30개 (v28 이면 19개 실패) · 딜러 15개 (d4 면 11개 실패) · 경비실 17개 (v1.3 이면 13개 실패) — 2026-10-15 전부 통과
+- `fake_supabase_check.ts` 에 `insert().select()` 가 번호(id)를 붙여 돌려주는 것 · gte/lte/neq 를 더함 (예전 체크 시험 그대로 통과)
+- 워시 알림톡 시험은 sb7 의 키 14개(13 + check_arrive)로 맞춤

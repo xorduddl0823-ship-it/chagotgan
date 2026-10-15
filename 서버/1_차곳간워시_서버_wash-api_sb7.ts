@@ -991,9 +991,10 @@ const ATA_TPL: Record<string, { name: string; vars: string[]; sms: string }> = {
   deposit_ok: { name: "차곳간_입금확인", vars: ["받는곳", "금액", "업체명", "확인일시", "기간", "업체전화"],
              sms: "[차곳간] #{금액}원 입금 확인되었습니다. 감사합니다.\n#{업체명} #{업체전화}" },
 };
-/* 관리 화면(v4.1)이 저장하는 13개 키 — 반려 5개(expire_soon·use_limit·login_block·data_keep·balance)는 통과 뒤 ATA_TPL 에 연결 */
+/* 관리 화면(v4.1)이 저장하는 13개 키 + 체크 서버 차량 도착(check_arrive · 체크 v29 가 읽음) — 반려 5개(expire_soon·use_limit·login_block·data_keep·balance)는 통과 뒤 ATA_TPL 에 연결 */
 const ATA_KEYS = ["intake", "release", "extra_work", "bill", "deposit_ok", "expire_soon", "use_limit", "login_block",
-  "data_keep", "pay_done", "cash_done", "balance", "auth"];
+  "data_keep", "pay_done", "cash_done", "balance", "auth",
+  "check_arrive"];   // 체크 차량 도착 알림 (본사 채널 · 새 템플릿 심사 뒤) — 체크 서버 v29 가 읽음
 /* 화면이 «#{이름}» 또는 «이름» 으로 보낸 값을 확정본 변수로 맞춥니다. 빠진 이름이 있으면 missing 에 */
 function ataPick(key: string, v: Record<string, unknown>) {
   const out: Record<string, string> = {}, missing: string[] = [];
@@ -4159,7 +4160,7 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     return { ok: true, pfSet: !!c.pfId, tpls: Object.fromEntries(keys.map((k) => [k, c.tpl[k] || ""])),
              ready: Object.keys(ATA_TPL), stats };
   },
-  /* sb7: 저장 — [{키:코드}] (13개 키만 · 빈 값은 지움 · 64자) */
+  /* sb7: 저장 — [{키:코드}] (ATA_KEYS(13개 + check_arrive)만 · 빈 값은 지움 · 64자) */
   hqAtaSave: async (shop, a, ss) => {
     hqOnly(shop, ss);
     const v = (a[0] || {}) as any;
