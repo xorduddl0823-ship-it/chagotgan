@@ -123,3 +123,13 @@ deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시
 ```
 
 - 9개 (2026-10-15 전부 통과 · sb8 이면 5개 실패) · `fake_supabase_wash.ts` 에 `update().select()` 가 바뀐 줄을 돌려주는 것 더함
+
+결제 빈 곳 메우기 시험 (워시 sb10 + pay-hook p1 · 딜러 d6):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/결제_웹훅_환불_자동결제_시험.ts
+deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/시험/딜러_청구서목록_시험.ts
+```
+
+- 49개 (sb9 면 22개 실패) · 9개 (d5 면 5개 실패) — 2026-10-15 전부 통과
+- 가짜에 더함: 워시 `knobs.cash`(잔액 흉내 · 마이너스 안 됨) · 딜러 `contains`·`gt`
