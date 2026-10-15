@@ -46,9 +46,6 @@ button,input,select{font-family:inherit}
 .seg button[aria-pressed="true"]{background:var(--draft-ink);color:var(--draft)}
 .rec{font-size:12px;font-weight:700;background:var(--draft-ink);color:var(--draft);border-radius:999px;padding:1px 8px}
 
-.beta{background:var(--beta);color:var(--beta-ink);font-size:13.5px}
-.beta .wrap{padding-block:8px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center}
-.beta b{background:var(--beta-ink);color:var(--beta);border-radius:6px;padding:0 7px;font-size:12px;letter-spacing:.04em}
 
 header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
 header.top .wrap{display:flex;align-items:center;gap:14px;padding-block:12px}
@@ -183,11 +180,19 @@ a.pick{text-decoration:none}
 .contact span{color:var(--muted);font-size:14.5px;user-select:all}
 
 footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:var(--surface)}
+/* 오픈 베타 띠 (디자인 방 2026-10-15) */
+:root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
+:root[data-theme="dark"]{--beta-bg:#1d3a5f}
+.cgg-beta{background:var(--beta-bg);color:var(--beta-ink);font-size:13.5px;line-height:1.5;word-break:keep-all}
+.cgg-beta .in{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;
+  padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
+.cgg-beta[hidden]{display:none}
+@media (max-width:600px){.cgg-beta{font-size:12.5px}.cgg-beta .in{display:block;padding-block:6px}.cgg-beta b{margin-right:6px}}
 </style>
 
-<div class="beta gut" id="betaBand"><div class="wrap">
-  <b>OPEN BETA</b><span>차곳간은 지금 <strong>오픈 베타</strong>예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span>
-</div></div>
+<div class="cgg-beta" id="cggBeta" role="note"><div class="in"><b>오픈 베타</b><span>차곳간은 지금 오픈 베타예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span></div></div>
 
 <header class="top gut"><div class="wrap">
   <a class="logo" href="#top">차곳간</a>
@@ -315,7 +320,6 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&!$("dlg").
 /* 폰 ☰ 메뉴 */
 $("burger").onclick=function(){ var o=$("mnav").hidden; $("mnav").hidden=!o; $("burger").setAttribute("aria-expanded",String(o)); };
 [].forEach.call(document.querySelectorAll("#mnav a"),function(a){ a.addEventListener("click",function(){ $("mnav").hidden=true; $("burger").setAttribute("aria-expanded","false"); }); });
-/* 오픈 베타 띠 — 「넣은 안」 확정 (2026-10-15) */
 
 /* ═══ 미리 써 보기 ═══ */
 var NAME={wash:"워시",check:"체크",dealer:"딜러"};
@@ -401,7 +405,7 @@ showResume();
 /* ═══ 요금제 — 가격 예시 (확정 전) ═══ */
 var PLANS={
   wash:[
-    {code:"basic", n:"베이직", price:55000, opens:["입고·출고 · 월별 청구서","출고 알림 자동 발송","엑셀 · 사진 내려받기"]},
+    {code:"basic", n:"베이직", price:55000, opens:["입고·출고 · 월별 청구서","출고 알림 자동 발송","엑셀 · 사진 다운로드"]},
     {code:"standard", n:"스탠다드", price:77000, best:true, opens:["베이직 전부","세금계산서 발급","통장 연결 · 입금 자동 확인","청구서 보내기 · 예약 발송"]},
     {code:"pro", n:"프로", price:0, opens:["스탠다드 전부","여러 지점","맞춤 상담"]}
   ],
