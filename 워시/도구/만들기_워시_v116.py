@@ -165,5 +165,8 @@ rep("""  $("awC1").onclick=function(){ vlCopy($("awMsg").value,"글"); };""",
       }).catch(function(e){ bt.disabled=false; bt.textContent="알림톡으로 보내기"; toast((e&&e.message)||"보내지 못했어요",true); });
   };""")
 
+# 2026-10-15 추가분 (확정본 변수 이름 · 입금 기한 칸 · 입금 확인 안내)
+exec(open(os.path.join(HERE, "만들기_워시_v116_추가.py"), encoding="utf-8").read())
+
 open(OUT, "w", encoding="utf-8").write(s)
 print("OK", OUT, len(s))
