@@ -46,3 +46,11 @@ deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/�
 ```
 
 - `체크v24_시험.ts` — 시험 7개 (2026-10-15 전부 통과 · v23 으로 돌리면 4개 실패)
+
+체크 서버 v25 시험 (직원 권한 창구 staffList · staffAdd · staffEdit):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/시험/체크v25_직원_시험.ts
+```
+
+- `체크v25_직원_시험.ts` — 시험 25개 (2026-10-15 전부 통과 · v24 로 돌리면 12개 실패)
