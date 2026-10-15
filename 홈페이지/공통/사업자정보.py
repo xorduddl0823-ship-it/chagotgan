@@ -31,7 +31,8 @@ def render(info=None, show_blank=False):
     parts = []
     for label, k in rows:
         v = val(k)
-        if not v and k == "통신판매업신고번호": v = "신고 진행 중"
+        if not v and k == "통신판매업신고번호":   # 「신고번호 신고 진행 중」처럼 겹치지 않게 (알림톡 방 워딩 검토)
+            parts.append('<span style="white-space:nowrap">통신판매업 신고: 진행 중</span>'); continue
         if v: parts.append('<span style="white-space:nowrap">' + e(label) + " " + v + "</span>")
     biz = re.sub(r"\D", "", str(info.get("사업자등록번호", "")))
     if len(biz) == 10:
