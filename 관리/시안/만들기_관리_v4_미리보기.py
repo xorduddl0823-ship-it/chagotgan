@@ -46,13 +46,15 @@ var F_USERS=[{phone:"admin",name:"한본사",shop:"ADMIN",shopName:"차곳간 �
  {phone:"01000005555",name:"최들판",shop:"HANBIT",shopName:"한빛광택",role:"staff",active:false,last_login:dd(-20)+"T10:00:00",created_at:"2026-07-02"}];
 var F_PAYS=[{id:1,shop:"HANBIT",shopName:"한빛광택",amount:55000,status:"paid",period:YM0,paid_at:dd(-2)},
  {id:2,shop:"BAREUN",shopName:"바른 카모터스",amount:99000,status:"paid",period:YM0,paid_at:dd(-1)},
+ {id:4,shop:"SAEBIT",shopName:"새빛 성능장",amount:66000,status:"paid",period:YM0,paid_at:dd(-1),product:"check"},
+ {id:5,shop:"HANBIT",shopName:"한빛광택",amount:33000,status:"paid",period:YM0,paid_at:dd(0),product:"dealer"},
  {id:3,shop:"DURI",shopName:"두리휠",amount:77000,status:"ready",period:YM0}];
 var F_PLANS=[{code:"basic",name:"베이직",price:55000,active:true,sort:1},{code:"standard",name:"스탠다드",price:77000,active:true,sort:2},{code:"pro",name:"프로",price:0,active:true,sort:3}];
 var F_SVCS=[{id:1,code:"supabase",name:"수파베이스",kind:"sub",cost:35000,next_due:dd(4),active:true,sort:1,url:"https://supabase.com",what:"서버·자료"},
  {id:2,code:"solapi",name:"솔라피 문자",kind:"charge",balance:8000,min_bal:10000,active:true,sort:2,auto:true,auto_note:"자동으로 읽음",what:"문자"},
  {id:3,code:"cloudflare",name:"클라우드플레어",kind:"sub",cost:0,next_due:dd(17),active:true,sort:3,what:"주소"}];
 var F_TODO=[{id:1,title:"QR 스티커 교체",done:false,due_at:dd(0)},{id:2,title:"문자 충전",done:false,due_at:dd(-2)},{id:3,title:"세금계산서 정리",done:false,due_at:dd(6)}], F_NEXT=10;
-var F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
+var F_PP={}, F_LOG=[], F_CGG=["wash"], F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
 function FAKE(fn,a){
   a=a||[];
   switch(fn){
@@ -78,7 +80,7 @@ function FAKE(fn,a){
       names:{HANBIT:"한빛광택",BAREUN:"바른 카모터스",SAEBIT:"새빛 성능장"},
       orders:[{order_id:"CGG-PLAN-0001",shop:"HANBIT",kind:"plan",order_name:"베이직 1개월",amount:55000,use_cash:0,status:F_RF["CGG-PLAN-0001"]?"canceled":"paid",method:"카드",created_at:dd(-12)+"T10:20:00"},
               {order_id:"CGG-CASH-0002",shop:"BAREUN",kind:"cash",order_name:"캐시 충전 3만원",amount:33000,use_cash:0,status:F_RF["CGG-CASH-0002"]?"canceled":"paid",method:"카드",created_at:dd(-3)+"T15:02:00"},
-              {order_id:"CGG-PLAN-0003",shop:"SAEBIT",kind:"plan",order_name:"스탠다드 1개월",amount:77000,use_cash:0,status:"failed",method:"카드",created_at:dd(-1)+"T09:40:00"}]};
+              {order_id:"CGG-PLAN-0003",shop:"SAEBIT",kind:"plan",product:"check",order_name:"스탠다드 1개월",amount:77000,use_cash:0,status:"failed",method:"카드",created_at:dd(-1)+"T09:40:00"}]};
     case "hqPgQuote": return a[0]==="CGG-PLAN-0001" ? {ok:true,kind:"plan",amount:55000,max:55000,suggest:33000,leftDays:18}
                                                    : {ok:true,kind:"cash",amount:33000,max:22000,suggest:22000,unusedCash:20000};
     case "hqPgCancel": F_RF[a[0]]=1; return {ok:true,amount:a[2],note:a[0]==="CGG-PLAN-0001"?"이용기간 -"+Math.round(30*a[2]/55000)+"일":"캐시 -"+Math.round(a[2]/1.1).toLocaleString("ko-KR")+"원"};
@@ -87,6 +89,28 @@ function FAKE(fn,a){
       {code:"HANBIT2",name:"한빛 성능검사소",wallet:F_CW.HANBIT2||"",bizNo:"2118130415",ceo:"김하늘"},
       {code:"DURI",name:"두리 검사소",wallet:F_CW.DURI||"",bizNo:"",ceo:""}]};
     case "hqCheckWallet": F_CW[a[0]]=a[1]; return {ok:true,office:a[0],wallet:a[1]};
+    case "hqPerson": return {ok:true,phone:a[0],
+      wash:[{shop:"HANBIT",shopName:"한빛광택",name:"김하늘",role:"owner",active:!F_PP["stop:wash"],lastLogin:dd(0)+"T08:00:00"}],
+      washOwnerOf:[{shop:"HANBIT",name:"한빛광택"}],
+      check:[{office:"HANBIT2",officeName:"한빛 성능검사소",name:"김하늘",role:"owner",active:!F_PP["stop:check:HANBIT2"],pwSet:!F_PP["pwReset:check:HANBIT2"]}],
+      drivers:[{id:17,office:"HANBIT2",officeName:"한빛 성능검사소",name:"김하늘",active:true}],
+      dealer:{name:"김하늘",active:true,left:false},
+      cgg:{products:F_CGG,active:true,smsOk:true},
+      locks:{wash:false,check:!F_PP["unlock:check"]&&!F_PP["unlock:all"],cgg:false,dealer:false},
+      sessions:{wash:F_PP["kick:wash"]||F_PP["kick:all"]?0:2,check:1,cgg:1,dealer:0}};
+    case "hqPersonAct": var k=a[1]+":"+a[2]; F_PP[k]=1; if(a[1]==="resume") F_PP["stop:"+a[2]]=0;
+      if(a[1]==="grant"&&F_CGG.indexOf(a[2])<0) F_CGG.push(a[2]); if(a[1]==="revoke") F_CGG=F_CGG.filter(function(x){return x!==a[2];});
+      F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",target:a[2],act:a[1],result:"됨"});
+      return a[1]==="pwReset"&&String(a[2]).indexOf("driver:")===0 ? {ok:true,tempPw:"K7m2-p9Qx"} : {ok:true};
+    case "hqAudit": return {ok:true,log:F_LOG.concat([{at:dd(-5)+"T10:00:00",who:"hq:한본사",target:"check:HANBIT2",act:"pwReset",result:"됨"}])};
+    case "hqPayResults": return {ok:true,rows:[
+      {product:"워시",at:dd(-12)+"T10:20:00",shop:"HANBIT",shopName:"한빛광택",kind:"월 요금",method:"카드 (신한)",amount:55000,status:"결제됨",period:"~11/14",orderId:"CGG-PLAN-0001",from:"워시"},
+      {product:"체크 · 새빛 성능검사소",at:dd(-3)+"T15:02:00",shop:"SAEBIT",shopName:"새빛 성능장",office:"새빛 성능검사소",kind:"캐시 충전",method:"카드 (국민)",amount:33000,status:"결제됨",period:"",orderId:"CGG-CASH-0002",from:"체크"},
+      {product:"자동 결제",at:dd(-1)+"T09:00:00",shop:"BAREUN",shopName:"바른 카모터스",kind:"월 요금",method:"자동 결제 (현대 ··1234)",amount:99000,status:"실패 · 한도 초과",period:"",orderId:"CGG-BILL-0003"},
+      {product:"환불",at:dd(-2)+"T11:30:00",shop:"HANBIT",shopName:"한빛광택",kind:"환불",method:"카드",amount:-27500,status:"환불됨",period:"-15일",orderId:"CGG-PLAN-0000"},
+      {product:"홈페이지 가입",at:dd(-4)+"T20:10:00",shop:"DURI",shopName:"두리휠",kind:"월 요금 (첫 결제)",method:"카드 (삼성)",amount:77000,status:"결제됨",period:"~11/11",orderId:"CGG-HOME-0004"},
+      {product:"계좌 입금(수동)",at:dd(-6)+"T14:00:00",shop:"DURI",shopName:"두리휠",kind:"월 요금",method:"계좌이체",amount:77000,status:"입금 전",period:"",orderId:"",payId:3},
+      {product:"딜러 청구서",at:dd(-7)+"T18:00:00",shop:"HANBIT",shopName:"한빛광택 → 대성상사",kind:"청구서",method:"계좌이체",amount:1430000,status:"입금 확인됨",period:"9월",orderId:""}]};
     case "hqAta": return {ok:true,pfSet:true,ready:["intake","release","extra_work","bill","deposit_ok","pay_done","cash_done","auth","staff_link"],tpls:{auth:"KA01TP000000AUTH01",intake:"KA01TP000000IN0001",release:"KA01TP000000REL001",bill:"KA01TP000000BILL01",deposit_ok:"KA01TP000000DEP001"},
       stats:{ym:a[0],ata:{cnt:412,won:412*13},sms:{cnt:96,won:96*18},lms:{cnt:1288,won:1288*45},mms:{cnt:12,won:12*110}}};
     case "hqAtaSave": return {ok:true};
