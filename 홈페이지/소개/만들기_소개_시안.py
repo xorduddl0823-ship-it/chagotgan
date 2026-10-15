@@ -33,7 +33,19 @@ info = B.load()
 ok = lambda k: B._ok(info.get(k))
 dealer = rd(DP)
 assert "<head>" in dealer, "딜러 화면에 <head> 가 없음"
-dealer = dealer.replace("<head>", "<head><script>window.__DEMO=true;</script>", 1)
+# 딜러 시연은 진짜 브라우저 저장(cgd_key·cgd_phone)을 건드리지 않게 «메모리 저장소»로 바꿔치기 (보안 방 낮음 1)
+MEMLS = ("<script>window.__DEMO=true;(function(){var M={};var S={getItem:function(k){return k in M?M[k]:null;},"
+         "setItem:function(k,v){M[k]=String(v);},removeItem:function(k){delete M[k];},clear:function(){M={};},"
+         "key:function(i){return Object.keys(M)[i]||null;},get length(){return Object.keys(M).length;}};"
+         "try{Object.defineProperty(window,'localStorage',{value:S,configurable:true});}catch(e){}"
+         "try{Object.defineProperty(window,'sessionStorage',{value:S,configurable:true});}catch(e){}})();</script>")
+dealer = dealer.replace("<head>", "<head>" + MEMLS, 1)
+GUARD_OLD = 'u.indexOf(location.host) < 0) return Promise.reject'
+GUARD_NEW = '(!location.host || u.indexOf(location.host) < 0)) return Promise.reject'
+def guard(s, name):
+    if GUARD_OLD in s: s = s.replace(GUARD_OLD, GUARD_NEW)
+    assert GUARD_NEW in s, name + " 사본에 바깥 연결 막기 줄이 없음"
+    return s
 pk = lambda s: base64.b64encode(s.encode("utf-8")).decode("ascii")
 t = rd(os.path.join(HERE, "소개_시안_틀.html"))
 rep = {
@@ -46,7 +58,7 @@ rep = {
     "@@TEL@@": info["대표전화"] if ok("대표전화") else "{대표 전화} — 사업자정보.json 에서 채워져요",
     "@@MAIL@@": info["이메일"] if ok("이메일") else "{이메일} — 사업자정보.json 에서 채워져요",
     "@@BIZ@@": B.render(info),
-    "@@PKG_WASH@@": pk(rd(WP)), "@@PKG_CHECK@@": pk(rd(CP)), "@@PKG_DEALER@@": pk(dealer),
+    "@@PKG_WASH@@": pk(guard(rd(WP), "워시")), "@@PKG_CHECK@@": pk(guard(rd(CP), "체크")), "@@PKG_DEALER@@": pk(dealer),
 }
 for k, v in rep.items():
     assert k in t, k
