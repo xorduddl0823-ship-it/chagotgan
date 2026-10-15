@@ -24,7 +24,7 @@ if [ "${1:-}" = "묶음" ]; then
   done
   # 시험 주소 안에서는 «로그인·결제»가 시험 주소의 통합 입구(/)로 가게 합니다 (손님 주소로 새지 않게).
   for f in out/home/index.html out/join.html; do [ -f "$f" ] && sed -i 's#https://app\.cgg\.co\.kr/#/#g' "$f"; done
-  grep -rlZ 'CGG-BIZ-START' out --include='*.html' | while IFS= read -r -d '' f; do python3 홈페이지/공통/사업자정보.py "$f" || true; done
+  grep -rlZ 'CGG-BIZ-START' out --include='*.html' | while IFS= read -r -d '' f; do python3 홈페이지/공통/사업자정보.py "$f" || true; done || true
 else
   SRC="홈페이지/통합입구/0_차곳간_통합_index${1:+_$1}.html"
   echo "올리는 판: $SRC"

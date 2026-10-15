@@ -478,7 +478,7 @@ function flowGo(s){
     +'<label class="f" for="fOwner">대표자 이름</label><input type="text" id="fOwner" placeholder="예) 홍길동" value="'+esc(F.owner)+'">'
     +'<label class="f" for="fPw">비밀번호 (6자 이상)</label><input type="password" id="fPw" placeholder="비밀번호">'
     +'<label class="f" for="fPw2">비밀번호 확인</label><input type="password" id="fPw2" placeholder="비밀번호 확인">'
-    +'<button class="btn p full" id="fNext">가입하고 결제로</button><span class="mono">서버: signup([휴대폰, 상호, 업종, 비밀번호, 대표이름, "'+esc(P.code)+'"]) → {key, shop, payWait:true}</span>');
+    +'<button class="btn p full" id="fNext">가입하고 결제로</button><span class="mono">서버: signup([휴대폰, 상호, 업종, 비밀번호, 대표이름, "'+esc(P.code)+'"]) → {key, shop, payWait:true, joinPlan}</span>');
   if(s==="how") panel('<h3>결제 방법</h3><p class="lead">회원가입이 완료되었습니다. 결제 방법을 선택해 주세요.</p>'
     +'<div class="choice"><label><input type="radio" name="how" value="once"'+(F.auto?'':' checked')+'> <span><b>이번 한 달 결제</b><small>30일 쓰고, 다음 달은 다시 결제해요</small></span></label>'
     +'<label><input type="radio" name="how" value="auto"'+(F.auto?' checked':'')+'> <span><b>매달 자동 결제</b><small>카드를 등록하면 매달 같은 날 결제돼요</small></span></label></div>'
@@ -539,7 +539,7 @@ function drawWait(){
     +'<div class="paywait"><span class="tag">체험판</span><span class="tx"><b>결제를 마치면 「'+esc(F.biz||"우리 가게")+'」 자료로 시작해요</b><small>고른 요금제: '+NAME[F.prod]+' '+esc(P.n)+' · '+won(P.price)+'원 / 월 (부가세 별도)</small></span>'
     +'<button type="button" class="pay" id="wPay">'+total()+' 결제하기</button><button type="button" class="chg" id="wChg">요금제 바꾸기</button></div>'
     +'<div class="trybox"><div class="frame" id="waitStage"></div><div class="side" id="waitSide"></div></div>'
-    +'<span class="mono">서버: 로그인 → lockState "pay" → 체험 모드로 열기 · 결제는 payDue → payStart → payConfirm 부터 다시</span></div>';
+    +'<span class="mono">서버: 로그인 → lockInfo {state:"pay", joinPlan} → 체험 모드로 열기 · 편한 기능은 trialUse([기능]) → {ok,left} · 잠긴 것은 {__lock:{state:"pay"}} · 요금제 바꾸기 joinPlanSet([요금제]) · 결제는 payDue → payStart → payConfirm 부터 다시</span></div>';
   if(!waitFrame) waitFrame=frameFor("wash");
   $("waitStage").appendChild(waitFrame);
   drawTrialSide();
