@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.1 (2026-10-15, 디자인 방)
-   ① 메뉴 배치 셋  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.2 (2026-10-15, 디자인 방)
+   ① 메뉴 배치 셋  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)  ⑤ 체험 모드 (1.2)
    바탕: 관리 v4.0 의 관리/v4재료/j4.js. 관리 전용 이름(TAB · render · NAV)에 묶이지 않게
          «무엇을 보여 줄지»와 «눌렀을 때 할 일»을 제품이 넘겨 주는 식으로 바꿨어요.
    서버를 부르지 않아요. 저장은 «이 기기에만»(localStorage) — 못 쓰면 가로 메뉴로 그냥 보여요.
@@ -106,5 +106,32 @@ var CGG = (function(){
     if(!i){ i=document.createElement("i"); i.className="cgg-badge"; if(getComputedStyle(btn).position==="static") btn.style.position="relative"; btn.appendChild(i); }
     i.textContent=n; i.setAttribute("aria-label","휴지통 "+n+"건"); }
 
-  return { ic:ic, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, version:"cgg-j4 1.1" };
+
+  /* ⑤ 체험 모드 (1.2) — 미리 써 보기(가입 전) · 체험판(결제 전)이 같은 모양을 씀.
+     모양만 맡아요. 진짜 잠금 · 횟수 세기는 서버가 해요 (체험판). 미리 써 보기는 저장 자체가 없어요.
+     mode: "preview"(가입 전 — 버튼 글 «무료로 시작하기») · "trial"(결제 전 — «요금제 보기») */
+  var trial = { mode:"trial", used:{}, key:"",
+    init:function(mode, key){ this.mode=mode||"trial"; this.key=key||""; if(this.key){ try{ this.used=JSON.parse(localStorage.getItem(this.key)||"{}")||{}; }catch(e){ this.used={}; } } },
+    left:function(n){ return 3-(this.used[n]||0); },
+    use:function(n){ if(this.left(n)<=0) return false; this.used[n]=(this.used[n]||0)+1; if(this.key){ try{ localStorage.setItem(this.key, JSON.stringify(this.used)); }catch(e){} } return true; },
+    cta:function(){ return this.mode==="preview"?"무료로 시작하기":"요금제 보기"; },
+    band:function(o){ o=o||{}; var pct=o.seen&&o.total?Math.round(o.seen/o.total*100):0;
+      return '<div class="cgg-trial" role="note"><span class="tag">'+(this.mode==="preview"?"미리 써 보기":"체험판")+'</span><span class="tx"><b>'+esc(o.title||"예시 자료로 모든 화면을 둘러보고 있어요.")+'</b>'
+        +'<small>'+esc(o.sub||"자물쇠가 있는 버튼은 "+(this.mode==="preview"?"가입하고 결제하면":"결제하면")+" 열려요. 편한 기능은 기능마다 3번까지 써 볼 수 있어요.")+'</small>'
+        +(o.total?'<span class="prog" aria-label="둘러본 화면 '+o.seen+' / '+o.total+'"><i style="width:'+pct+'%"></i></span>':'')+'</span>'
+        +'<button type="button" class="go" data-cgg-cta="1">'+this.cta()+'</button></div>'; },
+    lockMark:function(){ return '<span class="cgg-lock" aria-label="잠김">'+ic("lock")+'</span>'; },
+    chip:function(n){ var l=this.left(n); return '<span class="cgg-left'+(l?'':' out')+'">'+(l?l+'번 남음':'다 씀')+'</span>'; },
+    /* 기능 카드: list = [[기능, "lock"|"try"|"see", 한 줄 소개], …] */
+    card:function(list){ var self=this, L={lock:"잠금",try:"3번",see:"보기"};
+      return '<div class="cgg-cls"><h3>이 화면에서 할 수 있는 것<small>'+(this.mode==="preview"?"미리 써 보기":"체험판")+'</small></h3>'+list.map(function(x){ var k=x[1];
+        return '<div class="cgg-clsrow"><span class="cgg-k '+k+'">'+(k==="lock"?ic("lock"):'')+L[k]+'</span><span class="nm"><b>'+esc(x[0])+'</b>'+(x[2]?'<small>'+esc(x[2])+'</small>':'')+'</span>'
+          +(k==="see"?'<span class="st">늘 열려 있어요</span>': k==="lock"?'<button type="button" data-cgg-lock="'+esc(x[0])+'">'+ic("lock")+'결제 후 사용</button>'
+            :'<button type="button" data-cgg-try="'+esc(x[0])+'">써 보기'+self.chip(x[0])+'</button>')+'</div>'; }).join("")+'</div>'; },
+    /* 창 안에 넣을 글 — 창 틀은 각 제품의 확인 창(400)을 그대로 씀 */
+    lockText:function(n, tx){ return {title:"결제하면 쓸 수 있는 기능이에요", rows:[["기능",n],["하는 일",tx||"결제하면 바로 쓸 수 있어요."],["지금","예시 화면을 둘러볼 수 있어요"]], ok:this.cta()}; },
+    usedText:function(n){ return {title:"무료로 3번 모두 쓰셨어요", desc:"«"+n+"»은(는) 결제하면 횟수 제한 없이 쓸 수 있어요.", rows:[["기능",n],["쓴 횟수","3번 / 3번"]], ok:this.cta()}; }
+  };
+
+  return { ic:ic, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial, version:"cgg-j4 1.2" };
 })();
