@@ -3,7 +3,7 @@
 - 재료: 관리/3_차곳간_관리_index_v4.2.html (읽기만) · 관리/v4재료/people.js
 - 결과: 관리/3_차곳간_관리_index_v4.3.html
 - 근거: 대표님 지시 (결정 기록 2026-10-15) «결제 결과는 관리로, 관리에서 계정들을 다 컨트롤»
-- 서버 창구 이름 (hqPerson · hqPersonAct · 결제 줄의 product)은 시안용 가칭 — 서버 방 응답에 맞춰 고쳐요
+- 서버 창구 모양: 서버/설계/14 (hqPayResults · hqPerson · hqPersonAct · hqAudit, 워시 sb12 · 보안 설계 검토 중) — 확정되면 다시 맞춰요
 """
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,6 +49,12 @@ s = s[:b] + '\n      {k:"product",label:"제품",w:70},' + s[b:]
 rep('["users","계정 관리",viewUsers],', '["users","계정 관리",viewUsers],\n  ["ppl","번호로 계정 찾기",viewPpl],')
 rep('["users","계정",["inv","users"]],', '["users","계정",["inv","users","ppl"]],')
 pp = open(os.path.join(HERE, "v4재료", "people.js"), encoding="utf-8").read()
-rep('function navOf(t){', pp + '\nfunction navOf(t){')
+pr = open(os.path.join(HERE, "v4재료", "payres.js"), encoding="utf-8").read()
+# 결제 내역 = 모든 제품 결제 결과 (서버 새 판이 없으면 예전 화면 viewPaysOld 로)
+rep('function viewPays(){', 'function viewPaysOld(){')
+rep('function navOf(t){', pp + '\n' + pr + '\nfunction navOf(t){')
+# 결제 결과 화면에서 환불하면 그 목록도 다시 불러오기
+rep('closeSheet(); toast("환불했어요 · "+won((r&&r.amount)||w)+((r&&r.note)?" · "+r.note:"")); pgLoad();',
+    'closeSheet(); toast("환불했어요 · "+won((r&&r.amount)||w)+((r&&r.note)?" · "+r.note:"")); pgLoad(); if($("prBody")) prLoad();')
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")
