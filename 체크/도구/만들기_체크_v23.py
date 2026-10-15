@@ -43,7 +43,7 @@ rep('''      {k:"use",t:"쓰는 중",fmt:function(v){return '<span class="tag" s
 rep('''      '<button class="btn" id="accOn">다시 쓰게 하기</button>'}));''',
     '''      '<button class="btn" id="accOn">다시 쓰게 하기 (가입 승인)</button>'}));''')
 rep('''    var p=prompt("처음 비밀번호 (기사가 폰에서 바꿀 수 있습니다)")||"";''',
-    '''    var p=prompt("처음 비밀번호 (6자 이상 · 기사가 폰에서 바꿀 수 있습니다)")||"";
+    '''    var p=prompt("처음 비밀번호 (6자 이상 · 비워 두면 기사가 폰에서 정해요)")||"";
     if(p && p.length<6){ bar("기사 비밀번호는 6자 이상으로 정해 주세요.","err"); return; }''')
 
 # 판 번호
