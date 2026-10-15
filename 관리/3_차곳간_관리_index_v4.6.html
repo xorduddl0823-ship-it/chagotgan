@@ -6334,7 +6334,9 @@ var ATA_LIST = [   /* [키, 템플릿 이름, 언제 나가는지, 검수 상태
   ["balance",     "차곳간_잔액안내",       "남은 금액이 정해 둔 선 아래로 내려갔을 때", "재검수"],
   ["auth",        "차곳간_인증번호",       "인증번호를 보낼 때",                    "통과"],
   ["check_arrive","차곳간체크_차량도착", "체크 — 차가 목적지에 도착했을 때 (본사 채널, 비면 검사소 템플릿 → 문자)", "심사 대기"],
-  ["staff_link",  "차곳간_접속주소안내",   "직원에게 접속 주소를 보낼 때 (직원용 주소만, 로그인 열쇠 없음)", "심사 대기"]
+  ["staff_link",  "차곳간_접속주소안내",   "직원에게 접속 주소를 보낼 때 (직원용 주소만, 로그인 열쇠 없음)", "심사 대기"],
+  ["bill_on",     "차곳간_자동결제등록",   "자동 결제 카드를 등록했을 때",          "심사 대기"],
+  ["bill_fail",   "차곳간_자동결제실패",   "자동 결제가 되지 않았을 때 (다음 시도일 안내)", "심사 대기"]
 ];
 var ATA = {loaded:false, busy:false, err:"", tpls:{}, ready:[], stats:null, pfSet:false, at:""};
 function ataYm(){ var d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
@@ -6399,9 +6401,10 @@ function ataDraw(){
     inp.oninput=function(){ var w=host.querySelector('[data-ataway="'+inp.getAttribute("data-ata")+'"]'); if(w) w.innerHTML=ataWay(inp.value,inp.getAttribute("data-ata")); }; });
   $("ataRe").onclick=function(){ ATA.loaded=false; ataLoad(); };
   $("ataSave").onclick=function(){
-    var map={}, n=0, pf=$("ataPf").value.trim(); if(pf) map.pfId=pf;
+    /* 표에 없는 코드도 그대로 다시 보내요 — 서버는 보낸 것으로 통째로 바꿔서, 빠진 키는 지워져요 */
+    var map={}, n=0, pf=$("ataPf").value.trim(); Object.keys(ATA.tpls||{}).forEach(function(k){ if(ATA.tpls[k]) map[k]=ATA.tpls[k]; }); if(pf) map.pfId=pf;
     Array.prototype.forEach.call(host.querySelectorAll("[data-ata]"),function(inp){ var v=inp.value.trim(); map[inp.getAttribute("data-ata")]=v; if(v) n++; });
-    var tp={}; ATA_LIST.forEach(function(x){ tp[x[0]]=map[x[0]]; });
+    var tp={}; Object.keys(map).forEach(function(k){ if(k!=="pfId") tp[k]=map[k]; });
     confirmBox("코드를 저장할까요?","코드 넣음 "+n+"개 · 비어 있음(문자로 보냄) "+(ATA_LIST.length-n)+"개","저장",false,function(){
       $("ataSave").disabled=true;
       api("hqAtaSave",[map]).then(function(){ ATA.tpls=tp; if(pf) ATA.pfSet=true; toast("코드를 저장했어요"); ataDraw(); },
