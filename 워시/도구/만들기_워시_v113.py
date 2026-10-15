@@ -14,8 +14,12 @@ BASE = os.path.dirname(HERE)
 ROOT = os.path.dirname(BASE)
 SRC = os.path.join(BASE, "1_차곳간_워시_index_v112.html")
 OUT = os.path.join(BASE, "1_차곳간_워시_index_v113.html")
-CSS = open(os.path.join(ROOT, "디자인", "공통", "cgg-j4.css"), encoding="utf-8").read()
-JS = open(os.path.join(ROOT, "디자인", "공통", "cgg-j4.js"), encoding="utf-8").read()
+# v113 은 cgg-j4 1.0 (커밋 ce478d3) 으로 고정 — 1.1 은 v114 에서 (만들기_워시_v114.py)
+import subprocess
+def at_1_0(name):
+    return subprocess.run(["git", "-C", ROOT, "show", "ce478d3:디자인/공통/" + name], capture_output=True, check=True).stdout.decode("utf-8")
+CSS = at_1_0("cgg-j4.css")
+JS = at_1_0("cgg-j4.js")
 GLUE = open(os.path.join(HERE, "cgg-j4_워시_이음.css"), encoding="utf-8").read()
 s = open(SRC, encoding="utf-8").read()
 
