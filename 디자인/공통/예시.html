@@ -71,6 +71,7 @@ CGG.table(document.getElementById("tb"),{cols:["상사명","차량번호","차�
   filters:["검사일: 최근 7일 ✕","＋ 상사","＋ 금액"], sorts:[[4,-1,"최신순"],[0,1,"상사명순"],[5,-1,"금액 높은순"]], mline:function(x){return x[2]+" · "+x[3]+" · "+x[4];},
   actions:function(r){ return r[6]==="완료"?[{key:"bill",label:"청구서"},{key:"undo",label:"되돌리기",danger:true}]:[{key:"done",label:"완료"}]; },
   onAction:function(k,r){ CGG.toast(r[0]+" · "+({bill:"청구서 만들기",undo:"되돌리기",done:"완료로 바꾸기"})[k]); },
+  bulk:[{key:"del",label:"선택항목 삭제",needSel:true,danger:true}], onBulk:function(k,l){ CGG.toast(l.length+"건을 지울까요? (예시)"); },
   onSelect:function(l){ SEL=l; draw(); }, onName:function(r){ CGG.dialog({size:"detail", title:r[0]+" · "+r[1], rows:[["차종",r[2]],["검사",r[3]],["검사일",r[4]],["금액",CGG.won(r[5])+"원"],["상태",r[6]]]}); }});
 document.getElementById("hp").innerHTML=CGG.help("검사가 끝난 차를 골라 «선택한 건 청구서 만들기»를 누르면 청구처별로 청구서가 만들어져요.");
 CGG.trial.init("preview","cgg_demo_try");

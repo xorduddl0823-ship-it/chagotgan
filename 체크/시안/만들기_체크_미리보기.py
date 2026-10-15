@@ -92,9 +92,9 @@ FAKE = r'''<script>
       case "salesStat": return sales();
       case "dataCount": return {"상사":COMP.length, "딜러":DEALERS.length, "차량":540, "단가표":3, "청구서":DEALERS.length};
       case "officeGet": return OFFICE;
-      case "taxList": return invoices(a[0]||nowYm()).map(function(v){ return {name:v.bill_to_name, members:"", comp:v.company_name,
+      case "taxList": return invoices(a[0]||nowYm()).map(function(v,i){ return {id:"tx"+(i+1), name:v.bill_to_name, members:"", comp:v.company_name,
         issuer:v.issuer_name, biz:v.issuer_biz, supply:Math.round(v.total_amount/1.1), tax:v.total_amount-Math.round(v.total_amount/1.1),
-        state: v.paid_amount>=v.total_amount ? "발급" : "", can:true, why:""}; });
+        total:v.total_amount, state: v.paid_amount>=v.total_amount ? "발급" : "", can:true, why:""}; });
       case "insList": return [];
       case "uploadList": return [];
       case "carHealth": return {};
