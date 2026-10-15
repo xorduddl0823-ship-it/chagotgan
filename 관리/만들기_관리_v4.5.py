@@ -38,5 +38,7 @@ rep("""      (o.bulk?'<button type="button" class="cgg-btn sm danger" id="'+o.id
       (o.bulk?(function(){ var n=Object.keys(st.sel).filter(function(k){ return st.sel[k]; }).length;   /* 1.5: 일괄 버튼은 검색 앞 · 고른 줄 없으면 꺼짐 */
         return '<button type="button" class="cgg-btn sm danger" id="'+o.id+'_bulk" data-bulk="1"'+(n?'':' disabled')+'>고른 줄 처리'+(n?' ('+n+')':'')+'</button>'; })():'')+
       '<label class="cgg-find">'""")
+# 보안 규칙 ② (보안/검사기록/2026-10-15_공통부품_cgg-j4_1.5.md): 자료를 새로 받아 표를 새로 그리면 고른 줄을 비워요 (정렬 · 쪽 · 탭에서는 그대로)
+rep("  if(!st.f) st.f = {};\n  var host = $(o.id);", "  if(!st.f) st.f = {};\n  st.sel = {};   /* 보안 ②: 새 자료면 고른 줄 비우기 */\n  var host = $(o.id);")
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")
