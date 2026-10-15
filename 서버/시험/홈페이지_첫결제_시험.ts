@@ -29,7 +29,8 @@ globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
   if (u.includes("solapi")) { if (smsFail) throw new Error("끊김"); sms.push(JSON.parse(String(init?.body)).messages[0]); return Response.json({}); }
   if (u.endsWith("/v1/payments/confirm")) {
     const b = JSON.parse(String(init?.body)); tossDone[b.orderId] = 1;
-    return Response.json({ status: "DONE", orderId: b.orderId, paymentKey: b.paymentKey, totalAmount: b.amount, method: "카드" });
+    return Response.json({ status: "DONE", orderId: b.orderId, paymentKey: b.paymentKey, totalAmount: b.amount, method: "카드",
+      receipt: { url: "https://dashboard.tosspayments.com/receipt/redirection?transactionId=t1" }, card: { number: "4330****1234" } });
   }
   if (u.includes("anthropic")) return new Response("{}", { status: 500 });
   throw new Error("예상 못 한 주소 " + u);
@@ -123,6 +124,9 @@ check("싼 값에 비싼 요금제 안 열림 (주문의 프로로)", shopRow().
 check("이용기간 +30일", !!shopRow().paid_until);
 check("예시 칸 비움", !store.wash_docs.some((d: any) => d.shop === SH && d.demo === true));
 check("출입 명단: 체크 쓰는 번호라 wash+check", JSON.stringify(store.cgg_access.find((c: any) => c.phone === NEW)?.products) === '["wash","check"]', store.cgg_access);
+const pm = await call("payMine", [], K, SH);
+const po = (pm.result?.orders ?? []).find((o: any) => o.order_id === ps.result.orderId);
+check("payMine: 영수증 주소만 · 토스 원문(raw) 안 내려감", /^https:\/\/dashboard\.tosspayments\.com\//.test(po?.receiptUrl ?? "") && !("raw" in (po ?? {})) && !JSON.stringify(pm).includes("4330"), po);
 check("이제 lockInfo 는 ok", (await call("lockInfo", [], K, SH)).result?.state === "ok");
 check("결제 뒤 trialUse 는 제한 없음", (await call("trialUse", ["intake"], K, SH)).result?.left === -1);
 const pr = await call("hqPayResults", ["", "", ""], ADM, "ADMIN");

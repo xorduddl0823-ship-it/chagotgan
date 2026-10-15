@@ -2413,10 +2413,17 @@ const FN: Record<string, Fn> = {
   /* 내 결제 내역 — [] */
   payMine: async (s) => {
     const { data } = await sb.from("wash_pay_order")
-      .select("order_id,kind,amount,use_cash,status,order_name,period,paid_at,method,created_at")
+      .select("order_id,kind,amount,use_cash,status,order_name,period,paid_at,method,created_at,raw")
       .eq("shop", s).order("created_at", { ascending: false }).limit(100);
     const cfg = await hqCfg();
-    return { ok: true, orders: data || [], pgOn: cfg.pgOn, note: cfg.pgNote, fee: cfg.pgFee };
+    /* sb13 고침(워시 방 요청): 토스 영수증 주소만 꺼내 줌 (토스 원문은 안 내려감 · https://…tosspayments.com 만) */
+    const orders = (data || []).map((o: any) => {
+      const u = String((o.raw && o.raw.receipt && o.raw.receipt.url) || "");
+      const ok = /^https:\/\/([a-z0-9-]+\.)*tosspayments\.com\//.test(u);
+      const { raw: _raw, ...rest } = o;
+      return Object.assign(rest, { receiptUrl: ok ? u : "" });
+    });
+    return { ok: true, orders, pgOn: cfg.pgOn, note: cfg.pgNote, fee: cfg.pgFee };
   },
 
   /* 이번 달 내야 할 금액 보기 — [] */
