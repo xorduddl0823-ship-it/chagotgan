@@ -1251,7 +1251,7 @@ async function payDone(shop: string, kind: string, full: number, useCash: number
           await sb.from("wash_pay_order").update({ fail_msg: "캐시 모자람 — 이용기간 안 늘림(본사 확인)" }).eq("order_id", orderId);
           const admin = (await hqCfg()).adminPhone;
           if (admin) await noticeSms(admin, "[차곳간] " + shop + " 이용요금 결제(" + orderId + ")의 캐시 " + wonTxt2(useCash) +
-            "를 깎지 못해 이용기간을 늘리지 않았습니다. 관리에서 확인해 주세요");
+            "을 깎지 못해 이용기간을 늘리지 않았습니다. 관리에서 확인해 주세요");
         } catch (_) { /* */ }
         return;
       }
@@ -5211,7 +5211,7 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     /* 큰 금액은 한 번 더 확인받습니다 (a[5] === true 면 확인된 것) */
     if (cfg.bigAmt > 0 && amt > cfg.bigAmt && a[5] !== true)
       return { ok: false, confirm: true, amount: amt,
-               why: wonTxt2(amt) + " 는 큰 금액입니다. 한 번 더 확인해 주세요" };
+               why: wonTxt2(amt) + "은 큰 금액입니다. 한 번 더 확인해 주세요" };
     const who = "hq:" + String((ss && (ss.who || ss.phone)) || "?");
     const { data, error } = await sb.rpc("wash_cash_add", {
       p_shop: code, p_amt: amt, p_kind: String(a[4] || "paid"),
