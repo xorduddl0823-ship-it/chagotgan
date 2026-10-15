@@ -2695,7 +2695,8 @@ function growTag(p){
 var TB_WID={name:180,id:130,text:0,date:96,money:130,state:104,time:84,act:120};
 var TB_RANK={name:0,id:1,text:2,date:3,time:3,money:4,state:5};
 var TB_IDK=/^(plate|tel|biz|acctNo|bankCode|code|no|corpNum)$/;
-function tbPlain(h){ var d=document.createElement("div"); d.innerHTML=String(h==null?"":h); return (d.textContent||"").replace(/\s+/g," ").trim(); }
+function tbPlain(h){   /* 글자만 — template 안에서 읽어 그림 · 스크립트가 움직이지 않음 */
+  var t=document.createElement("template"); t.innerHTML=String(h==null?"":h); return (t.content.textContent||"").replace(/\s+/g," ").trim(); }
 /* 체크 꼬리표(.tag 색) → 공통 상태 칩 네 가지 색 */
 function tbChip(h){
   return String(h).replace(/<span class="tag" style="background:var\(--(good|warn|danger|brand|chip)(?:-soft)?\);?\s*color:var\(--[a-z-]+\)"([^>]*)>/g,
