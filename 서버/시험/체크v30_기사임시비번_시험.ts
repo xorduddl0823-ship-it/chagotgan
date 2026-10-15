@@ -29,7 +29,7 @@ let pass = 0, fail = 0;
 function check(name: string, cond: boolean, extra: unknown = "") {
   if (cond) { pass++; console.log("  ✅ " + name); } else { fail++; console.log("  ❌ " + name, extra); }
 }
-check("ping 이 v30", /v30/.test((await call("ping")).result?.ver ?? ""));
+check("ping 이 v30 이상", /v3[0-9]/.test((await call("ping")).result?.ver ?? ""));
 const l1 = await call("deliv_login", ["임시기사", "tmp-pass-10"]);
 check("임시 비밀번호로 로그인은 됨 + mustChange 표시", !!l1.result?.token && l1.result.mustChange === true, l1);
 const b1 = await call("deliv_boot", [l1.result?.token]);

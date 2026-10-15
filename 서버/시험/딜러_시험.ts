@@ -169,7 +169,7 @@ const F = "01020000040";
 const f1 = await newCode(F);
 rpcHooks.dealer_otp_try = () => ({ data: null, error: { message: "Could not find the function public.dealer_otp_try(p_phone)" } });
 const fx = await call("verifyCode", [F, f1.code]);
-check("함수가 없으면 맞는 번호라도 로그인하지 않음 (안전 쪽)", !fx.result && /sql\/03/.test(fx.__err ?? ""), fx);
+check("함수가 없으면 맞는 번호라도 로그인하지 않음 (안전 쪽)", !fx.result && /sql\/03|준비하는 중/.test(fx.__err ?? ""), fx);
 delete rpcHooks.dealer_otp_try;
 
 console.error = realErr;

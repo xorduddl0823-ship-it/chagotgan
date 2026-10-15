@@ -30,7 +30,7 @@ const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const db = createClient(SUPA_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   { auth: { persistSession: false } });
 
-const VER = "cgg-api v1.4 · 2026-10-15 (확인 번호 알림톡 먼저)";
+const VER = "cgg-api v1.5 · 2026-10-15 (오픈 베타 말 다듬기)";
 const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
 const WASH_API = () => SUPA_URL + "/functions/v1/wash-api";
 const DAYS = 14;                 // 로그인 유지 기간 (체크와 같음)
@@ -42,7 +42,7 @@ const PRODUCTS = ["wash", "check"] as const;
 const S = (v: unknown) => String(v ?? "").trim();
 const digits = (v: unknown) => S(v).replace(/[^0-9]/g, "");
 function ok(result: unknown) { return new Response(JSON.stringify({ result }), { headers: JSON_HEAD }); }
-function err(message: string) { return new Response(JSON.stringify({ __err: message }), { headers: JSON_HEAD }); }
+function err(message: string) { return new Response(JSON.stringify({ __err: userMsg(message) }), { headers: JSON_HEAD }); }   // v1.5: 영어·원문 숨김
 function b2hex(b: Uint8Array) { return [...b].map((x) => x.toString(16).padStart(2, "0")).join(""); }
 function hex2b(h: string) {
   const out = new Uint8Array(h.length / 2);
@@ -136,7 +136,7 @@ async function checkAlive(sid: string) {
 /* ───────── 출입 명단 ───────── */
 async function accessOf(phone: string) {
   const { data, error } = await db.from("cgg_access").select("*").eq("phone", phone).maybeSingle();
-  if (error) throw new Error("경비실 표(cgg_access)를 읽지 못했습니다. SQL 을 먼저 실행해 주세요.");
+  if (error) throw new Error("통합 입구를 준비하는 중입니다. 차곳간(010-9559-3663)으로 알려 주세요.");
   return data;
 }
 function grantsOf(acc: any): string[] {
@@ -147,7 +147,7 @@ function grantsOf(acc: any): string[] {
  *  false 면 잠긴 상태. 성공하면 attemptOk 로 0 으로 되돌립니다. 기준(5번 · 10분)은 SQL 함수 cgg_attempt 에 있음 */
 async function attempt(phone: string) {
   const { data, error } = await db.rpc("cgg_attempt", { p_phone: phone });
-  if (error) throw new Error("경비실 준비가 덜 됐습니다 (cgg_attempt 없음). SQL 을 먼저 실행해 주세요.");
+  if (error) throw new Error("통합 입구를 준비하는 중입니다. 차곳간(010-9559-3663)으로 알려 주세요.");
   return data !== false;
 }
 async function attemptOk(phone: string) {
@@ -155,9 +155,26 @@ async function attemptOk(phone: string) {
 }
 
 /* ───────── 문자 (솔라피 · two_step 계정만) ───────── */
+
+/* ===== 사용자에게 보이는 오류 글 다듬기 (규칙 4-1 · 오픈 베타) =====
+   영어·코드·데이터베이스 원문은 사용자에게 보이지 않게 하고 서버 기록에만 남깁니다. */
+const MSG_OK_WORDS = /\b(TEST|SMS|LMS|MMS|PDF|JPG|PNG|CSV|URL|QR|GAON)\b|[a-z0-9-]+(\.[a-z0-9-]+)*\.(co\.kr|com)\b/gi;
+const MSG_HELP = "잠시 뒤 다시 해 주세요. 계속되면 차곳간(010-9559-3663)으로 알려 주세요.";
+function userMsg(raw: unknown): string {
+  const m = String(raw ?? "").trim().replace(/관리/g, "관리");
+  if (!m) return "처리하지 못했습니다. " + MSG_HELP;
+  const probe = m.replace(MSG_OK_WORDS, "");
+  if (!/[A-Za-z]{3,}/.test(probe)) return m;
+  console.error("userMsg hidden:", m.slice(0, 300));
+  const head = m.split(/\s*[:(—]\s*/)[0].trim();
+  if (head && /[가-힣]/.test(head) && !/[A-Za-z]{3,}/.test(head.replace(MSG_OK_WORDS, "")))
+    return head.replace(/\s*실패$/, "에 실패했습니다").replace(/[.\s]*$/, ".") + " " + MSG_HELP;
+  return "처리하지 못했습니다. " + MSG_HELP;
+}
+
 async function solapiAuth() {
   const key = Deno.env.get("SOLAPI_KEY") ?? "", secret = Deno.env.get("SOLAPI_SECRET") ?? "";
-  if (!key || !secret) throw new Error("문자 연동값(SOLAPI_KEY · SOLAPI_SECRET)이 서버에 없습니다.");
+  if (!key || !secret) throw new Error("문자 설정이 아직 끝나지 않았습니다. 차곳간(010-9559-3663)으로 알려 주세요.");
   const date = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
   const salt = crypto.randomUUID().replace(/-/g, "").slice(0, 32);
   const te = new TextEncoder();
@@ -165,11 +182,11 @@ async function solapiAuth() {
   const sig = b2hex(new Uint8Array(await crypto.subtle.sign("HMAC", k, te.encode(date + salt))));
   return `HMAC-SHA256 apiKey=${key}, date=${date}, salt=${salt}, signature=${sig}`;
 }
-/* v1.4 규칙 5-6: 확인 번호는 알림톡 먼저 (차곳간_인증번호 · 코드는 관제센터 설정 wash_hq.ata_cfg.tpl.auth), 안 되면 문자.
+/* v1.4 규칙 5-6: 확인 번호는 알림톡 먼저 (차곳간_인증번호 · 코드는 관리 설정 wash_hq.ata_cfg.tpl.auth), 안 되면 문자.
    보내는 번호는 CGG_SMS_FROM → 없으면 SMS_FROM (워시와 같은 대표번호) */
 async function sendCode(to: string, code: string) {
   const from = digits(Deno.env.get("CGG_SMS_FROM")) || digits(Deno.env.get("SMS_FROM"));
-  if (!from) throw new Error("문자 보내는 번호(CGG_SMS_FROM)가 서버에 없습니다.");
+  if (!from) throw new Error("문자 설정이 아직 끝나지 않았습니다. 차곳간(010-9559-3663)으로 알려 주세요.");
   let c: any = {};
   try { const { data } = await db.from("wash_hq").select("ata_cfg").eq("id", 1).maybeSingle(); c = (data && data.ata_cfg) || {}; }
   catch (_) { /* 칸이 없으면 문자 */ }

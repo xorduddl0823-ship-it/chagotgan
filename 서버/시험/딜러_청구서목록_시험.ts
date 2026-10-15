@@ -39,7 +39,7 @@ let pass = 0, fail = 0;
 function check(name: string, cond: boolean, extra: unknown = "") {
   if (cond) { pass++; console.log("  ✅ " + name); } else { fail++; console.log("  ❌ " + name, extra); }
 }
-check("ping 이 d6", (await call("ping")).result?.ver === "d6");
+check("ping 이 d6 이상", /^d[6-9]$/.test((await call("ping")).result?.ver ?? ""));
 check("약관 동의 전에는 못 봄", !!(await call("myBills", [], SA)).__err);
 await call("agree", [false], SA); await call("agree", [false], SB);
 const a = await call("myBills", [], SA);
