@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.1 (2026-10-15, 디자인 방)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.2 (2026-10-15, 디자인 방)
    ① 메뉴 배치 셋 (가로 · 세로 · 아이콘)  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)
+   ⑤ 체험 모드 — 미리 써 보기(가입 전) · 체험판(결제 전) 띠 · 자물쇠 · 3번 표시 · 기능 카드 (1.2)
    + 한국어 낱말 단위 줄바꿈 (keep-all)
    바탕: 관리 v4.0 의 관리/v4재료/j4.css (값 그대로). 관리 전용 id(#app · #nav · #setSub · #main)를
          모든 제품이 붙일 수 있는 이름표(class)로 바꿨어요.
@@ -120,6 +121,32 @@
 
 /* 창 · 알림 글 층 (1.1) — 제품의 창에 이 class 를 «더하거나», 제품 CSS 에서 z-index:var(--z-dialog) 로 맞춰요 */
 .cgg-dialog{z-index:var(--z-dialog)!important} .cgg-toast{z-index:var(--z-toast)!important}
+
+/* ───────── ⑤ 체험 모드 (1.2) — 미리 써 보기(가입 전) · 체험판(결제 전) 같은 모양 ───────── */
+.cgg-trial{display:flex;align-items:center;gap:14px;background:var(--navy);color:#fff;border-radius:var(--r-card);padding:14px 18px;margin:0 0 16px}
+.cgg-trial .tag{flex:none;background:var(--sky);color:var(--navy);font-weight:900;font-size:12.5px;border-radius:999px;padding:4px 11px}
+.cgg-trial .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cgg-trial .tx b{font-size:14.5px} .cgg-trial .tx small{font-size:12.5px;opacity:.78;line-height:1.5}
+.cgg-trial .go{flex:none;height:40px;padding:0 16px;border-radius:12px;border:1px solid #ffffff40;background:#ffffff14;color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.cgg-trial .prog{display:block;height:4px;border-radius:2px;background:#ffffff26;margin-top:6px;overflow:hidden}
+.cgg-trial .prog i{display:block;height:100%;background:var(--sky)}
+.cgg-lock{display:inline-flex;margin-left:5px;vertical-align:-2px;opacity:.75} .cgg-lock svg.ic{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cgg-left{margin-left:8px;font-size:11.5px;font-weight:700;color:var(--run);background:var(--run-bg);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.cgg-left.out{color:var(--muted);background:var(--bg)}
+.cgg-cls{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px;margin:0 0 16px}
+.cgg-cls h3{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:16px} .cgg-cls h3 small{font-size:12px;color:var(--muted);font-weight:500}
+.cgg-clsrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)} .cgg-clsrow:first-of-type{border-top:0}
+.cgg-clsrow .nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .cgg-clsrow .nm b{font-size:14px} .cgg-clsrow .nm small{font-size:12.5px;color:var(--muted)}
+.cgg-clsrow .st{font-size:12.5px;color:var(--muted)}
+.cgg-clsrow button{flex:none;height:36px;padding:0 12px;border-radius:var(--r-ctl);border:1px solid var(--ln2);background:var(--surface);color:var(--btn-ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.cgg-k{flex:none;display:inline-flex;align-items:center;gap:3px;min-width:52px;justify-content:center;height:24px;border-radius:999px;font-size:12px;font-weight:700}
+.cgg-k.lock{background:var(--stop-bg);color:var(--stop)} .cgg-k.try{background:var(--run-bg);color:var(--run)} .cgg-k.see{background:var(--done-bg);color:var(--done)}
+.cgg-k svg.ic{width:12px;height:12px}
+@media (max-width:600px){
+  .cgg-trial{flex-wrap:wrap;gap:8px 10px;padding:12px;border-radius:14px}
+  .cgg-trial .tx{flex-basis:calc(100% - 70px)} .cgg-trial .go{width:100%;height:38px}
+  .cgg-clsrow{flex-wrap:wrap;gap:8px 12px} .cgg-clsrow .nm{flex:1 1 calc(100% - 76px)} .cgg-clsrow button,.cgg-clsrow .st{margin-left:64px}
+}
 
 /* ───────── 화면 설정 — 메뉴 배치 고르기 ───────── */
 .cgg-lays{display:grid;gap:8px}
