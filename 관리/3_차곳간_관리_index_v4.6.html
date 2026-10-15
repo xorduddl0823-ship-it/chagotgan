@@ -1631,8 +1631,8 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 .pmFoot{margin-top:15px;padding-top:13px;border-top:1px solid var(--line);display:flex;
   justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 
-/* 청구서 — 계산서 끊음 여부 딱지
-   «계산서 끊음» 과 «계산서 안 끊음» 의 칸 너비를 같게 맞춥니다 */
+/* 청구서 — 세금계산서 끊음 여부 딱지
+   «세금계산서 끊음» 과 «세금계산서 안 끊음» 의 칸 너비를 같게 맞춥니다 */
 .pill{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 10px;
   border-radius:999px;white-space:nowrap;line-height:1.7;text-align:center;
   min-width:86px;font-variant-numeric:tabular-nums}
@@ -2543,7 +2543,7 @@ input[type=checkbox]:checked::after{opacity:1}
       <input id="gid" type="text" autocomplete="username" placeholder="아이디" style="width:100%;box-sizing:border-box;padding:15px 14px;font-size:17px;border-radius:12px;border:1px solid var(--line,#dde3ec);background:var(--surface,#fff);color:var(--text,#14202e);margin-top:7px">
       <label style="font-size:14px;font-weight:600;color:var(--muted,#667389);margin-top:14px;display:block" for="gpw">비밀번호</label>
       <input id="gpw" type="password" autocomplete="current-password" placeholder="비밀번호" style="width:100%;box-sizing:border-box;padding:15px 14px;font-size:17px;border-radius:12px;border:1px solid var(--line,#dde3ec);background:var(--surface,#fff);color:var(--text,#14202e);margin-top:7px">
-      <button id="gGo" style="width:100%;padding:16px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:var(--brand,#0b5d8f);color:#fff;cursor:pointer;margin-top:16px">들어가기</button>
+      <button id="gGo" style="width:100%;padding:16px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:var(--brand,#0b5d8f);color:#fff;cursor:pointer;margin-top:16px">로그인</button>
       <div id="gStep2" hidden>
         <div style="font-size:14px;color:var(--muted,#667389);margin-top:14px;line-height:1.6" id="gTo"></div>
         <label style="font-size:14px;font-weight:600;color:var(--muted,#667389);margin-top:14px;display:block" for="gcode">문자로 받은 6자리</label>
@@ -2569,7 +2569,7 @@ input[type=checkbox]:checked::after{opacity:1}
       <button type="button" class="jhb cgg-wide" id="btnHelp"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17h.01"/></svg>도움말</button>
       <button type="button" class="jhb cgg-wide" id="btnLink"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>링크 복사</button>
       <button type="button" class="jhb" id="btnReload" title="새로고침"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span class="lbl">새로고침</span></button>
-      <button type="button" class="jh-me" id="hWho" aria-haspopup="menu" aria-expanded="false" title="내 정보"><span class="j-av" id="hAv">·</span><span class="wt"><b id="meName">-</b><small id="meRole">본사 관리자</small></span><span class="car">▾</span></button>
+      <button type="button" class="jh-me" id="hWho" aria-haspopup="menu" aria-expanded="false" title="마이페이지"><span class="j-av" id="hAv">·</span><span class="wt"><b id="meName">-</b><small id="meRole">본사 관리자</small></span><span class="car">▾</span></button>
       <button type="button" id="btnOut" hidden>로그아웃</button>
     </div>
   </div>
@@ -2866,19 +2866,20 @@ function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 function post(bodyObj){
   return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify(bodyObj)})
-    .then(function(r){return r.text();},function(){throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요");})
+    .then(function(r){return r.text();},function(){throw new Error("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");})
     .then(function(x){
-      var j; try{ j=JSON.parse(x); }catch(e){ throw new Error("서버 응답을 읽지 못했습니다. 잠시 뒤 다시 시도해 주세요"); }
+      var j; try{ j=JSON.parse(x); }catch(e){ throw new Error("서버 응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요."); }
       if(j && j.__err) throw new Error(j.__err);
       return j ? j.result : null;
     });
 }
+function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }
 function open_(fn,args){ return post({shop:"",token:"",fn:fn,args:args||[]}); }
 function api(fn,args){
   var sid = ls(SIDKEY);
   if(!sid) return Promise.reject(new Error("로그인이 필요합니다. 다시 로그인해 주세요"));
   return post({shop:SHOP,token:sid,fn:fn,args:args||[]}).catch(function(e){
-    if(/로그인이 필요|열쇠|세션/.test(e.message||"")){ lsDel(SIDKEY); showGate("다시 로그인해 주세요"); }
+    if(/로그인이 필요|열쇠|세션/.test(emsg(e,""))){ lsDel(SIDKEY); showGate("다시 로그인해 주세요"); }
     throw e;
   });
 }
@@ -2906,7 +2907,7 @@ function dt(v,withTime){
   return s;
 }
 function ago(v){
-  if(!v) return "기록 없음";
+  if(!v) return "아직 기록이 없어요";
   var ms=Date.now()-new Date(v).getTime();
   if(isNaN(ms)) return "-";
   var d=Math.floor(ms/864e5);
@@ -2936,7 +2937,7 @@ function closeAsk(){ CGG.closeDialog(); }
 function ask(msg,onOk,okText,danger){
   var ls=String(msg||"").split("\n"), t=ls.shift(), kv=ls.length && ls.every(function(x){ return /^[^:：]{1,14}[:：] ?\S/.test(x); });
   var dl=CGG.dialog({size:"confirm", title:t, rows:kv?ls.map(function(x){ var i=x.search(/[:：]/); return [x.slice(0,i).trim(), x.slice(i+1).trim()]; }):null,
-    body:(!kv&&ls.length)?'<div class="jask">'+esc(ls.join("\n"))+'</div>':"", ok:okText||"네, 진행",
+    body:(!kv&&ls.length)?'<div class="jask">'+esc(ls.join("\n"))+'</div>':"", ok:okText||"확인",
     onOk:function(){ if(onOk) setTimeout(onOk,0); }});
   var y=dl.querySelector("[data-dok]"); y.id="askYes"; if(danger) y.classList.add("danger");
   var n=dl.querySelector(".ft [data-dx]"); if(n) n.id="askNo";
@@ -3187,7 +3188,7 @@ function viewSummary(){
   var memoToday = (TODO.list||[]).filter(function(t){ return !t.done && (!t.due_at || String(t.due_at).slice(0,10)===todayK); });
   var memoOld   = (TODO.list||[]).filter(function(t){ return !t.done && t.due_at && String(t.due_at).slice(0,10)<todayK; });
   var memoTodos = memoToday.slice(0,5).map(function(m){
-    return ["📝","오늘 메모 · "+m.title,"누르면 완료 표시·지우기",function(){ hqDaySheet(todayK); }]; });
+    return ["memo","오늘 메모 · "+m.title,"누르면 완료 표시·지우기",function(){ hqDaySheet(todayK); }]; });
   if(memoToday.length>5) memoTodos.push([memoToday.length-5,"오늘 메모 더 있음","달력 오늘 칸을 눌러 보세요",function(){ hqDaySheet(todayK); }]);
   if(memoOld.length) memoTodos.push([memoOld.length,"지난 날 메모 · 아직 완료 안 됨",
     String(memoOld[0].due_at).slice(5,10).replace("-","/")+" "+memoOld[0].title+(memoOld.length>1?" 외":""),
@@ -3376,7 +3377,7 @@ function hqDaySheet(k){
     '<div id="mmList">'+(ms.length?ms.map(function(m){
       return '<div class="memorow'+(m.done?" done":"")+'"><input type="checkbox" data-mdone="'+esc(m.id)+'"'+(m.done?" checked":"")+' title="끝나면 체크">'+
         '<div class="mt">'+esc(m.title)+'</div>'+
-        '<button class="btn danger" data-mdel="'+esc(m.id)+'" style="padding:6px 10px;font-size:13px">삭제</button></div>';}).join("")
+        '<button class="btn danger" data-mdel="'+esc(m.id)+'" style="padding:6px 10px;font-size:13px">지우기</button></div>';}).join("")
       :'<div class="hint" style="padding:6px 0">아직 메모가 없어요. 아래에 적으면 이 날 달력과 홈 [오늘 할 일]에 떠요.</div>')+'</div>'+
     '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
       '<input type="text" id="mmText" placeholder="예) QR 스티커 교체 / 문자 충전" style="flex:1;min-width:200px">'+
@@ -3394,15 +3395,15 @@ function hqDaySheet(k){
     .then(function(){ hqDaySheet(k); if(TAB==="sum") viewSummary(); }); };
   $("mmAdd").onclick=function(){
     var t=$("mmText").value.trim(); if(!t) return toast("메모 내용을 적어주세요",true);
-    api("hqTodoAdd",[t,k]).then(function(){ toast("메모를 적었어요"); again(); }).catch(function(e){ toast(e.message,true); });
+    api("hqTodoAdd",[t,k]).then(function(){ toast("메모를 적었어요"); again(); }).catch(function(e){ toast(emsg(e),true); });
   };
   $("mmText").onkeydown=function(e){ if(e.key==="Enter"&&!e.isComposing) $("mmAdd").click(); };
   $("sheet").querySelectorAll("[data-mdone]").forEach(function(c){
     c.onchange=function(){ api("hqTodoDone",[Number(c.getAttribute("data-mdone")), c.checked])
-      .then(again).catch(function(e){ toast(e.message,true); }); }; });
+      .then(again).catch(function(e){ toast(emsg(e),true); }); }; });
   $("sheet").querySelectorAll("[data-mdel]").forEach(function(b){
     b.onclick=function(){ api("hqTodoDel",[Number(b.getAttribute("data-mdel"))])
-      .then(function(){ toast("지웠어요"); again(); }).catch(function(e){ toast(e.message,true); }); }; });
+      .then(function(){ toast("지웠어요"); again(); }).catch(function(e){ toast(emsg(e),true); }); }; });
   $("sheet").querySelectorAll("[data-ev]").forEach(function(b){
     b.onclick=function(){ var e=evs[Number(b.getAttribute("data-ev"))]; closeSheet(); TAB=e.go; window.scrollTo(0,0); render(); }; });
 }
@@ -3456,7 +3457,7 @@ function svcState(v){
     if(left<0) lv=2; else if(left<=wd) lv=Math.max(lv,1);
   }
   if(!txt) txt = (v.kind==="sub"?"매달 결제":"확인 필요");
-  if(v.auto && v.auto_err) { lv=Math.max(lv,1); txt = "자동 읽기 실패 — "+v.auto_err; }
+  if(v.auto && v.auto_err) { lv=Math.max(lv,1); txt = "자동으로 읽지 못했어요 — "+v.auto_err; }
   else if(v.auto_note && v.kind!=="charge" && !v.next_due) txt = v.auto_note;
   return {lv:lv, txt:txt, note:(v.auto?(v.auto_note||""):"")};
 }
@@ -3472,7 +3473,7 @@ function dtFull(){
   return (d.getMonth()+1)+"월 "+d.getDate()+"일 ("+w+")";
 }
 
-/* 이 업체의 문자·계산서 총량과 남은 량을 계산합니다
+/* 이 업체의 문자·세금계산서 총량과 남은 량을 계산합니다
    무료(요금제 또는 체험분) → 충전분 → 여유분 20건 순서로 써요 */
 function usageOf(r){
   var trial = !r.plan || r.plan==="trial";
@@ -3550,7 +3551,7 @@ function viewShops(){
         html:function(r){ var u=usageOf(r);
           return useCell(u.smsLeft, u.smsTotal,
             (u.smsPaid?("충전분 "+cnt(u.smsPaid)+" 포함"):(u.spareLeft<u.spareMax?("여유분 "+cnt(u.spareLeft)+" 남음"):""))); }},
-      {k:"_tax", label:"계산서 남음 / 전체", w:140, nosort:false,
+      {k:"_tax", label:"세금계산서 남음 / 전체", w:140, nosort:false,
         sortVal:function(r){ return usageOf(r).taxLeft; },
         html:function(r){ var u=usageOf(r);
           return useCell(u.taxLeft, u.taxTotal,
@@ -3597,7 +3598,7 @@ function sessBoxBind(code){
     b.onclick=function(){
       api("hqSessionKill",[b.getAttribute("data-k")]).then(function(){ return loadAll(); })
         .then(function(){ toast("기기를 내보냈어요"); shopSheet(code); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     };
   });
 }
@@ -3613,13 +3614,13 @@ function usageBoxHtml(s){
       '<div class="ub"><span class="t">문자</span>'+
         '<span class="v">'+(su)+' / '+(sf)+'건</span>'+
         '<span class="s">충전분 '+sp+'건</span></div>'+
-      '<div class="ub"><span class="t">계산서</span>'+
+      '<div class="ub"><span class="t">세금계산서</span>'+
         '<span class="v">'+(tf?(tu+" / "+tf+"건"):"못 씀")+'</span>'+
         '<span class="s">충전분 '+tp+'건</span></div>'+
     '</div>'+
     '<div class="row2" style="margin-top:10px">'+
       '<div><label class="f">충전 넣기 — 종류</label><select id="sTopKind">'+
-        '<option value="sms">문자</option><option value="tax">계산서</option></select></div>'+
+        '<option value="sms">문자</option><option value="tax">세금계산서</option></select></div>'+
       '<div><label class="f">건수</label><input type="number" id="sTopQty" placeholder="1000"></div>'+
     '</div>'+
     '<div class="row2">'+
@@ -3636,8 +3637,8 @@ function usageBoxBind(code){
     api("hqTopup",[code,{ kind:$("sTopKind").value, qty:qty,
       amount:Number($("sTopAmt").value)||0, memo:$("sTopMemo").value.trim() }])
       .then(function(r){ return loadAll().then(function(){ return r; }); })
-      .then(function(r){ toast((r&&r.kind==="tax"?"계산서 ":"문자 ")+(r&&r.qty)+"건을 넣었어요"); shopSheet(code); })
-      .catch(function(e){ toast(e.message,true); });
+      .then(function(r){ toast((r&&r.kind==="tax"?"세금계산서 ":"문자 ")+(r&&r.qty)+"건을 넣었어요"); shopSheet(code); })
+      .catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -3719,7 +3720,7 @@ function shopSheet(code){
     if(!v.name) return toast("업체명을 넣어주세요",true);
     api("hqShopSave",[code,v]).then(function(){ return loadAll(); })
       .then(function(){ closeSheet(); toast("저장했어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("sDel").onclick=function(){
     openSheet('<h3>업체 지우기</h3>'+
@@ -3733,7 +3734,7 @@ function shopSheet(code){
     $("dYes").onclick=function(){
       api("hqShopDel",[code,$("dName").value]).then(function(){ return loadAll(); })
         .then(function(){ closeSheet(); toast("지웠어요"); render(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     };
   };
 }
@@ -3826,7 +3827,7 @@ function userSheet(phone){
     if(!v.name) return toast("이름을 넣어주세요",true);
     api("hqUserSave",[phone,v]).then(function(){ return loadAll(); })
       .then(function(){ closeSheet(); toast("저장했어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("uPwGo").onclick=function(){
     var pw = $("uPw").value.trim();          // 비우면 서버가 무작위 6자리를 만들어 줘요
@@ -3834,14 +3835,14 @@ function userSheet(phone){
       if(pw && pw.length < 6) return toast("비밀번호는 6자 이상으로 해주세요",true);
       api("hqUserPw",[phone,pw||null]).then(function(r){
         toast("비밀번호를 바꿨어요 — "+((r&&r.pw)||pw)+" (이 화면에서만 보여요)"); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     });
   };
   if($("uDel")) $("uDel").onclick=function(){
     confirmBox("계정 지우기", u.name+" 님의 로그인 계정을 지워요. 되돌릴 수 없어요.", "지우기", true, function(){
       api("hqUserDel",[phone]).then(function(){ return loadAll(); })
         .then(function(){ toast("지웠어요"); render(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     });
   };
 }
@@ -3947,7 +3948,7 @@ function payAddSheet(){
       $("pPeriod").value.trim(),$("pMemo").value.trim()])
       .then(function(){ return loadAll(); })
       .then(function(){ closeSheet(); toast("청구를 만들었어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -3969,19 +3970,19 @@ function paySheet(id){
   if($("pPaid")) $("pPaid").onclick=function(){
     api("hqPayMark",[id,"paid",$("pMethod").value]).then(function(){ return loadAll(); })
       .then(function(){ closeSheet(); toast("받음으로 바꿨어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   if($("pBack")) $("pBack").onclick=function(){
     api("hqPayMark",[id,"ready",""]).then(function(){ return loadAll(); })
       .then(function(){ closeSheet(); toast("되돌렸어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("pDel").onclick=function(){
     confirmBox("결제 건 지우기","이 기록을 지워요. 회계 증빙이 필요하면 지우지 말고 «취소» 상태로 두세요.",
       "지우기", true, function(){
       api("hqPayDel",[id]).then(function(){ return loadAll(); })
         .then(function(){ toast("지웠어요"); render(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     });
   };
 }
@@ -4007,7 +4008,7 @@ function viewInvites(){
     api("inviteAdd",[ph,$("iN").value.trim(),"",Number($("iD").value)||30])
       .then(function(){ return loadAll(); })
       .then(function(){ toast(phoneFmt(ph)+" 에 가입 코드를 줬어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   makeTable({
     id:"tInv", rows:(D.invites||[]).slice(), search:["phone","biz_name"],
@@ -4068,7 +4069,7 @@ function planCmp(){
     ["직원도 PC", function(p){ return p.staff_pc
         ? '<span class="yes">가능</span>' : '<span class="no">휴대폰만</span>'; }],
     ["문자 무료 (달마다)", function(p){ return Number(p.sms_free||0)?cnt(p.sms_free):'<span class="no">없음</span>'; }],
-    ["계산서 무료 (달마다)", function(p){ return Number(p.tax_free||0)?cnt(p.tax_free):'<span class="no">못 씀</span>'; }],
+    ["세금계산서 무료 (달마다)", function(p){ return Number(p.tax_free||0)?cnt(p.tax_free):'<span class="no">못 씀</span>'; }],
     ["가입 화면", function(p){ return p.active
         ? '<span class="yes">보임</span>' : '<span class="no">숨김</span>'; }]
   ];
@@ -4092,7 +4093,7 @@ function viewPlans(){
       '<b>PC 대수</b> — 업체 전체로 동시에 켜둘 수 있는 PC 수예요. 넘으면 가장 오래 켜둔 PC 가 자동으로 로그아웃돼요.<br>'+
       '<b>직원 PC</b> — 끄면 현장 직원은 휴대폰으로만 들어와요(정산은 대표만). 켜면 직원도 PC 로 들어올 수 있어요.<br>'+
       '<b>문자 무료 건수</b> — 결제일마다 새로 채워져요. 다 쓰면 여유분 20건으로 잠시 버티고, 그 뒤에는 충전분으로 나가요.<br>'+
-      '<b>계산서 무료 건수</b> — <b>0</b> 을 넣으면 그 요금제는 계산서를 아예 쓸 수 없어요.<br>'+
+      '<b>세금계산서 무료 건수</b> — <b>0</b> 을 넣으면 그 요금제는 세금계산서를 아예 쓸 수 없어요.<br>'+
       '계정 수와 PC 대수에 <b>0</b> 을 넣으면 제한 없음이에요.</div></div>'+
     planCmp()+
     '<div class="tools"><button class="btn primary" id="plAll">'+((D.plans||[]).length||3)+'개 한 번에 저장</button>'+
@@ -4115,7 +4116,7 @@ function viewPlans(){
       '</div>'+
       '</div><div class="row2">'+
       '<div><label class="f">문자 무료 건수 (달마다)</label><input type="number" id="pl_sf_'+c+'" value="'+(p.sms_free||0)+'"></div>'+
-      '<div><label class="f">계산서 무료 건수 (0 = 못 씀)</label><input type="number" id="pl_tf_'+c+'" value="'+(p.tax_free||0)+'"></div>'+
+      '<div><label class="f">세금계산서 무료 건수 (0 = 못 씀)</label><input type="number" id="pl_tf_'+c+'" value="'+(p.tax_free||0)+'"></div>'+
       '<div class="hint">코드 '+c+' · 기능: '+esc((p.features||[]).join(", ")||"-")+'</div>'+
       '<button class="btn primary sm" id="pl_b_'+c+'" style="margin-top:12px;justify-self:start;align-self:start">이것만 저장</button></div>';
   });
@@ -4125,7 +4126,7 @@ function viewPlans(){
     $("pl_b_"+p.code).onclick=function(){
       api("hqPlanSave",[p.code,planForm(p.code)]).then(function(){ return loadAll(); })
         .then(function(){ toast(p.name+" 요금제를 저장했어요"); render(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     };
   });
   if($("plAll")) $("plAll").onclick=function(){
@@ -4134,7 +4135,7 @@ function viewPlans(){
     toast("저장 중…");
     api("hqPlanSaveAll",[list]).then(function(r){ return loadAll().then(function(){ return r; }); })
       .then(function(r){ toast("요금제 "+((r&&r.done)||list.length)+"개를 한 번에 저장했어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -4155,13 +4156,13 @@ var SEC_MANUAL = [
    "업체 화면에서 무료 건수를 1로 낮추고 출고 2건 → 두 번째에서 멈추고 대표 휴대폰으로 알림 문자가 와야 해요. 확인 뒤 원래 숫자로 돌려놓으세요."],
   ["m5","충전하면 바로 다시 나가는지",
    "위 상태에서 충전 화면으로 몇 건 넣고 출고를 다시 해보세요. 바로 나가야 해요."],
-  ["m6","베이직 업체가 계산서를 못 쓰는지",
-   "베이직 업체 계정으로 세금계산서 발행을 눌러 보세요. 「계산서를 쓸 수 없습니다」가 떠야 해요."],
+  ["m6","베이직 업체가 세금계산서를 못 쓰는지",
+   "베이직 업체 계정으로 세금계산서 발행을 눌러 보세요. 「세금계산서를 쓸 수 없습니다」가 떠야 해요."],
   ["m7","지운 자료를 되살릴 수 있는지",
    "앱에서 기록 하나를 지우고 휴지통에서 되살려 보세요."],
   ["m8","글자에 코드가 섞여도 안전한지",
    "차량번호 칸에 <b>시험</b> 이라고 적고 목록을 보세요. 글자 그대로 보여야 해요 (굵게 변하면 문제)."],
-  ["m9","업체 삭제에 재확인이 있는지",
+  ["m9","업체 지우기에 재확인이 있는지",
    "업체 지우기를 눌러 보세요. 상호를 정확히 다시 적어야만 지워져야 해요."],
   ["m10","관리 비밀번호를 6자 이상으로 바꿨는지",
    "짧거나 흔한 비밀번호는 몇 번만 찍어봐도 뚫려요. 「내 계정」에서 바꿀 수 있어요."],
@@ -4217,12 +4218,12 @@ function opsLoad(){
     OPS.low      = (r&&r.low)||[];
     OPS.at       = (r&&r.at)||new Date().toISOString();
   },function(e){
-    OPS.loaded = true; OPS.err = e.message||"확인하지 못했습니다. 다시 시도해 주세요";
+    OPS.loaded = true; OPS.err = emsg(e,"확인하지 못했어요. 다시 시도해 주세요.");
     toast(OPS.err,true);
   }).then(function(){
     OPS.busy=false;
     var b2=$("opsGo"); if(b2){ b2.disabled=false; b2.textContent="지금 다시 확인"; }
-    var at=$("opsAt"); if(at) at.textContent = OPS.at?("마지막 확인 "+dtTime(OPS.at)):"확인하지 못했습니다";
+    var at=$("opsAt"); if(at) at.textContent = OPS.at?("마지막 확인 "+dtTime(OPS.at)):"확인하지 못했어요";
     opsDraw();
   });
 }
@@ -4386,7 +4387,7 @@ function viewCash(){
   var h='<div class="dashhead"><h2>충전 — 캐시 지갑</h2>'+
     '<div class="sub2">업체 지갑에 금액을 넣어 두고, 쓸 때마다 그만큼 깎아요. '+
     '문자 종류마다 금액이 달라도 그대로 반영돼요.</div></div>'+
-    '<div class="tools"><button class="btn primary sm" id="cashGo">다시 불러오기</button>'+
+    '<div class="tools"><button class="btn primary sm" id="cashGo">새로고침</button>'+
       '<span class="sp"></span><span class="cnt" id="cashAt"></span></div>'+
     '<div id="cashBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("main").innerHTML=h;
@@ -4396,16 +4397,16 @@ function viewCash(){
 
 function cashLoad(){
   if(CASH.busy) return; CASH.busy=true;
-  var b=$("cashGo"); if(b){ b.disabled=true; b.textContent="불러오는 중…"; }
+  var b=$("cashGo"); if(b){ b.disabled=true; b.textContent="불러오는 중이에요…"; }
   api("hqCash",[]).then(function(r){
     CASH.loaded=true; CASH.err="";
     CASH.on=!!(r&&r.on); CASH.note=(r&&r.note)||""; CASH.bank=(r&&r.bank)||"";
     CASH.price=(r&&r.price)||{}; CASH.wallets=(r&&r.wallets)||[]; CASH.logs=(r&&r.logs)||[];
     CASH.at=new Date().toISOString();
-  },function(e){ CASH.loaded=true; CASH.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+  },function(e){ CASH.loaded=true; CASH.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){
     CASH.busy=false;
-    var b2=$("cashGo"); if(b2){ b2.disabled=false; b2.textContent="다시 불러오기"; }
+    var b2=$("cashGo"); if(b2){ b2.disabled=false; b2.textContent="새로고침"; }
     var at=$("cashAt"); if(at) at.textContent = CASH.at?("마지막 확인 "+dtTime(CASH.at)):"";
     cashDraw();
   });
@@ -4416,7 +4417,7 @@ var PRICE_ROWS=[["sms","단문 문자",18],["lms","장문 문자",45],["mms","�
 
 function cashDraw(){
   var host=$("cashBody"); if(!host) return;
-  if(CASH.err){ host.innerHTML='<div class="hint"><b>불러오지 못했습니다.</b><br>'+esc(CASH.err)+
+  if(CASH.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(CASH.err)+
     '<br>캐시 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
   var p=CASH.price||{};
   var h='';
@@ -4428,7 +4429,7 @@ function cashDraw(){
       '<span class="sp"></span>'+
       '<button class="btn '+(CASH.on?"danger ":"primary ")+'sm" id="cashSw">'+(CASH.on?"끄기":"켜기")+'</button></div>'+
     '<div class="hint" style="margin-top:11px">'+
-      '<b>꺼져 있으면</b> 문자·계산서는 지금까지처럼 «건수»로 깎이고, 업체가 앱에서 충전을 누르면 아래 안내창만 떠요.<br>'+
+      '<b>꺼져 있으면</b> 문자·세금계산서는 지금까지처럼 «건수»로 깎이고, 업체가 앱에서 충전을 누르면 아래 안내창만 떠요.<br>'+
       '<b>켜면</b> 그때부터 캐시로 깎이고, 업체 앱에 지갑·충전·사용 내역이 보여요. 문제가 생기면 다시 끄면 돼요.</div>'+
     '<label class="f" for="cNote">업체에게 보여줄 안내 문구 (꺼져 있을 때)</label>'+
     '<textarea id="cNote" style="min-height:64px">'+esc(CASH.note)+'</textarea>'+
@@ -4524,21 +4525,21 @@ function cashDraw(){
   $("cashSw").onclick=function(){
     var on=!CASH.on;
     confirmBox(on?"캐시 시스템 켜기":"캐시 시스템 끄기",
-      on?"지금부터 문자·계산서가 캐시에서 깎여요. 업체 앱에도 지갑이 보여요.":
+      on?"지금부터 문자·세금계산서가 캐시에서 깎여요. 업체 앱에도 지갑이 보여요.":
          "다시 «건수» 방식으로 돌아가요. 업체 앱의 충전은 안내창만 떠요.",
       on?"켜기":"끄기", !on, function(){
         api("hqCashCfg",[{on:on}]).then(function(){ toast(on?"켰어요":"껐어요"); cashLoad(); })
-          .catch(function(e){ toast(e.message,true); });
+          .catch(function(e){ toast(emsg(e),true); });
       });
   };
   $("cNoteSave").onclick=function(){
     api("hqCashCfg",[{note:$("cNote").value, bank:$("cBank").value.trim()}])
-      .then(function(){ toast("저장했어요"); cashLoad(); }).catch(function(e){ toast(e.message,true); });
+      .then(function(){ toast("저장했어요"); cashLoad(); }).catch(function(e){ toast(emsg(e),true); });
   };
   $("prSave").onclick=function(){
     var pp={}; PRICE_ROWS.forEach(function(r){ pp[r[0]]=Number($("pr_"+r[0]).value)||0; });
     api("hqCashCfg",[{price:pp}]).then(function(){ toast("단가를 저장했어요"); cashLoad(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   var amt=$("cgAmt"), box=$("cgBox");
   function draw(){
@@ -4565,7 +4566,7 @@ function cgSend(minus){
   if(minus){
     confirmBox("캐시 빼기", shop+" 에서 "+won(v)+" 을 빼요.","빼기",true,function(){
       api("hqCashTake",[shop,v,memo||"본사 조정"]).then(function(){ toast("뺐어요"); cashLoad(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     });
     return;
   }
@@ -4573,12 +4574,12 @@ function cgSend(minus){
     if(r && r.confirm){
       confirmBox("큰 금액이에요", won(v)+" 을 "+shop+" 지갑에 넣어요. 맞나요?","넣기",false,function(){
         api("hqCashAdd",[shop,v,d,memo,"paid",true]).then(function(){ toast("넣었어요"); cashLoad(); })
-          .catch(function(e){ toast(e.message,true); });
+          .catch(function(e){ toast(emsg(e),true); });
       });
       return;
     }
     toast("넣었어요"); cashLoad();
-  }).catch(function(e){ toast(e.message,true); });
+  }).catch(function(e){ toast(emsg(e),true); });
 }
 
 /* =========================================================
@@ -4589,7 +4590,7 @@ function viewExp(){
   $("main").innerHTML='<div class="dashhead"><h2>기한 안내 문자</h2>'+
     '<div class="sub2">끝나는 날이 가까워지면 업체 대표님께 자동으로 문자가 나가요. '+
     '사장님이 누르지 않아도 서버가 알아서 보내요.</div></div>'+
-    '<div class="tools"><button class="btn primary sm" id="expGo">다시 불러오기</button>'+
+    '<div class="tools"><button class="btn primary sm" id="expGo">새로고침</button>'+
       '<span class="sp"></span><span class="cnt" id="expAt"></span></div>'+
     '<div id="expBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("expGo").onclick=expLoad;
@@ -4604,7 +4605,7 @@ function expLoad(){
     if(!EXP.cfg.tpls || !EXP.cfg.tpls.length) EXP.cfg.tpls=[{name:"기본",text:""},{name:"",text:""},{name:"",text:""}];
     while(EXP.cfg.tpls.length<3) EXP.cfg.tpls.push({name:"",text:""});
     if(EXP.ti===undefined) EXP.ti=Number(EXP.cfg.tplIdx||0);
-  },function(e){ EXP.loaded=true; EXP.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+  },function(e){ EXP.loaded=true; EXP.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ EXP.busy=false;
     var at=$("expAt"); if(at) at.textContent=EXP.at?("마지막 확인 "+dtTime(EXP.at)):"";
     expDraw(); });
@@ -4617,7 +4618,7 @@ function koTime(h,m){
 }
 function expDraw(){
   var host=$("expBody"); if(!host) return;
-  if(EXP.err){ host.innerHTML='<div class="hint"><b>불러오지 못했습니다.</b><br>'+esc(EXP.err)+'</div>'; return; }
+  if(EXP.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(EXP.err)+'</div>'; return; }
   var c=EXP.cfg||{}, days=c.days||[3,0], tm=String(c.time||"12:00");
   var hh=Number(tm.slice(0,2))||0, mm=Number(tm.slice(3,5))||0;
   var ti=Math.min(2,Math.max(0,Number(EXP.ti||0)));
@@ -4745,7 +4746,7 @@ function expDraw(){
   }
   $("exSave").onclick=function(){
     api("hqExpSave",[readCfg()]).then(function(){ toast("저장했어요"); EXP.loaded=false; expLoad(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
 
   var tabs=$("tplTabs");
@@ -4768,13 +4769,13 @@ function expDraw(){
   $("tplSave").onclick=function(){
     c.tpls[ti]={name:$("tplName").value, text:$("tplText").value};
     api("hqExpSave",[{tpls:c.tpls, tplIdx:ti}]).then(function(){ toast("문구를 저장했어요"); EXP.loaded=false; expLoad(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("nwGo").onclick=function(){
     var sh=$("nwShop").value, i=Number($("nwTpl").value)||0;
     confirmBox("지금 보내기", (sh==="ME"?"내 번호":sh)+" 로 문자 한 통을 지금 보내요.","보내기",false,function(){
       api("hqExpSendNow",[sh,i]).then(function(r){ toast("보냈어요 ("+((r&&r.to)||"")+")"); EXP.loaded=false; expLoad(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     });
   };
   Array.prototype.forEach.call(document.querySelectorAll("[data-tog]"),function(b){
@@ -4782,7 +4783,7 @@ function expDraw(){
       ev.stopPropagation();
       var code=b.getAttribute("data-tog"), on=b.getAttribute("data-on")==="1";
       api("hqShopSave",[code,{expSms:!on}]).then(function(){ toast("바꿨어요"); EXP.loaded=false; expLoad(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     };
   });
 }
@@ -4881,13 +4882,13 @@ function todoBind(){
   Array.prototype.forEach.call(box.querySelectorAll("input[type=checkbox]"),function(c){
     c.onchange=function(){
       api("hqTodoDone",[Number(c.getAttribute("data-id")), c.checked])
-        .then(todoLoad).catch(function(e){ toast(e.message,true); });
+        .then(todoLoad).catch(function(e){ toast(emsg(e),true); });
     };
   });
   Array.prototype.forEach.call(box.querySelectorAll("[data-del]"),function(b){
     b.onclick=function(){
       api("hqTodoDel",[Number(b.getAttribute("data-del"))])
-        .then(todoLoad).catch(function(e){ toast(e.message,true); });
+        .then(todoLoad).catch(function(e){ toast(emsg(e),true); });
     };
   });
   function add(){
@@ -4898,7 +4899,7 @@ function todoBind(){
       due=y+"-"+String(mm[1]).padStart(2,"0")+"-"+String(mm[2]).padStart(2,"0");
       v=v.replace(/(\d{1,2})\s*\/\s*(\d{1,2})\s*$/,"").trim(); }
     $("tdNew").value="";
-    api("hqTodoAdd",[v,due]).then(todoLoad).catch(function(e){ toast(e.message,true); });
+    api("hqTodoAdd",[v,due]).then(todoLoad).catch(function(e){ toast(emsg(e),true); });
   }
   if($("tdAdd")) $("tdAdd").onclick=add;
   if($("tdNew")) $("tdNew").onkeydown=function(e){ if(e.key==="Enter") add(); };
@@ -4911,7 +4912,7 @@ var PG = {};
 function viewPg(){
   $("main").innerHTML='<div class="dashhead"><h2>카드 결제</h2>'+
     '<div class="sub2">PG사 승인이 나면 여기서 켜기만 하면 돼요. 켜는 순간부터 업체가 앱에서 카드로 충전·요금 결제를 할 수 있어요.</div></div>'+
-    '<div class="tools"><button class="btn primary sm" id="pgGo">다시 불러오기</button>'+
+    '<div class="tools"><button class="btn primary sm" id="pgGo">새로고침</button>'+
       '<span class="sp"></span><span class="cnt" id="pgAt"></span></div>'+
     '<div id="pgBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("pgGo").onclick=pgLoad;
@@ -4926,14 +4927,14 @@ function pgLoad(){
     PG.note=(r&&r.note)||""; PG.hasSecret=!!(r&&r.hasSecret);
     PG.orders=(r&&r.orders)||[]; PG.names=(r&&r.names)||{};
     PG.at=new Date().toISOString();
-  },function(e){ PG.loaded=true; PG.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+  },function(e){ PG.loaded=true; PG.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ PG.busy=false;
     var at=$("pgAt"); if(at) at.textContent=PG.at?("마지막 확인 "+dtTime(PG.at)):"";
     pgDraw(); });
 }
 function pgDraw(){
   var host=$("pgBody"); if(!host) return;
-  if(PG.err){ host.innerHTML='<div class="hint"><b>불러오지 못했습니다.</b><br>'+esc(PG.err)+
+  if(PG.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(PG.err)+
     '<br>카드 결제 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
 
   var h='';
@@ -5029,13 +5030,13 @@ function pgDraw(){
       on?"업체 앱에 「카드로 바로 결제」가 보이게 돼요.":"다시 계좌이체 안내만 나와요.",
       on?"켜기":"끄기", !on, function(){
         api("hqPgSave",[{on:on}]).then(function(){ toast(on?"켰어요":"껐어요"); pgLoad(); })
-          .catch(function(e){ toast(e.message,true); });
+          .catch(function(e){ toast(emsg(e),true); });
       });
   };
   $("pgSave").onclick=function(){
     api("hqPgSave",[{provider:$("pgProv").value, clientKey:$("pgKey").value.trim(),
       fee:Number($("pgFee").value)||0, note:$("pgNote").value}])
-      .then(function(){ toast("저장했어요"); pgLoad(); }).catch(function(e){ toast(e.message,true); });
+      .then(function(){ toast("저장했어요"); pgLoad(); }).catch(function(e){ toast(emsg(e),true); });
   };
   billBind();
   /* 줄마다 [환불] — 서버가 셈한 금액을 보고 확정 (결제 방 요청서) */
@@ -5081,11 +5082,11 @@ function secLoad(){
     SEC.ver    = (r&&r.ver)||"";
   },function(e){
     SEC.checks = null;
-    toast(e.message||"확인하지 못했습니다. 다시 시도해 주세요",true);
+    toast(emsg(e,"확인하지 못했어요. 다시 시도해 주세요."),true);
   }).then(function(){
     SEC.busy=false;
     var b2=$("secGo"); if(b2){ b2.disabled=false; b2.textContent="지금 다시 확인"; }
-    var at=$("secAt"); if(at) at.textContent = SEC.at?("마지막 확인 "+dtTime(SEC.at)):"확인하지 못했습니다";
+    var at=$("secAt"); if(at) at.textContent = SEC.at?("마지막 확인 "+dtTime(SEC.at)):"확인하지 못했어요";
     secDraw();
   });
 }
@@ -5162,7 +5163,7 @@ function secDraw(){
         secDraw();
       },function(e){
         box.checked = !on; box.disabled = false;
-        toast(e.message||"저장하지 못했습니다. 다시 시도해 주세요",true);
+        toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true);
       });
     };
   });
@@ -5200,7 +5201,7 @@ function viewMe(){
         toast("바꿨어요. 다시 로그인해 주세요");
         setTimeout(function(){ showGate("새 정보로 다시 로그인해 주세요"); },900);
       }else toast("바뀐 내용이 없어요");
-    }).catch(function(e){ toast(e.message,true); });
+    }).catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -5253,7 +5254,7 @@ function svcRefresh(){
       var ok=(r&&r.done)||[], bad=(r&&r.failed)||[];
       render();
       if(bad.length) openSheet('<h3>상태를 새로 받았어요</h3>'+
-        '<div class="sub">'+ok.length+'곳 성공 · '+bad.length+'곳 실패</div>'+
+        '<div class="sub">'+ok.length+'곳 보냈어요 · '+bad.length+'곳은 보내지 못했어요</div>'+
         (ok.length?('<label class="f">잘 읽은 곳</label><div class="hint">'+
           ok.map(function(x){return esc(x);}).join("<br>")+'</div>'):'')+
         '<label class="f">못 읽은 곳</label><div class="hint" style="color:var(--warn)">'+
@@ -5263,7 +5264,7 @@ function svcRefresh(){
       else toast(ok.length+"곳 상태를 새로 받았어요");
       if($("rOk")) $("rOk").onclick=closeSheet;
     });
-  }).catch(function(e){ toast(e.message,true); });
+  }).catch(function(e){ toast(emsg(e),true); });
 }
 
 function svcSheet(code){
@@ -5324,13 +5325,13 @@ function svcSheet(code){
     else p=api("hqSvcSave",[code,o]);
     p.then(function(){ return loadAll(); })
      .then(function(){ closeSheet(); toast("저장했어요"); render(); })
-     .catch(function(e){ toast(e.message,true); });
+     .catch(function(e){ toast(emsg(e),true); });
   };
   if($("vDel")) $("vDel").onclick = function(){
     confirmBox("서비스 지우기", v.name+" 를 목록에서 빼요. 지출 기록은 그대로 남아요.","지우기",true,function(){
       api("hqSvcDel",[code]).then(function(){ return loadAll(); })
         .then(function(){ closeSheet(); toast("지웠어요"); render(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     });
   };
 }
@@ -5342,7 +5343,7 @@ var SETTLE_YEAR = String(new Date().getFullYear());
 function viewSettle(){
   $("main").innerHTML = '<div class="dashhead"><h2>정산</h2>'+
     '<div class="sub2">달마다 업체에서 받은 금액과 유지비로 나간 금액을 견줘요.</div></div>'+
-    '<div class="card"><div class="empty">불러오는 중…</div></div>';
+    '<div class="card"><div class="empty">불러오는 중이에요…</div></div>';
   api("hqSettle",[SETTLE_YEAR]).then(function(r){
     var ms = (r&&r.months)||[], inc=(r&&r.income)||0, exp=(r&&r.expense)||0, prof=inc-exp;
     var yNow = new Date().getFullYear(), yOpt="";
@@ -5408,11 +5409,11 @@ function viewSettle(){
         ev.stopPropagation();
         api("hqExpenseDel",[b.getAttribute("data-ex")]).then(function(){ return loadAll(); })
           .then(function(){ toast("지웠어요"); viewSettle(); })
-          .catch(function(e){ toast(e.message,true); });
+          .catch(function(e){ toast(emsg(e),true); });
       };
     });
   }).catch(function(e){
-    $("main").innerHTML = '<div class="dashhead"><h2>정산</h2></div><div class="card"><div class="empty">'+esc(e.message)+'</div></div>';
+    $("main").innerHTML = '<div class="dashhead"><h2>정산</h2></div><div class="card"><div class="empty">'+esc(emsg(e))+'</div></div>';
   });
 }
 
@@ -5430,7 +5431,7 @@ function expSheet(){
     '</div>'+
     '<label class="f">어느 달치</label><input type="text" id="ePer" value="'+today.slice(0,7)+'" placeholder="2026-09">'+
     '<label class="f">충전식이면 남은 금액도 그만큼 올릴까요?</label>'+
-    '<select id="eAdd"><option value="1">네, 올려주세요</option><option value="0">아니요</option></select>'+
+    '<select id="eAdd"><option value="1">남은 금액도 올리기</option><option value="0">올리지 않기</option></select>'+
     '<div class="hint" id="eAddHint"></div>'+
     '<label class="f">메모</label><textarea id="eMemo" rows="2"></textarea>'+
     '<div class="sheetbtns"><button class="btn" id="eCancel">취소</button>'+
@@ -5463,7 +5464,7 @@ function expSheet(){
       closeSheet();
       toast((r&&r.note) ? r.note : "적었어요");
       viewSettle();
-    }).catch(function(e){ toast(e.message,true); });
+    }).catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -5483,7 +5484,7 @@ function taxLogLoad(force){
   }).catch(function(e){
     TAXLOG.rows=[];
     var b=document.getElementById("tLog");
-    if(b) b.innerHTML='<div class="hint" style="color:var(--danger)">'+esc(e.message||"불러오지 못했습니다. 다시 시도해 주세요")+'</div>';
+    if(b) b.innerHTML='<div class="hint" style="color:var(--danger)">'+esc(emsg(e,"불러오지 못했어요. 다시 시도해 주세요."))+'</div>';
   }).then(function(){ TAXLOG.busy=false; if(TAXLOG.rows) taxLogDraw(); });
 }
 function taxLogDraw(){
@@ -5493,8 +5494,8 @@ function taxLogDraw(){
   makeTable({
     id:"tLogT", rows:rows, search:["to_name","to_corp","nts_no","mgt_key","memo"],
     sortKey:"no", sortDir:"desc", rowId:function(r){ return String(r.no); },
-    empty:function(all){ return all.length ? "찾으시는 계산서가 없어요. 검색어를 지워 보세요."
-      : "아직 보낸 계산서가 없어요. 위 «업체별 발행» 에서 계산서를 보내면 여기에 쌓여요."; },
+    empty:function(all){ return all.length ? "찾으시는 세금계산서가 없어요. 검색어를 지워 보세요."
+      : "아직 보낸 세금계산서가 없어요. 위 «업체별 발행» 에서 세금계산서를 보내면 여기에 쌓여요."; },
     filters:[
       {k:"ok", label:"결과", get:function(r){ return r.ok?"ok":"no"; },
        opts:[["","결과 전체"],["ok","잘 됨"],["no","안 됨"]]},
@@ -5546,7 +5547,7 @@ function viewTax(){
       '<button class="btn sm" id="hqTog">'+(TAXHQ.open?"접기":"펼쳐서 고치기")+'</button></div>'+
     (TAXHQ.open?"":'<div class="hint" style="margin-top:8px">'+hqSum+'</div>')+
     '<div id="hqBody"'+(TAXHQ.open?"":' style="display:none"')+'>'+
-    '<p class="lead" style="margin:10px 0 12px">계산서에 «공급자» 로 찍히는 우리 정보예요.</p>'+
+    '<p class="lead" style="margin:10px 0 12px">세금계산서에 «공급자» 로 찍히는 우리 정보예요.</p>'+
     '<div class="row2">'+
       '<div><label class="f">상호</label><input type="text" id="hName" value="'+esc(hq.biz_name||"")+'"></div>'+
       '<div><label class="f">사업자등록번호 (10자리)</label><input type="text" id="hNo" value="'+esc(hq.biz_no||"")+'" placeholder="0000000000"></div>'+
@@ -5573,16 +5574,16 @@ function viewTax(){
 
   /* 2) 업체별 발행 */
   h += '<div class="card"><h2>업체별 발행</h2>'+
-    '<p class="lead" style="margin:2px 0 12px">줄을 누르면 그 업체에 계산서를 보내요. 사업자번호가 없으면 먼저 넣어야 해요.</p>'+
+    '<p class="lead" style="margin:2px 0 12px">줄을 누르면 그 업체에 세금계산서를 보내요. 사업자번호가 없으면 먼저 넣어야 해요.</p>'+
     (ready?'':'<div class="hint" style="margin-bottom:10px;color:var(--warn)">우리 사업자등록번호를 먼저 채워주세요.</div>')+
     '<div id="tTax"></div></div>';
 
-  /* 3) 보낸 계산서 */
+  /* 3) 보낸 세금계산서 */
   h += '<div class="card"><div class="tools" style="margin:0;align-items:center">'+
-      '<h2 style="margin:0">보낸 계산서</h2>'+
+      '<h2 style="margin:0">보낸 세금계산서</h2>'+
       '<span class="sp"></span>'+
       '<button class="btn sm" id="tLogRe">새로 불러오기</button></div>'+
-    '<p class="lead" style="margin:8px 0 12px">차곳간이 업체에 보낸 계산서예요. 국세청 승인번호가 찍히면 끝난 거예요.</p>'+
+    '<p class="lead" style="margin:8px 0 12px">차곳간이 업체에 보낸 세금계산서예요. 국세청 승인번호가 찍히면 끝난 거예요.</p>'+
     '<div id="tLog"><div class="hint">불러오는 중이에요…</div></div></div>';
 
   $("main").innerHTML = h;
@@ -5601,12 +5602,12 @@ function viewTax(){
       {k:"plan", label:"요금제", w:90, html:function(r){ return esc(PLAN_NAME[r.plan]||r.plan||"-"); }},
       {k:"tax_email", label:"받을 메일", w:170},
       {k:"_go", label:"", w:100, nosort:true, html:function(){
-        return '<span class="btn sm">계산서 보내기</span>'; }}
+        return '<span class="btn sm">세금계산서 보내기</span>'; }}
     ]
   });
 
   $("hqTog").onclick = function(){ TAXHQ.open = !TAXHQ.open; viewTax(); };
-  $("tLogRe").onclick = function(){ toast("다시 불러오는 중…"); taxLogLoad(true); };
+  $("tLogRe").onclick = function(){ toast("새로고침하는 중이에요…"); taxLogLoad(true); };
 
   $("hSave").onclick = function(){
     api("hqInfoSave",[{ bizName:$("hName").value.trim(), bizNo:$("hNo").value, ceo:$("hCeo").value.trim(),
@@ -5615,13 +5616,13 @@ function viewTax(){
       pbUserId:$("hPb").value.trim(), pbTest:$("hTest").value==="1" }])
       .then(function(){ return loadAll(); })
       .then(function(){ toast("저장했어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("hCheck").onclick = function(){
     toast("팝빌에 물어보는 중…");
     api("hqTaxCheck",[]).then(function(r){
       toast("팝빌 연결 정상"+(r&&r.point!==""?" · 남은 포인트 "+r.point:"")+(r&&r.test?" (시험)":""));
-    }).catch(function(e){ toast(e.message,true); });
+    }).catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -5638,15 +5639,15 @@ function taxSend(sh,code,v,force){
       if(r && r.dup && !force){ closeSheet(); taxDupSheet(sh,code,v,r); return; }
       closeSheet(); taxLogLoad(true); taxDoneSheet(sh,r,"");
     })
-    .catch(function(e){ closeSheet(); taxLogLoad(true); taxDoneSheet(sh,null,e.message||"알 수 없는 오류"); });
+    .catch(function(e){ closeSheet(); taxLogLoad(true); taxDoneSheet(sh,null,emsg(e,"알 수 없는 오류")); });
 }
 function taxDupSheet(sh,code,v,r){
   var pv=(r&&r.prev)||{};
   var row=function(k,val){ return '<label class="f" style="margin-top:10px">'+esc(k)+'</label>'+
     '<div style="font-size:14px;font-weight:700">'+val+'</div>'; };
   openSheet(
-    '<h3>이미 보낸 계산서가 있어요</h3>'+
-    '<div class="sub">받는 곳 · 금액 · 비고가 모두 같아요. 그대로 보내면 <b>같은 계산서가 한 장 더</b> 나가요.</div>'+
+    '<h3>이미 보낸 세금계산서가 있어요</h3>'+
+    '<div class="sub">받는 곳 · 금액 · 비고가 모두 같아요. 그대로 보내면 <b>같은 세금계산서가 한 장 더</b> 나가요.</div>'+
     '<div class="card" style="margin:0 0 16px;padding:14px 16px">'+
       row("받는 곳", esc(r.toName||sh.name)+' <span class="mono" style="color:var(--muted)">'+esc(bizFmt(r.toCorp||sh.biz_no))+'</span>')+
       row("금액", esc(won(Number(r.total)||0)))+
@@ -5659,7 +5660,7 @@ function taxDupSheet(sh,code,v,r){
       row("관리번호", '<span class="mono" style="color:var(--muted)">'+esc(pv.mgtKey||"-")+'</span>')+
     '</div>'+
     '<div class="hint">딜러가 달라서 따로 끊는 것이라면, <b>비고</b>에 딜러 이름을 적고 다시 보내시면 돼요. '+
-      '그러면 다른 계산서로 보고 그냥 나가요.</div>'+
+      '그러면 다른 세금계산서로 보고 그냥 나가요.</div>'+
     '<div class="sheetbtns"><button class="btn" id="dpNo">취소</button>'+
      '<button class="btn" id="dpFix" style="flex:1">비고 고치기</button>'+
      '<button class="btn danger" id="dpGo" style="flex:1">그래도 보내기</button></div>'
@@ -5673,7 +5674,7 @@ function taxDoneSheet(sh,r,err){
   var test = ok ? !!(r&&r.test) : (D.hq&&D.hq.pb_test!==false);
   var nts = (r&&r.ntsConfirmNum)||"";
   openSheet(
-    '<h3>'+(ok?'계산서를 보냈어요':'계산서를 보내지 못했습니다. 아래 이유를 확인하고 다시 보내 주세요')+'</h3>'+
+    '<h3>'+(ok?'세금계산서를 보냈어요':'세금계산서를 보내지 못했어요. 아래 이유를 확인하고 다시 보내 주세요.')+'</h3>'+
     '<div class="sub">'+esc(sh.name)+' · '+(test?'시험 발행':'실제 발행')+'</div>'+
     '<div class="card" style="margin:0 0 16px;padding:14px 16px">'+
      (ok
@@ -5684,15 +5685,15 @@ function taxDoneSheet(sh,r,err){
           (test
             ? '시험 발행이라 국세청으로는 가지 않았어요. 팝빌 시험 사이트에서 같은 내용이 보이면 제대로 된 거예요.<br>'+
               '<a href="https://test.popbill.com" target="_blank" rel="noopener">test.popbill.com 열기</a> → 로그인 → 세금 → 매출 → 발행 목록'
-            : '국세청으로 보냈어요. 받는 쪽 메일로도 계산서가 가요.')+
+            : '국세청으로 보냈어요. 받는 쪽 메일로도 세금계산서가 가요.')+
         '</div>'
       : '<div style="font-size:15px"><span class="pill off">안 됨</span></div>'+
         '<label class="f" style="margin-top:12px">안 된 이유</label>'+
         '<div style="color:var(--danger);font-size:14px;line-height:1.6">'+esc(err)+'</div>'+
-        '<div class="hint" style="margin-top:10px">아래 «보낸 계산서» 목록에도 그대로 남아요. 이유를 고치고 다시 보내면 돼요.</div>')+
+        '<div class="hint" style="margin-top:10px">아래 «보낸 세금계산서» 목록에도 그대로 남아요. 이유를 고치고 다시 보내면 돼요.</div>')+
     '</div>'+
     '<div class="sheetbtns"><button class="btn" id="tdClose">닫기</button>'+
-     '<button class="btn primary" id="tdList" style="flex:2">보낸 계산서 목록 보기</button></div>'
+     '<button class="btn primary" id="tdList" style="flex:2">보낸 세금계산서 목록 보기</button></div>'
   );
   $("tdClose").onclick = closeSheet;
   $("tdList").onclick = function(){
@@ -5722,7 +5723,7 @@ function taxSheet(code){
         '<div><label class="f">종목</label><input type="text" id="tJong" value="'+esc(sh.jongmok||"")+'"></div>'+
       '</div>'+
       '<div class="row2">'+
-        '<div><label class="f">계산서 받을 메일</label><input type="text" id="tEmail" value="'+esc(sh.tax_email||"")+'"></div>'+
+        '<div><label class="f">세금계산서 받을 메일</label><input type="text" id="tEmail" value="'+esc(sh.tax_email||"")+'"></div>'+
         '<div><label class="f">담당자 연락처</label><input type="text" id="tPhone" value="'+esc(sh.tax_phone||sh.owner_phone||"")+'"></div>'+
       '</div>'+
       '<button class="btn" id="tInfoSave" style="width:100%;margin-top:12px">받는 쪽 정보만 저장</button>'+
@@ -5735,7 +5736,7 @@ function taxSheet(code){
     '<div class="hint" id="tSum"></div>'+
     '<label class="f">메모</label><input type="text" id="tMemo" value="">'+
     '<div class="sheetbtns"><button class="btn" id="tCancel">닫기</button>'+
-      '<button class="btn primary" id="tGo" style="flex:2">계산서 보내기</button></div>'
+      '<button class="btn primary" id="tGo" style="flex:2">세금계산서 보내기</button></div>'
   );
   function sum(){
     var a=Number($("tAmt").value)||0, v=Math.round(a/10);
@@ -5750,7 +5751,7 @@ function taxSheet(code){
       taxEmail:$("tEmail").value.trim(), taxPhone:$("tPhone").value }])
       .then(function(){ return loadAll(); })
       .then(function(){ toast("받는 쪽 정보를 저장했어요"); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("tGo").onclick = function(){
     var amt=Number($("tAmt").value)||0;
@@ -5764,12 +5765,12 @@ function taxSheet(code){
     var dup=(TAXLOG.rows||[]).filter(function(r){
       return r.ok && String(r.mgt_key||"").indexOf(head)===0; });
     var dupMsg = dup.length
-      ? ("\n\n[알림] "+sh.name+" 에 "+per+" 계산서를 이미 "+dup.length+"장 보냈어요"+
+      ? ("\n\n[알림] "+sh.name+" 에 "+per+" 세금계산서를 이미 "+dup.length+"장 보냈어요"+
          (dup[0].nts_no?(" (마지막 승인번호 "+dup[0].nts_no+")"):"")+
          ". 금액과 비고까지 똑같으면 보내기 직전에 한 번 더 물어봐요.")
       : "";
-    confirmBox("계산서 보내기",
-      sh.name+" 에 "+won(amt+Math.round(amt/10))+" 짜리 계산서를 보내요."+
+    confirmBox("세금계산서 보내기",
+      sh.name+" 에 "+won(amt+Math.round(amt/10))+" 짜리 세금계산서를 보내요."+
       (real?" 실제 발행이라 국세청으로 바로 가요.":" 지금은 시험 발행이라 국세청에는 가지 않아요.")+dupMsg,
       dup.length?"그래도 보내기":"보내기", real||!!dup.length, function(){
       taxSend(sh,code,{ amount:amt, period:per, itemName:item, memo:memo });
@@ -5808,10 +5809,10 @@ function viewPacks(){
     '<div class="sub2">업체가 무료 건수를 다 썼을 때 미리 사 두는 묶음이에요. 여기서 정한 금액이 앱 충전 화면에 그대로 나와요.</div></div>'+
     '<div class="tools"><button class="btn primary" id="pkSave">한 번에 저장</button>'+
       '<button class="btn" id="pkAddS">＋ 문자 묶음</button>'+
-      '<button class="btn" id="pkAddT">＋ 계산서 묶음</button>'+
+      '<button class="btn" id="pkAddT">＋ 세금계산서 묶음</button>'+
       '<span class="cnt">금액이 0이면 업체 화면에 «상담 문의»로 나와요</span></div>'+
     '<div class="card"><h2>문자 묶음</h2>'+rows(sms,"sms")+'</div>'+
-    '<div class="card"><h2>계산서 묶음</h2>'+rows(tax,"tax")+'</div>'+
+    '<div class="card"><h2>세금계산서 묶음</h2>'+rows(tax,"tax")+'</div>'+
     '<div class="card"><h2>넣어준 기록</h2>'+
       '<p class="lead" style="margin:2px 0 10px">업체 화면에서 «충전 넣어주기»로 넣은 건수가 쌓여요.</p>'+
       '<div id="tTop"></div></div>';
@@ -5822,7 +5823,7 @@ function viewPacks(){
     cols:[
       {k:"at", label:"넣은 때", w:130, stick:true, html:function(r){ return dt(r.at,true); }},
       {k:"shopName", label:"업체", w:130, html:function(r){ return '<b>'+esc(r.shopName)+'</b>'; }},
-      {k:"kind", label:"종류", w:80, html:function(r){ return r.kind==="tax"?"계산서":"문자"; }},
+      {k:"kind", label:"종류", w:80, html:function(r){ return r.kind==="tax"?"세금계산서":"문자"; }},
       {k:"qty", label:"건수", w:90, num:true, html:function(r){ return (r.qty||0).toLocaleString("ko-KR")+"건"; }},
       {k:"amount", label:"받은 금액", w:110, num:true, html:function(r){ return esc(won(r.amount)); }},
       {k:"who", label:"넣은 사람", w:90},
@@ -5839,20 +5840,20 @@ function viewPacks(){
     if(!list.length) return toast("저장할 것이 없어요");
     api("hqPackSaveAll",[list]).then(function(){ return loadAll(); })
       .then(function(){ toast("저장했어요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("pkAddS").onclick=function(){ addPack("sms"); };
   $("pkAddT").onclick=function(){ addPack("tax"); };
   function addPack(kind){
     api("hqPackAdd",[{kind:kind, qty:0, price:0}]).then(function(){ return loadAll(); })
       .then(function(){ toast("묶음을 넣었어요. 건수와 금액을 채워주세요"); render(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   }
   Array.prototype.forEach.call($("main").querySelectorAll("button[data-pkd]"),function(b){
     b.onclick=function(){
       api("hqPackDel",[b.getAttribute("data-pkd")]).then(function(){ return loadAll(); })
         .then(function(){ toast("지웠어요"); render(); })
-        .catch(function(e){ toast(e.message,true); });
+        .catch(function(e){ toast(emsg(e),true); });
     };
   });
 }
@@ -5869,7 +5870,7 @@ function viewLock(){
   $("main").innerHTML='<div class="dashhead"><h2>잠금 · 차단</h2>'+
     '<div class="sub2">이용기간(또는 무료 체험)이 끝난 업체를 어떻게 할지 정해요. '+
     '끝나자마자 내쫓지 않고, 며칠은 <b>보기만</b> 되게 두었다가 그 뒤에 로그인을 막아요.</div></div>'+
-    '<div class="tools"><button class="btn primary sm" id="lkGo">다시 불러오기</button>'+
+    '<div class="tools"><button class="btn primary sm" id="lkGo">새로고침</button>'+
       '<span class="sp"></span><span class="cnt" id="lkAt"></span></div>'+
     '<div id="lkBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("lkGo").onclick=lkLoad;
@@ -5884,7 +5885,7 @@ function lkLoad(){
     LOCK.cfg=(r&&r.cfg)||{}; LOCK.shops=(r&&r.shops)||[]; LOCK.logs=(r&&r.logs)||[];
     LOCK.today=(r&&r.today)||""; LOCK.purge=(rs[1]&&rs[1].list)||[];
     LOCK.at=new Date().toISOString();
-  },function(e){ LOCK.loaded=true; LOCK.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+  },function(e){ LOCK.loaded=true; LOCK.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ LOCK.busy=false;
     var at=$("lkAt"); if(at) at.textContent=LOCK.at?("마지막 확인 "+dtTime(LOCK.at)):"";
     lkDraw(); });
@@ -5896,7 +5897,7 @@ function lkPill(st){
 }
 function lkDraw(){
   var host=$("lkBody"); if(!host) return;
-  if(LOCK.err){ host.innerHTML='<div class="hint"><b>불러오지 못했습니다.</b><br>'+esc(LOCK.err)+
+  if(LOCK.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(LOCK.err)+
     '<br><br>잠금 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
   var c=LOCK.cfg||{};
   var ld=(c.lockDays===undefined?7:Number(c.lockDays));
@@ -5914,8 +5915,8 @@ function lkDraw(){
       '<div class="lkArw">›</div>'+
       '<div class="lkStep gray"><b>'+dd+'일 뒤</b><span>자료 정리 대상<br>(직접 눌러야 지워짐)</span></div>'+
     '</div>'+
-    '<div class="hint" style="margin-top:12px">잠긴 동안에도 <b>지난 자료 보기·사진 보기·엑셀 내려받기·결제</b>는 돼요. '+
-    '<b>새 접수·출고·문자·사진 올리기·계산서</b>는 멈춰요. 자료는 지우지 않고 그대로 두었다가 '+dd+'일 뒤에 정리 목록에 올라와요.</div></div>';
+    '<div class="hint" style="margin-top:12px">잠긴 동안에도 <b>지난 자료 보기·사진 보기·엑셀 다운로드·결제</b>는 돼요. '+
+    '<b>새 접수·출고·문자·사진 올리기·세금계산서</b>는 멈춰요. 자료는 지우지 않고 그대로 두었다가 '+dd+'일 뒤에 정리 목록에 올라와요.</div></div>';
 
   /* ② 설정 */
   h+='<div class="card"><h2>설정</h2>'+
@@ -6026,7 +6027,7 @@ function lkDraw(){
       warnDel:$("lkWarn").checked, paidSay:$("lkSay").checked,
       lockDays:Number($("lkDays").value)||0, delDays:Number($("lkDel").value)||90 }])
     .then(function(){ toast("저장했어요"); LOCK.loaded=false; lkLoad(); })
-    .catch(function(e){ toast(e.message,true); });
+    .catch(function(e){ toast(emsg(e),true); });
   };
 
   host.addEventListener("click", function(ev){
@@ -6049,7 +6050,7 @@ function lkOpenBox(code){
     '<label class="f" for="lkoD">언제까지 열어 둘까요</label>'+
     '<input type="date" id="lkoD" value="'+esc(row.openUntil||t)+'">'+
     '<label class="f" for="lkoM">왜 열어 두는지 (기록에 남아요)</label>'+
-    '<input type="text" id="lkoM" value="'+esc(row.openMemo||"")+'" placeholder="예) 9/26 입금 확인, 계산서 발행 대기">'+
+    '<input type="text" id="lkoM" value="'+esc(row.openMemo||"")+'" placeholder="예) 9/26 입금 확인, 세금계산서 발행 대기">'+
     '<label class="f" for="lkoL">이 업체만 잠금 일수를 다르게 (비우면 기본값)</label>'+
     '<input type="number" id="lkoL" value="'+esc(row.own===null||row.own===undefined?"":row.own)+'" min="0" max="180" placeholder="비워 두면 기본값">'+
     '<div class="saveRow"><button class="btn primary sm" id="lkoGo">저장</button>'+
@@ -6058,12 +6059,12 @@ function lkOpenBox(code){
     var L=$("lkoL").value.trim();
     api("hqLockShop",[code,{ openUntil:$("lkoD").value, memo:$("lkoM").value, lockDays:(L===""?null:Number(L)) }])
     .then(function(){ closeSheet(); toast("저장했어요"); LOCK.loaded=false; lkLoad(); })
-    .catch(function(e){ toast(e.message,true); });
+    .catch(function(e){ toast(emsg(e),true); });
   };
   $("lkoOff").onclick=function(){
     api("hqLockShop",[code,{ openUntil:"", memo:"" }])
     .then(function(){ closeSheet(); toast("취소했어요"); LOCK.loaded=false; lkLoad(); })
-    .catch(function(e){ toast(e.message,true); });
+    .catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -6084,9 +6085,9 @@ function lkPurgeBox(code){
     $("lkpGo").onclick=function(){
       api("hqPurgeRun",[code,$("lkpN").value])
       .then(function(){ closeSheet(); toast("정리했어요"); LOCK.loaded=false; lkLoad(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
     };
-  }).catch(function(e){ toast(e.message,true); });
+  }).catch(function(e){ toast(emsg(e),true); });
 }
 
 
@@ -6102,7 +6103,7 @@ function viewNotice(){
     '<div class="sub2">여기서 한 번 쓰면 <b>업체 앱</b>과 <b>홈페이지</b>에 같이 올라가요. '+
     '창으로 뜨는 것은 <b>업체 앱에서만</b>이고, 홈페이지는 <b>공지사항 칸에 글로만</b> 올라가요.</div></div>'+
     '<div class="tools"><button class="btn primary sm" id="ntNew">＋ 새 공지 쓰기</button>'+
-      '<button class="btn sm" id="ntGo">다시 불러오기</button>'+
+      '<button class="btn sm" id="ntGo">새로고침</button>'+
       '<span class="sp"></span><span class="cnt" id="ntAt"></span></div>'+
     '<div id="ntBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("ntGo").onclick=ntLoad;
@@ -6115,7 +6116,7 @@ function ntLoad(){
     NOTI.loaded=true; NOTI.err="";
     NOTI.list=(r&&r.list)||[]; NOTI.today=(r&&r.today)||"";
     NOTI.at=new Date().toISOString();
-  },function(e){ NOTI.loaded=true; NOTI.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+  },function(e){ NOTI.loaded=true; NOTI.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ NOTI.busy=false;
     var at=$("ntAt"); if(at) at.textContent=NOTI.at?("마지막 확인 "+dtTime(NOTI.at)):"";
     ntDraw(); });
@@ -6137,7 +6138,7 @@ function ntState(n){
 }
 function ntDraw(){
   var host=$("ntBody"); if(!host) return;
-  if(NOTI.err){ host.innerHTML='<div class="hint"><b>불러오지 못했습니다.</b><br>'+esc(NOTI.err)+
+  if(NOTI.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(NOTI.err)+
     '<br><br>공지사항 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
   var list=NOTI.list||[];
   var live=list.filter(ntLive).length, pop=list.filter(function(n){return ntLive(n)&&n.pop;}).length;
@@ -6189,7 +6190,7 @@ function ntDel(id){
   var n=(NOTI.list||[]).filter(function(x){return String(x.id)===String(id);})[0];
   confirmBox("공지 지우기", (n?n.title:"")+"\n\n지우면 앱과 홈페이지에서 바로 사라져요.", "지우기", true, function(){
     api("hqNoticeDel",[Number(id)]).then(function(){ toast("지웠어요"); NOTI.loaded=false; ntLoad(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   });
 }
 function ntEdit(n){
@@ -6260,7 +6261,7 @@ function ntEdit(n){
   $("ntCancel").onclick=closeSheet;
   if($("ntAgain")) $("ntAgain").onclick=function(){
     api("hqNoticeAgain",[Number(n.id)]).then(function(){ toast("다시 띄워요"); NOTI.loaded=false; ntLoad(); closeSheet(); })
-      .catch(function(e){ toast(e.message,true); });
+      .catch(function(e){ toast(emsg(e),true); });
   };
   $("ntSave").onclick=function(){
     var kind=($("sheet").querySelector('input[name="ntk"]:checked')||{}).value||"etc";
@@ -6272,7 +6273,7 @@ function ntEdit(n){
     if(!v.title) return toast("제목을 넣어주세요",true);
     api("hqNoticeSave",[v]).then(function(){
       closeSheet(); toast("저장했어요"); NOTI.loaded=false; ntLoad();
-    }).catch(function(e){ toast(e.message,true); });
+    }).catch(function(e){ toast(emsg(e),true); });
   };
 }
 
@@ -6352,14 +6353,14 @@ function ataLoad(){
     ATA.loaded=true; ATA.err="";
     ATA.tpls=(r&&r.tpls)||{}; ATA.ready=(r&&r.ready)||[]; ATA.stats=(r&&r.stats)||null; ATA.pfSet=!!(r&&r.pfSet);
     ATA.at=new Date().toISOString();
-  },function(e){ ATA.loaded=true; ATA.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+  },function(e){ ATA.loaded=true; ATA.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ ATA.busy=false; ataDraw(); });
 }
 function ataDraw(){
   var host=$("ataBody"); if(!host) return;
-  if(ATA.err){ host.innerHTML='<div class="card"><div class="hint"><b>불러오지 못했습니다.</b><br>'+esc(ATA.err)+
+  if(ATA.err){ host.innerHTML='<div class="card"><div class="hint"><b>불러오지 못했어요.</b><br>'+esc(ATA.err)+
     '<br>서버 새 판(알림톡 템플릿 칸)이 아직 안 올라갔으면 이렇게 보여요. 그동안 안내는 모두 문자로 나가요.</div>'+
-    '<div class="tools" style="margin:12px 0 0"><button class="btn" id="ataRe">다시 불러오기</button></div></div>';
+    '<div class="tools" style="margin:12px 0 0"><button class="btn" id="ataRe">새로고침</button></div></div>';
     $("ataRe").onclick=function(){ ATA.loaded=false; ataLoad(); }; return; }
   var have=ATA_LIST.filter(function(x){ return String(ATA.tpls[x[0]]||"").trim(); }).length;
   var st=ATA.stats||{}, ym=st.ym||ataYm();
@@ -6393,7 +6394,7 @@ function ataDraw(){
       '</tbody></table></div>'+
       '<div class="hint" style="margin:10px 0 0">«검수 확인 필요» 템플릿은 카카오 재검수 중이고, «심사 대기»는 새로 심사받는 중이에요. 통과 전에 코드를 넣으면 알림톡이 실패하고 문자로 대신 나가요 — 안내가 끊기지는 않아요.</div>'+
       '<div class="tools" style="margin:14px 0 0"><button class="btn primary" id="ataSave">코드 저장</button>'+
-        '<button class="btn" id="ataRe">다시 불러오기</button></div>'+
+        '<button class="btn" id="ataRe">새로고침</button></div>'+
     '</div>'+
     '<details class="j-help"><summary>이 화면 사용법</summary><p>코드를 넣고 «코드 저장»을 누르면 그 안내부터 알림톡으로 나가요. 코드를 지우고 저장하면 다시 문자로만 나가요. '+
       '알림톡은 정보만 알릴 수 있어서 결제·충전·연장을 권하는 문구와 버튼은 넣지 않아요 (규칙 5-6).</p></details>';
@@ -6408,7 +6409,7 @@ function ataDraw(){
     confirmBox("코드를 저장할까요?","코드 넣음 "+n+"개 · 비어 있음(문자로 보냄) "+(ATA_LIST.length-n)+"개","저장",false,function(){
       $("ataSave").disabled=true;
       api("hqAtaSave",[map]).then(function(){ ATA.tpls=tp; if(pf) ATA.pfSet=true; toast("코드를 저장했어요"); ataDraw(); },
-        function(e){ $("ataSave").disabled=false; toast(e.message||"저장하지 못했습니다. 다시 시도해 주세요",true); });
+        function(e){ $("ataSave").disabled=false; toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true); });
     });
   };
 }
@@ -6471,11 +6472,11 @@ function refundSheet(oid, row){
         $("rfGo").disabled=true;
         api("hqPgCancel",[oid, reason, w]).then(function(r){
           closeSheet(); toast("환불했어요 · "+won((r&&r.amount)||w)+((r&&r.note)?" · "+r.note:"")); pgLoad(); if($("prBody")) prLoad();
-        }, function(e){ $("rfGo").disabled=false; toast(e.message||"환불하지 못했습니다. 다시 시도해 주세요",true); });
+        }, function(e){ $("rfGo").disabled=false; toast(emsg(e,"환불하지 못했습니다. 잠시 뒤 다시 시도해 주세요."),true); });
       });
     };
   }, function(e){
-    $("sheet").innerHTML='<h3 style="margin:0 0 6px">환불</h3><div class="hint"><b>환불 금액을 불러오지 못했습니다.</b><br>'+esc(e.message||"")+
+    $("sheet").innerHTML='<h3 style="margin:0 0 6px">환불</h3><div class="hint"><b>환불 금액을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</b><br>'+esc(emsg(e,""))+
       '<br>서버 새 판(워시 sb10)이 아직 안 올라갔으면 이렇게 보여요.</div>';
     openSheet();
   });
@@ -6487,7 +6488,7 @@ function billCard(){
     '<span class="pill '+(on?"run":"gray")+'">'+(on?"켜짐 — 업체가 카드를 등록할 수 있어요":"꺼짐")+'</span>'+
     (pgTestMode()?'<span class="pill wait">테스트 모드</span>':'')+
     '<span class="sp"></span><button class="btn '+(on?"danger ":"")+'sm" id="billSw">'+(on?"끄기":"켜기")+'</button></div>'+
-    '<div class="hint" style="margin-top:10px">켜면 업체 앱에 «카드 등록하고 매달 자동 결제»가 보여요. '+
+    '<div class="hint" style="margin-top:10px">켜면 업체 앱에 «자동 결제 켜기»가 보여요. '+
     '<b>토스 자동결제 계약과 열쇠(PAY_ENC_KEY)를 넣은 뒤에만 켜세요.</b> 끄면 새 등록과 자동 결제가 멈추고, 등록한 카드는 그대로 남아요.</div></div>';
 }
 function billBind(){
@@ -6498,7 +6499,7 @@ function billBind(){
       on?"토스 자동결제 계약과 열쇠(PAY_ENC_KEY)를 넣은 뒤에만 켜세요.":"새 등록과 자동 결제가 멈춰요.",
       on?"켜기":"끄기", !on, function(){
         api("hqBillingOn",[on]).then(function(r){ D.hq=D.hq||{}; D.hq.billing_on=!!(r&&r.on!==undefined?r.on:on); toast(on?"켰어요":"껐어요"); pgDraw(); },
-          function(e){ toast(e.message||"바꾸지 못했습니다. 다시 시도해 주세요",true); });
+          function(e){ toast(emsg(e,"바꾸지 못했어요. 다시 시도해 주세요."),true); });
       });
   };
 }
@@ -6523,14 +6524,14 @@ function viewCwal(){
 function cwLoad(){
   if(CW.busy) return; CW.busy=true;
   api("hqCheckWallets",[]).then(function(r){ CW.loaded=true; CW.err=""; CW.list=(r&&r.offices)||[]; },
-    function(e){ CW.loaded=true; CW.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+    function(e){ CW.loaded=true; CW.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ CW.busy=false; cwDraw(); });
 }
 function cwDraw(){
   var host=$("cwBody"); if(!host) return;
-  if(CW.err){ host.innerHTML='<div class="card"><div class="hint"><b>불러오지 못했습니다.</b><br>'+esc(CW.err)+
+  if(CW.err){ host.innerHTML='<div class="card"><div class="hint"><b>불러오지 못했어요.</b><br>'+esc(CW.err)+
     '<br>서버 새 판(워시 sb11)과 SQL 07 이 아직이면 이렇게 보여요. 그동안 체크 화면에는 «아직 준비 중»이 떠요.</div>'+
-    '<div class="tools" style="margin:12px 0 0"><button class="btn" id="cwRe">다시 불러오기</button></div></div>';
+    '<div class="tools" style="margin:12px 0 0"><button class="btn" id="cwRe">새로고침</button></div></div>';
     $("cwRe").onclick=function(){ CW.loaded=false; cwLoad(); }; return; }
   var linked=CW.list.filter(function(o){ return o.wallet; }).length;
   host.innerHTML='<div class="card"><h2>검사소 '+CW.list.length+'곳 <span class="rt">이어짐 '+linked+' · 안 이어짐 '+(CW.list.length-linked)+'</span></h2>'+
@@ -6611,7 +6612,7 @@ function cwSheet(code){
     confirmBox(t, body, w?"잇기":"끊기", m!=="same", function(){
       $("cwGo").disabled=true;
       api("hqCheckWallet",[o.code, w]).then(function(){ o.wallet=w; closeSheet(); toast(w?"이었어요":"끊었어요"); cwDraw(); },
-        function(e){ $("cwGo").disabled=false; toast(e.message||"바꾸지 못했습니다. 다시 시도해 주세요",true); });
+        function(e){ $("cwGo").disabled=false; toast(emsg(e,"바꾸지 못했어요. 다시 시도해 주세요."),true); });
     });
   };
 }
@@ -6661,14 +6662,14 @@ function pplSwDraw(){
     confirmBox("체크 비밀번호 초기화 준비를 "+(to?"켤까요?":"끌까요?"),
       to?"체크 서버 v26 이상이 운영 중인지 먼저 확인해 주세요.":"끄면 관리에서 체크 비밀번호 초기화를 할 수 없어요.", to?"켜기":"끄기", !to, function(){
       api("hqCheckPwSms",[to]).then(function(x){ PPL.pwSms=!!(x&&x.on); toast(PPL.pwSms?"켰어요":"껐어요"); pplSwDraw(); },
-        function(e){ toast(e.message||"하지 못했습니다. 다시 시도해 주세요",true); }); }); };
+        function(e){ toast(emsg(e,"하지 못했어요. 다시 시도해 주세요."),true); }); }); };
 }
 function viewPpl(){
   $("main").innerHTML='<div class="dashhead"><h2>번호로 계정 찾기</h2>'+
     '<div class="sub2">휴대폰 번호 하나로 워시 · 체크 · 배달 기사 · 딜러 · 통합 로그인 계정을 한꺼번에 찾아요. 모든 동작은 한 번 더 묻고 아래 기록에 남아요.</div></div>'+
     '<div class="card"><div class="tools" style="margin:0">'+
       '<input type="tel" id="pplQ" inputmode="numeric" placeholder="휴대폰 번호 (예: 010-0000-0000)" value="'+esc(PPL.q)+'" style="max-width:320px">'+
-      '<button class="btn primary" id="pplGo">찾기</button></div>'+
+      '<button class="btn primary" id="pplGo">검색</button></div>'+
       '<div class="hint" style="margin:8px 0 0">본사 계정과 지금 로그인한 내 번호는 바꿀 수 없어요. 비밀번호는 화면에 보이지 않아요 (배달 기사 임시 비밀번호는 기사 휴대폰으로만 가요). 찾기만 해도 기록에 남아요.</div></div>'+
     '<div id="pplSw"></div><div id="pplBody"></div>';
   pplSwDraw();
@@ -6683,7 +6684,7 @@ function pplFind(){
   PPL.busy=true; PPL.err=""; pplDraw();
   Promise.all([api("hqPerson",[q]), api("hqAudit",[q]).catch(function(){ return null; })])
     .then(function(x){ PPL.r=x[0]||{}; PPL.r.phone=PPL.r.phone||q; PPL.audit=(x[1]&&(x[1].log||x[1].rows||x[1].list))||(Array.isArray(x[1])?x[1]:[]); },
-          function(e){ PPL.err=e.message||"찾지 못했습니다. 다시 시도해 주세요"; PPL.r=null; })
+          function(e){ PPL.err=emsg(e,"찾지 못했어요. 다시 시도해 주세요."); PPL.r=null; })
     .then(function(){ PPL.busy=false; pplDraw(); });
 }
 /* 카드 하나 = 계정 하나 (대상 하나) */
@@ -6702,7 +6703,7 @@ function stPill(active, locked){
 function pplDraw(){
   var host=$("pplBody"); if(!host) return;
   if(PPL.busy){ host.innerHTML='<div class="hint">찾는 중이에요…</div>'; return; }
-  if(PPL.err){ host.innerHTML='<div class="card"><div class="hint"><b>찾지 못했습니다.</b><br>'+esc(PPL.err)+
+  if(PPL.err){ host.innerHTML='<div class="card"><div class="hint"><b>찾지 못했어요.</b><br>'+esc(PPL.err)+
     '<br>서버 새 판(워시 sb12, 설계 14)이 아직 안 올라갔으면 이렇게 보여요.</div></div>'; return; }
   var r=PPL.r; if(!r){ host.innerHTML=''; return; }
   var L=r.locks||{}, S=r.sessions||{}, cards=[], nm="";
@@ -6713,7 +6714,7 @@ function pplDraw(){
     var wn=(r.washOwnerOf||[]).filter(function(o){ return o.shop===w.shop; })[0];
     cards.push(pplCard('워시', esc(pv(w,["shopName","shop_name"],wn?wn.name:""))+' <span style="opacity:.7">'+esc(w.shop||"")+'</span>',
       stPill(w.active,L.wash),
-      [["역할",esc(roleTxt(w.role))],["마지막 접속",ll?esc(dt(ll,true)):"기록 없음"],["켜 둔 기기",(Number(S.wash)||0)+"대"]],
+      [["역할",esc(roleTxt(w.role))],["마지막 접속",ll?esc(dt(ll,true)):"아직 기록이 없어요"],["켜 둔 기기",(Number(S.wash)||0)+"대"]],
       [[w.active===false?"resume":"stop","wash","워시 · "+pv(w,["shopName","shop"],"")],["pwReset","wash","워시"]]
         .concat(L.wash?[["unlock","wash","워시"]]:[]).concat([["kick","wash","워시"]])));
   });
@@ -6734,7 +6735,7 @@ function pplDraw(){
     var li=pv(d,["lastIn","last_in"],"");
     cards.push(pplCard('배달 기사', esc(pv(d,["officeName","office"],""))+(d.name?' · '+esc(d.name):''),
       stPill(d.active,false),
-      [["기사 번호",esc(String(id))],["마지막 접속",li?esc(dt(li,true)):"기록 없음"],["새 비밀번호",d.mustChange?"첫 로그인 때 바꿔야 함":"정해 둠"]],
+      [["기사 번호",esc(String(id))],["마지막 접속",li?esc(dt(li,true)):"아직 기록이 없어요"],["새 비밀번호",d.mustChange?"첫 로그인 때 바꿔야 함":"정해 둠"]],
       [[d.active===false?"resume":"stop","driver:"+id,"배달 기사"],["pwReset","driver:"+id,"배달 기사","임시 비밀번호 문자 보내기"],["unlock","driver","배달 기사"],["kick","driver","배달 기사"]]));
   });
   /* 딜러 — 대상 dealer */
@@ -6742,7 +6743,7 @@ function pplDraw(){
     nm=nm||pv(r.dealer,["name"],"");
     var dl=pv(r.dealer,["lastLogin","last_login"],"");
     cards.push(pplCard('딜러', r.dealer.withdrawn?'탈퇴했어요':'', stPill(r.dealer.active,false),
-      [["마지막 접속",dl?esc(dt(dl,true)):"기록 없음"],["켜 둔 기기",(Number(S.dealer)||0)+"대"]],
+      [["마지막 접속",dl?esc(dt(dl,true)):"아직 기록이 없어요"],["켜 둔 기기",(Number(S.dealer)||0)+"대"]],
       [[r.dealer.active===false?"resume":"stop","dealer","딜러"],["unlock","dealer","딜러"],["kick","dealer","딜러"]]));
   }
   /* 통합 로그인 출입 명단 — 대상 cgg, 제품 열기/닫기는 grant/revoke wash|check */
@@ -6777,7 +6778,7 @@ function pplDraw(){
       confirmBox(label+" — "+n+"?", (nm||"")+" · "+phoneFmt(r.phone)+"\n"+A[1], label, A[2], function(){
         function done(x){ if(x && x.sent===false){ toast("문자를 보내지 못했어요"+(x.note?" · "+x.note:""),true); pplFind(); return; }
           toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:""))); pplFind(); }
-        function fail(e){ toast(e.message||"하지 못했습니다. 다시 시도해 주세요",true); }
+        function fail(e){ toast(emsg(e,"하지 못했어요. 다시 시도해 주세요."),true); }
         api("hqPersonAct",[r.phone, a, t]).then(function(x){
           /* 제품 열기가 처음이면 서버가 한 번 더 물어요 — 다른 제품이 막힐 수 있어서 */
           if(x && x.confirm) return confirmBox("한 번 더 확인해 주세요", x.why||"", "그래도 "+label, false, function(){
@@ -6824,7 +6825,7 @@ function prLoad(){
   api("hqPayResults",[PR2.from, PR2.to, ""]).then(function(r){ PR2.rows=(r&&(r.list||r.rows||r.results))||(Array.isArray(r)?r:[]); PR2.err="";
       PR2.sum=(r&&r.sum!=null)?Number(r.sum):null; PR2.refunds=(r&&r.refunds!=null)?Number(r.refunds):null;
       PR2.bill=(r&&r.billingShops!=null)?Number(r.billingShops):null; },
-    function(e){ PR2.rows=null; PR2.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+    function(e){ PR2.rows=null; PR2.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ PR2.busy=false; if(PR2.rows===null){ viewPaysOld(); prOldNote(); } else prDraw(); });
 }
 function prOldNote(){
@@ -6843,7 +6844,7 @@ function prDraw(){
   var rows=all;
   host.innerHTML='<div id="prK"></div>'+
     '<div class="tools"><label class="f" style="margin:0">기간</label><input type="date" id="prFrom" value="'+esc(PR2.from)+'"><span>~</span><input type="date" id="prTo" value="'+esc(PR2.to)+'">'+
-      '<button class="btn" id="prGo">다시 불러오기</button><span class="sp"></span><button class="btn" id="payNew">청구 만들기</button></div>'+
+      '<button class="btn" id="prGo">새로고침</button><span class="sp"></span><button class="btn" id="payNew">청구 만들기</button></div>'+
     '<div id="tPR"></div>';
   /* ⑤ 숫자 카드 4개 — 공통 부품 CGG.kpis */
   CGG.kpis($("prK"),[
@@ -6898,7 +6899,7 @@ var PWROWS = [];
 var PW = {list:null, err:"", loaded:false, busy:false, sg:null};
 function pwLoad(after){
   if(PW.busy) return; PW.busy=true;
-  api("hqPayWait",[]).then(function(r){ PW.list=(r&&r.list)||[]; PW.err=""; }, function(e){ PW.list=null; PW.err=e.message||"불러오지 못했습니다. 다시 시도해 주세요"; })
+  api("hqPayWait",[]).then(function(r){ PW.list=(r&&r.list)||[]; PW.err=""; }, function(e){ PW.list=null; PW.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
     .then(function(){ PW.busy=false; PW.loaded=true; if(after) after(); });
 }
 function pwKind(x){ return x.paidOrder?"chk":(x.old?"stop":(Number(x.days)>=7?"wait7":"run")); }
@@ -6944,7 +6945,7 @@ function pwDraw(){
       confirmBox("결제 대기 업체를 지울까요?", "업체: "+(x.name||"-")+"\n코드: "+x.shop+"\n대표 번호: "+phoneFmt(x.ownerPhone||"")+"\n가입: "+(Number(x.days)||0)+"일 전\n남는 것: 주문 · 결제 장부",
         "지우기", true, function(){
           api("hqPayWaitDel",[x.shop]).then(function(){ toast("지웠어요 · "+(x.name||x.shop)); pwLoad(pwDraw); },
-            function(e){ toast(e.message||"지우지 못했습니다. 다시 시도해 주세요",true); pwLoad(pwDraw); }); }); }; });
+            function(e){ toast(emsg(e,"지우지 못했어요. 다시 시도해 주세요."),true); pwLoad(pwDraw); }); }); }; });
 }
 /* 누구나 가입 — 가입 코드 없이 홈페이지에서 가입 (처음 꺼짐) · 한도 셋 */
 function sgDraw(){
@@ -6971,7 +6972,7 @@ function sgSheet(){
     confirmBox("누구나 가입을 "+(v.on?"켤까요?":"끈 채로 저장할까요?"),
       "누구나 가입: "+(v.on?"켜짐":"꺼짐")+"\n같은 곳 하루: "+v.perIp+"번\n전체 하루: "+v.allDay+"번\n결제 대기 같은 곳: "+v.waitPerIp+"개", "저장", false, function(){
       api("hqSignup",[v]).then(function(r){ PW.sg=r||v; closeSheet(); toast(v.on?"누구나 가입을 켰어요":"저장했어요"); sgDraw(); },
-        function(e){ toast(e.message||"저장하지 못했습니다. 다시 시도해 주세요",true); }); });
+        function(e){ toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true); }); });
   };
 }
 
@@ -7011,13 +7012,13 @@ function slLoad(){
   if(SLOG.busy) return; SLOG.busy=true;
   api("hqSendLog",[SLOG.from, SLOG.to]).then(function(r){ var L=r&&(r.list||r.rows||r.logs); if(!L && Array.isArray(r)) L=r;
       SLOG.list=Array.isArray(L)?L:null; SLOG.err=""; },   /* 목록이 없는 답 = 서버 새 판 전 */
-    function(e){ SLOG.list=null; SLOG.err=e.message||""; })
+    function(e){ SLOG.list=null; SLOG.err=emsg(e,""); })
     .then(function(){ SLOG.busy=false; slDraw(); });
 }
 function slDraw(){
   var host=$("slBody"); if(!host) return;
   var tools='<div class="tools"><label class="f" style="margin:0">기간</label><input type="date" id="slFrom" value="'+esc(SLOG.from)+'"><span>~</span><input type="date" id="slTo" value="'+esc(SLOG.to)+'">'+
-    '<button class="btn" id="slGo">다시 불러오기</button></div>';
+    '<button class="btn" id="slGo">새로고침</button></div>';
   if(SLOG.list===null){
     host.innerHTML=tools+'<div class="card"><div class="hint"><b>발송 기록은 서버 새 판이 아직이에요.</b><br>서버 방이 모든 제품의 발송 기록 창구를 올리면 이 화면에 바로 보여요. 지금 나가는 알림톡 · 문자는 그대로 나가요.'+
       (SLOG.err?'<br><span style="opacity:.7">서버 안내: '+esc(SLOG.err)+'</span>':'')+'</div></div>';
@@ -7168,7 +7169,7 @@ function doLogin(){
     TICK=(r&&r.tick)||"";
     $("gTo").innerHTML="<b>"+esc((r&&r.to)||"")+"</b> 로 6자리를 보냈습니다.<br>5분 안에 넣어 주세요.";
     gmsg(""); step2(true);
-  }).catch(function(e){ $("gGo").disabled=false; gmsg(e.message,true); });
+  }).catch(function(e){ $("gGo").disabled=false; gmsg(emsg(e,"로그인하지 못했습니다. 잠시 후 다시 시도해 주세요."),true); });
 }
 function doCode(){
   var c=$("gcode").value.replace(/[^0-9]/g,"");
@@ -7178,7 +7179,7 @@ function doCode(){
     ls(SIDKEY, r.key);
     D.me={ who:$("gid").value.trim(), name:r.who||"", shop:r.shop, role:r.role, phone:$("gid").value.trim() };
     return loadAll().then(function(){ $("gGo2").disabled=false; step2(false); $("gcode").value=""; showApp(); });
-  }).catch(function(e){ $("gGo2").disabled=false; gmsg(e.message,true); });
+  }).catch(function(e){ $("gGo2").disabled=false; gmsg(emsg(e,"로그인하지 못했습니다. 잠시 후 다시 시도해 주세요."),true); });
 }
 $("gGo").onclick=doLogin;
 $("gGo2").onclick=doCode;
@@ -7201,9 +7202,9 @@ $("btnOut").onclick=function(){
 };
 
 $("btnReload").onclick=function(){
-  toast("불러오는 중…");
+  toast("불러오는 중이에요…");
   loadAll().then(function(){ hdrFill(); render(); toast("새로 불러왔어요"); })
-    .catch(function(e){ toast(e.message,true); });
+    .catch(function(e){ toast(emsg(e),true); });
 };
 
 /* ═══════ 관리 — 머리말 버튼 · 사람 단추 ▾ · 메뉴 배치 · 폰 아래 탭바 (관리 v4.3) ═══════
@@ -7254,7 +7255,7 @@ var NAVHELP={ sum:"오늘 할 일 · 이번 달 숫자 · 일정 달력 · 운�
   noti:"기한 안내 문자 · 공지사항 · 알림톡 템플릿 코드 · 발송 기록이에요. 안내는 알림톡이 먼저 나가고, 안 되면 문자로 대신 나가요.",
   settings:"보안 점검과 내 계정이에요." };
 
-/* 폰 아래 탭바 5칸 — 홈 · 업체 · 받는 금액 · 계산서 · 전체 */
+/* 폰 아래 탭바 5칸 — 홈 · 업체 · 받는 금액 · 세금계산서 · 전체 */
 function tbarDraw(){
   var g=navOf(TAB), k=g?g[0]:"";
   CGG.tabbar($("jTbar"), [{key:"sum",icon:"home",label:"홈"},{key:"shops",icon:"shop",label:"업체"},{key:"pays",icon:"wallet",label:"받는 금액"},
@@ -7266,7 +7267,7 @@ function allSheet(){
   openSheet('<h3 style="margin:0 0 12px">전체 메뉴</h3><div class="j-allm">'+NAV.map(function(n){
     return '<div><h4>'+esc(n[1])+'</h4><div class="row">'+n[2].map(function(t){
       return '<button type="button" data-go2="'+t+'" class="'+(t===TAB?"on":"")+'">'+esc(tabLabel(t))+'</button>'; }).join("")+'</div></div>'; }).join("")+
-    '<div><h4>내 정보</h4><div class="row"><button type="button" data-go3="lay">화면 설정</button><button type="button" data-go3="out">로그아웃</button></div></div></div>');
+    '<div><h4>마이페이지</h4><div class="row"><button type="button" data-go3="lay">화면 설정</button><button type="button" data-go3="out">로그아웃</button></div></div></div>');
   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go2]"),function(b){
     b.onclick=function(){ closeSheet(); jgo(b.getAttribute("data-go2")); }; });
   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go3]"),function(b){
