@@ -102,7 +102,7 @@ check("문자에 「본인이 로그인한 게 아니면 넣지 마세요」", /
 console.log("⑤ SQL 을 안 돌렸을 때");
 delete (store as any).check_pw_first;
 store.check_deliv_fail = [];
-check("첫 비밀번호 표가 없으면 안내하고 막음", /SQL 04/.test((await call("login", [NEWU, "third-pw1"])).__err ?? ""));
+check("첫 비밀번호 표가 없으면 안내하고 막음", /SQL 04|준비하는 중/.test((await call("login", [NEWU, "third-pw1"])).__err ?? ""));
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);

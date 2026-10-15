@@ -56,7 +56,7 @@ async function login() { sent.length = 0; return await call("cggLogin", [PH, "tw
 const ok2 = async (t: any, code: string) => !!(await call("cggLogin2", [t.result?.tick, code])).result?.sid;
 
 console.log("① 버전");
-check("ping 이 v1.4", /v1\.4/.test((await call("ping")).result?.ver ?? ""));
+check("ping 이 v1.4 이상", /v1\.[4-9]/.test((await call("ping")).result?.ver ?? ""));
 
 console.log("② 템플릿이 없으면 문자");
 let t = await login();

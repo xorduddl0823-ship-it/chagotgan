@@ -68,7 +68,7 @@ HTML = r'''<!DOCTYPE html>
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font-size:16px;line-height:1.55;overflow:hidden}
 /* 제품 고르는 띠 — 대표(여러 제품 계정)에게만 보입니다. 워시 .tabs 모양 그대로 */
-#cggBar{position:fixed;left:0;right:0;top:0;height:46px;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);
+#cggBar{position:fixed;left:0;right:0;top:var(--bh,0px);height:46px;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);
   display:flex;align-items:center;gap:10px;padding:0 14px}
 #cggBar .nm{font-weight:900;font-size:15px;letter-spacing:-.02em}
 #cggBar .tabs{display:flex;gap:5px;background:var(--surface2);padding:3px;border-radius:12px}
@@ -79,15 +79,28 @@ body{background:var(--bg);color:var(--text);font-size:16px;line-height:1.55;over
 #cggBar .who{font-size:12px;color:var(--muted)}
 #cggBar .mini{font-family:inherit;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:var(--surface2);
   color:var(--text);border-radius:9px;padding:6px 10px;cursor:pointer}
-.cggFrame{position:fixed;left:0;right:0;bottom:0;top:0;width:100%;height:100%;border:0;background:var(--bg)}
-body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
-#cggBusy{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
+.cggFrame{position:fixed;left:0;right:0;bottom:0;top:var(--bh,0px);width:100%;height:calc(100% - var(--bh,0px));border:0;background:var(--bg)}
+body.multi .cggFrame{top:calc(var(--bh,0px) + 46px);height:calc(100% - var(--bh,0px) - 46px)}
+/* 오픈 베타 띠 — 껍데기는 늘 보임. 띠 높이(--bh)만큼 아래 것들을 내립니다 */
+#cggBeta{position:fixed;left:0;right:0;top:0;z-index:100000}
+/* 오픈 베타 띠 (디자인 방 2026-10-15) */
+:root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
+:root[data-theme="dark"]{--beta-bg:#1d3a5f}
+.cgg-beta{background:var(--beta-bg);color:var(--beta-ink);font-size:13.5px;line-height:1.5;word-break:keep-all}
+.cgg-beta .in{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;
+  padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
+.cgg-beta[hidden]{display:none}
+@media (max-width:600px){.cgg-beta{font-size:12.5px}.cgg-beta .in{display:block;padding-block:6px}.cgg-beta b{margin-right:6px}}
+#cggBusy{position:fixed;left:0;right:0;bottom:0;top:var(--bh,0px);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
 </style>
 </head>
 <body>
+<div class="cgg-beta" id="cggBeta" role="note"><div class="in"><b>오픈 베타</b><span>차곳간은 지금 오픈 베타예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span></div></div>
 
 <!-- ═══ 하나뿐인 로그인 — 워시 로그인 화면과 같은 모양 ═══ -->
-<div id="cggLogin" hidden style="position:fixed;inset:0;z-index:99999;background:var(--bg,#f4f6f9);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;font-family:inherit;color:var(--text,#14202e)">
+<div id="cggLogin" hidden style="position:fixed;left:0;right:0;bottom:0;top:var(--bh,0px);z-index:99999;background:var(--bg,#f4f6f9);display:flex;align-items:center;justify-content:center;padding:24px 20px 20px;overflow:auto;font-family:inherit;color:var(--text,#14202e)">
   <div style="width:100%;max-width:400px">
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:30px;font-weight:800;letter-spacing:-1px">차곳간</div>
@@ -159,17 +172,21 @@ function $(id){ return document.getElementById(id); }
 function esc(v){ return String(v==null?"":v).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k)||""; if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} return ""; }
 
+/* 화면에는 우리가 만든 쉬운 글(.ko)과 서버의 우리말 글(__err)만 보여 줍니다. 브라우저 영어 오류(e.message)는 보이지 않아요 */
+var FAIL="로그인하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+function KO(t){ var x=new Error(t); x.ko=true; return x; }
+function said(e){ return (e && e.ko) ? e.message : FAIL; }
 function post(fn,args,token){
   return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify({shop:"",token:token||"",fn:fn,args:args||[]})})
-    .then(function(r){ return r.text(); },function(){ throw new Error("서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요."); })
-    .then(function(t){ var j; try{ j=JSON.parse(t); }catch(e){ throw new Error("일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."); }
-      if(j && j.__err){ if(/모르는 요청/.test(j.__err)) throw new Error("로그인 서비스를 준비 중입니다. 잠시 후 다시 시도해 주세요."); throw new Error(j.__err); }
+    .then(function(r){ return r.text(); },function(){ throw KO("서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요."); })
+    .then(function(t){ var j; try{ j=JSON.parse(t); }catch(e){ throw KO(FAIL); }
+      if(j && j.__err){ if(/모르는 요청/.test(j.__err)) throw KO("로그인 서비스를 준비 중입니다. 잠시 후 다시 시도해 주세요."); throw KO(/[가-힣]/.test(j.__err)?j.__err:FAIL); }
       return j ? j.result : null; });
 }
 
 /* ── 로그인 화면 ── */
-function msg(t,bad){ var m=$("lgMsg"); m.textContent=t||""; m.style.color=bad?"var(--danger,#b3261e)":"var(--good,#127a4b)"; }
+function msg(t,bad){ var m=$("lgMsg"); if(bad && t && !/[가-힣]/.test(t)) t=FAIL; m.textContent=t||""; m.style.color=bad?"var(--danger,#b3261e)":"var(--good,#127a4b)"; }
 function step2(on){ $("lgStep1").hidden=on; $("lgStep2").hidden=!on; if(on) setTimeout(function(){ try{$("lgCode").focus();}catch(e){} },60); }
 var TICK="";
 function showLogin(t,bad){
@@ -186,14 +203,14 @@ function doLogin(){
     $("lgGo").disabled=false;
     if(r && r.tick){ TICK=r.tick; $("lgTo").innerHTML="<b>"+esc(r.to||"")+"</b>(으)로 인증번호를 발송했습니다."; msg(""); step2(true); return; }
     enter(r);
-  }).catch(function(e){ $("lgGo").disabled=false; msg(e.message,true); });
+  }).catch(function(e){ $("lgGo").disabled=false; msg(said(e),true); });
 }
 function doCode(){
   var c=$("lgCode").value.replace(/[^0-9]/g,"");
   if(c.length!==6) return msg("인증번호 6자리를 입력해 주세요.",true);
   $("lgGo2").disabled=true; msg("확인 중…");
   post("cggLogin2",[TICK,c]).then(function(r){ $("lgGo2").disabled=false; $("lgCode").value=""; enter(r); })
-    .catch(function(e){ $("lgGo2").disabled=false; msg(e.message,true); });
+    .catch(function(e){ $("lgGo2").disabled=false; msg(said(e),true); });
 }
 
 /* ── 들어가기: 열 수 있는 제품만 저장 칸에 열쇠를 넣고, 띄웁니다 ── */
@@ -224,6 +241,26 @@ function can(code){ return !!ME && ME.products.some(function(p){ return p.code==
 /* ── 홈페이지 요금제에서 온 결제 뜻 (?buy=제품-요금제) ──
    로그인 전에는 이 창(sessionStorage)에만 들고 있다가, 들어가면 그 제품의 저장 칸 «cgg_buy» 에 넣고 그 제품을 엽니다.
    결제 창을 여는 것은 제품(워시 결제 창구)이 합니다. 금액은 서버가 다시 계산해요. */
+/* 이 기기에 남은 계정 기록 지우기 — 통합 열쇠 · 제품 칸(cgg.<제품>.*) · 예전에 이 주소에서 제품을 직접 열었을 때 남은 칸(ccw_* · 체크 cgg_key/cgg_shop/cgg_memos) · 결제 뜻
+   딜러(cgd_*) · 기사 칸은 다른 화면 것이라 그대로 둡니다. «마지막에 본 제품»(cgg_last)도 둡니다 */
+function cleanStore(){
+  try{ var S=window.localStorage, gone=[];
+    for(var i=0;i<S.length;i++){ var k=S.key(i);
+      if(k && (/^cgg\.(wash|check)\./.test(k) || /^ccw_/.test(k) || /^(cgg_key|cgg_shop|cgg_memos|cgg_buy)$/.test(k))) gone.push(k); }
+    gone.forEach(function(k){ S.removeItem(k); });
+  }catch(e){}
+  try{ sessionStorage.removeItem("cgg_buy"); }catch(e){}
+  ls(SKEY,null);
+}
+/* ?logout=1 — 회원가입을 마치고 오면 이 기기에 남은 앞사람 계정으로 들어가지 않게 먼저 모두 지웁니다 (보안 S-M4) */
+(function(){
+  if(!/[?&]logout=1(&|#|$)/.test(location.search)) return;
+  var sid=ls(SKEY);
+  cleanStore();
+  if(sid) post("cggLogout",[sid]).catch(function(){});
+  var q=location.search.replace(/[?&]logout=1(?=&|$)/,"").replace(/^&/,"?");
+  try{ history.replaceState(null,"",location.pathname+q+location.hash); }catch(e){}
+})();
 var BUY=null;
 (function(){
   var m=/[?&]buy=([^&#]*)/.exec(location.search), v="";
@@ -308,11 +345,9 @@ window.addEventListener("storage",function(e){
 });
 function logoutAll(t){
   var sid=ls(SKEY);
-  ORDER.forEach(function(code){
-    var kv=PRODUCTS[code].keys({});
-    Object.keys(kv).forEach(function(k){ ls("cgg."+code+"."+k, null); });
-  });
-  ls(SKEY,null); ME=null;
+  /* 오픈 베타 보안: 로그아웃하면 제품들이 이 기기에 남긴 칸(cgg.<제품>.*)을 모두 지웁니다 */
+  cleanStore();
+  ME=null;
   if(sid) post("cggLogout",[sid]).catch(function(){});
   showLogin(t||"",false);
 }
@@ -334,6 +369,10 @@ $("lgVer").textContent=SHELL_VER;
   post("cggMe",[sid]).then(function(r){ $("cggBusy").hidden=true; enter(r); })
     .catch(function(){ $("cggBusy").hidden=true; ls(SKEY,null); showLogin(""); });
 })();
+
+/* 오픈 베타 띠 높이만큼 아래 화면을 내립니다 (폰에서 두 줄이 되면 저절로 맞춤) */
+(function(){ var b=$("cggBeta"); function fit(){ document.documentElement.style.setProperty("--bh",(b.hidden?0:b.offsetHeight)+"px"); }
+  fit(); window.addEventListener("resize",fit); try{ new ResizeObserver(fit).observe(b); }catch(e){} })();
 
 /* 시험·점검용 — 지금 상태를 돌려줍니다 (화면에는 안 보입니다) */
 window.CGG_SHELL = { ver:SHELL_VER, me:function(){ return ME; }, cur:function(){ return CUR; },

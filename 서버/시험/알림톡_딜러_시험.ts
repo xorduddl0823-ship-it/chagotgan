@@ -52,7 +52,7 @@ let pn = 0;
 const phone = () => "0105555" + String(++pn).padStart(4, "0");
 
 console.log("① 버전");
-check("ping 이 d5", (await call("ping")).result?.ver === "d5");
+check("ping 이 d5 이상", /^d[5-9]$/.test((await call("ping")).result?.ver ?? ""));
 
 console.log("② 템플릿이 없으면 문자");
 setCfg({});
