@@ -2385,7 +2385,7 @@ const FN: Record<string, Fn> = {
     dbCheck(error, "업체");
     /* sb15: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
     if (patch.biz_no) {
-      try { await sb.from("wash_shops").update({ biz_ok_at: null, biz_set_at: new Date().toISOString() }).eq("shop", s); } catch (_) { /* */ }
+      try { await sb.from("wash_shops").update({ biz_ok_at: null }).eq("shop", s); await sb.from("wash_shops").update({ biz_set_at: new Date().toISOString() }).eq("shop", s); } catch (_) { /* */ }
       try { const admin = (await hqCfg()).adminPhone;
         if (admin) await noticeSms(admin, "[차곳간] " + s + " 업체가 사업자번호를 처음 넣었습니다. 관리 → 사업자번호 확인에서 확인해 주세요", { tpl: "notice", shop: s }); }
       catch (_) { /* */ }
