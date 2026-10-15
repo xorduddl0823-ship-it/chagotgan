@@ -54,7 +54,7 @@ var F_SVCS=[{id:1,code:"supabase",name:"수파베이스",kind:"sub",cost:35000,n
  {id:2,code:"solapi",name:"솔라피 문자",kind:"charge",balance:8000,min_bal:10000,active:true,sort:2,auto:true,auto_note:"자동으로 읽음",what:"문자"},
  {id:3,code:"cloudflare",name:"클라우드플레어",kind:"sub",cost:0,next_due:dd(17),active:true,sort:3,what:"주소"}];
 var F_TODO=[{id:1,title:"QR 스티커 교체",done:false,due_at:dd(0)},{id:2,title:"문자 충전",done:false,due_at:dd(-2)},{id:3,title:"세금계산서 정리",done:false,due_at:dd(6)}], F_NEXT=10;
-var F_PP={}, F_LOG=[], F_CGG=["wash"], F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
+var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
 function FAKE(fn,a){
   a=a||[];
   switch(fn){
@@ -89,28 +89,34 @@ function FAKE(fn,a){
       {code:"HANBIT2",name:"한빛 성능검사소",wallet:F_CW.HANBIT2||"",bizNo:"2118130415",ceo:"김하늘"},
       {code:"DURI",name:"두리 검사소",wallet:F_CW.DURI||"",bizNo:"",ceo:""}]};
     case "hqCheckWallet": F_CW[a[0]]=a[1]; return {ok:true,office:a[0],wallet:a[1]};
-    case "hqPerson": return {ok:true,phone:a[0],
-      wash:[{shop:"HANBIT",shopName:"한빛광택",name:"김하늘",role:"owner",active:!F_PP["stop:wash"],lastLogin:dd(0)+"T08:00:00"}],
-      washOwnerOf:[{shop:"HANBIT",name:"한빛광택"}],
+    case "hqPerson": F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:"view",target_phone:a[0],product:"",result:"ok"});
+      return {ok:true,phone:a[0],
+      wash:[{shop:"HANBIT",name:"김하늘",role:"owner",active:!F_PP["stop:wash"],last_login:dd(0)+"T08:00:00"}],
+      washOwnerOf:[{shop:"HANBIT",name:"한빛광택",active:true}],
       check:[{office:"HANBIT2",officeName:"한빛 성능검사소",name:"김하늘",role:"owner",active:!F_PP["stop:check:HANBIT2"],pwSet:!F_PP["pwReset:check:HANBIT2"]}],
-      drivers:[{id:17,office:"HANBIT2",officeName:"한빛 성능검사소",name:"김하늘",active:true}],
-      dealer:{name:"김하늘",active:true,left:false},
-      cgg:{products:F_CGG,active:true,smsOk:true},
-      locks:{wash:false,check:!F_PP["unlock:check"]&&!F_PP["unlock:all"],cgg:false,dealer:false},
+      drivers:[{id:"17",office:"HANBIT2",officeName:"한빛 성능검사소",name:"김하늘",active:true,lastIn:dd(-1)+"T18:00:00",mustChange:!!F_PP["pwReset:driver:17"]}],
+      dealer:{name:"김하늘",active:true,withdrawn:false,lastLogin:dd(-2)+"T09:30:00"},
+      cgg:{name:"김하늘",products:F_CGG,active:true,twoStep:true,locked:false},
+      locks:{wash:false,check:!F_PP["unlock:check"]&&!F_PP["unlock:all"],cgg:false},
       sessions:{wash:F_PP["kick:wash"]||F_PP["kick:all"]?0:2,check:1,cgg:1,dealer:0}};
-    case "hqPersonAct": var k=a[1]+":"+a[2]; F_PP[k]=1; if(a[1]==="resume") F_PP["stop:"+a[2]]=0;
+    case "hqPersonAct":
+      if(a[1]==="grant"&&F_CGG.length===0&&a[3]!==true) return {ok:true,confirm:true,why:"출입 명단에 처음 넣으면 다른 제품은 막힙니다. 둘 다 쓰는 분이면 둘 다 열어 주세요."};
+      if(a[1]==="pwReset"&&String(a[2]).indexOf("check:")===0&&!F_PWSMS) throw new Error("체크 첫 비밀번호 문자 확인(체크 서버 v26 이상)이 운영 중일 때만 됩니다. 관리 설정에서 먼저 켜 주세요");
+      var k=a[1]+":"+a[2]; F_PP[k]=1; if(a[1]==="resume") F_PP["stop:"+a[2]]=0;
       if(a[1]==="grant"&&F_CGG.indexOf(a[2])<0) F_CGG.push(a[2]); if(a[1]==="revoke") F_CGG=F_CGG.filter(function(x){return x!==a[2];});
-      F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",target:a[2],act:a[1],result:"됨"});
-      return a[1]==="pwReset"&&String(a[2]).indexOf("driver:")===0 ? {ok:true,tempPw:"K7m2-p9Qx"} : {ok:true};
-    case "hqAudit": return {ok:true,log:F_LOG.concat([{at:dd(-5)+"T10:00:00",who:"hq:한본사",target:"check:HANBIT2",act:"pwReset",result:"됨"}])};
-    case "hqPayResults": return {ok:true,rows:[
-      {product:"워시",at:dd(-12)+"T10:20:00",shop:"HANBIT",shopName:"한빛광택",kind:"월 요금",method:"카드 (신한)",amount:55000,status:"결제됨",period:"~11/14",orderId:"CGG-PLAN-0001",from:"워시"},
-      {product:"체크 · 새빛 성능검사소",at:dd(-3)+"T15:02:00",shop:"SAEBIT",shopName:"새빛 성능장",office:"새빛 성능검사소",kind:"캐시 충전",method:"카드 (국민)",amount:33000,status:"결제됨",period:"",orderId:"CGG-CASH-0002",from:"체크"},
-      {product:"자동 결제",at:dd(-1)+"T09:00:00",shop:"BAREUN",shopName:"바른 카모터스",kind:"월 요금",method:"자동 결제 (현대 ··1234)",amount:99000,status:"실패 · 한도 초과",period:"",orderId:"CGG-BILL-0003"},
-      {product:"환불",at:dd(-2)+"T11:30:00",shop:"HANBIT",shopName:"한빛광택",kind:"환불",method:"카드",amount:-27500,status:"환불됨",period:"-15일",orderId:"CGG-PLAN-0000"},
-      {product:"홈페이지 가입",at:dd(-4)+"T20:10:00",shop:"DURI",shopName:"두리휠",kind:"월 요금 (첫 결제)",method:"카드 (삼성)",amount:77000,status:"결제됨",period:"~11/11",orderId:"CGG-HOME-0004"},
-      {product:"계좌 입금(수동)",at:dd(-6)+"T14:00:00",shop:"DURI",shopName:"두리휠",kind:"월 요금",method:"계좌이체",amount:77000,status:"입금 전",period:"",orderId:"",payId:3},
-      {product:"딜러 청구서",at:dd(-7)+"T18:00:00",shop:"HANBIT",shopName:"한빛광택 → 대성상사",kind:"청구서",method:"계좌이체",amount:1430000,status:"입금 확인됨",period:"9월",orderId:""}]};
+      F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:a[1],target_phone:a[0],product:a[2],result:"ok"});
+      if(a[1]==="pwReset") return {ok:true,note:String(a[2]).indexOf("driver:")===0?"임시 비밀번호를 기사 휴대폰으로 보냈습니다":String(a[2]).indexOf("check:")===0?"다음 로그인 때 본인 휴대폰 확인 번호로 새 비밀번호를 정합니다":"본인이 «비밀번호 찾기»(문자 인증)로 새로 정합니다",sent:String(a[2]).indexOf("driver:")===0||undefined};
+      return {ok:true};
+    case "hqAudit": return {ok:true,list:F_LOG.concat([{at:dd(-5)+"T10:00:00",who:"hq:한본사",action:"pwReset",target_phone:a[0],product:"check:HANBIT2",result:"ok"}])};
+    case "hqCheckPwSms": if(a[0]===true||a[0]===false){ F_PWSMS=a[0]; F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:"checkPwSms",product:String(a[0]),result:"ok"}); } return {ok:true,on:F_PWSMS};
+    case "hqPayResults": return {ok:true,from:a[0],to:a[1],sum:55000+33000+77000,refunds:27500,list:[
+      {tag:"워시",at:dd(-12)+"T10:20:00",shop:"HANBIT",shopName:"한빛광택",kind:"월 요금",method:"카드",amount:55000,useCash:0,status:"paid",period:"~11/14",orderId:"CGG-PLAN-0001",from:"워시"},
+      {tag:"체크 · 새빛 성능검사소",at:dd(-3)+"T15:02:00",shop:"SAEBIT",shopName:"새빛 성능장",office:"새빛 성능검사소",kind:"캐시",method:"카드",amount:33000,status:"paid",period:"",orderId:"CGG-CASH-0002",from:"체크"},
+      {tag:"자동 결제",at:dd(-1)+"T09:00:00",shop:"BAREUN",shopName:"바른 카모터스",kind:"월 요금",method:"카드",amount:99000,status:"failed",period:"",orderId:"CGG-BILL-0003",from:"워시"},
+      {tag:"환불",at:dd(-2)+"T11:30:00",shop:"HANBIT",shopName:"한빛광택",kind:"월 요금",method:"카드 환불",amount:-27500,status:"canceled",period:"-15일",orderId:"CGG-PLAN-0000",from:"관리"},
+      {tag:"홈페이지",at:dd(-4)+"T20:10:00",shop:"DURI",shopName:"두리휠",kind:"월 요금",method:"카드",amount:77000,status:"paid",period:"~11/11",orderId:"CGG-HOME-0004",from:"홈페이지",first:true},
+      {tag:"계좌 입금",at:dd(-6)+"T14:00:00",shop:"DURI",shopName:"두리휠",kind:"월 요금",method:"계좌이체",amount:77000,status:"입금 전",period:"",orderId:"",from:"관리",payId:3},
+      {tag:"딜러 청구서",at:dd(-7)+"T18:00:00",shop:"HANBIT",shopName:"한빛광택",kind:"청구서",dealer:"대성상사",month:"2026-09",amount:1430000,refOnly:true,status:"입금 확인됨"}]};
     case "hqAta": return {ok:true,pfSet:true,ready:["intake","release","extra_work","bill","deposit_ok","pay_done","cash_done","auth","staff_link"],tpls:{auth:"KA01TP000000AUTH01",intake:"KA01TP000000IN0001",release:"KA01TP000000REL001",bill:"KA01TP000000BILL01",deposit_ok:"KA01TP000000DEP001"},
       stats:{ym:a[0],ata:{cnt:412,won:412*13},sms:{cnt:96,won:96*18},lms:{cnt:1288,won:1288*45},mms:{cnt:12,won:12*110}}};
     case "hqAtaSave": return {ok:true};
@@ -120,7 +126,7 @@ function FAKE(fn,a){
   return {};
 }
 function post(bodyObj){
-  return new Promise(function(ok){ setTimeout(function(){ ok(JSON.parse(JSON.stringify(FAKE(bodyObj.fn,bodyObj.args)))); },60); });
+  return new Promise(function(ok,no){ setTimeout(function(){ try{ ok(JSON.parse(JSON.stringify(FAKE(bodyObj.fn,bodyObj.args)))); }catch(e){ no(new Error(e.message)); } },60); });
 }
 '''
 a = s.index('function post(bodyObj){'); b = s.index('function open_(fn,args)')
@@ -128,6 +134,7 @@ s = s[:a] + FAKE + s[b:]
 # 처음 열면 바로 들어가게
 rep('(function boot(){', 'if(!ls(SIDKEY)) ls(SIDKEY,"SID-PREVIEW");\n(function boot(){')
 # 미리보기 표시
-rep('<div class="toast" id="toast"></div>', '<div class="toast" id="toast"></div>\n<div style="position:fixed;right:12px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:70;background:#B26B00;color:#fff;font-size:12px;font-weight:700;padding:6px 11px;border-radius:999px;box-shadow:0 4px 12px #0003;pointer-events:none">미리보기 · 지어낸 자료 · 저장 안 됨</div>')
+TOAST_AT = '<div class="toast" id="toast"></div>' if '<div class="toast" id="toast"></div>' in s else '<div class="sheetbg" id="sheetbg"></div>'
+rep(TOAST_AT, TOAST_AT+'\n<div style="position:fixed;right:12px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:var(--z-drop,70);background:#B26B00;color:#fff;font-size:12px;font-weight:700;padding:6px 11px;border-radius:999px;box-shadow:0 4px 12px #0003;pointer-events:none">미리보기 · 지어낸 자료 · 저장 안 됨</div>')
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")

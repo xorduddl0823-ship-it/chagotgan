@@ -16,7 +16,10 @@ def rep(old, new):
     if s.count(old) != 1: raise SystemExit("찾은 수 %d: %s" % (s.count(old), old[:80]))
     s = s.replace(old, new)
 
-rep('var ADM_VER="관리 v4.2 · UI 3.0 · 2026-10-15";', 'var ADM_VER="관리 v4.3 · UI 3.0 · 2026-10-15";')
+# 0. J안 4판 완성 모양 — 공통 부품 cgg-j4 1.2 로 바꿔 끼우기 (v4재료/cgg_swap.py)
+import sys; sys.path.insert(0, os.path.join(HERE, "v4재료")); import cgg_swap
+s = cgg_swap.swap(s)
+rep('var ADM_VER="관리 v4.2 · UI 3.0 · 2026-10-15";', 'var ADM_VER="관리 v4.3 · 공통 1.3 · 2026-10-15";')
 
 # ① 결제 내역 — 제품 칸 · 제품 걸러 보기 · 제품별 이번 달 합계
 PRODF = '''{k:"product", label:"제품", get:function(r){ return r.product||"wash"; },

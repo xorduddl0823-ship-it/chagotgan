@@ -95,6 +95,7 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
     </div>
     <div style="background:var(--surface,#fff);border:1px solid var(--line,#dde3ec);border-radius:var(--r,14px);padding:22px 20px;box-shadow:var(--shadow,0 2px 10px rgba(16,32,52,.08))">
       <h2 style="margin:0 0 4px;font-size:20px">로그인</h2>
+      <div id="lgBuy" hidden style="font-size:14px;background:var(--tabon,#E8F1FC);color:var(--text,#101828);border-radius:10px;padding:10px 12px;margin-top:8px;line-height:1.6"></div>
       <div id="lgStep1">
         <label style="@@LAB@@" for="lgId">아이디 (휴대폰 번호)</label>
         <input id="lgId" type="text" autocomplete="username" placeholder="010-0000-0000" style="@@IN@@">
@@ -214,11 +215,39 @@ function enter(r){
   $("cggBar").hidden=!multi; document.body.classList.toggle("multi",multi);
   $("cggWho").textContent = ME.name ? (ME.name+" 님") : "";
   drawTabs();
-  var want=(location.hash||"").replace("#","");
+  var bought=takeBuy();
+  var want=bought||(location.hash||"").replace("#","");
   var last=ls("cgg_last");
   open_( can(want)?want : (can(last)?last : ME.products[0].code) );
 }
 function can(code){ return !!ME && ME.products.some(function(p){ return p.code===code; }); }
+/* ── 홈페이지 요금제에서 온 결제 뜻 (?buy=제품-요금제) ──
+   로그인 전에는 이 창(sessionStorage)에만 들고 있다가, 들어가면 그 제품의 저장 칸 «cgg_buy» 에 넣고 그 제품을 엽니다.
+   결제 창을 여는 것은 제품(워시 결제 창구)이 합니다. 금액은 서버가 다시 계산해요. */
+var BUY=null;
+(function(){
+  var m=/[?&]buy=([^&#]*)/.exec(location.search), v="";
+  try{ v=m?decodeURIComponent(m[1]):(sessionStorage.getItem("cgg_buy")||""); }catch(e){ v=m?m[1]:""; }
+  if(m){ try{ history.replaceState(null,"",location.pathname+location.hash); }catch(e){} }
+  if(!/^(wash|check)-[a-z0-9_]{1,20}$/.test(v)){ try{ sessionStorage.removeItem("cgg_buy"); }catch(e){} return; }
+  BUY={code:v.split("-")[0], plan:v.slice(v.indexOf("-")+1)};
+  try{ sessionStorage.setItem("cgg_buy",v); }catch(e){}
+  var nm={wash:"워시",check:"체크"}[BUY.code];
+  $("lgBuy").innerHTML="고른 요금제: <b>"+esc(nm+" · "+({basic:"베이직",standard:"스탠다드",pro:"프로"}[BUY.plan]||BUY.plan))+"</b><br>로그인하면 바로 결제 화면으로 이어집니다. 처음이시면 <a href=\"/join.html?plan="+encodeURIComponent(v)+"\">회원가입</a>부터 해 주세요.";
+  $("lgBuy").hidden=false;
+})();
+function takeBuy(){
+  if(!BUY) return "";
+  var code=BUY.code;
+  try{ sessionStorage.removeItem("cgg_buy"); }catch(e){}
+  $("lgBuy").hidden=true; BUY_DONE=BUY; BUY=null;
+  if(!can(code)){ toastNo(code); return ""; }
+  ls("cgg."+code+".cgg_buy", BUY_DONE.plan);
+  return code;
+}
+var BUY_DONE=null;
+function toastNo(code){ try{ alertNo(code); }catch(e){} }
+
 
 function drawTabs(){
   var t=$("cggTabs");
