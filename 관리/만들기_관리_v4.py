@@ -225,5 +225,27 @@ s = s.replace("이번 달 수금", "이번 달 입금")
 s = s.replace('placeholder="🔍 표에서 찾기"', 'placeholder="🔍 검색"').replace("🔍 표에서 찾기", "🔍 검색")
 rep("<span>쓰는 곳 / 멈춘 곳</span>", "<span>진행 중 / 보류</span>")
 
+# ───────── 6. 「~합니다」 → 해요체 (규칙 4-1, 대표님 확정 2026-10-15). 가입 · 로그인 · 오류 안내는 표준형 그대로 ─────────
+import sys; sys.path.insert(0, os.path.join(HERE, "v4재료")); import haeyo
+def _segs(text):
+    t = re.sub(r'/\*.*?\*/', '', text, flags=re.S); t = re.sub(r'<!--.*?-->', '', t, flags=re.S)
+    out = []
+    for m in re.finditer(r'[^"\'<>`{}();=+]*?(?:니다)[^"\'<>`{}();=+]*', t):
+        x = m.group(0).strip()
+        if re.search('[가-힣]', x) and not x.startswith('//') and x not in out: out.append(x)
+    return out
+before = _segs(s)
+s = haeyo.convert(s)
+rows_chg = [(x, haeyo.convert(x)) for x in before if haeyo.convert(x) != x]
+rows_keep = [x for x in before if haeyo.convert(x) == x]
+md = ["# 관리 v4.0 — 화면 글 해요체 대조표", "",
+      "> 관리 방이 만든 표예요 (`관리/만들기_관리_v4.py` 6단계가 저절로 만들어요). 규칙 4-1: 해요체로 쓰되, **가입 · 로그인 · 오류 안내**는 일반 사이트 표준형 그대로예요.",
+      "> 지금 쓰는 v3.6 화면은 바꾸지 않았어요. 아래는 v4.0 새 판에만 들어가요.", "",
+      "## 바꾼 글 (%d줄)" % len(rows_chg), "", "| 전 | 후 |", "|---|---|"]
+md += ["| %s | %s |" % (a.replace("|", "\\|").replace("\\n", " "), b.replace("|", "\\|").replace("\\n", " ")) for a, b in rows_chg]
+md += ["", "## 그대로 둔 글 — 로그인 · 오류 안내 · 다른 화면의 버튼 이름 (%d줄)" % len(rows_keep), ""]
+md += ["- " + x.replace("\\n", " ") for x in rows_keep]
+open(os.path.join(HERE, "시안", "02_해요체_대조표.md"), "w", encoding="utf-8").write("\n".join(md) + "\n")
+
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")

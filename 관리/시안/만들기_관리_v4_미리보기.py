@@ -79,7 +79,7 @@ function post(bodyObj){
 a = s.index('function post(bodyObj){'); b = s.index('function open_(fn,args)')
 s = s[:a] + FAKE + s[b:]
 # 처음 열면 바로 들어가게
-rep('/* 이미 로그인해 둔 기기라면 바로 들어갑니다 */', 'if(!ls(SIDKEY)) ls(SIDKEY,"SID-PREVIEW");\n/* 이미 로그인해 둔 기기라면 바로 들어갑니다 */')
+rep('(function boot(){', 'if(!ls(SIDKEY)) ls(SIDKEY,"SID-PREVIEW");\n(function boot(){')
 # 미리보기 표시
 rep('<div class="toast" id="toast"></div>', '<div class="toast" id="toast"></div>\n<div style="position:fixed;right:12px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:70;background:#B26B00;color:#fff;font-size:12px;font-weight:700;padding:6px 11px;border-radius:999px;box-shadow:0 4px 12px #0003;pointer-events:none">미리보기 · 지어낸 자료 · 저장 안 됨</div>')
 open(OUT, "w", encoding="utf-8").write(s)

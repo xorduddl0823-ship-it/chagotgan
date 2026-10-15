@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 
-/* ═══ 관리 → 워시 색 이름 맞추기 (UI 1.1) — 값은 워시 것을 그대로 씁니다 ═══ */
+/* ═══ 관리 → 워시 색 이름 맞추기 (UI 1.1) — 값은 워시 것을 그대로 써요 ═══ */
 :root{--blue:var(--brand);--blue-soft:var(--brand-soft);--navy:var(--accent);--ok:var(--good);
   --blue-deep:#0E4E9B;--block:#E6EDF7;--block-line:#D3DEED}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--blue-deep:#8AC2F8;--block:#101A29;--block-line:#223145}}
@@ -213,11 +213,11 @@ td.stick b{font-weight:700}
 [hidden]{display:none !important}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--text);font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
-/* 차곳간 공통 UI 1.0 — 한글은 낱말 중간에서 자르지 않습니다 */
+/* 차곳간 공통 UI 1.0 — 한글은 낱말 중간에서 자르지 않아요 */
 body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflow-wrap:break-word}
 /* ═══════ 매출 내역 — 차곳간 체크 화면 그대로 (UI 1.0) ═══════
-   체크의 매출 모양을 그대로 가져왔습니다. 매출 화면 안에서만 씁니다.
-   그래서 다른 화면은 하나도 건드리지 않습니다. */
+   체크의 매출 모양을 그대로 가져왔습니다. 매출 화면 안에서만 써요.
+   그래서 다른 화면은 하나도 건드리지 않아요. */
 #vSales{--s-fee:var(--good);--s-rep:#E0E8F2;--s-ins:#8E6FD8}
 #vSales td.num{font-variant-numeric:tabular-nums}
 #vSales td.num .nn{font-variant-numeric:tabular-nums}
@@ -503,7 +503,7 @@ h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.02em}
 .mwrap .mbtn .mic{display:inline-flex;align-items:center}
 .mwrap .mpop{left:0}
 .mwrap .mpop .mg button small{min-height:14px;font-size:10px}
-/* 작은 탭 — 한 화면 안에서 표를 바꿉니다 (UI 1.0) */
+/* 작은 탭 — 한 화면 안에서 표를 바꿔요 (UI 1.0) */
 .subtabs{display:inline-flex;flex-wrap:wrap;gap:5px;background:var(--surface2);
   padding:4px;border-radius:12px;margin:0 0 12px}
 .subtabs button{border:0;background:transparent;color:var(--muted);font-family:inherit;
@@ -650,14 +650,14 @@ h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.02em}
 #btnMode{--ic:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.9%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M8%203h8v18H8z%27%2F%3E%3Cpath%20d%3D%27M11%2018h2%27%2F%3E%3C%2Fsvg%3E")}
 #btnMore{--ic:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.9%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%205h18%27%2F%3E%3Cpath%20d%3D%27M3%2012h18%27%2F%3E%3Cpath%20d%3D%27M3%2019h18%27%2F%3E%3C%2Fsvg%3E")}
 
-/* 세로·아이콘 메뉴에서만 그림을 씁니다 (가로 메뉴·폰은 글자만) */
+/* 세로·아이콘 메뉴에서만 그림을 써요 (가로 메뉴·폰은 글자만) */
 .wrap.pc.side #tabs button::before{
   content:"";display:block;width:18px;height:18px;flex:0 0 auto;background-color:currentColor;
   -webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat;
   font-size:0;filter:none;opacity:1}
 .wrap.pc.side #setSub button::before{display:none}
 .wrap.pc:not(.side) #tabs button::before,.wrap:not(.pc) #tabs button::before{display:none}
-/* 화면 안쪽 작은 탭에는 그림 자리를 만들지 않습니다 */
+/* 화면 안쪽 작은 탭에는 그림 자리를 만들지 않아요 */
 .tabs:not(#tabs) button::before{content:none !important;display:none !important}
 .wrap.iconmenu > header .tabs button::before{width:22px;height:22px}
 .wrap.iconmenu > header .tabs button{color:#8FA5C2}
@@ -1033,7 +1033,7 @@ h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.02em}
 .wrap:not(.pc) > header .who{color:#B7C6DE}
 .wrap:not(.pc) > header .who b{color:#fff}
 .wrap:not(.pc) > header #dbState{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.26);color:#9EE6C4}
-/* 폰 탭은 머리말 바로 아래(위쪽)에 둡니다 */
+/* 폰 탭은 머리말 바로 아래(위쪽)에 둬요 */
 .wrap:not(.pc) .tabs{background:rgba(255,255,255,.1);margin:8px 0 0;padding:3px;border-radius:11px}
 .wrap:not(.pc) .tabs button{color:#B7C6DE;font-size:13.5px;padding:8px 6px}
 .wrap:not(.pc) .tabs button[aria-selected="true"]{background:rgba(255,255,255,.16);color:#fff;box-shadow:none}
@@ -1415,7 +1415,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 .sheet h3{margin:0 0 4px;font-size:19px;font-weight:900}
 .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
 .kv span{color:var(--muted);font-weight:700}
-/* 직원 목록 한 줄 — 좁은 화면에서는 두 줄로 깔끔하게 내려갑니다 */
+/* 직원 목록 한 줄 — 좁은 화면에서는 두 줄로 깔끔하게 내려가요 */
 .stRow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;padding:11px 0}
 .stL{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;flex:1 1 260px;min-width:0}
 .stR{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;flex:0 0 auto}
@@ -1493,12 +1493,12 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 /* ===== 요금제 띠 (본문 맨 위 · 메뉴 칸 밖) ===== */
 #planStrip{min-width:0}
 /* 가로메뉴·현장 화면 — 머리말(탭줄) 바로 밑에 이어 붙는 흰 띠.
-   머리말의 아래 여백을 없애고 띠가 그 자리를 이어받습니다 (배치마다 여백 값이 달라서 음수 여백을 쓰지 않습니다) */
+   머리말의 아래 여백을 없애고 띠가 그 자리를 이어받습니다 (배치마다 여백 값이 달라서 음수 여백을 쓰지 않아요) */
 .wrap:not(.side).hasplan > header{margin-bottom:0}
 .wrap:not(.side) #planStrip{background:var(--surface);border-bottom:1px solid var(--line);
   margin:0 -14px 18px;padding:9px 14px}
 @media (min-width:1000px){
-  /* 현장 화면 미리보기(폰 모양 틀) — 좌우 여백이 16px 입니다 */
+  /* 현장 화면 미리보기(폰 모양 틀) — 좌우 여백이 16px 이에요 */
   .wrap.fieldview #planStrip{margin:0 -16px 16px;padding:9px 16px}
   /* 세로메뉴 — 본문 칸 맨 위에 꽉 차게 붙는 흰 띠 */
   .wrap.side:not(.iconmenu) #planStrip{background:var(--surface);border-bottom:1px solid var(--line);
@@ -1567,7 +1567,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
   .pl-band .tx{flex:1 1 100%}
   .pl-band .pl-go{width:100%}
 }
-/* 좁은 자리(현장 화면·폰) — 한 줄에 모두 들어가도록 글씨를 줄입니다 */
+/* 좁은 자리(현장 화면·폰) — 한 줄에 모두 들어가도록 글씨를 줄이에요 */
 #planStrip.pl-nar .pl-row{flex-wrap:nowrap;gap:4px}
 #planStrip.pl-nar .pl-lead{font-size:10.5px;margin:0;white-space:nowrap}
 #planStrip.pl-nar .pl-chip{padding:3px 7px;gap:3px;flex:0 1 auto;min-width:0;overflow:hidden}
@@ -1579,7 +1579,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 #planStrip.pl-xs .pl-chip{padding:2px 6px}
 #planStrip.pl-xs .pl-chip .k{font-size:9px}
 #planStrip.pl-xs .pl-chip .v{font-size:10.5px}
-/* 좁은 자리에서 「자세히」를 펼쳤을 때 — 칸을 눕혀서 높이를 줄입니다 */
+/* 좁은 자리에서 「자세히」를 펼쳤을 때 — 칸을 눕혀서 높이를 줄이에요 */
 #planStrip.pl-nar .pmBox{padding:12px 13px;margin-top:8px;border-radius:12px}
 #planStrip.pl-nar .pmTop{gap:9px}
 #planStrip.pl-nar .pmName{font-size:16.5px;gap:6px}
@@ -1744,7 +1744,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 .pbBar .tx{flex:1;min-width:0;font-weight:700}
 .pbBar .btn{flex:0 0 auto;height:34px;padding:0 12px;font-size:12.5px;font-weight:800;
   background:var(--surface);color:inherit;border:1px solid currentColor}
-/* 처음 한 번만 하는 준비 — 접어 둡니다 */
+/* 처음 한 번만 하는 준비 — 접어 둬요 */
 #pbFold{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
   box-shadow:var(--shadow);margin-top:14px;overflow:hidden}
 #pbFold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;
@@ -1820,7 +1820,7 @@ p.lead{font-size:12px;color:var(--muted);margin:5px 0 12px}
 .sheet .sub{font-size:13px;color:var(--muted);margin-bottom:14px}
 .prog.w i{background:var(--warn)} .prog.d i{background:var(--danger)}
 #homeSums .sum[data-go]{cursor:pointer}
-/* 둘째 줄 작은 탭 앞 글자 — 워시는 «설정» 고정, 관리는 묶음 이름(홈·업체·…·설정)을 보여 줍니다 */
+/* 둘째 줄 작은 탭 앞 글자 — 워시는 «설정» 고정, 관리는 묶음 이름(홈·업체·…·설정)을 보여 줘요 */
 .wrap:not(.side) > header #setSub[data-label]::before{content:attr(data-label)}
 /* 숫자 칸(kbox) — 워시 .sum 과 같은 모양 */
 .kbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;text-align:center;
@@ -1835,9 +1835,9 @@ p.lead{font-size:12px;color:var(--muted);margin:5px 0 12px}
 /* ═══════ 차곳간 공통 UI — cgg-ui 1.1 (이 블록만 갈아 끼우면 디자인이 바뀝니다) ═══════ */
 /* ════════════════════════════════════════════════════════════════════
    차곳간 공통 UI 규격  ·  cgg-ui 1.1  ·  2026-10-12
-   워시 · 체크 · 관리가 똑같이 쓰는 한 벌입니다.
+   워시 · 체크 · 관리가 똑같이 쓰는 한 벌이에요.
 
-   새 디자인을 입히실 때는 이 파일만 갈아 끼우면 됩니다.
+   새 디자인을 입히실 때는 이 파일만 갈아 끼우면 돼요.
    아래 「이름표」를 그대로 쓰시면 세 제품이 한 번에 맞습니다.
 
      머리말    .bizname b / .bizname small / #hVer · #hdVer / #btnTrash / .trbdg
@@ -1925,7 +1925,7 @@ p.lead{font-size:12px;color:var(--muted);margin:5px 0 12px}
 
 /* ───────── 5. 오늘 할 일 ─────────
    바깥은 회색 바탕, 항목은 흰색. 급한 것은 빨강 + 「중요」, 메모는 주황.
-   세 개만 보이고 나머지는 「모두 보기」로 가운데 창에 띄웁니다. */
+   세 개만 보이고 나머지는 「모두 보기」로 가운데 창에 띄워요. */
 .todo{display:grid;grid-template-columns:1fr;gap:8px;align-items:stretch;
   background:#F4F6F9;border:1px solid var(--line);border-radius:12px;padding:10px}
 .todo button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
@@ -2029,14 +2029,14 @@ td.num .b.same,.gtag.same{color:var(--muted)}
 
 
 /* ───────── 8. 글 ─────────
-   한글은 낱말 중간에서 자르지 않습니다. */
+   한글은 낱말 중간에서 자르지 않아요. */
 body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflow-wrap:break-word}
 .who .mypglb{font-weight:800;font-size:12px;white-space:nowrap}
 
 </style>
 <style>
 /* ═══════ J안 4판 덮개 — 관리 v4.0 · UI 3.0 (2026-10-14) ═══════
-   디자인 서랍 08_차곳간_합친디자인_J.html 의 값을 그대로 씁니다. (기준서 2장)
+   디자인 서랍 08_차곳간_합친디자인_J.html 의 값을 그대로 써요. (기준서 2장)
    이 블록이 맨 마지막에 있어서 앞의 UI 1.1 값을 덮어씁니다.
    틀: #app.lay-top(가로 메뉴) · lay-side(세로 메뉴) · lay-icon(아이콘 메뉴) — 셋 다 남색 틀, 본문은 똑같음
    폰(600px 이하): 배치와 상관없이 남색 윗줄 48 + 아래 탭바 56 */
@@ -2374,12 +2374,12 @@ input[type=checkbox]:checked::after{opacity:1}
 
 <script>
 (function(){
-/* 관리 판 번호 — 고칠 때마다 이 줄만 바꾸면 화면에 그대로 나옵니다 (워시 APP_VER 와 같은 꼴) */
+/* 관리 판 번호 — 고칠 때마다 이 줄만 바꾸면 화면에 그대로 나와요 (워시 APP_VER 와 같은 꼴) */
 var ADM_VER="관리 v4.0 · UI 3.0 · 2026-10-14";
 try{
   document.title = "관리 v4.0 미리보기";
   var _g=document.getElementById("gVer"); if(_g) _g.textContent = ADM_VER;
-  /* 판 번호는 짧게 — 「v3.6 · UI 1.1」 (전체는 마우스를 올리면 보입니다) — 워시와 같은 식 */
+  /* 판 번호는 짧게 — 「v3.6 · UI 1.1」 (전체는 마우스를 올리면 보여요) — 워시와 같은 식 */
   var _h=document.getElementById("hVer");
   if(_h){ _h.textContent = ADM_VER.replace(/^\S+\s+/,"").replace(/\s*·\s*\d{4}-\d{2}-\d{2}\s*$/,""); _h.title = ADM_VER; }
 }catch(e){}
@@ -2533,7 +2533,7 @@ function makeTable(o){
   function val(r,c){ return c.sortVal ? c.sortVal(r) : r[c.k]; }
   function draw(){
     var rows = (o.rows||[]).slice();
-    /* 거르기 — 권한·상태 같은 칸을 골라서 봅니다 */
+    /* 거르기 — 권한·상태 같은 칸을 골라서 봐요 */
     (o.filters||[]).forEach(function(f){
       var v = st.f[f.k];
       if(v===undefined || v==="") return;
@@ -2603,7 +2603,7 @@ function makeTable(o){
       h += '</tr>';
     });
     h += '</tbody></table>'+(view.length?'':('<div class="empty">'+
-         esc((typeof o.empty==="function"?o.empty(o.rows||[]):o.empty)||"보여드릴 자료가 없습니다.")+'</div>'))+'</div>';
+         esc((typeof o.empty==="function"?o.empty(o.rows||[]):o.empty)||"보여드릴 자료가 없어요.")+'</div>'))+'</div>';
 
     /* 쪽 넘김 — 워시·체크와 같은 모양 (처음 · 이전 · N / M · 모두 N줄 · 다음 · 맨뒤) */
     h += '<div class="pager">'+
@@ -2766,7 +2766,7 @@ function viewSummary(){
     [stop.length,"멈춘 업체", stop.length?names(stop,function(x){return x.name||x.shop;}):"이용이 멈춘 곳", go("shops")],
     [Number(s.waitInvite||0),"가입 코드 · 아직 가입 안 함","코드를 받고 가입을 안 한 번호", go("inv")],
     [noPrice.length,"요금 미정 요금제", noPrice.length?names(noPrice,function(p){return p.name;}):"금액이 0원인 요금제", go("plans")]
-  ]);   /* 0건도 빼지 않습니다 — 워시와 같이 늘 세 줄이 보입니다 */
+  ]);   /* 0건도 빼지 않아요 — 워시와 같이 늘 세 줄이 보여요 */
 
   /* ── 아래 넓은 카드 — 운영 상태 · 유지비 ── */
   var u=OPS.usage, L=OPS.limits||{dbGb:8,fileGb:100,warnPct:80};
@@ -2846,15 +2846,15 @@ function viewSummary(){
         '<span>문자 '+(sms&&sms.balanceAt?("확인 <b>"+esc(dtTime(sms.balanceAt))+"</b>"):"유지비에서 받아오세요")+'</span>'+
       '</div>'+
       (u ? ('<div class="gauges" style="margin:12px 0 0">'+
-        opsGauge("자료(DB)",u.db_bytes,L.dbGb,L.warnPct,"업체 기록 · 입출고 · 정산 같은 글자 자료입니다.")+
-        opsGauge("차량 사진",u.file_bytes,L.fileGb,L.warnPct,"<b>※ 사진은 자동 백업에 들어가지 않습니다.</b>")+
+        opsGauge("자료(DB)",u.db_bytes,L.dbGb,L.warnPct,"업체 기록 · 입출고 · 정산 같은 글자 자료예요.")+
+        opsGauge("차량 사진",u.file_bytes,L.fileGb,L.warnPct,"<b>※ 사진은 자동 백업에 들어가지 않아요.</b>")+
         '</div>') : '')+
     '</div>'+
     /* 유지비 — 요금을 내야 시스템이 도는 곳 */
     '<div class="card">'+
       '<h2>유지비 — 끊기면 안 되는 곳 <span class="rt">'+(svcBad.length?("끊기기 직전 "+svcBad.length+"곳"):"모두 정상")+'</span></h2>'+
-      '<div class="hint" style="margin:-6px 0 12px">충전·결제가 밀리면 문자·주소·서버가 멈춥니다. 「바로 가기」를 누르면 그 회사 결제 화면이 열립니다.</div>'+
-      (!svcs.length ? '<div class="hint">운영 서비스 표가 아직 없습니다. 유지비 화면에서 DB 반영을 먼저 해주세요.</div>' :
+      '<div class="hint" style="margin:-6px 0 12px">충전·결제가 밀리면 문자·주소·서버가 멈춰요. 「바로 가기」를 누르면 그 회사 결제 화면이 열려요.</div>'+
+      (!svcs.length ? '<div class="hint">운영 서비스 표가 아직 없어요. 유지비 화면에서 DB 반영을 먼저 해주세요.</div>' :
         ('<div class="svcList">'+svcs.map(function(x){
           var st = svcState(x);
           return '<div class="svcRow lv'+st.lv+'">'+
@@ -2924,7 +2924,7 @@ function viewSummary(){
 function todoSheet(list, mk){
   $("sheet").innerHTML='<h3 style="margin:0 0 2px">오늘 할 일</h3>'+
     '<div style="color:var(--muted);font-size:12.5px;margin-bottom:13px">모두 '+list.length+
-      '건입니다. 누르면 그 화면으로 갑니다.</div>'+
+      '건이에요. 누르면 그 화면으로 가요.</div>'+
     '<div class="todo" id="todoAll"></div>'+
     '<div class="sheetbtns"><button class="btn" id="todoClose">닫기</button></div>';
   openSheet();
@@ -2947,7 +2947,7 @@ function hqDaySheet(k){
       return '<div class="memorow'+(m.done?" done":"")+'"><input type="checkbox" data-mdone="'+esc(m.id)+'"'+(m.done?" checked":"")+' title="끝나면 체크">'+
         '<div class="mt">'+esc(m.title)+'</div>'+
         '<button class="btn danger" data-mdel="'+esc(m.id)+'" style="padding:6px 10px;font-size:13px">삭제</button></div>';}).join("")
-      :'<div class="hint" style="padding:6px 0">아직 메모가 없습니다. 아래에 적으면 이 날 달력과 홈 [오늘 할 일]에 뜹니다.</div>')+'</div>'+
+      :'<div class="hint" style="padding:6px 0">아직 메모가 없어요. 아래에 적으면 이 날 달력과 홈 [오늘 할 일]에 떠요.</div>')+'</div>'+
     '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
       '<input type="text" id="mmText" placeholder="예) QR 스티커 교체 / 문자 충전" style="flex:1;min-width:200px">'+
       '<button class="btn primary" id="mmAdd">메모 추가</button></div>'+
@@ -2956,7 +2956,7 @@ function hqDaySheet(k){
    '<div style="max-height:34vh;overflow:auto">'+
    (evs.length?evs.map(function(e,i){
      return '<div class="kv"><span><b>'+esc(e.t)+'</b></span><b><button class="btn sm" data-ev="'+i+'">보기 ›</button></b></div>'; }).join("")
-    :'<div class="empty">이 날은 일정이 없습니다.</div>')+'</div>'+
+    :'<div class="empty">이 날은 일정이 없어요.</div>')+'</div>'+
    '<div class="sheetbtns"><button class="btn" id="dsClose">닫기</button></div>';
   openSheet();
   $("dsClose").onclick=closeSheet;
@@ -2964,7 +2964,7 @@ function hqDaySheet(k){
     .then(function(){ hqDaySheet(k); if(TAB==="sum") viewSummary(); }); };
   $("mmAdd").onclick=function(){
     var t=$("mmText").value.trim(); if(!t) return toast("메모 내용을 적어주세요",true);
-    api("hqTodoAdd",[t,k]).then(function(){ toast("메모를 적었습니다"); again(); }).catch(function(e){ toast(e.message,true); });
+    api("hqTodoAdd",[t,k]).then(function(){ toast("메모를 적었어요"); again(); }).catch(function(e){ toast(e.message,true); });
   };
   $("mmText").onkeydown=function(e){ if(e.key==="Enter"&&!e.isComposing) $("mmAdd").click(); };
   $("sheet").querySelectorAll("[data-mdone]").forEach(function(c){
@@ -2972,7 +2972,7 @@ function hqDaySheet(k){
       .then(again).catch(function(e){ toast(e.message,true); }); }; });
   $("sheet").querySelectorAll("[data-mdel]").forEach(function(b){
     b.onclick=function(){ api("hqTodoDel",[Number(b.getAttribute("data-mdel"))])
-      .then(function(){ toast("지웠습니다"); again(); }).catch(function(e){ toast(e.message,true); }); }; });
+      .then(function(){ toast("지웠어요"); again(); }).catch(function(e){ toast(e.message,true); }); }; });
   $("sheet").querySelectorAll("[data-ev]").forEach(function(b){
     b.onclick=function(){ var e=evs[Number(b.getAttribute("data-ev"))]; closeSheet(); TAB=e.go; window.scrollTo(0,0); render(); }; });
 }
@@ -3000,15 +3000,15 @@ function homeOps(){
     '</div>';
   if(u){
     h+='<div class="gauges">'+
-      opsGauge("자료(DB)",u.db_bytes,L.dbGb,L.warnPct,"업체 기록 · 입출고 · 정산 같은 글자 자료입니다.")+
+      opsGauge("자료(DB)",u.db_bytes,L.dbGb,L.warnPct,"업체 기록 · 입출고 · 정산 같은 글자 자료예요.")+
       opsGauge("차량 사진",u.file_bytes,L.fileGb,L.warnPct,
-        "<b>※ 사진은 자동 백업에 들어가지 않습니다.</b>")+
+        "<b>※ 사진은 자동 백업에 들어가지 않아요.</b>")+
       '</div>';
   }
   return h+'</div>';
 }
 
-/* 운영 서비스 하나의 상태를 봅니다 — {lv, txt}  lv: 0 넉넉 / 1 곧 / 2 급함 */
+/* 운영 서비스 하나의 상태를 봐요 — {lv, txt}  lv: 0 넉넉 / 1 곧 / 2 급함 */
 function svcState(v){
   var lv=0, txt="", day=864e5;
   if(v.kind==="charge"){
@@ -3016,7 +3016,7 @@ function svcState(v){
     txt = won(bal)+" 남음";
     if(min>0 && bal<=min) lv=2;
     else if(min>0 && bal<=min*2) lv=1;
-    if(lv===2) txt += " — 충전이 필요합니다";
+    if(lv===2) txt += " — 충전이 필요해요";
   }
   if(v.next_due){
     var left = Math.ceil((new Date(v.next_due+"T00:00:00").getTime()-Date.now())/day);
@@ -3036,14 +3036,14 @@ function svcPill(lv){
                 : '<span class="pill ok">넉넉</span>';
 }
 
-/* 오늘 날짜를 «9월 25일 (목)» 처럼 적습니다 */
+/* 오늘 날짜를 «9월 25일 (목)» 처럼 적어요 */
 function dtFull(){
   var d = new Date(), w = ["일","월","화","수","목","금","토"][d.getDay()];
   return (d.getMonth()+1)+"월 "+d.getDate()+"일 ("+w+")";
 }
 
 /* 이 업체의 문자·계산서 총량과 남은 량을 계산합니다
-   무료(요금제 또는 체험분) → 충전분 → 여유분 20건 순서로 씁니다 */
+   무료(요금제 또는 체험분) → 충전분 → 여유분 20건 순서로 써요 */
 function usageOf(r){
   var trial = !r.plan || r.plan==="trial";
   var pl = (D.plans||[]).filter(function(p){return p.code===r.plan;})[0] || {};
@@ -3063,9 +3063,9 @@ function usageOf(r){
     spareLeft:Math.max(0,spareMax-spareUsed), spareMax:spareMax
   };
 }
-/* 건수를 「1,000건」처럼 적습니다 (금액이 아닙니다) */
+/* 건수를 「1,000건」처럼 적어요 (금액이 아닙니다) */
 function cnt(n){ return Number(n||0).toLocaleString("ko-KR")+"건"; }
-/* 「342건 / 500건」처럼 남은 량과 총량을 같이 보여 줍니다 */
+/* 「342건 / 500건」처럼 남은 량과 총량을 같이 보여 줘요 */
 function useCell(left,total,extra){
   if(total===0) return '<span style="color:var(--muted)">못 씀</span>';
   var col = left===0 ? "var(--danger)" : (left<=total*0.1 ? "var(--warn)" : "var(--text)");
@@ -3079,7 +3079,7 @@ function useCell(left,total,extra){
 function viewShops(){
   $("main").innerHTML =
     '<div class="dashhead"><h2>업체 관리</h2>'+
-    '<div class="sub2">줄을 누르면 고칠 수 있습니다. 차곳간 본사(ADMIN)는 목록에서 빼 두었습니다.</div></div>'+
+    '<div class="sub2">줄을 누르면 고칠 수 있어요. 차곳간 본사(ADMIN)는 목록에서 빼 두었어요.</div></div>'+
     '<div id="tShops"></div>';
   var rows = (D.shops||[]).filter(function(s){ return s.shop!=="ADMIN"; });
   makeTable({
@@ -3152,7 +3152,7 @@ function sessBoxHtml(code){
   var pc=list.filter(function(x){return x.kind!=="mo";}).length;
   var mo=list.length-pc;
   var h='<div class="f" style="margin-top:24px">지금 로그인된 기기 — PC '+pc+'대 · 모바일 '+mo+'대</div>';
-  if(!list.length) return h+'<div class="hint">지금 로그인해 둔 기기가 없습니다.</div>';
+  if(!list.length) return h+'<div class="hint">지금 로그인해 둔 기기가 없어요.</div>';
   h+='<div style="margin-top:8px">';
   list.forEach(function(x){
     h+='<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)">'+
@@ -3166,7 +3166,7 @@ function sessBoxBind(code){
   Array.prototype.forEach.call($("sheet").querySelectorAll("button[data-k]"),function(b){
     b.onclick=function(){
       api("hqSessionKill",[b.getAttribute("data-k")]).then(function(){ return loadAll(); })
-        .then(function(){ toast("기기를 내보냈습니다"); shopSheet(code); })
+        .then(function(){ toast("기기를 내보냈어요"); shopSheet(code); })
         .catch(function(e){ toast(e.message,true); });
     };
   });
@@ -3177,7 +3177,7 @@ function usageBoxHtml(s){
   var sf=pl?(pl.sms_free||0):0, tf=pl?(pl.tax_free||0):0;
   var su=s.sms_used||0, tu=s.tax_used||0, sp=s.sms_paid||0, tp=s.tax_paid||0;
   if(!s.plan || s.plan==="trial")
-    return '<div class="hint" style="margin-top:12px">무료 체험 중이라 건수를 세지 않습니다.</div>';
+    return '<div class="hint" style="margin-top:12px">무료 체험 중이라 건수를 세지 않아요.</div>';
   return '<label class="f" style="margin-top:14px">이번 기간 사용량</label>'+
     '<div class="usg">'+
       '<div class="ub"><span class="t">문자</span>'+
@@ -3206,7 +3206,7 @@ function usageBoxBind(code){
     api("hqTopup",[code,{ kind:$("sTopKind").value, qty:qty,
       amount:Number($("sTopAmt").value)||0, memo:$("sTopMemo").value.trim() }])
       .then(function(r){ return loadAll().then(function(){ return r; }); })
-      .then(function(r){ toast((r&&r.kind==="tax"?"계산서 ":"문자 ")+(r&&r.qty)+"건을 넣었습니다"); shopSheet(code); })
+      .then(function(r){ toast((r&&r.kind==="tax"?"계산서 ":"문자 ")+(r&&r.qty)+"건을 넣었어요"); shopSheet(code); })
       .catch(function(e){ toast(e.message,true); });
   };
 }
@@ -3229,7 +3229,7 @@ function shopSheet(code){
       '<div><label class="f">업태</label><input type="text" id="sUpte" value="'+esc(s.upte||"")+'" placeholder="서비스"></div>'+
       '<div><label class="f">종목</label><input type="text" id="sJong" value="'+esc(s.jongmok||"")+'" placeholder="자동차 광택·세차"></div>'+
     '</div>'+
-    '<div class="hint">세금계산서와 팝빌 등록에 쓰입니다. 업체 앱의 «설정 → 우리 사업장» 과 같은 내용입니다.'+
+    '<div class="hint">세금계산서와 팝빌 등록에 쓰여요. 업체 앱의 «설정 → 우리 사업장» 과 같은 내용이에요.'+
       (s.pb_id?(' 팝빌에 등록됨 (아이디 '+esc(s.pb_id)+')'):"")+'</div>'+
     '<div class="row2">'+
       '<div><label class="f">요금제</label><select id="sPlan">'+planOpts+
@@ -3239,29 +3239,29 @@ function shopSheet(code){
     '</div>'+
     '<label class="f">체험 끝나는 날 (무료 체험일 때)</label>'+
     '<input type="date" id="sTrial" value="'+(s.trial_until?esc(String(s.trial_until).slice(0,10)):"")+'">'+
-    '<div class="hint">요금제가 «무료 체험» 인 업체는 이 날짜가 이용기한이 됩니다. '+
-      '비워 두면 «기한 없음» 이 되어 기한 안내 문자도, 잠금·차단도 작동하지 않습니다.</div>'+
+    '<div class="hint">요금제가 «무료 체험» 인 업체는 이 날짜가 이용기한이 돼요. '+
+      '비워 두면 «기한 없음» 이 되어 기한 안내 문자도, 잠금·차단도 작동하지 않아요.</div>'+
     '<div class="sheetbtns" style="margin:-4px 0 14px"><button class="btn" id="sT7">7일</button>'+
       '<button class="btn" id="sT14">14일</button><button class="btn" id="sT30">30일</button>'+
       '<button class="btn" id="sT0">비우기</button></div>'+
     '<label class="f">이용 상태</label>'+
     '<select id="sOn"><option value="1"'+(s.active!==false?" selected":"")+'>진행 중</option>'+
       '<option value="0"'+(s.active===false?" selected":"")+'>보류 (로그인 막기)</option></select>'+
-    '<div class="hint">멈추면 그 업체 사람들이 로그인할 수 없게 되고, 지금 켜 둔 화면도 다음 요청부터 막힙니다. 자료는 그대로 남습니다.</div>'+
+    '<div class="hint">멈추면 그 업체 사람들이 로그인할 수 없게 되고, 지금 켜 둔 화면도 다음 요청부터 막혀요. 자료는 그대로 남아요.</div>'+
     '<div class="row2">'+
       '<div><label class="f">결제일 (이 날부터 30일)</label><input type="date" id="sPaidAt" value="'+
         (s.paid_at?esc(String(s.paid_at).slice(0,10)):"")+'"></div>'+
       '<div><label class="f">여유분 (업체당 한 번)</label><input type="number" id="sSpare" value="'+
         (s.spare_max==null?20:s.spare_max)+'"></div>'+
     '</div>'+
-    '<div class="hint">결제일을 바꾸면 그 날부터 30일이 새로 시작되고, 이번 기간 사용량이 0으로 돌아갑니다. '+
-      '여유분은 지금까지 '+(s.spare_used||0)+'건 썼습니다.</div>'+
+    '<div class="hint">결제일을 바꾸면 그 날부터 30일이 새로 시작되고, 이번 기간 사용량이 0으로 돌아가요. '+
+      '여유분은 지금까지 '+(s.spare_used||0)+'건 썼어요.</div>'+
     usageBoxHtml(s)+
     '<label class="f">메모</label><textarea id="sMemo" rows="2" placeholder="내부 메모">'+esc(s.memo||"")+'</textarea>'+
     '<div class="sheetbtns"><button class="btn" id="sCancel">취소</button>'+
       '<button class="btn primary" id="sSave" style="flex:2">저장</button></div>'+
     sessBoxHtml(code)+
-    '<div class="warnbox" style="margin-top:22px">업체를 지우면 그 업체의 장부·계정이 모두 사라집니다. 되돌릴 수 없습니다.</div>'+
+    '<div class="warnbox" style="margin-top:22px">업체를 지우면 그 업체의 장부·계정이 모두 사라져요. 되돌릴 수 없어요.</div>'+
     '<button class="btn danger" id="sDel" style="width:100%">이 업체 지우기</button>'
   );
   sessBoxBind(code);
@@ -3288,13 +3288,13 @@ function shopSheet(code){
             upte:$("sUpte").value.trim(), jongmok:$("sJong").value.trim() };
     if(!v.name) return toast("업체명을 넣어주세요",true);
     api("hqShopSave",[code,v]).then(function(){ return loadAll(); })
-      .then(function(){ closeSheet(); toast("저장했습니다"); render(); })
+      .then(function(){ closeSheet(); toast("저장했어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("sDel").onclick=function(){
     openSheet('<h3>업체 지우기</h3>'+
       '<div class="sub">'+esc(s.name)+' (코드 '+esc(s.shop)+')</div>'+
-      '<div class="warnbox">입출고 기록, 거래처, 청구서, 계정이 전부 사라집니다. 되돌릴 수 없습니다.</div>'+
+      '<div class="warnbox">입출고 기록, 거래처, 청구서, 계정이 전부 사라져요. 되돌릴 수 없어요.</div>'+
       '<label class="f">확인하려면 업체명을 그대로 적어주세요</label>'+
       '<input type="text" id="dName" placeholder="'+esc(s.name)+'">'+
       '<div class="sheetbtns"><button class="btn" id="dNo">취소</button>'+
@@ -3302,7 +3302,7 @@ function shopSheet(code){
     $("dNo").onclick=function(){ shopSheet(code); };
     $("dYes").onclick=function(){
       api("hqShopDel",[code,$("dName").value]).then(function(){ return loadAll(); })
-        .then(function(){ closeSheet(); toast("지웠습니다"); render(); })
+        .then(function(){ closeSheet(); toast("지웠어요"); render(); })
         .catch(function(e){ toast(e.message,true); });
     };
   };
@@ -3315,7 +3315,7 @@ var ROLE = {owner:"대표", manager:"매니저", staff:"직원", admin:"본사 �
 function viewUsers(){
   $("main").innerHTML =
     '<div class="dashhead"><h2>계정 관리</h2>'+
-    '<div class="sub2">모든 업체의 대표·직원 계정입니다. 줄을 누르면 고칠 수 있습니다.</div></div>'+
+    '<div class="sub2">모든 업체의 대표·직원 계정이에요. 줄을 누르면 고칠 수 있어요.</div></div>'+
     '<div id="tUsers"></div>';
   makeTable({
     id:"tUsers", rows:(D.users||[]).slice(), search:["name","phone","shopName"],
@@ -3368,7 +3368,7 @@ function userSheet(phone){
   openSheet(
     '<h3>'+esc(u.name)+'</h3>'+
     '<div class="sub">'+esc(u.shopName||u.shop)+' · 아이디 '+esc(phoneFmt(u.phone))+'</div>'+
-    (isMe?'<div class="warnbox">지금 로그인해 쓰고 있는 계정입니다.</div>':'')+
+    (isMe?'<div class="warnbox">지금 로그인해 쓰고 있는 계정이에요.</div>':'')+
     '<label class="f">이름</label><input type="text" id="uName" value="'+esc(u.name)+'">'+
     '<div class="row2">'+
       '<div><label class="f">권한</label><select id="uRole">'+
@@ -3386,8 +3386,8 @@ function userSheet(phone){
     '<label class="f" style="margin-top:24px">비밀번호</label>'+
     '<div class="row2"><input type="text" id="uPw" placeholder="새 비밀번호 (비우면 무작위 6자리)">'+
       '<button class="btn" id="uPwGo">비밀번호 바꾸기</button></div>'+
-    '<div class="hint">바꾸면 그분이 켜 둔 모든 기기에서 로그아웃됩니다.</div>'+
-    (isMe?'':'<div class="warnbox" style="margin-top:22px">계정을 지우면 그분은 로그인할 수 없게 됩니다. 입출고 기록은 남습니다.</div>'+
+    '<div class="hint">바꾸면 그분이 켜 둔 모든 기기에서 로그아웃돼요.</div>'+
+    (isMe?'':'<div class="warnbox" style="margin-top:22px">계정을 지우면 그분은 로그인할 수 없게 돼요. 입출고 기록은 남아요.</div>'+
       '<button class="btn danger" id="uDel" style="width:100%">이 계정 지우기</button>')
   );
   $("uCancel").onclick=closeSheet;
@@ -3395,22 +3395,22 @@ function userSheet(phone){
     var v={ name:$("uName").value.trim(), role:$("uRole").value, active:$("uOn").value==="1" };
     if(!v.name) return toast("이름을 넣어주세요",true);
     api("hqUserSave",[phone,v]).then(function(){ return loadAll(); })
-      .then(function(){ closeSheet(); toast("저장했습니다"); render(); })
+      .then(function(){ closeSheet(); toast("저장했어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("uPwGo").onclick=function(){
-    var pw = $("uPw").value.trim();          // 비우면 서버가 무작위 6자리를 만들어 줍니다
-    confirmBox("비밀번호 바꾸기", u.name+" 님의 비밀번호를 «"+pw+"» 로 바꿉니다.", "바꾸기", false, function(){
+    var pw = $("uPw").value.trim();          // 비우면 서버가 무작위 6자리를 만들어 줘요
+    confirmBox("비밀번호 바꾸기", u.name+" 님의 비밀번호를 «"+pw+"» 로 바꿔요.", "바꾸기", false, function(){
       if(pw && pw.length < 6) return toast("비밀번호는 6자 이상으로 해주세요",true);
       api("hqUserPw",[phone,pw||null]).then(function(r){
-        toast("비밀번호를 바꿨습니다 — "+((r&&r.pw)||pw)+" (이 화면에서만 보입니다)"); })
+        toast("비밀번호를 바꿨어요 — "+((r&&r.pw)||pw)+" (이 화면에서만 보여요)"); })
         .catch(function(e){ toast(e.message,true); });
     });
   };
   if($("uDel")) $("uDel").onclick=function(){
-    confirmBox("계정 지우기", u.name+" 님의 로그인 계정을 지웁니다. 되돌릴 수 없습니다.", "지우기", true, function(){
+    confirmBox("계정 지우기", u.name+" 님의 로그인 계정을 지워요. 되돌릴 수 없어요.", "지우기", true, function(){
       api("hqUserDel",[phone]).then(function(){ return loadAll(); })
-        .then(function(){ toast("지웠습니다"); render(); })
+        .then(function(){ toast("지웠어요"); render(); })
         .catch(function(e){ toast(e.message,true); });
     });
   };
@@ -3430,7 +3430,7 @@ function viewPays(){
     .reduce(function(a,b){return a+(b.amount||0);},0);
   $("main").innerHTML =
     '<div class="dashhead"><h2>결제 내역</h2>'+
-    '<div class="sub2">아직 카드 결제는 붙어 있지 않습니다. 계좌로 받으신 것을 여기서 «받음»으로 바꿔 주세요.</div></div>'+
+    '<div class="sub2">아직 카드 결제는 붙어 있지 않아요. 계좌로 받으신 것을 여기서 «받음»으로 바꿔 주세요.</div></div>'+
     '<div class="paySum">'+
       '<div class="kbox hl"><span class="t">이번 달 받은 금액</span>'+
         '<span class="v" style="display:block">'+won(month)+'</span>'+
@@ -3482,7 +3482,7 @@ function payAddSheet(){
   var planOpts = (D.plans||[]).map(function(p){
     return '<option value="'+esc(p.code)+'" data-price="'+(p.price||0)+'">'+esc(p.name)+'</option>'; }).join("");
   var ym = new Date().toISOString().slice(0,7);
-  openSheet('<h3>청구 만들기</h3><div class="sub">받을 금액을 한 건 적어 둡니다.</div>'+
+  openSheet('<h3>청구 만들기</h3><div class="sub">받을 금액을 한 건 적어 둬요.</div>'+
     '<label class="f">업체</label><select id="pShop">'+shopOpts+'</select>'+
     '<div class="row2">'+
       '<div><label class="f">요금제</label><select id="pPlan">'+planOpts+'</select></div>'+
@@ -3510,7 +3510,7 @@ function payAddSheet(){
     api("hqPayAdd",[$("pShop").value,$("pPlan").value,Number($("pAmt").value)||0,
       $("pPeriod").value.trim(),$("pMemo").value.trim()])
       .then(function(){ return loadAll(); })
-      .then(function(){ closeSheet(); toast("청구를 만들었습니다"); render(); })
+      .then(function(){ closeSheet(); toast("청구를 만들었어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
 }
@@ -3532,19 +3532,19 @@ function paySheet(id){
   $("pClose").onclick=closeSheet;
   if($("pPaid")) $("pPaid").onclick=function(){
     api("hqPayMark",[id,"paid",$("pMethod").value]).then(function(){ return loadAll(); })
-      .then(function(){ closeSheet(); toast("받음으로 바꿨습니다"); render(); })
+      .then(function(){ closeSheet(); toast("받음으로 바꿨어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
   if($("pBack")) $("pBack").onclick=function(){
     api("hqPayMark",[id,"ready",""]).then(function(){ return loadAll(); })
-      .then(function(){ closeSheet(); toast("되돌렸습니다"); render(); })
+      .then(function(){ closeSheet(); toast("되돌렸어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("pDel").onclick=function(){
-    confirmBox("결제 건 지우기","이 기록을 지웁니다. 회계 증빙이 필요하면 지우지 말고 «취소» 상태로 두세요.",
+    confirmBox("결제 건 지우기","이 기록을 지워요. 회계 증빙이 필요하면 지우지 말고 «취소» 상태로 두세요.",
       "지우기", true, function(){
       api("hqPayDel",[id]).then(function(){ return loadAll(); })
-        .then(function(){ toast("지웠습니다"); render(); })
+        .then(function(){ toast("지웠어요"); render(); })
         .catch(function(e){ toast(e.message,true); });
     });
   };
@@ -3556,7 +3556,7 @@ function paySheet(id){
 function viewInvites(){
   $("main").innerHTML =
     '<div class="dashhead"><h2>가입 코드</h2>'+
-    '<div class="sub2">여기에 넣은 휴대폰 번호만 새 업체로 가입할 수 있습니다. 요금을 받기로 한 곳에만 주세요.</div></div>'+
+    '<div class="sub2">여기에 넣은 휴대폰 번호만 새 업체로 가입할 수 있어요. 요금을 받기로 한 곳에만 주세요.</div></div>'+
     '<div class="card"><div class="row2">'+
       '<div><label class="f">휴대폰 번호</label><input type="tel" id="iP" placeholder="010-0000-0000"></div>'+
       '<div><label class="f">업체명 (메모)</label><input type="text" id="iN" placeholder="예) 대박모터스"></div>'+
@@ -3570,7 +3570,7 @@ function viewInvites(){
     if(digits(ph).length<10) return toast("휴대폰 번호를 정확히 넣어주세요",true);
     api("inviteAdd",[ph,$("iN").value.trim(),"",Number($("iD").value)||30])
       .then(function(){ return loadAll(); })
-      .then(function(){ toast(phoneFmt(ph)+" 에 가입 코드을 줬습니다"); render(); })
+      .then(function(){ toast(phoneFmt(ph)+" 에 가입 코드를 줬어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
   makeTable({
@@ -3597,9 +3597,9 @@ function viewInvites(){
     b.onclick=function(e){
       e.stopPropagation();
       var ph=b.getAttribute("data-i");
-      confirmBox("가입 코드 지우기", phoneFmt(ph)+" 의 가입 코드을 지웁니다.", "지우기", true, function(){
+      confirmBox("가입 코드 지우기", phoneFmt(ph)+" 의 가입 코드를 지워요.", "지우기", true, function(){
         api("inviteDel",[ph]).then(function(){ return loadAll(); })
-          .then(function(){ toast("지웠습니다"); render(); })
+          .then(function(){ toast("지웠어요"); render(); })
           .catch(function(e2){ toast(e2.message,true); });
       });
     };
@@ -3648,19 +3648,19 @@ function planCmp(){
 
 function viewPlans(){
   var h = '<div class="dashhead"><h2>요금제</h2>'+
-    '<div class="sub2">여기서 정한 금액이 회원가입 페이지에 그대로 나옵니다. 부가세 별도 기준입니다.</div></div>'+
+    '<div class="sub2">여기서 정한 금액이 회원가입 페이지에 그대로 나와요. 부가세 별도 기준이에요.</div></div>'+
     '<div class="card" style="padding:14px 18px">'+
       '<b style="font-size:14.5px">계정 수 · PC 대수 읽는 법</b>'+
       '<div class="hint" style="margin-top:6px">'+
-      '<b>계정 수</b> — 그 업체가 만들 수 있는 로그인 계정 수입니다. 계정 하나에 휴대폰 1대라서 <b>쓸 수 있는 휴대폰 대수와 같습니다.</b> 넘으면 직원 계정을 더 만들 수 없습니다.<br>'+
-      '<b>PC 대수</b> — 업체 전체로 동시에 켜둘 수 있는 PC 수입니다. 넘으면 가장 오래 켜둔 PC 가 자동으로 로그아웃됩니다.<br>'+
-      '<b>직원 PC</b> — 끄면 현장 직원은 휴대폰으로만 들어옵니다(정산은 대표만). 켜면 직원도 PC 로 들어올 수 있습니다.<br>'+
-      '<b>문자 무료 건수</b> — 결제일마다 새로 채워집니다. 다 쓰면 여유분 20건으로 잠시 버티고, 그 뒤에는 충전분으로 나갑니다.<br>'+
-      '<b>계산서 무료 건수</b> — <b>0</b> 을 넣으면 그 요금제는 계산서를 아예 쓸 수 없습니다.<br>'+
-      '계정 수와 PC 대수에 <b>0</b> 을 넣으면 제한 없음입니다.</div></div>'+
+      '<b>계정 수</b> — 그 업체가 만들 수 있는 로그인 계정 수예요. 계정 하나에 휴대폰 1대라서 <b>쓸 수 있는 휴대폰 대수와 같아요.</b> 넘으면 직원 계정을 더 만들 수 없어요.<br>'+
+      '<b>PC 대수</b> — 업체 전체로 동시에 켜둘 수 있는 PC 수예요. 넘으면 가장 오래 켜둔 PC 가 자동으로 로그아웃돼요.<br>'+
+      '<b>직원 PC</b> — 끄면 현장 직원은 휴대폰으로만 들어와요(정산은 대표만). 켜면 직원도 PC 로 들어올 수 있어요.<br>'+
+      '<b>문자 무료 건수</b> — 결제일마다 새로 채워져요. 다 쓰면 여유분 20건으로 잠시 버티고, 그 뒤에는 충전분으로 나가요.<br>'+
+      '<b>계산서 무료 건수</b> — <b>0</b> 을 넣으면 그 요금제는 계산서를 아예 쓸 수 없어요.<br>'+
+      '계정 수와 PC 대수에 <b>0</b> 을 넣으면 제한 없음이에요.</div></div>'+
     planCmp()+
     '<div class="tools"><button class="btn primary" id="plAll">'+((D.plans||[]).length||3)+'개 한 번에 저장</button>'+
-      '<span class="cnt">고친 뒤 한 번만 누르면 전부 저장됩니다</span></div>';
+      '<span class="cnt">고친 뒤 한 번만 누르면 전부 저장돼요</span></div>';
   (D.plans||[]).forEach(function(p){
     var c = esc(p.code);
     h += '<div class="card"><div class="row2">'+
@@ -3683,12 +3683,12 @@ function viewPlans(){
       '<div class="hint">코드 '+c+' · 기능: '+esc((p.features||[]).join(", ")||"-")+'</div>'+
       '<button class="btn primary sm" id="pl_b_'+c+'" style="margin-top:12px;justify-self:start;align-self:start">이것만 저장</button></div>';
   });
-  if(!(D.plans||[]).length) h += '<div class="card"><div class="empty">요금제가 없습니다.</div></div>';
+  if(!(D.plans||[]).length) h += '<div class="card"><div class="empty">요금제가 없어요.</div></div>';
   $("main").innerHTML = h;
   (D.plans||[]).forEach(function(p){
     $("pl_b_"+p.code).onclick=function(){
       api("hqPlanSave",[p.code,planForm(p.code)]).then(function(){ return loadAll(); })
-        .then(function(){ toast(p.name+" 요금제를 저장했습니다"); render(); })
+        .then(function(){ toast(p.name+" 요금제를 저장했어요"); render(); })
         .catch(function(e){ toast(e.message,true); });
     };
   });
@@ -3697,7 +3697,7 @@ function viewPlans(){
     if(!list.length) return;
     toast("저장 중…");
     api("hqPlanSaveAll",[list]).then(function(r){ return loadAll().then(function(){ return r; }); })
-      .then(function(r){ toast("요금제 "+((r&&r.done)||list.length)+"개를 한 번에 저장했습니다"); render(); })
+      .then(function(r){ toast("요금제 "+((r&&r.done)||list.length)+"개를 한 번에 저장했어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
 }
@@ -3710,29 +3710,29 @@ var SEC = { at:"", ver:"", checks:null, state:{}, busy:false };
 /* 손으로 직접 눌러 봐야 아는 것들 */
 var SEC_MANUAL = [
   ["m1","다른 업체 자료가 안 보이는지",
-   "시험 계정으로 로그인한 채 주소 뒤에 ?shop=BT 를 붙여 새로고침 → 「다른 업체의 자료는 볼 수 없습니다」가 떠야 합니다."],
+   "시험 계정으로 로그인한 채 주소 뒤에 ?shop=BT 를 붙여 새로고침 → 「다른 업체의 자료는 볼 수 없습니다」가 떠야 해요."],
   ["m2","직원에게 정산·설정이 안 보이는지",
-   "직원 계정으로 앱에 들어가 보세요. 정산·설정·요금제 메뉴가 보이면 안 됩니다."],
+   "직원 계정으로 앱에 들어가 보세요. 정산·설정·요금제 메뉴가 보이면 안 돼요."],
   ["m3","비밀번호를 바꾸면 다른 기기가 로그아웃되는지",
-   "한 계정으로 두 기기에서 로그인 → 비밀번호를 바꾼 뒤 다른 기기를 새로고침하면 로그인 화면이 떠야 합니다."],
+   "한 계정으로 두 기기에서 로그인 → 비밀번호를 바꾼 뒤 다른 기기를 새로고침하면 로그인 화면이 떠야 해요."],
   ["m4","문자가 다 되면 멈추고 알림이 오는지",
-   "업체 화면에서 무료 건수를 1로 낮추고 출고 2건 → 두 번째에서 멈추고 대표 휴대폰으로 알림 문자가 와야 합니다. 확인 뒤 원래 숫자로 돌려놓으세요."],
+   "업체 화면에서 무료 건수를 1로 낮추고 출고 2건 → 두 번째에서 멈추고 대표 휴대폰으로 알림 문자가 와야 해요. 확인 뒤 원래 숫자로 돌려놓으세요."],
   ["m5","충전하면 바로 다시 나가는지",
-   "위 상태에서 충전 화면으로 몇 건 넣고 출고를 다시 해보세요. 바로 나가야 합니다."],
+   "위 상태에서 충전 화면으로 몇 건 넣고 출고를 다시 해보세요. 바로 나가야 해요."],
   ["m6","베이직 업체가 계산서를 못 쓰는지",
-   "베이직 업체 계정으로 세금계산서 발행을 눌러 보세요. 「계산서를 쓸 수 없습니다」가 떠야 합니다."],
+   "베이직 업체 계정으로 세금계산서 발행을 눌러 보세요. 「계산서를 쓸 수 없습니다」가 떠야 해요."],
   ["m7","지운 자료를 되살릴 수 있는지",
    "앱에서 기록 하나를 지우고 휴지통에서 되살려 보세요."],
   ["m8","글자에 코드가 섞여도 안전한지",
-   "차량번호 칸에 <b>시험</b> 이라고 적고 목록을 보세요. 글자 그대로 보여야 합니다 (굵게 변하면 문제)."],
+   "차량번호 칸에 <b>시험</b> 이라고 적고 목록을 보세요. 글자 그대로 보여야 해요 (굵게 변하면 문제)."],
   ["m9","업체 삭제에 재확인이 있는지",
-   "업체 지우기를 눌러 보세요. 상호를 정확히 다시 적어야만 지워져야 합니다."],
+   "업체 지우기를 눌러 보세요. 상호를 정확히 다시 적어야만 지워져야 해요."],
   ["m10","관리 비밀번호를 6자 이상으로 바꿨는지",
-   "짧거나 흔한 비밀번호는 몇 번만 찍어봐도 뚫립니다. 「내 계정」에서 바꿀 수 있습니다."],
+   "짧거나 흔한 비밀번호는 몇 번만 찍어봐도 뚫려요. 「내 계정」에서 바꿀 수 있어요."],
   ["m11","본사 계정을 차곳간 전용 메일로 옮겼는지",
-   "지금은 개인 구글 계정으로 되어 있습니다. 수파베이스·클라우드플레어·가비아·솔라피를 차곳간 계정으로 옮겨 주세요."],
+   "지금은 개인 구글 계정으로 되어 있어요. 수파베이스·클라우드플레어·가비아·솔라피를 차곳간 계정으로 옮겨 주세요."],
   ["m12","외부 코드 무결성 검사(SRI) 넣었는지",
-   "cdnjs.com 에서 xlsx·html2canvas·qrcode·jszip 네 파일의 SRI 값을 복사해 저에게 주시면 앱에 넣어 드립니다."]
+   "cdnjs.com 에서 xlsx·html2canvas·qrcode·jszip 네 파일의 SRI 값을 복사해 저에게 주시면 앱에 넣어 드려요."]
 ];
 
 function secPill(lv){ return lv===2?"위험":(lv===1?"주의":"좋음"); }
@@ -3750,12 +3750,12 @@ function gbTxt(b){
 
 function viewOps(){
   var h = '<div class="dashhead"><h2>운영 상태</h2>'+
-    '<div class="sub2">자료와 사진이 얼마나 쌓였는지, 다달이 나가는 금액이 얼마인지 한 번에 봅니다. '+
-    '「지금 다시 확인」을 누르면 서버에 직접 물어봅니다.</div></div>'+
+    '<div class="sub2">자료와 사진이 얼마나 쌓였는지, 다달이 나가는 금액이 얼마인지 한 번에 봐요. '+
+    '「지금 다시 확인」을 누르면 서버에 직접 물어봐요.</div></div>'+
     '<div class="tools"><button class="btn primary" id="opsGo">지금 다시 확인</button>'+
       '<button class="btn sm" id="opsSvc">유지비 화면으로</button>'+
       '<span class="sp"></span><span class="cnt" id="opsAt">'+
-      (OPS.at?("마지막 확인 "+dtTime(OPS.at)):"아직 확인하지 않았습니다")+'</span></div>'+
+      (OPS.at?("마지막 확인 "+dtTime(OPS.at)):"아직 확인하지 않았어요")+'</span></div>'+
     '<div id="opsBody"></div>';
   $("main").innerHTML = h;
   $("opsGo").onclick = opsLoad;
@@ -3804,7 +3804,7 @@ function opsGauge(name, used, capGb, warnPct, sub){
 function opsDraw(){
   var host=$("opsBody"); if(!host) return;
   if(!OPS.loaded){
-    host.innerHTML = '<div class="hint">불러오는 중입니다…</div>';
+    host.innerHTML = '<div class="hint">불러오는 중이에요…</div>';
     return;
   }
   var u = OPS.usage, L = OPS.limits||{dbGb:8,fileGb:100,warnPct:80};
@@ -3816,21 +3816,21 @@ function opsDraw(){
     var dpct = u.db_bytes/(L.dbGb*1024*1024*1024)*100;
     var fpct = u.file_bytes/(L.fileGb*1024*1024*1024)*100;
     if(dpct>=L.warnPct) warns.push({lv:dpct>=95?2:1,nm:"자료(DB) 용량",
-      tx:"한도의 "+dpct.toFixed(0)+"% 를 썼습니다.",how:"수파베이스 요금제를 올리거나 오래된 기록을 정리해 주세요."});
+      tx:"한도의 "+dpct.toFixed(0)+"% 를 썼어요.",how:"수파베이스 요금제를 올리거나 오래된 기록을 정리해 주세요."});
     if(fpct>=L.warnPct) warns.push({lv:fpct>=95?2:1,nm:"차량 사진 용량",
-      tx:"한도의 "+fpct.toFixed(0)+"% 를 썼습니다.",how:"오래된 사진을 내려받아 보관하고 지우거나, 요금제를 올려 주세요."});
+      tx:"한도의 "+fpct.toFixed(0)+"% 를 썼어요.",how:"오래된 사진을 내려받아 보관하고 지우거나, 요금제를 올려 주세요."});
   }
   (OPS.low||[]).forEach(function(v){
-    var what = v.code==="solapi" ? "문자가 안 나갑니다"
-             : (v.code==="popbill" ? "세금계산서를 못 보냅니다"
-             : (v.code==="anthropic" ? "번호판 자동읽기가 멈춥니다" : "그 기능이 멈춥니다"));
+    var what = v.code==="solapi" ? "문자가 안 나가요"
+             : (v.code==="popbill" ? "세금계산서를 못 보내요"
+             : (v.code==="anthropic" ? "번호판 자동읽기가 멈춰요" : "그 기능이 멈춰요"));
     warns.push({lv:2,nm:v.name+" 남은 금액 부족",
-      tx:"지금 "+won(v.balance)+" — 정해 두신 최소 "+won(v.minBal)+" 보다 적습니다.",
+      tx:"지금 "+won(v.balance)+" — 정해 두신 최소 "+won(v.minBal)+" 보다 적어요.",
       how:"충전해 주세요. 다 떨어지면 "+what+"."});
   });
   (OPS.due||[]).forEach(function(v){
     warns.push({lv:(v.days<=3&&v.cost>0)?2:1,nm:v.name+" 결제일",
-      tx:(v.days<0?("결제일이 "+(-v.days)+"일 지났습니다"):(v.days===0?"오늘이 결제일입니다":(v.days+"일 뒤 결제일입니다")))+
+      tx:(v.days<0?("결제일이 "+(-v.days)+"일 지났어요"):(v.days===0?"오늘이 결제일이에요":(v.days+"일 뒤 결제일이에요")))+
          " ("+esc(v.nextDue)+(v.cost?(" · "+won(v.cost)):"")+")",
       how:"카드 한도와 잔액을 확인해 주세요."});
   });
@@ -3863,26 +3863,26 @@ function opsDraw(){
     '</div>';
 
   if(OPS.usageErr){
-    h += '<div class="hint"><b>용량을 아직 못 읽습니다.</b><br>'+esc(OPS.usageErr)+'<br>'+
-      '「1_수파베이스_SQL_사용량.sql」 을 한 번 돌려 주시면 이 칸이 채워집니다.</div>';
+    h += '<div class="hint"><b>용량을 아직 못 읽어요.</b><br>'+esc(OPS.usageErr)+'<br>'+
+      '「1_수파베이스_SQL_사용량.sql」 을 한 번 돌려 주시면 이 칸이 채워져요.</div>';
   }
 
   if(u){
     var growTx = "";
     if(OPS.grow && OPS.grow.perMonth>0){
-      growTx = "요즘 한 달에 "+gbTxt(OPS.grow.perMonth)+" 씩 늘고 있습니다.";
+      growTx = "요즘 한 달에 "+gbTxt(OPS.grow.perMonth)+" 씩 늘고 있어요.";
       var ml = OPS.grow.monthsLeft;
       if(ml!==null && ml!==undefined){
-        growTx += ml>60 ? " 한참 여유가 있습니다."
-          : (ml>=12 ? (" 이대로면 약 "+Math.floor(ml/12)+"년 "+(ml%12)+"달 더 쓸 수 있습니다.")
-                    : (" 이대로면 약 "+ml+"달 뒤 꽉 찹니다."));
+        growTx += ml>60 ? " 한참 여유가 있어요."
+          : (ml>=12 ? (" 이대로면 약 "+Math.floor(ml/12)+"년 "+(ml%12)+"달 더 쓸 수 있어요.")
+                    : (" 이대로면 약 "+ml+"달 뒤 꽉 차요."));
       }
     }
     h += opsGauge("자료(DB)", u.db_bytes, L.dbGb, L.warnPct,
-        "업체 기록 · 입출고 · 정산 같은 글자 자료입니다.")+
+        "업체 기록 · 입출고 · 정산 같은 글자 자료예요.")+
       opsGauge("차량 사진", u.file_bytes, L.fileGb, L.warnPct,
-        (growTx||"차량 사진과 첨부 파일입니다.")+
-        ' <b style="color:var(--warn)">※ 사진은 수파베이스 자동 백업에 들어가지 않습니다.</b>');
+        (growTx||"차량 사진과 첨부 파일이에요.")+
+        ' <b style="color:var(--warn)">※ 사진은 수파베이스 자동 백업에 들어가지 않아요.</b>');
 
     h += '<div class="card"><h2>업체별 사진</h2><div id="opsShopT"></div></div>';
     h += '<div class="card"><h2>자료가 큰 표</h2><div id="opsTblT"></div></div>';
@@ -3948,11 +3948,11 @@ function gbW(n){ return won(n); }
 
 function viewCash(){
   var h='<div class="dashhead"><h2>충전 — 캐시 지갑</h2>'+
-    '<div class="sub2">업체 지갑에 금액을 넣어 두고, 쓸 때마다 그만큼 깎습니다. '+
-    '문자 종류마다 금액이 달라도 그대로 반영됩니다.</div></div>'+
+    '<div class="sub2">업체 지갑에 금액을 넣어 두고, 쓸 때마다 그만큼 깎아요. '+
+    '문자 종류마다 금액이 달라도 그대로 반영돼요.</div></div>'+
     '<div class="tools"><button class="btn primary sm" id="cashGo">다시 불러오기</button>'+
       '<span class="sp"></span><span class="cnt" id="cashAt"></span></div>'+
-    '<div id="cashBody"><div class="hint">불러오는 중입니다…</div></div>';
+    '<div id="cashBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("main").innerHTML=h;
   $("cashGo").onclick=cashLoad;
   if(CASH.loaded) cashDraw(); else cashLoad();
@@ -3992,17 +3992,17 @@ function cashDraw(){
       '<span class="sp"></span>'+
       '<button class="btn '+(CASH.on?"danger ":"primary ")+'sm" id="cashSw">'+(CASH.on?"끄기":"켜기")+'</button></div>'+
     '<div class="hint" style="margin-top:11px">'+
-      '<b>꺼져 있으면</b> 문자·계산서는 지금까지처럼 «건수»로 깎이고, 업체가 앱에서 충전을 누르면 아래 안내창만 뜹니다.<br>'+
-      '<b>켜면</b> 그때부터 캐시로 깎이고, 업체 앱에 지갑·충전·사용 내역이 보입니다. 문제가 생기면 다시 끄면 됩니다.</div>'+
+      '<b>꺼져 있으면</b> 문자·계산서는 지금까지처럼 «건수»로 깎이고, 업체가 앱에서 충전을 누르면 아래 안내창만 떠요.<br>'+
+      '<b>켜면</b> 그때부터 캐시로 깎이고, 업체 앱에 지갑·충전·사용 내역이 보여요. 문제가 생기면 다시 끄면 돼요.</div>'+
     '<label class="f" for="cNote">업체에게 보여줄 안내 문구 (꺼져 있을 때)</label>'+
     '<textarea id="cNote" style="min-height:64px">'+esc(CASH.note)+'</textarea>'+
-    '<label class="f" for="cBank">입금 계좌 (업체 충전 화면에 보입니다)</label>'+
+    '<label class="f" for="cBank">입금 계좌 (업체 충전 화면에 보여요)</label>'+
     '<input type="text" id="cBank" value="'+esc(CASH.bank)+'" placeholder="예) 국민은행 000000-00-000000 티와이컴퍼니">'+
     '<div class="saveRow"><button class="btn primary sm" id="cNoteSave">문구·계좌 저장</button></div></div>';
 
   /* 단가표 */
   h+='<div class="card"><h2>단가표</h2>'+
-    '<p class="lead">업체가 하나 보낼 때 지갑에서 깎이는 금액입니다. 솔라피 할인을 받으면 낮춰 주세요.</p>'+
+    '<p class="lead">업체가 하나 보낼 때 지갑에서 깎이는 금액이에요. 솔라피 할인을 받으면 낮춰 주세요.</p>'+
     '<div class="tablebox"><table><thead><tr><th class="c-name" style="left:0">무엇을 보내면</th>'+
     '<th class="num">깎이는 금액</th><th class="num">우리 원가</th><th class="num">남는 것</th></tr></thead><tbody>'+
     PRICE_ROWS.map(function(r){
@@ -4013,14 +4013,14 @@ function cashDraw(){
         '<td class="num" style="color:var(--ok);font-weight:700">'+won(v-r[2])+'</td></tr>';
     }).join("")+'</tbody></table></div>'+
     '<div class="saveRow"><button class="btn primary sm" id="prSave">단가 저장</button>'+
-    '<span class="cnt">알림톡은 사진문자의 8분의 1입니다 — 연결하면 원가가 크게 내려갑니다</span></div></div>';
+    '<span class="cnt">알림톡은 사진문자의 8분의 1이에요 — 연결하면 원가가 크게 내려가요</span></div></div>';
 
   /* 업체별 지갑 */
   h+='<div class="card"><h2>업체별 지갑</h2><div id="wT"></div></div>';
 
   /* 캐시 넣기 */
   h+='<div class="card" style="margin-top:14px"><h2>캐시 넣기</h2>'+
-    '<p class="lead">입금을 확인하신 뒤 넣어 주세요. 넣은 날부터 1년간 쓸 수 있습니다.</p>'+
+    '<p class="lead">입금을 확인하신 뒤 넣어 주세요. 넣은 날부터 1년간 쓸 수 있어요.</p>'+
     '<div class="row2">'+
       '<div><label class="f" for="cgShop">어느 업체에</label><select id="cgShop">'+
         (CASH.wallets||[]).map(function(w){ return '<option value="'+esc(w.shop)+'">'+esc(w.name||w.shop)+'</option>'; }).join("")+
@@ -4036,7 +4036,7 @@ function cashDraw(){
     '<div class="prev" id="cgBox"></div>'+
     '<div class="saveRow"><button class="btn primary sm" id="cgAdd">넣기</button>'+
       '<button class="btn sm danger" id="cgSub">빼기 (잘못 넣었을 때)</button>'+
-      '<span class="cnt">움직이면 사장님 휴대폰으로 알림 문자가 갑니다</span></div></div>';
+      '<span class="cnt">움직이면 사장님 휴대폰으로 알림 문자가 가요</span></div></div>';
 
   /* 내역 */
   h+='<div class="card"><h2>사용·충전 내역</h2><div id="clT"></div></div>';
@@ -4088,27 +4088,27 @@ function cashDraw(){
   $("cashSw").onclick=function(){
     var on=!CASH.on;
     confirmBox(on?"캐시 시스템 켜기":"캐시 시스템 끄기",
-      on?"지금부터 문자·계산서가 캐시에서 깎입니다. 업체 앱에도 지갑이 보입니다.":
-         "다시 «건수» 방식으로 돌아갑니다. 업체 앱의 충전은 안내창만 뜹니다.",
+      on?"지금부터 문자·계산서가 캐시에서 깎여요. 업체 앱에도 지갑이 보여요.":
+         "다시 «건수» 방식으로 돌아가요. 업체 앱의 충전은 안내창만 떠요.",
       on?"켜기":"끄기", !on, function(){
-        api("hqCashCfg",[{on:on}]).then(function(){ toast(on?"켰습니다":"껐습니다"); cashLoad(); })
+        api("hqCashCfg",[{on:on}]).then(function(){ toast(on?"켰어요":"껐어요"); cashLoad(); })
           .catch(function(e){ toast(e.message,true); });
       });
   };
   $("cNoteSave").onclick=function(){
     api("hqCashCfg",[{note:$("cNote").value, bank:$("cBank").value.trim()}])
-      .then(function(){ toast("저장했습니다"); cashLoad(); }).catch(function(e){ toast(e.message,true); });
+      .then(function(){ toast("저장했어요"); cashLoad(); }).catch(function(e){ toast(e.message,true); });
   };
   $("prSave").onclick=function(){
     var pp={}; PRICE_ROWS.forEach(function(r){ pp[r[0]]=Number($("pr_"+r[0]).value)||0; });
-    api("hqCashCfg",[{price:pp}]).then(function(){ toast("단가를 저장했습니다"); cashLoad(); })
+    api("hqCashCfg",[{price:pp}]).then(function(){ toast("단가를 저장했어요"); cashLoad(); })
       .catch(function(e){ toast(e.message,true); });
   };
   var amt=$("cgAmt"), box=$("cgBox");
   function draw(){
     var v=Number(amt.value)||0, d=Number($("cgDays").value)||365;
     var t=new Date(); t.setDate(t.getDate()+d);
-    box.innerHTML='<div class="ph">이만큼 쓸 수 있습니다</div><div class="msg">'+
+    box.innerHTML='<div class="ph">이만큼 쓸 수 있어요</div><div class="msg">'+
       esc('사진문자 '+Math.floor(v/Math.max(1,p.mms||240))+'장 · 단문 '+Math.floor(v/Math.max(1,p.sms||40))+'통 · '+
       '알림톡 '+Math.floor(v/Math.max(1,p.ata||30))+'통 · 세금계산서 '+Math.floor(v/Math.max(1,p.tax||300))+'건\n'+
       '유효기간 : '+dt(t)+' 까지')+'</div>';
@@ -4127,21 +4127,21 @@ function cgSend(minus){
       d=Number($("cgDays").value)||365, memo=$("cgMemo").value.trim();
   if(!shop || v<=0) return toast("업체와 금액을 확인해 주세요",true);
   if(minus){
-    confirmBox("캐시 빼기", shop+" 에서 "+won(v)+" 을 뺍니다.","빼기",true,function(){
-      api("hqCashTake",[shop,v,memo||"본사 조정"]).then(function(){ toast("뺐습니다"); cashLoad(); })
+    confirmBox("캐시 빼기", shop+" 에서 "+won(v)+" 을 빼요.","빼기",true,function(){
+      api("hqCashTake",[shop,v,memo||"본사 조정"]).then(function(){ toast("뺐어요"); cashLoad(); })
         .catch(function(e){ toast(e.message,true); });
     });
     return;
   }
   api("hqCashAdd",[shop,v,d,memo,"paid"]).then(function(r){
     if(r && r.confirm){
-      confirmBox("큰 금액입니다", won(v)+" 을 "+shop+" 지갑에 넣습니다. 맞나요?","넣기",false,function(){
-        api("hqCashAdd",[shop,v,d,memo,"paid",true]).then(function(){ toast("넣었습니다"); cashLoad(); })
+      confirmBox("큰 금액이에요", won(v)+" 을 "+shop+" 지갑에 넣어요. 맞나요?","넣기",false,function(){
+        api("hqCashAdd",[shop,v,d,memo,"paid",true]).then(function(){ toast("넣었어요"); cashLoad(); })
           .catch(function(e){ toast(e.message,true); });
       });
       return;
     }
-    toast("넣었습니다"); cashLoad();
+    toast("넣었어요"); cashLoad();
   }).catch(function(e){ toast(e.message,true); });
 }
 
@@ -4151,11 +4151,11 @@ function cgSend(minus){
 var EXP = {};
 function viewExp(){
   $("main").innerHTML='<div class="dashhead"><h2>기한 안내 문자</h2>'+
-    '<div class="sub2">끝나는 날이 가까워지면 업체 대표님께 자동으로 문자가 나갑니다. '+
-    '사장님이 누르지 않아도 서버가 알아서 보냅니다.</div></div>'+
+    '<div class="sub2">끝나는 날이 가까워지면 업체 대표님께 자동으로 문자가 나가요. '+
+    '사장님이 누르지 않아도 서버가 알아서 보내요.</div></div>'+
     '<div class="tools"><button class="btn primary sm" id="expGo">다시 불러오기</button>'+
       '<span class="sp"></span><span class="cnt" id="expAt"></span></div>'+
-    '<div id="expBody"><div class="hint">불러오는 중입니다…</div></div>';
+    '<div id="expBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("expGo").onclick=expLoad;
   if(EXP.loaded) expDraw(); else expLoad();
 }
@@ -4189,7 +4189,7 @@ function expDraw(){
 
   var h='';
   if(!EXP.cron) h+='<div class="hint" style="background:var(--warn-soft);border-color:#F0D9A8">'+
-    '<b>자동 시계가 아직 준비되지 않았습니다.</b><br>캐시 SQL 을 먼저 돌려 주세요. 그때까지는 자동 발송이 안 됩니다.</div>';
+    '<b>자동 시계가 아직 준비되지 않았어요.</b><br>캐시 SQL 을 먼저 돌려 주세요. 그때까지는 자동 발송이 안 돼요.</div>';
 
   h+='<div class="card">'+
     '<div class="chips">'+
@@ -4208,10 +4208,10 @@ function expDraw(){
         '<input type="number" id="exM" value="'+twoD(mm)+'" min="0" max="59" aria-label="분"><span>분</span>'+
         '<b id="exShow">'+esc(koTime(hh,mm))+'</b></div></div>'+
     '</div>'+
-    '<div class="hint" style="margin-top:14px">받는 사람은 <b>업체 대표님</b>입니다. '+
-    '이 문자는 <b>본사 문자 남은 금액</b>에서 나가고 업체 캐시는 쓰지 않습니다. '+
-    '같은 날짜·같은 단계는 <b>한 번만</b> 나가고, 지난 날짜로 거슬러 보내지 않습니다. '+
-    '서버가 10분마다 확인하므로 적어두신 시각에서 <b>최대 10분 안</b>에 나갑니다.</div>'+
+    '<div class="hint" style="margin-top:14px">받는 사람은 <b>업체 대표님</b>이에요. '+
+    '이 문자는 <b>본사 문자 남은 금액</b>에서 나가고 업체 캐시는 쓰지 않아요. '+
+    '같은 날짜·같은 단계는 <b>한 번만</b> 나가고, 지난 날짜로 거슬러 보내지 않아요. '+
+    '서버가 10분마다 확인하므로 적어두신 시각에서 <b>최대 10분 안</b>에 나가요.</div>'+
     '<div class="saveRow"><button class="btn primary sm" id="exSave">설정 저장</button></div></div>';
 
   /* 문구 */
@@ -4224,14 +4224,14 @@ function expDraw(){
     '<textarea id="tplText" style="min-height:110px">'+esc(t.text||"")+'</textarea>'+
     '<div class="keys"><span class="cnt">바꿔 넣을 수 있는 말 :</span>'+
       '<code>{업체}</code><code>{무엇}</code><code>{날짜}</code><code>{남은일}</code><code>{요금제}</code><code>{캐시}</code></div>'+
-    '<div class="prev"><div class="ph">실제로 이렇게 나갑니다 — 보기</div>'+
+    '<div class="prev"><div class="ph">실제로 이렇게 나가요 — 보기</div>'+
       '<div class="msg" id="tplPrev"></div><div class="cnt" id="tplLen" style="margin-top:7px"></div></div>'+
     '<div class="saveRow"><button class="btn primary sm" id="tplSave">문구 저장</button>'+
-      '<span class="cnt">「설정 저장」과 따로 눌러 주셔도 되고, 같이 눌러도 됩니다</span></div></div>';
+      '<span class="cnt">「설정 저장」과 따로 눌러 주셔도 되고, 같이 눌러도 돼요</span></div></div>';
 
   /* 지금 바로 보내기 */
   h+='<div class="card"><h2>지금 바로 보내기</h2>'+
-    '<p class="lead">기다리지 않고 손으로 한 통 보낼 때 씁니다.</p>'+
+    '<p class="lead">기다리지 않고 손으로 한 통 보낼 때 써요.</p>'+
     '<div class="row2">'+
       '<div><label class="f" for="nwShop">누구에게</label><select id="nwShop">'+
         '<option value="ME">내 번호로 시험 보내기</option>'+
@@ -4241,7 +4241,7 @@ function expDraw(){
         c.tpls.map(function(x,i){ return '<option value="'+i+'">'+esc(x.name||("문구 "+(i+1)))+'</option>'; }).join("")+
       '</select></div></div>'+
     '<div class="saveRow"><button class="btn primary sm" id="nwGo">이 문자 보내기</button>'+
-      '<span class="cnt">누르면 바로 나갑니다</span></div></div>';
+      '<span class="cnt">누르면 바로 나가요</span></div></div>';
 
   /* 업체별 끄기 */
   h+='<div class="card"><h2>업체별 받기 설정</h2><div id="exShopT"></div></div>';
@@ -4308,7 +4308,7 @@ function expDraw(){
              days:dd, time:twoD(eh.value)+":"+twoD(em.value) };
   }
   $("exSave").onclick=function(){
-    api("hqExpSave",[readCfg()]).then(function(){ toast("저장했습니다"); EXP.loaded=false; expLoad(); })
+    api("hqExpSave",[readCfg()]).then(function(){ toast("저장했어요"); EXP.loaded=false; expLoad(); })
       .catch(function(e){ toast(e.message,true); });
   };
 
@@ -4326,18 +4326,18 @@ function expDraw(){
       .split("{요금제}").join("스탠다드").split("{캐시}").join("12,000원");
     $("tplPrev").textContent=s2;
     var n=s2.length;
-    $("tplLen").textContent="글자 "+n+"자 — "+(n<=45?"단문(SMS)":"장문(LMS)")+" 요금으로 나갑니다.";
+    $("tplLen").textContent="글자 "+n+"자 — "+(n<=45?"단문(SMS)":"장문(LMS)")+" 요금으로 나가요.";
   }
   $("tplText").oninput=pv; pv();
   $("tplSave").onclick=function(){
     c.tpls[ti]={name:$("tplName").value, text:$("tplText").value};
-    api("hqExpSave",[{tpls:c.tpls, tplIdx:ti}]).then(function(){ toast("문구를 저장했습니다"); EXP.loaded=false; expLoad(); })
+    api("hqExpSave",[{tpls:c.tpls, tplIdx:ti}]).then(function(){ toast("문구를 저장했어요"); EXP.loaded=false; expLoad(); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("nwGo").onclick=function(){
     var sh=$("nwShop").value, i=Number($("nwTpl").value)||0;
-    confirmBox("지금 보내기", (sh==="ME"?"내 번호":sh)+" 로 문자 한 통을 지금 보냅니다.","보내기",false,function(){
-      api("hqExpSendNow",[sh,i]).then(function(r){ toast("보냈습니다 ("+((r&&r.to)||"")+")"); EXP.loaded=false; expLoad(); })
+    confirmBox("지금 보내기", (sh==="ME"?"내 번호":sh)+" 로 문자 한 통을 지금 보내요.","보내기",false,function(){
+      api("hqExpSendNow",[sh,i]).then(function(r){ toast("보냈어요 ("+((r&&r.to)||"")+")"); EXP.loaded=false; expLoad(); })
         .catch(function(e){ toast(e.message,true); });
     });
   };
@@ -4345,7 +4345,7 @@ function expDraw(){
     b.onclick=function(ev){
       ev.stopPropagation();
       var code=b.getAttribute("data-tog"), on=b.getAttribute("data-on")==="1";
-      api("hqShopSave",[code,{expSms:!on}]).then(function(){ toast("바꿨습니다"); EXP.loaded=false; expLoad(); })
+      api("hqShopSave",[code,{expSms:!on}]).then(function(){ toast("바꿨어요"); EXP.loaded=false; expLoad(); })
         .catch(function(e){ toast(e.message,true); });
     };
   });
@@ -4422,7 +4422,7 @@ function calBind(){
 
 function todoHtml(){
   var list=TODO.list;
-  if(!list) return '<div class="panel"><h3>오늘 해야 할 일</h3><div class="hint">불러오는 중입니다…</div></div>';
+  if(!list) return '<div class="panel"><h3>오늘 해야 할 일</h3><div class="hint">불러오는 중이에요…</div></div>';
   var open=list.filter(function(x){return !x.done;}).length;
   return '<div class="panel"><h3>오늘 해야 할 일 '+open+'건</h3>'+
     '<div class="todoAdd"><input type="text" id="tdNew" placeholder="할 일을 적고 Enter" aria-label="할 일 적기">'+
@@ -4433,8 +4433,8 @@ function todoHtml(){
         '<span class="tt">'+esc(x.title)+'</span>'+
         (x.due_at?'<span class="when">'+esc(String(x.due_at).slice(5).replace("-","월 ")+"일")+'</span>':'')+
         '<button class="x" data-del="'+x.id+'" title="지우기" aria-label="지우기">✕</button></div>';
-    }).join("") : '<div class="hint">아직 적으신 것이 없습니다.</div>')+'</div>'+
-    '<div class="cnt" style="margin-top:8px">「9/28 QR 교체」처럼 적고, 날짜를 넣으면 달력에도 같이 나옵니다.</div></div>';
+    }).join("") : '<div class="hint">아직 적으신 것이 없어요.</div>')+'</div>'+
+    '<div class="cnt" style="margin-top:8px">「9/28 QR 교체」처럼 적고, 날짜를 넣으면 달력에도 같이 나와요.</div></div>';
 }
 function todoLoad(){
   api("hqTodo",[]).then(function(r){ TODO.list=(r&&r.todo)||[]; },function(){ TODO.list=[]; })
@@ -4474,10 +4474,10 @@ function todoBind(){
 var PG = {};
 function viewPg(){
   $("main").innerHTML='<div class="dashhead"><h2>카드 결제</h2>'+
-    '<div class="sub2">PG사 승인이 나면 여기서 켜기만 하면 됩니다. 켜는 순간부터 업체가 앱에서 카드로 충전·요금 결제를 할 수 있습니다.</div></div>'+
+    '<div class="sub2">PG사 승인이 나면 여기서 켜기만 하면 돼요. 켜는 순간부터 업체가 앱에서 카드로 충전·요금 결제를 할 수 있어요.</div></div>'+
     '<div class="tools"><button class="btn primary sm" id="pgGo">다시 불러오기</button>'+
       '<span class="sp"></span><span class="cnt" id="pgAt"></span></div>'+
-    '<div id="pgBody"><div class="hint">불러오는 중입니다…</div></div>';
+    '<div id="pgBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("pgGo").onclick=pgLoad;
   if(PG.loaded) pgDraw(); else pgLoad();
 }
@@ -4503,11 +4503,11 @@ function pgDraw(){
   var h='';
   /* 준비 상태 */
   var steps=[
-    ["통신판매업 신고", null, "PG사 계약의 필수 조건입니다. 사업자등록증에 전자상거래가 이미 있으니 신고만 하면 됩니다."],
-    ["PG사 계약 (토스페이먼츠 등)", !!PG.clientKey, "계약이 끝나면 클라이언트 키와 시크릿 키를 받습니다."],
+    ["통신판매업 신고", null, "PG사 계약의 필수 조건이에요. 사업자등록증에 전자상거래가 이미 있으니 신고만 하면 돼요."],
+    ["PG사 계약 (토스페이먼츠 등)", !!PG.clientKey, "계약이 끝나면 클라이언트 키와 시크릿 키를 받아요."],
     ["시크릿 키를 Secrets 에 넣기", PG.hasSecret, "수파베이스 Edge Functions → Secrets → TOSS_SECRET_KEY"],
-    ["클라이언트 키를 아래에 적기", !!PG.clientKey, "이 키는 화면에 나가도 되는 공개 키입니다."],
-    ["스위치 켜기", PG.on, "켜는 순간부터 업체 앱에 「카드로 바로 결제」가 보입니다."]
+    ["클라이언트 키를 아래에 적기", !!PG.clientKey, "이 키는 화면에 나가도 되는 공개 키예요."],
+    ["스위치 켜기", PG.on, "켜는 순간부터 업체 앱에 「카드로 바로 결제」가 보여요."]
   ];
   h+='<div class="card"><h2>준비 단계</h2>'+
     steps.map(function(x,i){
@@ -4525,8 +4525,8 @@ function pgDraw(){
     '<span class="sp"></span>'+
     '<button class="btn '+(PG.on?"danger ":"primary ")+'sm" id="pgSw">'+(PG.on?"끄기":"켜기")+'</button></div>'+
     (PG.hasSecret ? '' : '<div class="hint" style="margin-top:11px;background:var(--warn-soft);border-color:#F0D9A8">'+
-      '<b>시크릿 키가 아직 없습니다.</b><br>수파베이스 Secrets 에 <b>TOSS_SECRET_KEY</b> 를 먼저 넣어 주세요. '+
-      '넣기 전에는 켤 수 없습니다.</div>')+
+      '<b>시크릿 키가 아직 없어요.</b><br>수파베이스 Secrets 에 <b>TOSS_SECRET_KEY</b> 를 먼저 넣어 주세요. '+
+      '넣기 전에는 켤 수 없어요.</div>')+
     '<div class="row2" style="margin-top:12px">'+
       '<div><label class="f" for="pgProv">PG사</label>'+
         '<select id="pgProv"><option value="toss"'+(PG.provider==="toss"?" selected":"")+'>토스페이먼츠</option></select></div>'+
@@ -4538,7 +4538,7 @@ function pgDraw(){
     '<label class="f" for="pgNote">꺼져 있을 때 업체에게 보여줄 안내</label>'+
     '<textarea id="pgNote" style="min-height:60px">'+esc(PG.note)+'</textarea>'+
     '<div class="saveRow"><button class="btn primary sm" id="pgSave">저장</button>'+
-    '<span class="cnt">시크릿 키는 여기에 적지 마세요. 수파베이스 Secrets 에만 넣습니다</span></div></div>';
+    '<span class="cnt">시크릿 키는 여기에 적지 마세요. 수파베이스 Secrets 에만 넣어요</span></div></div>';
 
   /* 수수료 계산 */
   if(PG.fee>0){
@@ -4587,24 +4587,24 @@ function pgDraw(){
     var on=!PG.on;
     if(on && !PG.hasSecret) return toast("먼저 Secrets 에 TOSS_SECRET_KEY 를 넣어 주세요",true);
     confirmBox(on?"카드 결제 켜기":"카드 결제 끄기",
-      on?"업체 앱에 「카드로 바로 결제」가 보이게 됩니다.":"다시 계좌이체 안내만 나옵니다.",
+      on?"업체 앱에 「카드로 바로 결제」가 보이게 돼요.":"다시 계좌이체 안내만 나와요.",
       on?"켜기":"끄기", !on, function(){
-        api("hqPgSave",[{on:on}]).then(function(){ toast(on?"켰습니다":"껐습니다"); pgLoad(); })
+        api("hqPgSave",[{on:on}]).then(function(){ toast(on?"켰어요":"껐어요"); pgLoad(); })
           .catch(function(e){ toast(e.message,true); });
       });
   };
   $("pgSave").onclick=function(){
     api("hqPgSave",[{provider:$("pgProv").value, clientKey:$("pgKey").value.trim(),
       fee:Number($("pgFee").value)||0, note:$("pgNote").value}])
-      .then(function(){ toast("저장했습니다"); pgLoad(); }).catch(function(e){ toast(e.message,true); });
+      .then(function(){ toast("저장했어요"); pgLoad(); }).catch(function(e){ toast(e.message,true); });
   };
   Array.prototype.forEach.call(document.querySelectorAll("[data-cancel]"),function(b){
     b.onclick=function(ev){
       ev.stopPropagation();
       var oid=b.getAttribute("data-cancel");
-      confirmBox("결제 취소","주문 "+oid+" 을 취소하고 금액을 돌려줍니다. 충전이었다면 넣어준 캐시도 도로 뺍니다.",
+      confirmBox("결제 취소","주문 "+oid+" 을 취소하고 금액을 돌려줘요. 충전이었다면 넣어준 캐시도 도로 빼요.",
         "취소하기",true,function(){
-          api("hqPgCancel",[oid,"고객 요청"]).then(function(){ toast("취소했습니다"); pgLoad(); })
+          api("hqPgCancel",[oid,"고객 요청"]).then(function(){ toast("취소했어요"); pgLoad(); })
             .catch(function(e){ toast(e.message,true); });
         });
     };
@@ -4613,11 +4613,11 @@ function pgDraw(){
 
 function viewSec(){
   var h = '<div class="dashhead"><h2>보안 점검</h2>'+
-    '<div class="sub2">차곳간이 지금 어떤 상태인지 한 번에 봅니다. '+
-    '「지금 다시 확인」을 누르면 서버에 직접 물어봅니다.</div></div>'+
+    '<div class="sub2">차곳간이 지금 어떤 상태인지 한 번에 봐요. '+
+    '「지금 다시 확인」을 누르면 서버에 직접 물어봐요.</div></div>'+
     '<div class="tools"><button class="btn primary" id="secGo">지금 다시 확인</button>'+
       '<span class="sp"></span><span class="cnt" id="secAt">'+
-      (SEC.at?("마지막 확인 "+dtTime(SEC.at)):"아직 확인하지 않았습니다")+'</span></div>'+
+      (SEC.at?("마지막 확인 "+dtTime(SEC.at)):"아직 확인하지 않았어요")+'</span></div>'+
     '<div id="secBody"></div>';
   $("main").innerHTML = h;
   $("secGo").onclick = secLoad;
@@ -4658,8 +4658,8 @@ function secDraw(){
   var h = "";
 
   if(!c){
-    h += '<div class="hint">아직 확인 전입니다. 위의 「지금 다시 확인」을 눌러 주세요.<br>'+
-         '「보안 점검 기록」 같은 말이 나오면 보안점검 SQL 을 아직 안 돌리신 것입니다.</div>';
+    h += '<div class="hint">아직 확인 전이에요. 위의 「지금 다시 확인」을 눌러 주세요.<br>'+
+         '「보안 점검 기록」 같은 말이 나오면 보안점검 SQL 을 아직 안 돌리신 거예요.</div>';
   }else{
     var bad=c.filter(function(x){return x.lv===2;}).length;
     var warn=c.filter(function(x){return x.lv===1;}).length;
@@ -4667,10 +4667,10 @@ function secDraw(){
     h += '<div class="secTop">'+
       '<div class="kbox'+(bad?' warn':'')+'"><span class="t">지금 위험</span>'+
         '<span class="v" style="display:block;color:'+(bad?'var(--danger)':'var(--text)')+'">'+bad+'건</span>'+
-        '<span class="s" style="display:block">'+(bad?'바로 손보셔야 합니다':'없습니다')+'</span></div>'+
+        '<span class="s" style="display:block">'+(bad?'바로 손보셔야 해요':'없어요')+'</span></div>'+
       '<div class="kbox'+(warn?' warn':'')+'"><span class="t">한 번 봐주실 것</span>'+
         '<span class="v" style="display:block;color:'+(warn?'var(--warn)':'var(--text)')+'">'+warn+'건</span>'+
-        '<span class="s" style="display:block">'+(warn?'급하지는 않습니다':'없습니다')+'</span></div>'+
+        '<span class="s" style="display:block">'+(warn?'급하지는 않아요':'없어요')+'</span></div>'+
       '<div class="kbox"><span class="t">잘 되어 있는 것</span>'+
         '<span class="v" style="display:block;color:var(--good)">'+ok+'건</span>'+
         '<span class="s" style="display:block">서버 '+esc(SEC.ver||"")+'</span></div>'+
@@ -4700,8 +4700,8 @@ function secDraw(){
   h += '<div class="card"><div class="todoHd">'+
        '<span class="'+(doneN===SEC_MANUAL.length?"dotOk":"dotWarn")+'"></span>'+
        '<h2>손으로 확인하는 것 ('+doneN+' / '+SEC_MANUAL.length+')</h2></div>'+
-       '<p class="lead" style="margin:2px 0 12px">직접 눌러 봐야 아는 것들입니다. '+
-       '확인하신 것은 네모를 눌러 표시해 두세요 — 누가 언제 확인했는지 같이 남습니다.</p>';
+       '<p class="lead" style="margin:2px 0 12px">직접 눌러 봐야 아는 것들이에요. '+
+       '확인하신 것은 네모를 눌러 표시해 두세요 — 누가 언제 확인했는지 같이 남아요.</p>';
   SEC_MANUAL.forEach(function(m){
     var d = st[m[0]];
     h += '<label class="secChk'+(d?' on':'')+'" data-m="'+esc(m[0])+'">'+
@@ -4737,7 +4737,7 @@ function viewMe(){
   var me = D.me||{};
   $("main").innerHTML =
     '<div class="dashhead"><h2>내 관리자 계정</h2>'+
-    '<div class="sub2">아이디나 비밀번호를 바꾸면 모든 기기에서 로그아웃되고 다시 로그인해야 합니다.</div></div>'+
+    '<div class="sub2">아이디나 비밀번호를 바꾸면 모든 기기에서 로그아웃되고 다시 로그인해야 해요.</div></div>'+
     '<div class="card">'+
       '<label class="f">지금 아이디</label><input type="text" value="'+esc(me.who||"")+'" disabled>'+
       '<div class="hint">이름 '+esc(me.name||"")+' · 자리 '+esc(me.shop||"")+'</div>'+
@@ -4759,9 +4759,9 @@ function viewMe(){
     api("hqMe",[nid,npw,cur]).then(function(r){
       if(r && r.relogin){
         lsDel(SIDKEY);
-        toast("바꿨습니다. 다시 로그인해 주세요");
+        toast("바꿨어요. 다시 로그인해 주세요");
         setTimeout(function(){ showGate("새 정보로 다시 로그인해 주세요"); },900);
-      }else toast("바뀐 내용이 없습니다");
+      }else toast("바뀐 내용이 없어요");
     }).catch(function(e){ toast(e.message,true); });
   };
 }
@@ -4773,11 +4773,11 @@ function viewMe(){
 function viewSvc(){
   var list = (D.svcs||[]).slice().sort(function(a,b){ return (a.sort||0)-(b.sort||0); });
   var h = '<div class="dashhead"><h2>유지비</h2>'+
-    '<div class="sub2">요금을 내야 차곳간이 계속 도는 곳들입니다. 줄을 누르면 고칠 수 있습니다.</div></div>'+
+    '<div class="sub2">요금을 내야 차곳간이 계속 도는 곳들이에요. 줄을 누르면 고칠 수 있어요.</div></div>'+
     '<div class="tools">'+
       '<button class="btn primary" id="svAdd">＋ 서비스 넣기</button>'+
       '<button class="btn" id="svRef">연결된 곳 상태 새로 받기</button>'+
-      '<span class="cnt">「자동」이 켜진 곳은 서버가 직접 물어봅니다. 「직접」은 보고 적어주세요.</span>'+
+      '<span class="cnt">「자동」이 켜진 곳은 서버가 직접 물어봐요. 「직접」은 보고 적어주세요.</span>'+
     '</div><div id="tSvc"></div>';
   $("main").innerHTML = h;
   makeTable({
@@ -4814,15 +4814,15 @@ function svcRefresh(){
     return loadAll().then(function(){
       var ok=(r&&r.done)||[], bad=(r&&r.failed)||[];
       render();
-      if(bad.length) openSheet('<h3>상태를 새로 받았습니다</h3>'+
+      if(bad.length) openSheet('<h3>상태를 새로 받았어요</h3>'+
         '<div class="sub">'+ok.length+'곳 성공 · '+bad.length+'곳 실패</div>'+
         (ok.length?('<label class="f">잘 읽은 곳</label><div class="hint">'+
           ok.map(function(x){return esc(x);}).join("<br>")+'</div>'):'')+
         '<label class="f">못 읽은 곳</label><div class="hint" style="color:var(--warn)">'+
           bad.map(function(x){return esc(x);}).join("<br>")+'</div>'+
-        '<div class="hint" style="margin-top:10px">열쇠를 넣어 달라는 말이 보이면, 수파베이스 Edge Functions → Secrets 에 그 이름으로 넣어 주세요. 넣기 전까지는 그 줄만 직접 적으시면 됩니다.</div>'+
+        '<div class="hint" style="margin-top:10px">열쇠를 넣어 달라는 말이 보이면, 수파베이스 Edge Functions → Secrets 에 그 이름으로 넣어 주세요. 넣기 전까지는 그 줄만 직접 적으시면 돼요.</div>'+
         '<div class="sheetbtns"><button class="btn primary" id="rOk" style="flex:1">닫기</button></div>');
-      else toast(ok.length+"곳 상태를 새로 받았습니다");
+      else toast(ok.length+"곳 상태를 새로 받았어요");
       if($("rOk")) $("rOk").onclick=closeSheet;
     });
   }).catch(function(e){ toast(e.message,true); });
@@ -4836,15 +4836,15 @@ function svcSheet(code){
   function kOpt(k,t){ return '<option value="'+k+'"'+(v.kind===k?" selected":"")+'>'+t+'</option>'; }
   openSheet(
     '<h3>'+(isNew?"서비스 넣기":esc(v.name))+'</h3>'+
-    '<div class="sub">'+(isNew?"요금을 내야 하는 곳을 하나 더 넣습니다":("코드 "+esc(v.code)))+'</div>'+
+    '<div class="sub">'+(isNew?"요금을 내야 하는 곳을 하나 더 넣어요":("코드 "+esc(v.code)))+'</div>'+
     (isNew?'<label class="f">영문 코드 (예: naver)</label><input type="text" id="vCode" placeholder="naver">':'')+
     '<label class="f">이름</label><input type="text" id="vName" value="'+esc(v.name||"")+'">'+
     '<label class="f">무엇에 쓰는지</label><input type="text" id="vWhat" value="'+esc(v.what||"")+'">'+
     '<label class="f">충전·결제하러 가는 주소</label><input type="text" id="vUrl" value="'+esc(v.url||"")+'" placeholder="https://...">'+
     '<div class="row2">'+
       '<div><label class="f">결제 방식</label><select id="vKind">'+
-        kOpt("charge","충전식 — 미리 넣어두고 씁니다")+kOpt("sub","매달 결제 — 카드에서 빠집니다")+
-        kOpt("renew","연장 — 기한이 오면 다시 냅니다")+'</select></div>'+
+        kOpt("charge","충전식 — 미리 넣어두고 써요")+kOpt("sub","매달 결제 — 카드에서 빠져요")+
+        kOpt("renew","연장 — 기한이 오면 다시 내요")+'</select></div>'+
       '<div><label class="f">다음 결제일 · 만료일</label><input type="date" id="vDue" value="'+
         esc(v.next_due||"")+'"></div>'+
     '</div>'+
@@ -4858,16 +4858,16 @@ function svcSheet(code){
     '</div>'+
     '<div class="row2">'+
       '<div><label class="f">자동으로 읽기</label><select id="vAuto">'+
-        '<option value="1"'+(v.auto?" selected":"")+'>켬 — 서버가 직접 물어봅니다</option>'+
-        '<option value="0"'+(!v.auto?" selected":"")+'>끔 — 내가 직접 적습니다</option></select></div>'+
+        '<option value="1"'+(v.auto?" selected":"")+'>켬 — 서버가 직접 물어봐요</option>'+
+        '<option value="0"'+(!v.auto?" selected":"")+'>끔 — 내가 직접 적어요</option></select></div>'+
       '<div><label class="f">읽은 값 (도메인일 때만)</label><input type="text" id="vRef" value="'+esc(v.ref||"")+'" placeholder="cgg.co.kr"></div>'+
     '</div>'+
     (v.auto_note?('<div class="hint">마지막으로 읽은 것 — '+esc(v.auto_note)+' ('+esc(ago(v.auto_at))+')</div>'):'')+
     (v.auto_err?('<div class="hint" style="color:var(--warn)">못 읽음 — '+esc(v.auto_err)+'</div>'):'')+
     '<div class="hint">자동이 안 되는 곳은 그 회사 화면에서 보고 「남은 금액」·「다음 결제일」을 적어주세요.</div>'+
     '<label class="f">사용</label><select id="vOn">'+
-      '<option value="1"'+(v.active!==false?" selected":"")+'>씁니다</option>'+
-      '<option value="0"'+(v.active===false?" selected":"")+'>안 씁니다 (화면에서 숨김)</option></select>'+
+      '<option value="1"'+(v.active!==false?" selected":"")+'>써요</option>'+
+      '<option value="0"'+(v.active===false?" selected":"")+'>안 써요 (화면에서 숨김)</option></select>'+
     '<label class="f">메모</label><textarea id="vMemo" rows="2">'+esc(v.memo||"")+'</textarea>'+
     '<div class="sheetbtns"><button class="btn" id="vCancel">취소</button>'+
       '<button class="btn primary" id="vSave" style="flex:2">저장</button></div>'+
@@ -4885,13 +4885,13 @@ function svcSheet(code){
     if(isNew){ o.code=$("vCode").value.trim(); p=api("hqSvcAdd",[o]); }
     else p=api("hqSvcSave",[code,o]);
     p.then(function(){ return loadAll(); })
-     .then(function(){ closeSheet(); toast("저장했습니다"); render(); })
+     .then(function(){ closeSheet(); toast("저장했어요"); render(); })
      .catch(function(e){ toast(e.message,true); });
   };
   if($("vDel")) $("vDel").onclick = function(){
-    confirmBox("서비스 지우기", v.name+" 를 목록에서 뺍니다. 지출 기록은 그대로 남습니다.","지우기",true,function(){
+    confirmBox("서비스 지우기", v.name+" 를 목록에서 빼요. 지출 기록은 그대로 남아요.","지우기",true,function(){
       api("hqSvcDel",[code]).then(function(){ return loadAll(); })
-        .then(function(){ closeSheet(); toast("지웠습니다"); render(); })
+        .then(function(){ closeSheet(); toast("지웠어요"); render(); })
         .catch(function(e){ toast(e.message,true); });
     });
   };
@@ -4903,7 +4903,7 @@ function svcSheet(code){
 var SETTLE_YEAR = String(new Date().getFullYear());
 function viewSettle(){
   $("main").innerHTML = '<div class="dashhead"><h2>정산</h2>'+
-    '<div class="sub2">달마다 업체에서 받은 금액과 유지비로 나간 금액을 견줍니다.</div></div>'+
+    '<div class="sub2">달마다 업체에서 받은 금액과 유지비로 나간 금액을 견줘요.</div></div>'+
     '<div class="card"><div class="empty">불러오는 중…</div></div>';
   api("hqSettle",[SETTLE_YEAR]).then(function(r){
     var ms = (r&&r.months)||[], inc=(r&&r.income)||0, exp=(r&&r.expense)||0, prof=inc-exp;
@@ -4911,10 +4911,10 @@ function viewSettle(){
     for(var y=yNow; y>=yNow-4; y--) yOpt += '<option value="'+y+'"'+(String(y)===SETTLE_YEAR?" selected":"")+'>'+y+'년</option>';
 
     var h = '<div class="dashhead"><h2>정산</h2>'+
-    '<div class="sub2">달마다 업체에서 받은 금액과 유지비로 나간 금액을 견줍니다.</div></div>'+
+    '<div class="sub2">달마다 업체에서 받은 금액과 유지비로 나간 금액을 견줘요.</div></div>'+
       '<div class="tools"><select id="stYear" style="max-width:130px">'+yOpt+'</select>'+
         '<button class="btn primary" id="exAdd">＋ 지출 적기</button>'+
-        '<span class="cnt">솔라피 충전·가비아 연장처럼 나간 금액을 여기에 적어두면 아래 표에 바로 반영됩니다</span></div>'+
+        '<span class="cnt">솔라피 충전·가비아 연장처럼 나간 금액을 여기에 적어두면 아래 표에 바로 반영돼요</span></div>'+
       '<div class="dash"><div class="dRow money">'+
         '<button class="kbox hl" data-none><span class="t">'+SETTLE_YEAR+'년 들어온 금액</span>'+
           '<span class="v" style="display:block">'+esc(won(inc))+'</span>'+
@@ -4924,11 +4924,11 @@ function viewSettle(){
           '<span class="s" style="display:block">유지비로 나간 금액</span></button>'+
         '<button class="kbox '+(prof<0?"warn":"")+'" data-none><span class="t">'+SETTLE_YEAR+'년 남은 것</span>'+
           '<span class="v" style="display:block">'+esc(won(prof))+'</span>'+
-          '<span class="s" style="display:block">'+(prof<0?"적자입니다":"들어온 금액 − 나간 금액")+'</span></button>'+
+          '<span class="s" style="display:block">'+(prof<0?"적자예요":"들어온 금액 − 나간 금액")+'</span></button>'+
       '</div></div>';
 
     h += '<div class="card"><h2>달마다 보기</h2>';
-    if(!ms.length) h += '<div class="empty">'+SETTLE_YEAR+'년에는 아직 기록이 없습니다.</div>';
+    if(!ms.length) h += '<div class="empty">'+SETTLE_YEAR+'년에는 아직 기록이 없어요.</div>';
     else {
       h += '<div style="overflow:auto"><table class="stl"><thead><tr>'+
         '<th>달</th><th>들어온 금액</th><th>건수</th><th>나간 금액</th><th>남은 것</th></tr></thead><tbody>';
@@ -4944,7 +4944,7 @@ function viewSettle(){
     h += '</div>';
 
     h += '<div class="card"><h2>지출 적은 것</h2>'+
-      '<p class="lead" style="margin:2px 0 10px">줄 끝의 지우기를 누르면 그 기록만 지워집니다.</p><div id="tExp"></div></div>';
+      '<p class="lead" style="margin:2px 0 10px">줄 끝의 지우기를 누르면 그 기록만 지워져요.</p><div id="tExp"></div></div>';
     $("main").innerHTML = h;
 
     $("stYear").onchange = function(){ SETTLE_YEAR=this.value; viewSettle(); };
@@ -4969,7 +4969,7 @@ function viewSettle(){
       b.onclick = function(ev){
         ev.stopPropagation();
         api("hqExpenseDel",[b.getAttribute("data-ex")]).then(function(){ return loadAll(); })
-          .then(function(){ toast("지웠습니다"); viewSettle(); })
+          .then(function(){ toast("지웠어요"); viewSettle(); })
           .catch(function(e){ toast(e.message,true); });
       };
     });
@@ -4983,7 +4983,7 @@ function expSheet(){
   var opts = '<option value="">(고르지 않음)</option>' + (D.svcs||[]).map(function(v){
     return '<option value="'+esc(v.code)+'">'+esc(v.name)+'</option>'; }).join("");
   openSheet(
-    '<h3>지출 적기</h3><div class="sub">유지비로 실제로 낸 금액을 적습니다</div>'+
+    '<h3>지출 적기</h3><div class="sub">유지비로 실제로 낸 금액을 적어요</div>'+
     '<label class="f">어느 서비스</label><select id="eSvc">'+opts+'</select>'+
     '<label class="f">무엇에 나간 금액인지</label><input type="text" id="eName" placeholder="예: 솔라피 문자 충전">'+
     '<div class="row2">'+
@@ -5007,8 +5007,8 @@ function expSheet(){
     $("eAdd").value = auto ? "0" : "1";
     $("eAdd").disabled = auto;
     $("eAddHint").innerHTML = auto
-      ? '이 곳은 <b>자동으로 읽는 곳</b>이라 남은 금액은 건드리지 않습니다. 실제 잔액은 「연결된 곳 상태 새로 받기」로 맞춰집니다.'
-      : '직접 적는 곳이라, 충전한 만큼 남은 금액을 올려둘 수 있습니다.';
+      ? '이 곳은 <b>자동으로 읽는 곳</b>이라 남은 금액은 건드리지 않아요. 실제 잔액은 「연결된 곳 상태 새로 받기」로 맞춰져요.'
+      : '직접 적는 곳이라, 충전한 만큼 남은 금액을 올려둘 수 있어요.';
   }
   $("eSvc").onchange = eSync;
   eSync();
@@ -5023,7 +5023,7 @@ function expSheet(){
       return loadAll().then(function(){ return r; });
     }).then(function(r){
       closeSheet();
-      toast((r&&r.note) ? r.note : "적었습니다");
+      toast((r&&r.note) ? r.note : "적었어요");
       viewSettle();
     }).catch(function(e){ toast(e.message,true); });
   };
@@ -5055,8 +5055,8 @@ function taxLogDraw(){
   makeTable({
     id:"tLogT", rows:rows, search:["to_name","to_corp","nts_no","mgt_key","memo"],
     sortKey:"no", sortDir:"desc", rowId:function(r){ return String(r.no); },
-    empty:function(all){ return all.length ? "찾으시는 계산서가 없습니다. 검색어를 지워 보세요."
-      : "아직 보낸 계산서가 없습니다. 위 «업체별 발행» 에서 계산서를 보내면 여기에 쌓입니다."; },
+    empty:function(all){ return all.length ? "찾으시는 계산서가 없어요. 검색어를 지워 보세요."
+      : "아직 보낸 계산서가 없어요. 위 «업체별 발행» 에서 계산서를 보내면 여기에 쌓여요."; },
     filters:[
       {k:"ok", label:"결과", get:function(r){ return r.ok?"ok":"no"; },
        opts:[["","결과 전체"],["ok","잘 됨"],["no","안 됨"]]},
@@ -5090,25 +5090,25 @@ function viewTax(){
   var hq = D.hq||{};
   var ready = String(hq.biz_no||"").replace(/[^0-9]/g,"").length===10;
   var h = '<div class="dashhead"><h2>세금계산서</h2>'+
-    '<div class="sub2">차곳간(티와이컴퍼니)이 각 업체에 전자세금계산서를 보냅니다. 팝빌을 씁니다.</div></div>';
+    '<div class="sub2">차곳간(티와이컴퍼니)이 각 업체에 전자세금계산서를 보내요. 팝빌을 써요.</div></div>';
 
   if(!D.hasPopbill)
-    h += '<div class="card" style="border-color:var(--warn)"><b>팝빌이 아직 연결되지 않았습니다</b>'+
-      '<div class="hint" style="margin-top:6px">수파베이스 Edge Functions → Secrets 에 POPBILL_LINKID · POPBILL_SECRET 를 넣으면 발행할 수 있습니다. 넣기 전에도 아래 정보는 미리 채워 둘 수 있습니다.</div></div>';
+    h += '<div class="card" style="border-color:var(--warn)"><b>팝빌이 아직 연결되지 않았어요</b>'+
+      '<div class="hint" style="margin-top:6px">수파베이스 Edge Functions → Secrets 에 POPBILL_LINKID · POPBILL_SECRET 를 넣으면 발행할 수 있어요. 넣기 전에도 아래 정보는 미리 채워 둘 수 있어요.</div></div>';
 
-  /* 1) 본사 정보 — 다 채워 두었으면 접어 둡니다 */
+  /* 1) 본사 정보 — 다 채워 두었으면 접어 둬요 */
   if(TAXHQ.open===null) TAXHQ.open = !ready;
   var hqSum = ready
     ? (esc(hq.biz_name||"")+' · '+esc(bizFmt(hq.biz_no))+' · 대표 '+esc(hq.ceo||"-")+
        ' · '+(hq.pb_test===false?'<b style="color:var(--good)">실제 발행</b>':'<b>시험 발행</b>'))
-    : '<b style="color:var(--warn)">아직 다 채우지 않았습니다</b>';
+    : '<b style="color:var(--warn)">아직 다 채우지 않았어요</b>';
   h += '<div class="card"><div class="tools" style="margin:0;align-items:center">'+
       '<h2 style="margin:0">차곳간 정보 (보내는 쪽)</h2>'+
       '<span class="sp"></span>'+
       '<button class="btn sm" id="hqTog">'+(TAXHQ.open?"접기":"펼쳐서 고치기")+'</button></div>'+
     (TAXHQ.open?"":'<div class="hint" style="margin-top:8px">'+hqSum+'</div>')+
     '<div id="hqBody"'+(TAXHQ.open?"":' style="display:none"')+'>'+
-    '<p class="lead" style="margin:10px 0 12px">계산서에 «공급자» 로 찍히는 우리 정보입니다.</p>'+
+    '<p class="lead" style="margin:10px 0 12px">계산서에 «공급자» 로 찍히는 우리 정보예요.</p>'+
     '<div class="row2">'+
       '<div><label class="f">상호</label><input type="text" id="hName" value="'+esc(hq.biz_name||"")+'"></div>'+
       '<div><label class="f">사업자등록번호 (10자리)</label><input type="text" id="hNo" value="'+esc(hq.biz_no||"")+'" placeholder="0000000000"></div>'+
@@ -5127,15 +5127,15 @@ function viewTax(){
     '</div>'+
     '<label class="f">입금 계좌 안내 (청구서에 적을 말)</label><input type="text" id="hBank" value="'+esc(hq.bank||"")+'">'+
     '<label class="f">발행 방식</label><select id="hTest">'+
-      '<option value="1"'+(hq.pb_test!==false?" selected":"")+'>시험 발행 (연습용, 국세청에 안 갑니다)</option>'+
-      '<option value="0"'+(hq.pb_test===false?" selected":"")+'>실제 발행 (국세청으로 갑니다)</option></select>'+
-    '<div class="hint">처음에는 «시험 발행» 으로 두고 한 장 보내 보세요. 잘 되면 실제 발행으로 바꾸면 됩니다.</div>'+
+      '<option value="1"'+(hq.pb_test!==false?" selected":"")+'>시험 발행 (연습용, 국세청에 안 가요)</option>'+
+      '<option value="0"'+(hq.pb_test===false?" selected":"")+'>실제 발행 (국세청으로 가요)</option></select>'+
+    '<div class="hint">처음에는 «시험 발행» 으로 두고 한 장 보내 보세요. 잘 되면 실제 발행으로 바꾸면 돼요.</div>'+
     '<div class="tools" style="margin-top:14px"><button class="btn primary" id="hSave">저장</button>'+
       '<button class="btn" id="hCheck">팝빌 연결 확인</button></div></div></div>';
 
   /* 2) 업체별 발행 */
   h += '<div class="card"><h2>업체별 발행</h2>'+
-    '<p class="lead" style="margin:2px 0 12px">줄을 누르면 그 업체에 계산서를 보냅니다. 사업자번호가 없으면 먼저 넣어야 합니다.</p>'+
+    '<p class="lead" style="margin:2px 0 12px">줄을 누르면 그 업체에 계산서를 보내요. 사업자번호가 없으면 먼저 넣어야 해요.</p>'+
     (ready?'':'<div class="hint" style="margin-bottom:10px;color:var(--warn)">우리 사업자등록번호를 먼저 채워주세요.</div>')+
     '<div id="tTax"></div></div>';
 
@@ -5144,8 +5144,8 @@ function viewTax(){
       '<h2 style="margin:0">보낸 계산서</h2>'+
       '<span class="sp"></span>'+
       '<button class="btn sm" id="tLogRe">새로 불러오기</button></div>'+
-    '<p class="lead" style="margin:8px 0 12px">차곳간이 업체에 보낸 계산서입니다. 국세청 승인번호가 찍히면 끝난 것입니다.</p>'+
-    '<div id="tLog"><div class="hint">불러오는 중입니다…</div></div></div>';
+    '<p class="lead" style="margin:8px 0 12px">차곳간이 업체에 보낸 계산서예요. 국세청 승인번호가 찍히면 끝난 거예요.</p>'+
+    '<div id="tLog"><div class="hint">불러오는 중이에요…</div></div></div>';
 
   $("main").innerHTML = h;
   taxLogLoad();
@@ -5176,7 +5176,7 @@ function viewTax(){
       email:$("hEmail").value.trim(), phone:$("hPhone").value, bank:$("hBank").value.trim(),
       pbUserId:$("hPb").value.trim(), pbTest:$("hTest").value==="1" }])
       .then(function(){ return loadAll(); })
-      .then(function(){ toast("저장했습니다"); render(); })
+      .then(function(){ toast("저장했어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("hCheck").onclick = function(){
@@ -5193,7 +5193,7 @@ function bizFmt(v){
 }
 
 function taxSend(sh,code,v,force){
-  toast(force?"그대로 다시 보내는 중입니다…":"팝빌로 보내는 중입니다…");
+  toast(force?"그대로 다시 보내는 중이에요…":"팝빌로 보내는 중이에요…");
   var body=Object.assign({},v); if(force) body.force=true;
   api("hqTaxIssue",[code,body])
     .then(function(r){
@@ -5207,8 +5207,8 @@ function taxDupSheet(sh,code,v,r){
   var row=function(k,val){ return '<label class="f" style="margin-top:10px">'+esc(k)+'</label>'+
     '<div style="font-size:14px;font-weight:700">'+val+'</div>'; };
   openSheet(
-    '<h3>이미 보낸 계산서가 있습니다</h3>'+
-    '<div class="sub">받는 곳 · 금액 · 비고가 모두 같습니다. 그대로 보내면 <b>같은 계산서가 한 장 더</b> 나갑니다.</div>'+
+    '<h3>이미 보낸 계산서가 있어요</h3>'+
+    '<div class="sub">받는 곳 · 금액 · 비고가 모두 같아요. 그대로 보내면 <b>같은 계산서가 한 장 더</b> 나가요.</div>'+
     '<div class="card" style="margin:0 0 16px;padding:14px 16px">'+
       row("받는 곳", esc(r.toName||sh.name)+' <span class="mono" style="color:var(--muted)">'+esc(bizFmt(r.toCorp||sh.biz_no))+'</span>')+
       row("금액", esc(won(Number(r.total)||0)))+
@@ -5220,8 +5220,8 @@ function taxDupSheet(sh,code,v,r){
       row("국세청 승인번호", '<span class="mono">'+esc(pv.nts||"(없음)")+'</span>')+
       row("관리번호", '<span class="mono" style="color:var(--muted)">'+esc(pv.mgtKey||"-")+'</span>')+
     '</div>'+
-    '<div class="hint">딜러가 달라서 따로 끊는 것이라면, <b>비고</b>에 딜러 이름을 적고 다시 보내시면 됩니다. '+
-      '그러면 다른 계산서로 보고 그냥 나갑니다.</div>'+
+    '<div class="hint">딜러가 달라서 따로 끊는 것이라면, <b>비고</b>에 딜러 이름을 적고 다시 보내시면 돼요. '+
+      '그러면 다른 계산서로 보고 그냥 나가요.</div>'+
     '<div class="sheetbtns"><button class="btn" id="dpNo">취소</button>'+
      '<button class="btn" id="dpFix" style="flex:1">비고 고치기</button>'+
      '<button class="btn danger" id="dpGo" style="flex:1">그래도 보내기</button></div>'
@@ -5235,23 +5235,23 @@ function taxDoneSheet(sh,r,err){
   var test = ok ? !!(r&&r.test) : (D.hq&&D.hq.pb_test!==false);
   var nts = (r&&r.ntsConfirmNum)||"";
   openSheet(
-    '<h3>'+(ok?'계산서를 보냈습니다':'계산서를 보내지 못했습니다')+'</h3>'+
+    '<h3>'+(ok?'계산서를 보냈어요':'계산서를 보내지 못했습니다')+'</h3>'+
     '<div class="sub">'+esc(sh.name)+' · '+(test?'시험 발행':'실제 발행')+'</div>'+
     '<div class="card" style="margin:0 0 16px;padding:14px 16px">'+
      (ok
       ? '<div style="font-size:15px"><span class="pill ok">잘 됨</span></div>'+
         '<label class="f" style="margin-top:12px">국세청 승인번호</label>'+
-        '<div class="mono">'+esc(nts||"아직 안 나왔습니다 (조금 뒤 목록에서 확인하세요)")+'</div>'+
+        '<div class="mono">'+esc(nts||"아직 안 나왔어요 (조금 뒤 목록에서 확인하세요)")+'</div>'+
         '<div class="hint" style="margin-top:10px">'+
           (test
-            ? '시험 발행이라 국세청으로는 가지 않았습니다. 팝빌 시험 사이트에서 같은 내용이 보이면 제대로 된 것입니다.<br>'+
+            ? '시험 발행이라 국세청으로는 가지 않았어요. 팝빌 시험 사이트에서 같은 내용이 보이면 제대로 된 거예요.<br>'+
               '<a href="https://test.popbill.com" target="_blank" rel="noopener">test.popbill.com 열기</a> → 로그인 → 세금 → 매출 → 발행 목록'
-            : '국세청으로 보냈습니다. 받는 쪽 메일로도 계산서가 갑니다.')+
+            : '국세청으로 보냈어요. 받는 쪽 메일로도 계산서가 가요.')+
         '</div>'
       : '<div style="font-size:15px"><span class="pill off">안 됨</span></div>'+
         '<label class="f" style="margin-top:12px">안 된 이유</label>'+
         '<div style="color:var(--danger);font-size:14px;line-height:1.6">'+esc(err)+'</div>'+
-        '<div class="hint" style="margin-top:10px">아래 «보낸 계산서» 목록에도 그대로 남습니다. 이유를 고치고 다시 보내면 됩니다.</div>')+
+        '<div class="hint" style="margin-top:10px">아래 «보낸 계산서» 목록에도 그대로 남아요. 이유를 고치고 다시 보내면 돼요.</div>')+
     '</div>'+
     '<div class="sheetbtns"><button class="btn" id="tdClose">닫기</button>'+
      '<button class="btn primary" id="tdList" style="flex:2">보낸 계산서 목록 보기</button></div>'
@@ -5273,7 +5273,7 @@ function taxSheet(code){
     '<h3>'+esc(sh.name)+' 세금계산서</h3><div class="sub">업체 코드 '+esc(sh.shop)+'</div>'+
     '<div class="card" style="margin:0 0 16px;padding:14px 16px">'+
       '<b style="font-size:14px">받는 쪽 정보</b>'+
-      '<div class="hint" style="margin-top:6px">비어 있으면 아래에서 채운 뒤 저장하세요. 업체 화면에서 고친 것과 같은 자리입니다.</div>'+
+      '<div class="hint" style="margin-top:6px">비어 있으면 아래에서 채운 뒤 저장하세요. 업체 화면에서 고친 것과 같은 자리예요.</div>'+
       '<div class="row2" style="margin-top:10px">'+
         '<div><label class="f">사업자등록번호 (10자리)</label><input type="text" id="tNo" value="'+esc(sh.biz_no||"")+'"></div>'+
         '<div><label class="f">대표자</label><input type="text" id="tCeo" value="'+esc(sh.ceo||"")+'"></div>'+
@@ -5311,28 +5311,28 @@ function taxSheet(code){
       upte:$("tUpte").value.trim(), jongmok:$("tJong").value.trim(),
       taxEmail:$("tEmail").value.trim(), taxPhone:$("tPhone").value }])
       .then(function(){ return loadAll(); })
-      .then(function(){ toast("받는 쪽 정보를 저장했습니다"); })
+      .then(function(){ toast("받는 쪽 정보를 저장했어요"); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("tGo").onclick = function(){
     var amt=Number($("tAmt").value)||0;
     if(!amt) return toast("공급가액을 적어주세요",true);
-    /* 물어보는 창이 뜨면 이 칸들은 사라집니다 — 먼저 값을 챙겨 둡니다 */
+    /* 물어보는 창이 뜨면 이 칸들은 사라져요 — 먼저 값을 챙겨 둬요 */
     var per=$("tPer").value.trim(), item=$("tItem").value.trim(), memo=$("tMemo").value.trim();
     var real = D.hq && D.hq.pb_test===false;
-    /* 이 달에 이미 보낸 게 있으면 알려 줍니다 (겹쳐 보내는 사고 막기) */
+    /* 이 달에 이미 보낸 게 있으면 알려 줘요 (겹쳐 보내는 사고 막기) */
     var per6=per.replace(/[^0-9]/g,"").slice(0,6);
     var head="CGG"+code+"-"+per6;
     var dup=(TAXLOG.rows||[]).filter(function(r){
       return r.ok && String(r.mgt_key||"").indexOf(head)===0; });
     var dupMsg = dup.length
-      ? ("\n\n[알림] "+sh.name+" 에 "+per+" 계산서를 이미 "+dup.length+"장 보냈습니다"+
+      ? ("\n\n[알림] "+sh.name+" 에 "+per+" 계산서를 이미 "+dup.length+"장 보냈어요"+
          (dup[0].nts_no?(" (마지막 승인번호 "+dup[0].nts_no+")"):"")+
-         ". 금액과 비고까지 똑같으면 보내기 직전에 한 번 더 물어봅니다.")
+         ". 금액과 비고까지 똑같으면 보내기 직전에 한 번 더 물어봐요.")
       : "";
     confirmBox("계산서 보내기",
-      sh.name+" 에 "+won(amt+Math.round(amt/10))+" 짜리 계산서를 보냅니다."+
-      (real?" 실제 발행이라 국세청으로 바로 갑니다.":" 지금은 시험 발행이라 국세청에는 가지 않습니다.")+dupMsg,
+      sh.name+" 에 "+won(amt+Math.round(amt/10))+" 짜리 계산서를 보내요."+
+      (real?" 실제 발행이라 국세청으로 바로 가요.":" 지금은 시험 발행이라 국세청에는 가지 않아요.")+dupMsg,
       dup.length?"그래도 보내기":"보내기", real||!!dup.length, function(){
       taxSend(sh,code,{ amount:amt, period:per, itemName:item, memo:memo });
     });
@@ -5347,7 +5347,7 @@ function viewPacks(){
   var sms=(D.packs||[]).filter(function(p){return p.kind==="sms";});
   var tax=(D.packs||[]).filter(function(p){return p.kind==="tax";});
   function rows(list,kind){
-    if(!list.length) return '<div class="hint">아직 묶음이 없습니다.</div>';
+    if(!list.length) return '<div class="hint">아직 묶음이 없어요.</div>';
     return list.map(function(p){
       return '<div class="row2" style="align-items:end">'+
         '<div><label class="f">건수</label><input type="number" id="pk_q_'+p.id+'" value="'+(p.qty||0)+'"></div>'+
@@ -5361,21 +5361,21 @@ function viewPacks(){
           '<option value="1"'+(p.active!==false?" selected":"")+'>업체에게 보임</option>'+
           '<option value="0"'+(p.active===false?" selected":"")+'>숨김</option></select></div>'+
       '</div>'+
-      '<div class="hint" style="margin:-8px 0 14px">'+(p.price&&p.qty?('건당 약 '+Math.round(p.price/p.qty)+'원'):'금액을 넣으면 건당 얼마인지 알려드립니다')+
+      '<div class="hint" style="margin:-8px 0 14px">'+(p.price&&p.qty?('건당 약 '+Math.round(p.price/p.qty)+'원'):'금액을 넣으면 건당 얼마인지 알려 드려요')+
         ' · <button class="btn sm danger" data-pkd="'+p.id+'">지우기</button></div>';
     }).join("");
   }
   $("main").innerHTML =
     '<div class="dashhead"><h2>충전</h2>'+
-    '<div class="sub2">업체가 무료 건수를 다 썼을 때 미리 사 두는 묶음입니다. 여기서 정한 금액이 앱 충전 화면에 그대로 나옵니다.</div></div>'+
+    '<div class="sub2">업체가 무료 건수를 다 썼을 때 미리 사 두는 묶음이에요. 여기서 정한 금액이 앱 충전 화면에 그대로 나와요.</div></div>'+
     '<div class="tools"><button class="btn primary" id="pkSave">한 번에 저장</button>'+
       '<button class="btn" id="pkAddS">＋ 문자 묶음</button>'+
       '<button class="btn" id="pkAddT">＋ 계산서 묶음</button>'+
-      '<span class="cnt">금액이 0이면 업체 화면에 «상담 문의»로 나옵니다</span></div>'+
+      '<span class="cnt">금액이 0이면 업체 화면에 «상담 문의»로 나와요</span></div>'+
     '<div class="card"><h2>문자 묶음</h2>'+rows(sms,"sms")+'</div>'+
     '<div class="card"><h2>계산서 묶음</h2>'+rows(tax,"tax")+'</div>'+
     '<div class="card"><h2>넣어준 기록</h2>'+
-      '<p class="lead" style="margin:2px 0 10px">업체 화면에서 «충전 넣어주기»로 넣은 건수가 쌓입니다.</p>'+
+      '<p class="lead" style="margin:2px 0 10px">업체 화면에서 «충전 넣어주기»로 넣은 건수가 쌓여요.</p>'+
       '<div id="tTop"></div></div>';
 
   makeTable({
@@ -5398,22 +5398,22 @@ function viewPacks(){
   }
   $("pkSave").onclick=function(){
     var list=(D.packs||[]).filter(function(p){ return $("pk_q_"+p.id); }).map(form);
-    if(!list.length) return toast("저장할 것이 없습니다");
+    if(!list.length) return toast("저장할 것이 없어요");
     api("hqPackSaveAll",[list]).then(function(){ return loadAll(); })
-      .then(function(){ toast("저장했습니다"); render(); })
+      .then(function(){ toast("저장했어요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("pkAddS").onclick=function(){ addPack("sms"); };
   $("pkAddT").onclick=function(){ addPack("tax"); };
   function addPack(kind){
     api("hqPackAdd",[{kind:kind, qty:0, price:0}]).then(function(){ return loadAll(); })
-      .then(function(){ toast("묶음을 넣었습니다. 건수와 금액을 채워주세요"); render(); })
+      .then(function(){ toast("묶음을 넣었어요. 건수와 금액을 채워주세요"); render(); })
       .catch(function(e){ toast(e.message,true); });
   }
   Array.prototype.forEach.call($("main").querySelectorAll("button[data-pkd]"),function(b){
     b.onclick=function(){
       api("hqPackDel",[b.getAttribute("data-pkd")]).then(function(){ return loadAll(); })
-        .then(function(){ toast("지웠습니다"); render(); })
+        .then(function(){ toast("지웠어요"); render(); })
         .catch(function(e){ toast(e.message,true); });
     };
   });
@@ -5429,11 +5429,11 @@ function viewPacks(){
 var LOCK = {};
 function viewLock(){
   $("main").innerHTML='<div class="dashhead"><h2>잠금 · 차단</h2>'+
-    '<div class="sub2">이용기간(또는 무료 체험)이 끝난 업체를 어떻게 할지 정합니다. '+
-    '끝나자마자 내쫓지 않고, 며칠은 <b>보기만</b> 되게 두었다가 그 뒤에 로그인을 막습니다.</div></div>'+
+    '<div class="sub2">이용기간(또는 무료 체험)이 끝난 업체를 어떻게 할지 정해요. '+
+    '끝나자마자 내쫓지 않고, 며칠은 <b>보기만</b> 되게 두었다가 그 뒤에 로그인을 막아요.</div></div>'+
     '<div class="tools"><button class="btn primary sm" id="lkGo">다시 불러오기</button>'+
       '<span class="sp"></span><span class="cnt" id="lkAt"></span></div>'+
-    '<div id="lkBody"><div class="hint">불러오는 중입니다…</div></div>';
+    '<div id="lkBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("lkGo").onclick=lkLoad;
   if(LOCK.loaded) lkDraw(); else lkLoad();
 }
@@ -5466,7 +5466,7 @@ function lkDraw(){
 
   var h='';
   /* ① 흐름 그림 */
-  h+='<div class="card"><h2>이렇게 흘러갑니다</h2>'+
+  h+='<div class="card"><h2>이렇게 흘러가요</h2>'+
     '<div class="lkFlow">'+
       '<div class="lkStep ok"><b>끝나는 날까지</b><span>평소대로</span></div>'+
       '<div class="lkArw">›</div>'+
@@ -5476,8 +5476,8 @@ function lkDraw(){
       '<div class="lkArw">›</div>'+
       '<div class="lkStep gray"><b>'+dd+'일 뒤</b><span>자료 정리 대상<br>(직접 눌러야 지워짐)</span></div>'+
     '</div>'+
-    '<div class="hint" style="margin-top:12px">잠긴 동안에도 <b>지난 자료 보기·사진 보기·엑셀 내려받기·결제</b>는 됩니다. '+
-    '<b>새 접수·출고·문자·사진 올리기·계산서</b>는 멈춥니다. 자료는 지우지 않고 그대로 두었다가 '+dd+'일 뒤에 정리 목록에 올라옵니다.</div></div>';
+    '<div class="hint" style="margin-top:12px">잠긴 동안에도 <b>지난 자료 보기·사진 보기·엑셀 내려받기·결제</b>는 돼요. '+
+    '<b>새 접수·출고·문자·사진 올리기·계산서</b>는 멈춰요. 자료는 지우지 않고 그대로 두었다가 '+dd+'일 뒤에 정리 목록에 올라와요.</div></div>';
 
   /* ② 설정 */
   h+='<div class="card"><h2>설정</h2>'+
@@ -5495,20 +5495,20 @@ function lkDraw(){
         '<div class="hm"><input type="number" id="lkDel" value="'+dd+'" min="7" max="1825"><span>일</span>'+
         '<b id="lkDelShow"></b></div></div>'+
     '</div>'+
-    '<div class="hint" style="margin-top:12px"><b>0일</b>로 두시면 끝나는 즉시 로그인이 막힙니다. '+
-    '자료 보관 날짜는 <b>이용약관에 적어 둔 날짜와 같아야</b> 합니다. 지금 홈페이지 약관에는 <b>90일</b>로 적혀 있습니다.</div>'+
+    '<div class="hint" style="margin-top:12px"><b>0일</b>로 두시면 끝나는 즉시 로그인이 막혀요. '+
+    '자료 보관 날짜는 <b>이용약관에 적어 둔 날짜와 같아야</b> 해요. 지금 홈페이지 약관에는 <b>90일</b>로 적혀 있어요.</div>'+
     '<div class="saveRow"><button class="btn primary sm" id="lkSave">설정 저장</button></div></div>';
 
   /* ③ 업체별 */
   h+='<div class="card"><h2>업체별 상태</h2>'+
-    '<p class="lead">한 곳만 더 열어 두고 싶으시면 «열어 두기»에 날짜를 넣으세요. 그 날짜까지는 평소처럼 다 됩니다.</p>'+
+    '<p class="lead">한 곳만 더 열어 두고 싶으시면 «열어 두기»에 날짜를 넣으세요. 그 날짜까지는 평소처럼 다 돼요.</p>'+
     '<div id="lkShopT"></div></div>';
 
   /* ④ 자료 정리 */
   h+='<div class="card"><h2>자료 정리 대상</h2>'+
-    '<p class="lead">보관 기간이 끝나가는 업체입니다. <b>자동으로 지우지 않습니다.</b> 눈으로 보시고 직접 누르셔야 지워집니다.</p>'+
+    '<p class="lead">보관 기간이 끝나가는 업체예요. <b>자동으로 지우지 않아요.</b> 눈으로 보시고 직접 누르셔야 지워져요.</p>'+
     (LOCK.purge && LOCK.purge.length ? '<div id="lkPurgeT"></div>'
-      : '<div class="hint">지금은 정리할 업체가 없습니다.</div>')+'</div>';
+      : '<div class="hint">지금은 정리할 업체가 없어요.</div>')+'</div>';
 
   /* ⑤ 기록 */
   h+='<div class="card"><h2>기록</h2><div id="lkLogT"></div></div>';
@@ -5587,7 +5587,7 @@ function lkDraw(){
     api("hqLockSave",[{ on:$("lkOn").checked, trialSame:$("lkTrial").checked,
       warnDel:$("lkWarn").checked, paidSay:$("lkSay").checked,
       lockDays:Number($("lkDays").value)||0, delDays:Number($("lkDel").value)||90 }])
-    .then(function(){ toast("저장했습니다"); LOCK.loaded=false; lkLoad(); })
+    .then(function(){ toast("저장했어요"); LOCK.loaded=false; lkLoad(); })
     .catch(function(e){ toast(e.message,true); });
   };
 
@@ -5606,11 +5606,11 @@ function lkOpenBox(code){
   if(!row) return;
   var t=new Date(Date.now()+7*864e5).toISOString().slice(0,10);
   openSheet('<h3>'+esc(row.name||code)+' — 열어 두기</h3>'+
-    '<p class="lead">이 날짜까지는 잠금·차단과 상관없이 <b>평소처럼 다</b> 쓸 수 있습니다. '+
+    '<p class="lead">이 날짜까지는 잠금·차단과 상관없이 <b>평소처럼 다</b> 쓸 수 있어요. '+
     '입금은 됐는데 아직 이용기한을 못 늘렸을 때 쓰세요.</p>'+
     '<label class="f" for="lkoD">언제까지 열어 둘까요</label>'+
     '<input type="date" id="lkoD" value="'+esc(row.openUntil||t)+'">'+
-    '<label class="f" for="lkoM">왜 열어 두는지 (기록에 남습니다)</label>'+
+    '<label class="f" for="lkoM">왜 열어 두는지 (기록에 남아요)</label>'+
     '<input type="text" id="lkoM" value="'+esc(row.openMemo||"")+'" placeholder="예) 9/26 입금 확인, 계산서 발행 대기">'+
     '<label class="f" for="lkoL">이 업체만 잠금 일수를 다르게 (비우면 기본값)</label>'+
     '<input type="number" id="lkoL" value="'+esc(row.own===null||row.own===undefined?"":row.own)+'" min="0" max="180" placeholder="비워 두면 기본값">'+
@@ -5619,12 +5619,12 @@ function lkOpenBox(code){
   $("lkoGo").onclick=function(){
     var L=$("lkoL").value.trim();
     api("hqLockShop",[code,{ openUntil:$("lkoD").value, memo:$("lkoM").value, lockDays:(L===""?null:Number(L)) }])
-    .then(function(){ closeSheet(); toast("저장했습니다"); LOCK.loaded=false; lkLoad(); })
+    .then(function(){ closeSheet(); toast("저장했어요"); LOCK.loaded=false; lkLoad(); })
     .catch(function(e){ toast(e.message,true); });
   };
   $("lkoOff").onclick=function(){
     api("hqLockShop",[code,{ openUntil:"", memo:"" }])
-    .then(function(){ closeSheet(); toast("취소했습니다"); LOCK.loaded=false; lkLoad(); })
+    .then(function(){ closeSheet(); toast("취소했어요"); LOCK.loaded=false; lkLoad(); })
     .catch(function(e){ toast(e.message,true); });
   };
 }
@@ -5635,7 +5635,7 @@ function lkPurgeBox(code){
     var pk=(r&&r.peek)||{}, st=(r&&r.state)||{};
     var nm=st.name||code;
     openSheet('<h3 style="color:var(--danger)">'+esc(nm)+' — 자료 정리</h3>'+
-      '<p class="lead">아래 자료가 <b>영영 지워집니다.</b> 되돌릴 수 없습니다.</p>'+
+      '<p class="lead">아래 자료가 <b>영영 지워져요.</b> 되돌릴 수 없어요.</p>'+
       '<div class="hint" style="background:var(--danger-soft);border-color:#F0B9B4">'+
         '기록 <b>'+(pk.rows>=0?pk.rows:"?")+'</b>줄 · 문자기록 <b>'+(pk.send>=0?pk.send:"?")+'</b>줄 · '+
         '계정 <b>'+(pk.users>=0?pk.users:"?")+'</b>개<br>'+
@@ -5645,7 +5645,7 @@ function lkPurgeBox(code){
       '<div class="saveRow"><button class="btn sm" id="lkpGo" style="background:var(--danger);border-color:var(--danger);color:#fff">이 업체 자료 지우기</button></div>', nm);
     $("lkpGo").onclick=function(){
       api("hqPurgeRun",[code,$("lkpN").value])
-      .then(function(){ closeSheet(); toast("정리했습니다"); LOCK.loaded=false; lkLoad(); })
+      .then(function(){ closeSheet(); toast("정리했어요"); LOCK.loaded=false; lkLoad(); })
       .catch(function(e){ toast(e.message,true); });
     };
   }).catch(function(e){ toast(e.message,true); });
@@ -5653,7 +5653,7 @@ function lkPurgeBox(code){
 
 
 /* ══════════════════════════════════════════════════════════
-   공지사항 — 한 번 쓰면 앱과 홈페이지에 같이 올라갑니다
+   공지사항 — 한 번 쓰면 앱과 홈페이지에 같이 올라가요
    ══════════════════════════════════════════════════════════ */
 var NOTI = {};
 var NKIND = {update:"업데이트", price:"요금", etc:"기타"};
@@ -5661,12 +5661,12 @@ var NWHERE = {both:"앱 + 홈페이지", app:"앱만", home:"홈페이지만"};
 
 function viewNotice(){
   $("main").innerHTML='<div class="dashhead"><h2>공지사항</h2>'+
-    '<div class="sub2">여기서 한 번 쓰면 <b>업체 앱</b>과 <b>홈페이지</b>에 같이 올라갑니다. '+
-    '창으로 뜨는 것은 <b>업체 앱에서만</b>이고, 홈페이지는 <b>공지사항 칸에 글로만</b> 올라갑니다.</div></div>'+
+    '<div class="sub2">여기서 한 번 쓰면 <b>업체 앱</b>과 <b>홈페이지</b>에 같이 올라가요. '+
+    '창으로 뜨는 것은 <b>업체 앱에서만</b>이고, 홈페이지는 <b>공지사항 칸에 글로만</b> 올라가요.</div></div>'+
     '<div class="tools"><button class="btn primary sm" id="ntNew">＋ 새 공지 쓰기</button>'+
       '<button class="btn sm" id="ntGo">다시 불러오기</button>'+
       '<span class="sp"></span><span class="cnt" id="ntAt"></span></div>'+
-    '<div id="ntBody"><div class="hint">불러오는 중입니다…</div></div>';
+    '<div id="ntBody"><div class="hint">불러오는 중이에요…</div></div>';
   $("ntGo").onclick=ntLoad;
   $("ntNew").onclick=function(){ ntEdit(null); };
   if(NOTI.loaded) ntDraw(); else ntLoad();
@@ -5710,8 +5710,8 @@ function ntDraw(){
       '<div><span>지금 보이는 것</span><b>'+live+'건</b></div>'+
       '<div><span>앱에서 창으로 뜨는 것</span><b>'+pop+'건</b></div>'+
     '</div>'+
-    '<div class="hint" style="margin:10px 0 0">창은 <b>업체 앱에서만</b> 뜹니다. 홈페이지에는 창이 뜨지 않습니다.<br>'+
-    '창으로 뜨는 공지가 너무 많으면 업체가 피곤해합니다. 한 번에 <b>한두 개</b>만 켜두시길 권합니다.</div></div>'+
+    '<div class="hint" style="margin:10px 0 0">창은 <b>업체 앱에서만</b> 떠요. 홈페이지에는 창이 뜨지 않아요.<br>'+
+    '창으로 뜨는 공지가 너무 많으면 업체가 피곤해해요. 한 번에 <b>한두 개</b>만 켜두시길 권해요.</div></div>'+
     '<div id="ntTable"></div>';
 
   makeTable({ id:"ntTable", sortKey:"at", sortDir:"desc",
@@ -5749,8 +5749,8 @@ function ntDraw(){
 }
 function ntDel(id){
   var n=(NOTI.list||[]).filter(function(x){return String(x.id)===String(id);})[0];
-  confirmBox("공지 지우기", (n?n.title:"")+"\n\n지우면 앱과 홈페이지에서 바로 사라집니다.", "지우기", true, function(){
-    api("hqNoticeDel",[Number(id)]).then(function(){ toast("지웠습니다"); NOTI.loaded=false; ntLoad(); })
+  confirmBox("공지 지우기", (n?n.title:"")+"\n\n지우면 앱과 홈페이지에서 바로 사라져요.", "지우기", true, function(){
+    api("hqNoticeDel",[Number(id)]).then(function(){ toast("지웠어요"); NOTI.loaded=false; ntLoad(); })
       .catch(function(e){ toast(e.message,true); });
   });
 }
@@ -5766,22 +5766,22 @@ function ntEdit(n){
     '<label class="f" for="ntTitle" style="margin-top:12px">제목</label>'+
     '<input type="text" id="ntTitle" value="'+esc(n.title||"")+'" placeholder="예) 9월 26일 업데이트 안내" maxlength="120">'+
     '<label class="f" for="ntBodyIn" style="margin-top:10px">내용</label>'+
-    '<textarea id="ntBodyIn" style="min-height:150px" placeholder="줄을 바꿔 쓰시면 그대로 보입니다.">'+esc(n.body||"")+'</textarea>'+
+    '<textarea id="ntBodyIn" style="min-height:150px" placeholder="줄을 바꿔 쓰시면 그대로 보여요.">'+esc(n.body||"")+'</textarea>'+
     '<div class="row2" style="margin-top:12px">'+
       '<div><label class="f" for="ntFrom">언제부터</label>'+
         '<input type="date" id="ntFrom" value="'+esc(String(n.from_at||"").slice(0,10))+'">'+
-        '<div class="hint" style="margin:4px 0 0">비우면 바로 올라갑니다</div></div>'+
+        '<div class="hint" style="margin:4px 0 0">비우면 바로 올라가요</div></div>'+
       '<div><label class="f" for="ntTo">언제까지</label>'+
         '<input type="date" id="ntTo" value="'+esc(String(n.to_at||"").slice(0,10))+'">'+
-        '<div class="hint" style="margin:4px 0 0">비우면 계속 보입니다</div></div>'+
+        '<div class="hint" style="margin:4px 0 0">비우면 계속 보여요</div></div>'+
     '</div>'+
     '<label class="f" style="margin-top:12px">어디에 보일까요</label>'+
     '<div class="chips" id="ntWhere">'+
       Object.keys(NWHERE).map(function(k){
         return '<label class="chip'+(n.where_at===k?" on":"")+'"><input type="radio" name="ntw" value="'+k+'"'+
                (n.where_at===k?" checked":"")+'><span>'+NWHERE[k]+'</span></label>'; }).join("")+'</div>'+
-    '<div class="hint" style="margin:6px 0 0">홈페이지에는 <b>창이 뜨지 않습니다.</b> '+
-    '공지사항 칸에만 글로 올라갑니다. 창은 <b>업체 앱</b>에서만 뜹니다.</div>'+
+    '<div class="hint" style="margin:6px 0 0">홈페이지에는 <b>창이 뜨지 않아요.</b> '+
+    '공지사항 칸에만 글로 올라가요. 창은 <b>업체 앱</b>에서만 떠요.</div>'+
     '<div class="chips" style="margin-top:12px">'+
       '<label class="chip'+(n.pop?" on":"")+'" id="ntPopLb"><input type="checkbox" id="ntPop"'+(n.pop?" checked":"")+'><span>업체 앱에서 로그인할 때 창으로 띄우기</span></label>'+
       '<label class="chip'+(n.pin?" on":"")+'"><input type="checkbox" id="ntPin"'+(n.pin?" checked":"")+'><span>맨 위에 고정</span></label>'+
@@ -5789,7 +5789,7 @@ function ntEdit(n){
     '</div>'+
     '<div class="hint" id="ntPopWhy" style="margin:6px 0 0" hidden></div>'+
     (isNew?"":'<div class="hint" style="margin-top:12px">이 공지를 «다시 보지 않기» 한 사람이 <b>'+
-      Number(n.hid||0)+'명</b> 있습니다. 내용을 크게 고치셨으면 아래 [다시 띄우기] 를 눌러 주세요.</div>')+
+      Number(n.hid||0)+'명</b> 있어요. 내용을 크게 고치셨으면 아래 [다시 띄우기] 를 눌러 주세요.</div>')+
     '<div class="sheetbtns" style="margin-top:16px">'+
       '<button class="btn" id="ntCancel">취소</button>'+
       (isNew?"":'<button class="btn" id="ntAgain">다시 띄우기</button>')+
@@ -5815,13 +5815,13 @@ function ntEdit(n){
     if(lb) lb.style.opacity = only ? ".45" : "";
     if(why){
       why.hidden=!only;
-      why.innerHTML="홈페이지만 올리는 공지라 창은 뜨지 않습니다. 홈페이지에는 로그인이 없기 때문입니다.";
+      why.innerHTML="홈페이지만 올리는 공지라 창은 뜨지 않아요. 홈페이지에는 로그인이 없기 때문이에요.";
     }
   }
   ntPopSync();
   $("ntCancel").onclick=closeSheet;
   if($("ntAgain")) $("ntAgain").onclick=function(){
-    api("hqNoticeAgain",[Number(n.id)]).then(function(){ toast("다시 띄웁니다"); NOTI.loaded=false; ntLoad(); closeSheet(); })
+    api("hqNoticeAgain",[Number(n.id)]).then(function(){ toast("다시 띄워요"); NOTI.loaded=false; ntLoad(); closeSheet(); })
       .catch(function(e){ toast(e.message,true); });
   };
   $("ntSave").onclick=function(){
@@ -5833,7 +5833,7 @@ function ntEdit(n){
             pop:$("ntPop").checked, pin:$("ntPin").checked, active:$("ntOn").checked };
     if(!v.title) return toast("제목을 넣어주세요",true);
     api("hqNoticeSave",[v]).then(function(){
-      closeSheet(); toast("저장했습니다"); NOTI.loaded=false; ntLoad();
+      closeSheet(); toast("저장했어요"); NOTI.loaded=false; ntLoad();
     }).catch(function(e){ toast(e.message,true); });
   };
 }
@@ -5859,8 +5859,8 @@ var TABS = [
 ];
 var TAB = "sum";
 /* 위 메뉴 — 워시 탭과 같은 모양 (UI 1.1).
-   17개 화면은 하나도 빼지 않았습니다. 비슷한 것끼리 8묶음으로 묶고, 묶음 안 화면은 둘째 줄 작은 탭으로 고릅니다.
-   내 계정은 설정 안 + 오른쪽 위 「👤 마이페이지」 단추로도 갑니다. */
+   17개 화면은 하나도 빼지 않았어요. 비슷한 것끼리 8묶음으로 묶고, 묶음 안 화면은 둘째 줄 작은 탭으로 고릅니다.
+   내 계정은 설정 안 + 오른쪽 위 「👤 마이페이지」 단추로도 가요. */
 var NAV = [   /* J안 4판 차례 = 지금 쓰는 메뉴 차례 그대로 (관리/시안/00_비교와_추천안.md) — 대표님 최종 확인 전 */
   ["sum","홈",["sum","ops"]],
   ["users","계정",["inv","users"]],
@@ -5992,7 +5992,7 @@ $("gpw").onkeydown=function(e){ if(e.key==="Enter") doLogin(); };
 $("gid").onkeydown=function(e){ if(e.key==="Enter") $("gpw").focus(); };
 
 $("btnOut").onclick=function(){
-  confirmBox("로그아웃","관리에서 나갑니다.","로그아웃",false,function(){
+  confirmBox("로그아웃","관리에서 나가요.","로그아웃",false,function(){
     var sid=ls(SIDKEY); lsDel(SIDKEY);
     (sid?open_("logout",[sid]).catch(function(){}):Promise.resolve())
       .then(function(){ D={me:null,sum:null,shops:[],users:[],pays:[],invites:[],plans:[],sess:[]};
@@ -6007,7 +6007,7 @@ $("btnReload").onclick=function(){
 };
 
 /* ═══════ J안 4판 — 머리말 버튼 · 사람 단추 ▾ · 메뉴 배치 셋 · 폰 아래 탭바 (관리 v4.0) ═══════
-   서버 창구는 하나도 새로 쓰지 않습니다. 화면 이동(TAB · render)과 기존 단추(btnOut · btnReload)만 씁니다. */
+   서버 창구는 하나도 새로 쓰지 않아요. 화면 이동(TAB · render)과 기존 단추(btnOut · btnReload)만 써요. */
 var LAYKEY = "cgg_admin_layout";   /* 이 기기에만 저장 (워시와 같은 식) */
 function layGet(){ var v=ls(LAYKEY); return (v==="side"||v==="icon")?v:"top"; }
 function laySet(v){
@@ -6109,8 +6109,8 @@ function addCrumb(){
 }
 try{ new MutationObserver(addCrumb).observe($("main"),{childList:true}); }catch(e){}
 
-if(!ls(SIDKEY)) ls(SIDKEY,"SID-PREVIEW");
 /* 이미 로그인해 둔 기기라면 바로 들어갑니다 */
+if(!ls(SIDKEY)) ls(SIDKEY,"SID-PREVIEW");
 (function boot(){
   var sid = ls(SIDKEY);
   if(!sid){ showGate(""); return; }
@@ -6118,7 +6118,7 @@ if(!ls(SIDKEY)) ls(SIDKEY,"SID-PREVIEW");
     if(!r || r.shop!=="ADMIN"){ lsDel(SIDKEY); showGate(""); return; }
     D.me = { who:"(기억된 계정)", name:r.who||"", shop:r.shop, role:r.role, phone:"" };
     return loadAll().then(function(){
-      /* 내 계정 화면에서 쓸 아이디를 계정 목록에서 찾아 둡니다 */
+      /* 내 계정 화면에서 쓸 아이디를 계정 목록에서 찾아 둬요 */
       var mine=(D.users||[]).filter(function(u){return u.shop==="ADMIN"&&u.name===D.me.name;})[0];
       if(mine){ D.me.who=mine.phone; D.me.phone=mine.phone; }
       showApp();
