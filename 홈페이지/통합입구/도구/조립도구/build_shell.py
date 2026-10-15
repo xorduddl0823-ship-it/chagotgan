@@ -4,14 +4,23 @@
 #   관리는 넣지 않습니다 (규칙 1-3: 관리는 주소·배포·로그인을 따로 둠).
 #   python build_shell.py        → 진짜 파일
 #   python build_shell.py test   → 시험용 사본 (_시험_통합.html, 모든 서버 주소 → 가짜 서버)
+#   새 판 묶기: python build_shell.py [test] --판 v3 --wash 워시/파일.html --check 체크/파일.html
+#     → 0_차곳간_통합_index_v3.html (시험용은 _시험_통합_v3.html). 경로는 저장소 기준. 기존 판은 덮어쓰지 않습니다.
 import io, os, sys, base64
 # 저장소 기준 경로: 이 파일은 홈페이지/통합입구/도구/조립도구/ 에 있습니다.
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."))
 OUT = os.path.join(ROOT, "홈페이지", "통합입구")
-TEST = len(sys.argv) > 1 and sys.argv[1] == "test"
+ARGS = sys.argv[1:]
+TEST = "test" in ARGS
+def opt(k, d=None):
+    return ARGS[ARGS.index(k) + 1] if k in ARGS else d
+PAN = opt("--판")
 SB = "https://ybfpxmmjofyvfprtvmhj.supabase.co"
 SRC = {"wash": os.path.join(ROOT, "워시", "1_차곳간_워시_index.html"),
        "check": os.path.join(ROOT, "체크", "2_차곳간_체크_index.html")}
+for _c in ("wash", "check"):
+    if opt("--" + _c): SRC[_c] = os.path.join(ROOT, opt("--" + _c))
+print("묶는 원본:", {k: os.path.relpath(v, ROOT) for k, v in SRC.items()})
 
 def pkg(code):
     t = io.open(SRC[code], encoding="utf-8").read()
@@ -21,6 +30,7 @@ def pkg(code):
         print(code, "서버 주소 바꿈", n)
     return base64.b64encode(t.encode("utf-8")).decode("ascii")
 
+VER = opt("--ver", "통합 v2 · UI 1.1 · 2026-10-13")
 API = ("http://127.0.0.1:8898/sb" if TEST else SB) + "/functions/v1/cgg-api?forceFunctionRegion=ap-northeast-2"
 
 S_IN  = "width:100%;box-sizing:border-box;padding:15px 14px;font-size:17px;border-radius:12px;border:1px solid var(--line,#dde3ec);background:var(--surface,#fff);color:var(--text,#14202e);margin-top:7px"
@@ -87,11 +97,11 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
         <input id="lgId" type="text" autocomplete="username" placeholder="010-0000-0000" style="@@IN@@">
         <label style="@@LAB@@" for="lgPw">비밀번호</label>
         <input id="lgPw" type="password" autocomplete="current-password" placeholder="비밀번호" style="@@IN@@">
-        <button id="lgGo" style="@@BTN@@">들어가기</button>
+        <button id="lgGo" style="@@BTN@@">로그인</button>
       </div>
       <div id="lgStep2" hidden>
         <div id="lgTo" style="font-size:14px;color:var(--muted,#667389);margin-top:10px"></div>
-        <label style="@@LAB@@" for="lgCode">문자로 받은 6자리</label>
+        <label style="@@LAB@@" for="lgCode">인증번호 6자리</label>
         <input id="lgCode" type="tel" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="@@IN@@;letter-spacing:8px;font-size:24px;text-align:center;font-weight:700">
         <button id="lgGo2" style="@@BTN@@">확인</button>
         <button id="lgBack" style="@@GHOST@@">처음부터 다시</button>
@@ -129,7 +139,7 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
       워시와 체크가 같은 이름(ccw_sid 등)을 써도 서로 덮어쓰지 않습니다.
    ④ 제품 화면은 원본 파일 그대로 띄웁니다 — 한 글자도 바꾸지 않습니다.
    ===================================================================== */
-var SHELL_VER = "통합 v2 · UI 1.1 · 2026-10-13";
+var SHELL_VER = "@@VER@@";
 var API = "@@API@@";
 var PRODUCTS = {
   wash:  { name:"워시", keys:function(p){ return { ccw_sid:p.sid, ccw_shop:p.shop }; },           sid:"ccw_sid" },
@@ -147,9 +157,9 @@ function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k)||""; if(
 function post(fn,args,token){
   return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify({shop:"",token:token||"",fn:fn,args:args||[]})})
-    .then(function(r){ return r.text(); },function(){ throw new Error("서버에 연결하지 못했습니다 (인터넷 확인)"); })
-    .then(function(t){ var j; try{ j=JSON.parse(t); }catch(e){ throw new Error("서버 응답을 읽지 못했습니다"); }
-      if(j && j.__err){ if(/모르는 요청/.test(j.__err)) throw new Error("서버에 통합 로그인 창구(cggLogin)가 아직 없습니다 — 설계서 3장을 먼저 올려 주세요"); throw new Error(j.__err); }
+    .then(function(r){ return r.text(); },function(){ throw new Error("서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요."); })
+    .then(function(t){ var j; try{ j=JSON.parse(t); }catch(e){ throw new Error("일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."); }
+      if(j && j.__err){ if(/모르는 요청/.test(j.__err)) throw new Error("로그인 서비스를 준비 중입니다. 잠시 후 다시 시도해 주세요."); throw new Error(j.__err); }
       return j ? j.result : null; });
 }
 
@@ -165,17 +175,17 @@ function showLogin(t,bad){
 }
 function doLogin(){
   var id=$("lgId").value.trim(), pw=$("lgPw").value;
-  if(!id||!pw) return msg("아이디와 비밀번호를 넣어주세요",true);
+  if(!id||!pw) return msg("휴대폰 번호와 비밀번호를 입력해 주세요.",true);
   $("lgGo").disabled=true; msg("확인 중…");
   post("cggLogin",[id,pw]).then(function(r){
     $("lgGo").disabled=false;
-    if(r && r.tick){ TICK=r.tick; $("lgTo").innerHTML="<b>"+esc(r.to||"")+"</b> 로 6자리를 보냈습니다."; msg(""); step2(true); return; }
+    if(r && r.tick){ TICK=r.tick; $("lgTo").innerHTML="<b>"+esc(r.to||"")+"</b>(으)로 인증번호를 발송했습니다."; msg(""); step2(true); return; }
     enter(r);
   }).catch(function(e){ $("lgGo").disabled=false; msg(e.message,true); });
 }
 function doCode(){
   var c=$("lgCode").value.replace(/[^0-9]/g,"");
-  if(c.length!==6) return msg("6자리를 넣어주세요",true);
+  if(c.length!==6) return msg("인증번호 6자리를 입력해 주세요.",true);
   $("lgGo2").disabled=true; msg("확인 중…");
   post("cggLogin2",[TICK,c]).then(function(r){ $("lgGo2").disabled=false; $("lgCode").value=""; enter(r); })
     .catch(function(e){ $("lgGo2").disabled=false; msg(e.message,true); });
@@ -183,7 +193,7 @@ function doCode(){
 
 /* ── 들어가기: 열 수 있는 제품만 저장 칸에 열쇠를 넣고, 띄웁니다 ── */
 function enter(r){
-  if(!r || !r.sid || !r.products || !r.products.length){ showLogin("이 계정으로 열 수 있는 화면이 없습니다",true); return; }
+  if(!r || !r.sid || !r.products || !r.products.length){ showLogin("이 계정으로 이용할 수 있는 서비스가 없습니다.",true); return; }
   ME = { sid:r.sid, name:r.name||"", products:r.products.filter(function(p){ return PRODUCTS[p.code]; }) };
   ls(SKEY, r.sid);
   /* 제품마다 따로 쓰는 저장 칸 — cgg.<제품>.<원래 이름> */
@@ -253,14 +263,14 @@ function open_(code){
 }
 function alertNo(code){
   var n=PRODUCTS[code]?PRODUCTS[code].name:code;
-  if(code) console.warn("[차곳간] 이 계정은 «"+n+"» 화면을 열 수 없습니다");
+  if(code) console.warn("[차곳간] 이 계정은 «"+n+"» 서비스를 이용할 수 없습니다.");
 }
 
 /* ── 제품 안에서 로그아웃하면 (그 제품 열쇠가 지워지면) 통합 로그인으로 돌아옵니다 ── */
 window.addEventListener("storage",function(e){
   if(!ME || !e.key) return;
   ORDER.forEach(function(code){
-    if(e.key==="cgg."+code+"."+PRODUCTS[code].sid && !e.newValue && can(code)) logoutAll("로그아웃했습니다");
+    if(e.key==="cgg."+code+"."+PRODUCTS[code].sid && !e.newValue && can(code)) logoutAll("로그아웃되었습니다.");
   });
 });
 function logoutAll(t){
@@ -273,7 +283,7 @@ function logoutAll(t){
   if(sid) post("cggLogout",[sid]).catch(function(){});
   showLogin(t||"",false);
 }
-$("cggOut").onclick=function(){ logoutAll("모두 로그아웃했습니다"); };
+$("cggOut").onclick=function(){ logoutAll("모두 로그아웃되었습니다."); };
 window.addEventListener("hashchange",function(){ var c=(location.hash||"").replace("#",""); if(ME && c && c!==CUR) open_(c); });
 
 $("lgGo").onclick=doLogin; $("lgGo2").onclick=doCode;
@@ -301,7 +311,8 @@ window.CGG_SHELL = { ver:SHELL_VER, me:function(){ return ME; }, cur:function(){
 </html>
 '''
 out = (HTML.replace("@@IN@@", S_IN).replace("@@BTN@@", S_BTN).replace("@@GHOST@@", S_GHOST).replace("@@LAB@@", S_LAB)
-       .replace("@@API@@", API).replace("@@WASH@@", pkg("wash")).replace("@@CHECK@@", pkg("check")))
-name = os.path.join("도구", "시험용", "_시험_통합.html") if TEST else "0_차곳간_통합_index.html"
+       .replace("@@API@@", API).replace("@@VER@@", VER).replace("@@WASH@@", pkg("wash")).replace("@@CHECK@@", pkg("check")))
+sfx = "_" + PAN if PAN else ""
+name = os.path.join("도구", "시험용", "_시험_통합" + sfx + ".html") if TEST else "0_차곳간_통합_index" + sfx + ".html"
 io.open(os.path.join(OUT, name), "w", encoding="utf-8").write(out)
 print(name, len(out.encode("utf-8")), "bytes")
