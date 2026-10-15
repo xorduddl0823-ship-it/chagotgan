@@ -5623,12 +5623,14 @@ if(ST.key) openApp(); else drawLogin();
 
   /* 서버 부르기 — 앱의 rpc 가 있으면 그걸 쓰고, 없으면 직접 부릅니다 */
   function cwRpc(fn, args){
-    if(typeof rpc === "function") return rpc(fn, args||[]);
     /* v31: 결제 · 캐시는 워시 서버 한 곳(sb11) — 체크 열쇠(cgg_key)와 검사소 코드(cgg_shop)로 부름 */
     var sid="", shop="";
     try{ sid = (typeof ST!=="undefined" && ST.key) || localStorage.getItem("cgg_key") || "";
          shop = (typeof ST!=="undefined" && ST.shop) || localStorage.getItem("cgg_shop") || ""; }catch(e){}
     var url = "https://ybfpxmmjofyvfprtvmhj.supabase.co/functions/v1/wash-api?forceFunctionRegion=ap-northeast-2";
+    /* 체크 열쇠(chk_)가 아니면(워시 열쇠로 들어온 경우) 워시 서버가 다른 업체로 보고 거절함 — 미리 안내 */
+    if(String(sid).indexOf("chk_") !== 0)
+      return Promise.reject({message:"결제는 체크 로그인으로만 할 수 있습니다. 통합 입구로 다시 로그인해 주세요."});
     return fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
         body:JSON.stringify({shop:shop,token:sid,fn:fn,args:args||[]})})
       .then(function(r){ return r.text(); },function(){ throw {message:"서버에 연결하지 못했습니다"}; })
