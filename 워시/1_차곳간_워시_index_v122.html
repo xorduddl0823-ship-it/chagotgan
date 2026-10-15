@@ -15518,14 +15518,16 @@ function boot(){
     cashBox('<h3 style="margin:0 0 6px">결제 내역</h3><div class="sub">불러오는 중이에요…</div>');
     cwRpc("payMine",[]).then(function(r){
       var L=((r&&r.orders)||[]).slice(0,50);
-      cashBox('<h3 style="margin:0 0 4px">결제 내역</h3><div class="sub" style="margin-bottom:12px">최근 '+L.length+'건 · 영수증은 결제할 때 토스가 보내 드린 안내에서 볼 수 있어요</div>'+
+      cashBox('<h3 style="margin:0 0 4px">결제 내역</h3><div class="sub" style="margin-bottom:12px">최근 '+L.length+'건 · 카드 결제는 «영수증»을 누르면 토스 영수증이 열려요</div>'+
         '<div style="border:1px solid #DDE3EC;border-radius:12px;max-height:56vh;overflow:auto">'+
         (L.length?L.map(function(o){var st=PAYST[o.status]||[o.status||"-","#667085"];
           return '<div style="display:flex;gap:10px;align-items:center;padding:11px 13px;border-bottom:1px solid #EEF2F7;font-size:13.5px">'+
             '<span style="min-width:74px;color:#667085;font-size:12px">'+esc2(String(o.paid_at||o.created_at||"").slice(0,10))+'</span>'+
             '<span style="flex:1;min-width:0">'+esc2(o.order_name||PAYKIND[o.kind]||"-")+'<br><small style="color:#667085">'+esc2(PAYKIND[o.kind]||o.kind||"")+(o.method?' · '+esc2(o.method):'')+(Number(o.use_cash)>0?' · 캐시 '+w(o.use_cash):'')+'</small></span>'+
             '<b style="white-space:nowrap">'+w(o.amount)+'</b>'+
-            '<span style="min-width:52px;text-align:center;font-size:12px;font-weight:700;color:'+st[1]+'">'+esc2(st[0])+'</span></div>';}).join("")
+            '<span style="min-width:52px;text-align:center;font-size:12px;font-weight:700;color:'+st[1]+'">'+esc2(st[0])+'</span>'+
+            (/^https:\/\/([a-z0-9-]+\.)*tosspayments\.com\/[^\s"'<>]*$/i.test(String(o.receiptUrl||""))
+              ? '<a href="'+esc2(o.receiptUrl)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;font-weight:700;color:#1668C4;white-space:nowrap">영수증</a>' : '')+'</div>';}).join("")
           :'<div style="padding:16px;text-align:center;color:#667085;font-size:13px">아직 결제한 내역이 없어요.</div>')+'</div>'+
         '<div class="sheetbtns" style="margin-top:14px"><button class="btn" type="button" id="phBack">이용요금 창으로</button><button class="btn" data-cwclose>닫기</button></div>');
       var bk=document.getElementById("phBack"); if(bk) bk.onclick=function(){ window.ccwPlanPay(); };

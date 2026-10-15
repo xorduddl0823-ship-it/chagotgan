@@ -114,8 +114,8 @@ FAKE = r'''<script>
       case "payDue": return {ok:true,trial:false,pgOn:true,planName:"기본 요금제",price:30000,vat:3000,full:33000,cash:0,
         period:new Date().toISOString().slice(0,7),paid:/paid=1/.test(location.search),paidUntil:"2026-11-14T15:00:00Z"};
       case "payMine": return {ok:true,pgOn:true,orders:[
-          {order_id:"PV1",kind:"plan",amount:33000,use_cash:0,status:"paid",order_name:"차곳간 기본 요금제 2026-09 이용요금",period:"2026-09",paid_at:"2026-09-14T10:00:00Z",method:"카드",created_at:"2026-09-14T09:59:00Z"},
-          {order_id:"PV2",kind:"cash",amount:50000,use_cash:0,status:"canceled",order_name:"캐시 충전",period:"",paid_at:"2026-08-02T10:00:00Z",method:"카드",created_at:"2026-08-02T10:00:00Z"}]};
+          {order_id:"PV1",kind:"plan",amount:33000,use_cash:0,status:"paid",order_name:"차곳간 기본 요금제 2026-09 이용요금",period:"2026-09",paid_at:"2026-09-14T10:00:00Z",method:"카드",created_at:"2026-09-14T09:59:00Z",receiptUrl:"https://dashboard.tosspayments.com/receipt/redirection?transactionId=PREVIEW"},
+          {order_id:"PV2",kind:"cash",amount:50000,use_cash:0,status:"canceled",order_name:"캐시 충전",period:"",paid_at:"2026-08-02T10:00:00Z",method:"카드",created_at:"2026-08-02T10:00:00Z",receiptUrl:"javascript:alert(1)"}]};
       case "cashInfo": return {ok:true,on:true,balance:0,free:0,paid:0,usedMonth:0,price:{},lots:[],logs:[]};
       case "payStart": PAY.push({fn:fn,a:a});
         if(/srv=old/.test(OLDQ)) return {ok:true,orderId:"PV"+Date.now(),amount:33000,orderName:"차곳간 기본 요금제 이용요금",
