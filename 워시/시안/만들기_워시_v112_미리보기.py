@@ -45,6 +45,8 @@ FAKE = r'''<script>
   var ROLE = (RQ==="manager"||RQ==="staff") ? RQ : "owner";
   var WHO = ROLE==="owner" ? "김대표" : (ROLE==="manager" ? "이매니저" : "박직원");
   var ME = {shop:"PREVIEW", who:WHO, role:ROLE, key:"SID-PREVIEW"};
+  /* v121~: 주소 끝 ?plan=trial 이면 체험판 계정 (로그인 답에 요금제가 같이 옴) */
+  if(/plan=trial/.test(location.search)) ME.planInfo={trial:true,name:"무료 체험",daysLeft:30};
   var MEM = {};
   /* 브라우저 저장이 막힌 곳(미리보기 창)에서도 돌아가게 */
   try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); }catch(e){
@@ -100,6 +102,9 @@ FAKE = r'''<script>
       case "pbIssue": return JSON.stringify({ok:true,ntsConfirmNum:"미리보기-0001"});
       case "pbCheck": case "pbReady": return JSON.stringify({ok:true,test:true,point:""});
       case "webAppUrl": return location.href.split("?")[0];
+      /* v121~: 요금제 — 주소 끝 ?plan=trial 이면 체험판 계정 (체험 띠 · 자물쇠) */
+      case "myPlan": if(/plan=trial/.test(OLDQ)) return {planInfo:{trial:true,name:"무료 체험",daysLeft:30}};
+        return {planInfo:{trial:false,name:"기본 요금제",price:30000,daysLeft:30,paidUntil:"2026-11-14"}};
       /* v120~: 결제 (서버 sb10 처럼) — 주소 끝 ?ab=open|on|fail 이면 자동 결제 칸이 열림 (없으면 관리 스위치 꺼짐과 같음) */
       case "payDue": return {ok:true,trial:false,pgOn:true,planName:"기본 요금제",price:30000,vat:3000,full:33000,cash:0,
         period:new Date().toISOString().slice(0,7),paid:/paid=1/.test(location.search),paidUntil:"2026-11-14T15:00:00Z"};

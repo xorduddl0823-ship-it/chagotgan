@@ -159,6 +159,7 @@ check("환불 · 계좌 입금 줄", L.some((x: any) => x.tag === "환불" && x.
 const db = L.find((x: any) => x.tag === "딜러 청구서");
 check("딜러 청구서: 상태·참고 금액·딜러명 · 딜러 번호 없음 · 합계에서 빠짐", db?.refOnly === true && db.status === "입금 전" && db.dealer === "김딜러" &&
   !JSON.stringify(pr).includes("01022223333") && pr.result.sum === 33000 * 3 + 55000 + 40000, { db, sum: pr.result?.sum });
+check("자동 결제 켠 업체 수 (sb13)", /sb12/.test(Deno.env.get("WASH_SRC") ?? "") || pr.result?.billingShops === 0, pr.result?.billingShops);
 check("첫 결제 표시", L.find((x: any) => x.orderId === "CGG1")?.first === true && L.find((x: any) => x.orderId === "CGG2")?.first === false);
 check("꼬리표로 걸러보기", (await hq("hqPayResults", ["", "", "체크"])).result.list.every((x: any) => String(x.tag).startsWith("체크")));
 
