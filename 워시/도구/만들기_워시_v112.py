@@ -81,10 +81,13 @@ rep('''el.innerHTML='🗑 휴지통'+(n?(' <span class="trbdg">'+n+'</span>'):''
     '''el.innerHTML='휴지통'+(n?(' <span class="trbdg">'+n+'</span>'):'');
     /* 빨간 개수는 사람 단추 위에 (J안) */
     var ml=document.querySelector("#hWho .mypglb");
-    if(ml)ml.innerHTML='마이페이지 · 휴지통'+(n?(' <span class="trbdg">'+n+'</span>'):'');''')
+    var own=(typeof isOwner==="function")&&isOwner();
+    if(ml)ml.innerHTML=(own?'마이페이지 · 휴지통':'마이페이지')+(own&&n?(' <span class="trbdg">'+n+'</span>'):'');''')
 rep('<span class="mypglb">👤 마이페이지</span>', '<span class="mypglb">마이페이지 · 휴지통</span>')
 rep('''  var th = mpTheme(), ly = layoutMode();''',
     '''  var trN = (S.trash || []).length;
+  /* 휴지통은 원래대로 대표만 (매니저 · 직원 설정에는 휴지통이 없음) */
+  if (setSubFor().some(function (t) { return t[0] === "trash"; }))
   h += '<div class="mcard"><div class="mh"><b>휴지통</b><span>지운 자료를 되돌려요</span></div>' +
     '<div class="mrow2"><button class="btn" data-mp="trash">휴지통 열기' + (trN ? (' (' + trN + '건)') : '') + '</button></div></div>';
 
@@ -179,7 +182,7 @@ function j4Note(){
     if(!S.me||S.mode!=="pc")return;
     if(localStorage.getItem("ccw_rn_j4"))return;
     localStorage.setItem("ccw_rn_j4","1");
-    setTimeout(function(){toast("화면이 새 모양으로 바뀌었어요. 입출고 내역 · 출고 기록은 «일감» 안에, 휴지통은 «마이페이지» 안에 있어요");},1600);
+    setTimeout(function(){toast(isOwner()?"화면이 새 모양으로 바뀌었어요. 입출고 내역 · 출고 기록은 «일감» 안에, 휴지통은 «마이페이지» 안에 있어요":"화면이 새 모양으로 바뀌었어요. 입출고 내역 · 출고 기록은 «일감» 안에 있어요");},1600);
   }catch(e){}
 }''')
 

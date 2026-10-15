@@ -25,7 +25,11 @@ FAKE = r'''<script>
 (function(){
   var DB = __SEED__;
   var REV = 1;
-  var ME = {shop:"PREVIEW", who:"김대표", role:"owner", key:"SID-PREVIEW"};
+  /* 주소에 ?role=manager 또는 ?role=staff 를 붙이면 매니저 · 직원으로 들어가 봅니다 (서버 sb2 처럼 돈 자료를 비워서 줌) */
+  var RQ = ""; try{ RQ = (new URLSearchParams(location.search).get("role")||"").toLowerCase(); }catch(e){}
+  var ROLE = (RQ==="manager"||RQ==="staff") ? RQ : "owner";
+  var WHO = ROLE==="owner" ? "김대표" : (ROLE==="manager" ? "이매니저" : "박직원");
+  var ME = {shop:"PREVIEW", who:WHO, role:ROLE, key:"SID-PREVIEW"};
   var MEM = {};
   /* 브라우저 저장이 막힌 곳(미리보기 창)에서도 돌아가게 */
   try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); }catch(e){
@@ -34,7 +38,7 @@ FAKE = r'''<script>
   }
   try{
     localStorage.setItem("ccw_sid","SID-PREVIEW"); localStorage.setItem("ccw_shop","PREVIEW");
-    localStorage.setItem("ccw_user", JSON.stringify({who:"김대표",role:"owner",phone:"01000000000"}));
+    localStorage.setItem("ccw_user", JSON.stringify({who:WHO,role:ROLE,phone:ROLE==="owner"?"01000000000":""}));
   }catch(e){}
   function put(col,id,data){ if(typeof data==="string"){ try{ data=JSON.parse(data); }catch(e){} } DB[col]=DB[col]||{}; DB[col][id]=data; REV++; }
   function answer(fn,a){
@@ -42,7 +46,13 @@ FAKE = r'''<script>
     switch(fn){
       case "me": case "login": return ME;
       case "logout": return {ok:true};
-      case "apiLoad": var d=JSON.parse(JSON.stringify(DB)); d.__rev=String(REV); d.__fast=true; return d;
+      case "apiLoad": var d=JSON.parse(JSON.stringify(DB));
+        if(ROLE!=="owner"){   /* 서버 sb2 와 같게: 청구서 · 세금계산서는 비우고, 직원 번호 · 설정 백업은 뺌 */
+          d.bills={}; d.taxdocs={};
+          Object.keys(d.staff||{}).forEach(function(k){ d.staff[k].phone=""; });
+          Object.keys(d.settings||{}).forEach(function(k){ if(k.indexOf("bak_")===0) delete d.settings[k]; });
+        }
+        d.__rev=String(REV); d.__fast=true; return d;
       case "apiStamp": return {rev:String(REV)};
       case "apiVer": return {ver:"미리보기"};
       case "ping": return {ok:true};
