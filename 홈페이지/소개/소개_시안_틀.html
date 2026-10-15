@@ -78,7 +78,7 @@ section.alt{background:var(--surface);border-block:1px solid var(--line)}
 .h2{font-size:clamp(22px,3.4vw,30px);font-weight:900;letter-spacing:-.5px}
 .sub{color:var(--muted);max-width:64ch}
 .note{font-size:13.5px;color:var(--muted)}
-.mono{font-family:var(--f-mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.mono{display:none}  /* 서버 창구 메모는 검토용 — 손님 화면에서는 숨김 (알림톡 방 워딩 검토) */
 
 .picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .pick{background:var(--surface);border:1px solid transparent;box-shadow:var(--sh);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;color:var(--ink);font-size:inherit}
@@ -180,6 +180,8 @@ a.pick{text-decoration:none}
 .contact span{color:var(--muted);font-size:14.5px;user-select:all}
 
 footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:var(--surface)}
+/* 사업자 정보(법정 표시)는 폰에서도 보여요 — 디자인 cgg-j4.css 의 머리말용 .cgg-biz 숨김(600px 이하)과 이름이 겹쳐서 되살림 */
+footer.site .cgg-biz{display:block!important}
 /* 오픈 베타 띠 (디자인 방 2026-10-15) */
 :root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
@@ -199,13 +201,13 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
   <nav class="mn" aria-label="주요 메뉴">
     <a href="#try">미리 써 보기</a>
     <a href="#price">요금제</a>
-    <a class="hide-s" href="#flow">회원가입</a>
+    <a class="hide-s" href="/join.html">회원가입</a>
     <a class="hide-s" href="#ask">문의</a>
     <a class="login" href="@@APP@@">로그인</a>
   </nav>
   <button type="button" class="burger" id="burger" aria-expanded="false" aria-controls="mnav" aria-label="메뉴 열기"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
 </div>
-  <nav class="mnav" id="mnav" hidden aria-label="전체 메뉴"><a href="#try">미리 써 보기</a><a href="#price">요금제</a><a href="#flow">회원가입</a><a href="#ask">문의</a><a href="@@APP@@">로그인</a></nav>
+  <nav class="mnav" id="mnav" hidden aria-label="전체 메뉴"><a href="#try">미리 써 보기</a><a href="#price">요금제</a><a href="/join.html">회원가입</a><a href="#flow">가입 순서</a><a href="#ask">문의</a><a href="@@APP@@">로그인</a></nav>
 </header>
 
 <main id="top">
@@ -226,7 +228,7 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
 
 <section class="blk alt gut" id="try"><div class="wrap">
   <h2 class="h2">미리 써 보기</h2>
-  <p class="sub">실제 차곳간 화면에 예시 가게 자료를 넣어 두었어요. 모든 화면을 둘러볼 수 있고, 자물쇠가 있는 버튼만 결제하면 열려요. 저장·문자·결제는 실제로 일어나지 않아요.</p>
+  <p class="sub">실제 차곳간 화면에 예시 가게 자료를 넣어 두었어요. 모든 화면을 둘러볼 수 있고, 자물쇠가 있는 버튼만 결제하면 열려요. 저장·알림·결제는 실제로 일어나지 않아요.</p>
   <div class="resume" id="resume" hidden></div>
   <div id="pickView">
     <div class="picks">
@@ -262,7 +264,7 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
 
 <section class="blk alt gut" id="flow"><div class="wrap">
   <h2 class="h2">처음 오신 분 — 요금제 고르기부터 앱이 열릴 때까지</h2>
-  <p class="sub">시안이에요. 실제로 문자·결제가 일어나지 않아요. 인증번호는 아무 6자리나 넣어도 넘어가요. 각 단계 아래 작은 글은 부르는 서버 창구예요(서버 설계 15).</p>
+  <p class="sub">가입 순서를 미리 볼 수 있어요. 여기서는 실제로 저장·알림·결제가 일어나지 않아요. 인증번호는 아무 6자리나 넣어도 넘어가요. 진짜 가입은 <a href="/join.html">회원가입 화면</a>에서 해요.</p>
   <div class="flowwrap">
     <ol class="steps" id="steps"></ol>
     <div id="flowBody"></div>
@@ -274,7 +276,6 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
   <div class="contact">
     <div><b>전화</b><span>@@TEL@@</span></div>
     <div><b>이메일</b><span>@@MAIL@@</span></div>
-    <div><b>상담 시간</b><span>평일 10:00 ~ 18:00 (예시)</span></div>
   </div>
 </div></section>
 </main>
@@ -328,7 +329,7 @@ var CLS={
   wash:[["입고 등록","try","상사·작업·금액만 고르면 끝나요"],["사진 한 장으로 번호판 읽기","try","AI가 번호판을 읽어요"],["월별 청구서 만들기","try","한 달치가 버튼 하나로 나와요"],
         ["출고 알림 자동 발송","lock","출고하면 딜러에게 바로 알림이 가요"],["청구서 보내기 · 예약 발송","lock","거래처에 한 달치 청구서를 보내요"],["세금계산서 발급","lock","국세청에 바로 발급돼요"],
         ["매출 · 일감 둘러보기","see","예시 가게의 달별 매출과 입출고 내역"]],
-  check:[["세금계산서 발급","lock","검사 건을 모아 한 번에 발급해요"],["청구서 보내기","lock","상사에 한 달치 청구서를 보내요"],["통장 연결 · 입금 자동 확인","lock","들어온 돈을 저절로 맞춰 줘요"],["홈 · 매출 · 청구서 둘러보기","see","예시 검사소의 12달 매출과 청구"]],
+  check:[["세금계산서 발급","lock","검사 건을 모아 한 번에 발급해요"],["청구서 보내기","lock","상사에 한 달치 청구서를 보내요"],["통장 연결 · 입금 자동 확인","lock","들어온 금액을 자동으로 맞춰 줘요"],["홈 · 매출 · 청구서 둘러보기","see","예시 검사소의 12달 매출과 청구"]],
   dealer:[["도착 · 출고 알림","lock","내 차 소식이 카카오톡으로 와요"],["내 차 진행 보기","see","예시 차 4대"]]
 };
 var SCREENS=20, SEEN={};
@@ -338,7 +339,7 @@ function markSeen(p, name){ if(!name) return; loadSeen(p); if(SEEN[p].indexOf(na
 function drawBand(p){
   loadSeen(p); var n=Math.min(SEEN[p].length,SCREENS);
   $("band").innerHTML=CGG.trial.band({seen:n,total:SCREENS,title:"예시 가게 자료로 "+NAME[p]+" 화면을 둘러보고 있어요 · 둘러본 화면 "+n+" / "+SCREENS,
-    sub:"자물쇠가 있는 버튼은 가입하고 결제하면 열려요. 편한 기능은 기능마다 3번까지 써 볼 수 있어요."});
+    sub:"자물쇠가 있는 버튼은 가입하고 결제하면 열려요. 몇몇 기능은 3번까지 미리 써 볼 수 있어요."});
 }
 function drawCls(p){ $("cls").innerHTML=CGG.trial.card(CLS[p]); }
 function unpack(id){
@@ -384,7 +385,7 @@ document.addEventListener("click",function(e){
   if(t.hasAttribute("data-cgg-lock")){
     var n=t.getAttribute("data-cgg-lock"), row=(CLS[inFlow?"wash":CUR]||[]).filter(function(x){ return x[0]===n; })[0];
     var L=CGG.trial.lockText(n,row&&row[2]);
-    if(inFlow) dialog("결제하면 바로 쓸 수 있어요", L.rows.concat([["고른 요금제",NAME[F.prod]+" "+P.n+" · "+won(P.price)+"원 / 월"]]), won(Math.round(P.price*1.1))+"원 결제하기", function(){ flowGo("pay"); });
+    if(inFlow) dialog("결제하면 바로 쓸 수 있어요", L.rows.concat([["고른 요금제",NAME[F.prod]+" "+P.n+" · "+won(P.price)+"원 / 30일"]]), won(Math.round(P.price*1.1))+"원 결제하기", function(){ flowGo("pay"); });
     else dialog(L.title, L.rows, L.ok, function(){ go("price"); });
     return;
   }
@@ -417,7 +418,7 @@ function drawPlans(q){
   $("plans").innerHTML=PLANS[q].map(function(p,i){
     var price = p.price===null ? '<div class="price">가격 미정</div><div class="pmeta">가격이 정해지면 열려요</div>'
               : p.price===0 ? '<div class="price">상담</div><div class="pmeta">지점 수에 맞춰 안내해 드려요</div>'
-              : '<div class="price">'+won(p.price)+'원 <small>/ 월</small></div><div class="pmeta">부가세 별도 · 결제일부터 30일</div><span class="ex">가격 예시</span>';
+              : '<div class="price">'+won(p.price)+'원 <small>/ 30일</small></div><div class="pmeta">부가세 별도 · 결제일부터 30일</div><span class="ex">가격 예시</span>';
     var btn = p.price ? '<button type="button" class="btn '+(p.best?'p':'g')+'" data-start="'+q+':'+i+'">이 요금제로 시작하기</button><a class="member" href="'+APP+'?buy='+q+'-'+p.code+'">이미 회원이면 로그인하고 결제</a>'
             : p.price===0 ? '<a class="btn g" href="#ask">상담 요청</a>'
             : '<button class="btn g" type="button" disabled>가격이 정해지면 열려요</button>';
@@ -447,18 +448,19 @@ function panel(h,cls){ $("flowBody").innerHTML='<div class="panel'+(cls?' '+cls:
 function flowGo(s){
   F.step=s; drawSteps();
   var P=F.plan, amt=won(P.price)+"원";
-  if(s==="plan") panel('<h3>고른 요금제를 확인해 주세요</h3><dl class="kv"><dt>제품</dt><dd>차곳간 '+NAME[F.prod]+'</dd><dt>요금제</dt><dd>'+esc(P.n)+'</dd><dt>금액</dt><dd>'+amt+' / 월 (부가세 별도)</dd></dl>'
-    +'<p class="lead">이 요금제를 들고 가입으로 가요. 가입이 끝나면 바로 결제 화면이 나와요.</p>'
-    +'<button class="btn p full" id="fNext">가입하고 결제하기</button><div class="links"><a href="#price">요금제 다시 고르기</a><span>·</span><a href="'+APP+'">이미 회원이에요 (로그인)</a></div><span class="mono">서버: planList()</span>');
+  if(s==="plan") panel('<h3>고른 요금제를 확인해 주세요</h3><dl class="kv"><dt>제품</dt><dd>차곳간 '+NAME[F.prod]+'</dd><dt>요금제</dt><dd>'+esc(P.n)+'</dd><dt>금액</dt><dd>'+amt+' / 30일 (부가세 별도)</dd></dl>'
+    +'<p class="lead">이 요금제로 가입을 이어 가요. 가입이 끝나면 바로 결제 화면이 나와요.</p>'
+    +'<a class="btn p full" href="/join.html?plan='+encodeURIComponent(F.prod+'-'+P.code)+'">이 요금제로 회원가입</a>'
+    +'<button class="btn g full" id="fNext" style="margin-top:8px">가입 순서 미리 보기</button><div class="links"><a href="#price">요금제 다시 고르기</a><span>·</span><a href="'+APP+'">이미 회원이에요 (로그인)</a></div><span class="mono">서버: planList()</span>');
   if(s==="phone") panel('<h3>휴대폰 인증</h3><p class="lead">대표자 휴대폰 번호를 입력해 주세요. 이 번호가 로그인 아이디가 됩니다.</p>'
     +'<label class="f" for="fPhone">휴대폰 번호</label><div class="row2"><input type="tel" id="fPhone" placeholder="010-0000-0000" value="'+esc(F.phone)+'"><button class="btn g" id="fSend">'+(F.sent?'다시 받기':'인증번호 받기')+'</button></div>'
     +(F.sent?'<label class="f" for="fCode">인증번호 6자리</label><input type="tel" id="fCode" maxlength="6" placeholder="000000">':'')
     +'<button class="btn p full" id="fNext"'+(F.sent?'':' disabled')+'>확인</button><span class="mono">서버: joinCheck([휴대폰]) → sendCode([휴대폰,"signup"]) → verifyCode([휴대폰,번호])</span>');
-  if(s==="agree") panel('<h3>약관 동의</h3><p class="lead">차곳간 이용을 위해 아래 약관에 동의해 주세요.</p>'
+  if(s==="agree") panel('<h3>약관 동의</h3><p class="lead">차곳간을 쓰려면 아래 약관에 동의해 주세요.</p>'
     +'<label class="chk"><input type="checkbox" id="aAll"> <b>전체 동의합니다</b></label>'
     +'<label class="chk"><input type="checkbox" data-a="t"> [필수] 이용약관 <a href="@@TERMS@@" target="_blank" rel="noopener">보기</a></label>'
     +'<label class="chk"><input type="checkbox" data-a="p"> [필수] 개인정보 수집·이용 <a href="@@PRIVACY@@" target="_blank" rel="noopener">보기</a></label>'
-    +'<label class="chk"><input type="checkbox" data-a="r"> [필수] 결제·환불 정책 <a href="@@REFUND@@" target="_blank" rel="noopener">보기</a></label>'
+    +'<label class="chk"><input type="checkbox" data-a="r"> [필수] 환불 규정 <a href="@@REFUND@@" target="_blank" rel="noopener">보기</a></label>'
     +'<label class="chk"><input type="checkbox" data-a="m"> [선택] 새 기능·혜택 안내 받기</label>'
     +'<button class="btn p full" id="fNext">동의하고 계속</button><span class="mono">서버: agree([휴대폰, {terms,privacy,refund}, 광고])</span>');
   if(s==="shop") panel('<h3>사업장 정보</h3><p class="lead">상호를 입력하면 업종이 자동으로 선택됩니다. 다르면 바꿔 주세요.</p>'
@@ -476,9 +478,9 @@ function flowGo(s){
     +'<button class="btn p full" id="fNext">다음</button><span class="mono">서버: payDue() (가입 때 받은 열쇠로)</span>');
   if(s==="pay") panel('<h3>결제 확인</h3><dl class="kv"><dt>요금제</dt><dd>차곳간 '+NAME[F.prod]+' '+esc(P.n)+(F.auto?' (자동 결제)':'')+'</dd><dt>기간</dt><dd>'+periodTx()+'</dd><dt>합계</dt><dd>'+total()+' (부가세 포함)<br><small style="font-weight:500;color:var(--muted)">요금 '+won(P.price)+'원 + 부가세 '+won(Math.round(P.price*1.1)-P.price)+'원</small></dd></dl>'
     +'<button class="btn p full" id="fToss">'+total()+' 결제하기</button>'
-    +'<div class="toss" id="tossBox" hidden><b>토스페이먼츠 결제 창</b><span>실제 화면에서는 이 자리에 토스 결제 창이 떠요. 토스 심사용 테스트 결제 창 캡처를 여기에 넣어요.</span>'
+    +'<div class="toss" id="tossBox" hidden><b>토스페이먼츠 결제 창</b><span>실제 가입에서는 이 자리에 토스 결제 창이 떠요.</span>'
     +'<div class="links" style="justify-content:center;margin-top:8px"><button class="btn p" id="fOk">결제 성공으로 보기</button><button class="btn g" id="fQuit">창 닫기 · 실패로 보기</button></div></div>'
-    +'<p class="note">금액은 서버가 요금제 표로 다시 계산해요. 결제를 그만두셔도 계정은 남고, 다음 로그인 때 이어서 결제할 수 있어요.</p>'
+    +'<p class="note">결제 직전에 금액을 한 번 더 확인해요. 결제를 그만두셔도 계정은 남고, 다음 로그인 때 이어서 결제할 수 있어요.</p>'
     +'<span class="mono">서버: payStart(["plan",0,0]) → 토스 v2 결제창 → payConfirm([orderId, paymentKey, amount])</span>');
   if(s==="done") panel('<div class="okmsg">결제가 완료되었습니다.</div><h3>차곳간 '+NAME[F.prod]+'가 열렸어요</h3>'
     +'<p class="lead">「'+esc(F.biz||"우리 가게")+'」 이름으로 빈 화면에서 시작해요. 예시 자료는 사라지고, 첫 설정 안내가 먼저 나와요.</p>'
@@ -505,7 +507,7 @@ function bind(){
     $("fBiz").oninput=function(){ var s=$("fBiz").value; if(/휠/.test(s)) $("fKind").value="wheel"; else if(/공업사|모터스|정비|판금|도색|덴트/.test(s)) $("fKind").value="repair"; else if(/광택|세차|디테일|코팅/.test(s)) $("fKind").value="wash"; };
     n.onclick=function(){ F.biz=$("fBiz").value.trim(); F.owner=$("fOwner").value.trim(); F.kind=$("fKind").value;
       if(!F.biz) return say("상호를 입력해 주세요.","bad"); if(!F.owner) return say("대표자 이름을 입력해 주세요.","bad");
-      if(($("fPw").value||"").length<6) return say("비밀번호는 6자 이상 입력해 주세요.","bad"); if($("fPw").value!==$("fPw2").value) return say("비밀번호가 일치하지 않습니다.","bad");
+      if(($("fPw").value||"").length<6) return say("비밀번호는 6자 이상 입력해 주세요.","bad"); if($("fPw").value!==$("fPw2").value) return say("비밀번호가 서로 다릅니다. 다시 입력해 주세요.","bad");
       flowGo("how"); };
   }
   if(F.step==="how"){
@@ -515,7 +517,7 @@ function bind(){
   if(F.step==="pay"){
     $("fToss").onclick=function(){ $("tossBox").hidden=false; $("fToss").disabled=true; };
     $("fOk").onclick=function(){ flowGo("done"); };
-    $("fQuit").onclick=function(){ dialog("결제가 완료되지 않았습니다", [["계정","남아 있습니다 (결제 기다림)"],["다음 로그인","체험판 화면 + 「결제 이어 하기」"]], "다음 로그인 화면 보기", function(){ flowGo("wait"); }, "결제 창을 닫았거나 결제에 실패했습니다. 다시 결제할 수 있습니다."); };
+    $("fQuit").onclick=function(){ dialog("결제가 완료되지 않았습니다", [["계정","그대로 있습니다"],["다음 로그인","체험판 화면과 「결제 이어 하기」 버튼"]], "다음 로그인 화면 보기", function(){ flowGo("wait"); }, "결제가 완료되지 않았습니다. 다음에 로그인하면 이어서 결제할 수 있습니다."); };
   }
 }
 /* 결제 이어 하기 = 체험판(미리 써 보기와 같은 체험 모드) 위에 띠 */
@@ -525,7 +527,7 @@ function drawWait(){
   var P=F.plan;
   $("flowBody").innerHTML='<div class="panel wide">'
     +'<p class="note">결제를 마치지 않은 손님이 다시 로그인하면 이렇게 보여요. 화면은 미리 써 보기와 같은 체험 모드이고, 실제 저장·문자·세금계산서는 서버가 막아요. 결제를 권하는 알림톡은 보내지 않아요.</p>'
-    +'<div class="paywait"><span class="tag">체험판</span><span class="tx"><b>결제를 마치면 「'+esc(F.biz||"우리 가게")+'」 자료로 시작해요</b><small>고른 요금제: '+NAME[F.prod]+' '+esc(P.n)+' · '+won(P.price)+'원 / 월 (부가세 별도)</small></span>'
+    +'<div class="paywait"><span class="tag">체험판</span><span class="tx"><b>결제를 마치면 「'+esc(F.biz||"우리 가게")+'」 자료로 시작해요</b><small>고른 요금제: '+NAME[F.prod]+' '+esc(P.n)+' · '+won(P.price)+'원 / 30일 (부가세 별도)</small></span>'
     +'<button type="button" class="pay" id="wPay">'+total()+' 결제하기</button><button type="button" class="chg" id="wChg">요금제 바꾸기</button></div>'
     +'<div class="trybox"><div class="frame" id="waitStage"></div><div class="side" id="waitSide"></div></div>'
     +'<span class="mono">서버: 로그인 → lockInfo {state:"pay", joinPlan} → 체험 모드로 열기 · 편한 기능은 trialUse([기능]) → {ok,left} · 잠긴 것은 {__lock:{state:"pay"}} · 요금제 바꾸기 joinPlanSet([요금제]) · 결제는 payDue → payStart → payConfirm 부터 다시</span></div>';

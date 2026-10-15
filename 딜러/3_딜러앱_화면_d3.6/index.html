@@ -378,17 +378,32 @@ body.shell{padding:0;background:var(--bg)}
 .cardlg .photo{height:170px}
 .cgg-app .sheet-wrap{z-index:calc(var(--z-dialog) + 1)}
 
-/* d3.6 — 오픈 베타 띠 (홈페이지 시안 «넣은 안» 과 같은 모양) */
-:root{--beta:#0d2440;--beta-ink:#e8f0fb}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta:#1d3a5f;--beta-ink:#e8f0fb}}
-:root[data-theme="dark"]{--beta:#1d3a5f;--beta-ink:#e8f0fb}
-.beta{background:var(--beta);color:var(--beta-ink);font-size:13.5px;word-break:keep-all}
-.beta .wrap{padding:8px 12px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center}
-.beta b{background:var(--beta-ink);color:var(--beta);border-radius:6px;padding:0 7px;font-size:12px;letter-spacing:.04em}
-.phone:not(.cgg-app)>.beta{border-radius:0}
-/* 로그인 · 동의 · 창 글도 낱말 단위 줄바꿈 (공통 부품 밖) */
+/* 오픈 베타 띠 (디자인 방 2026-10-15) */
+:root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
+:root[data-theme="dark"]{--beta-bg:#1d3a5f}
+.cgg-beta{background:var(--beta-bg);color:var(--beta-ink);font-size:13.5px;line-height:1.5;word-break:keep-all}
+.cgg-beta .in{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;
+  padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
+.cgg-beta[hidden]{display:none}
+@media (max-width:600px){.cgg-beta{font-size:12.5px}.cgg-beta .in{display:block;padding-block:6px}.cgg-beta b{margin-right:6px}}
+/* d3.6 — 넓은 화면 세로 · 아이콘 메뉴는 메뉴 · 윗줄이 화면에 붙어 있어 띠를 가림 → 띠를 본문 위에 붙이고 붙은 줄을 띠 높이(36px)만큼 내림 */
+@media (min-width:1000px){
+  .cgg-beta:not([hidden]):has(~ .lay-side),.cgg-beta:not([hidden]):has(~ .lay-icon){position:fixed;top:0;right:0;left:252px;height:36px;z-index:var(--z-hdr);overflow:hidden;white-space:nowrap}
+  .cgg-beta:not([hidden]):has(~ .lay-icon){left:76px}
+  .cgg-beta:not([hidden]) ~ .lay-side .cgg-right,.cgg-beta:not([hidden]) ~ .lay-icon .cgg-right,.cgg-beta:not([hidden]) ~ .lay-icon .cgg-biz{top:36px}
+  .cgg-beta:not([hidden]) ~ .lay-side .cgg-sub,.cgg-beta:not([hidden]) ~ .lay-icon .cgg-sub{top:100px}
+  .cgg-beta:not([hidden]) ~ .lay-side > .cgg-main,.cgg-beta:not([hidden]) ~ .lay-icon > .cgg-main{padding-top:122px}
+  .cgg-beta:not([hidden]) ~ .lay-side.hasSub > .cgg-main,.cgg-beta:not([hidden]) ~ .lay-icon.hasSub > .cgg-main{padding-top:168px}
+}
+/* d3.6 — 로그인 · 동의 화면(넓은 화면)은 바깥 여백 16px 이 있어 띠가 떠 보임 → 띠만 맨 위 · 가장자리까지 */
+@media (min-width:480px){body:not(.shell) > .cgg-beta{margin:-16px -16px 16px}}
+/* d3.6 — 좁은 PC(1000~1279px)에서 세로 메뉴를 쓰면 숫자 카드 글이 한 글자씩 꺾이던 것 (d3.5부터) → 두 칸으로 */
+@media (min-width:1000px) and (max-width:1279px){.lay-side .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1000px){.kpi:not(:has(svg.sp)) small{padding-right:0}}
+/* d3.6 — 로그인 · 동의 · 창 글도 낱말 단위 줄바꿈 (공통 부품 밖) */
 .phone,.sheet,.cardlg{word-break:keep-all;overflow-wrap:anywhere}
-@media (max-width:600px){.beta{font-size:12.5px}.beta .wrap{padding:6px 12px;gap:6px}}
 
 /* ═══════════════════════════════════════════════════════════════════
    차곳간 공통 부품 · J안 4판 · cgg-j4 1.5 (2026-10-15, 디자인 방)
@@ -684,6 +699,7 @@ body.shell{padding:0;background:var(--bg)}
 </style>
 </head>
 <body>
+<div class="cgg-beta" id="cggBeta" role="note"><div class="in"><b>오픈 베타</b><span>차곳간은 지금 오픈 베타예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span></div></div>
 <div class="phone" id="phone"></div>
 <script>
 /* ═══════════════════════════════════════════════════════════════════
@@ -944,6 +960,7 @@ var CGG = (function(){
 </script>
 <script>
 "use strict";
+try{ if(window.top!==window.self){ document.getElementById("cggBeta").hidden=true; } }catch(e){ document.getElementById("cggBeta").hidden=true; }
 /* =========================================================
    차곳간 딜러앱 — 화면 (dealer.cgg.co.kr)   판: d2
    모양은 «딜러앱 화면 시안»과 똑같이, 자료는 진짜(수파베이스 dealer-api)로.
@@ -972,7 +989,7 @@ var CARSVG='<svg viewBox="0 0 200 80" fill="none" stroke="#8FC9F2" stroke-width=
 var TERMS="차곳간 딜러 이용약관 (d1-2026-10)\n\n"+
 "제1조 (목적) 이 약관은 티와이컴퍼니(이하 «회사»)가 운영하는 «차곳간 딜러»(이하 «서비스»)를 이용하는 조건과 절차를 정합니다.\n\n"+
 "제2조 (서비스 내용) 서비스는 딜러가 차곳간을 쓰는 업체(광택·세차, 휠복원, 판금·도색 등)에 맡긴 차량의 입고·출고·위치·사진 등 진행 정보를 보여 줍니다. 진행 정보는 각 업체가 입력한 내용이며, 회사는 그 정확성을 보증하지 않습니다.\n\n"+
-"제3조 (이용 요금) 기본 서비스는 무료입니다. 유료 서비스(예: 차량 이력 조회)가 생기면 이용 전에 요금을 알립니다.\n\n"+
+"제3조 (이용요금) 기본 서비스는 무료입니다. 유료 서비스(예: 차량 이력 조회)가 생기면 이용 전에 요금을 알립니다.\n\n"+
 "제4조 (계정) 휴대폰 번호와 인증번호로 로그인합니다. 본인 번호가 아닌 번호로 로그인해서는 안 됩니다.\n\n"+
 "제5조 (이용 제한) 남의 번호로 들어오거나 서비스를 방해하는 경우 이용을 멈출 수 있습니다.\n\n"+
 "제6조 (해지) 딜러는 «내 정보 → 동의 철회»로 언제든 이용을 그만둘 수 있습니다.\n\n"+
@@ -1007,21 +1024,27 @@ function day(iso){if(!iso)return "";var d=new Date(iso);if(isNaN(d))return "";
 function $(id){return document.getElementById(id);}
 
 /* ---------- 서버 ---------- */
+function inLogin(){return S.view==="login"||S.view==="agree";}
+function errStd(){return inLogin()?"처리하지 못했습니다. 잠시 후 다시 시도해 주세요.":"처리하지 못했어요. 다시 시도해 주세요.";}
+function safeMsg(m){m=String(m==null?"":m).trim();
+  if(m&&m.length<=80&&/[가-힣]/.test(m)&&!/[A-Za-z_]{3,}|[{}<>\n]/.test(m))return m;
+  try{console.warn("dealer-api 오류",m.slice(0,200));}catch(_){}return errStd();}
+function errMsg(e){return safeMsg(e&&e.message);}
 function api(fn,args){
   if(DEMO)return demoApi(fn,args||[]);
   return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
     body:JSON.stringify({fn:fn,args:args||[],token:S.key})})
-  .then(function(r){return r.text();},function(){throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");})
-  .then(function(t){var j;try{j=JSON.parse(t);}catch(e){try{console.warn("dealer-api 응답",String(t).slice(0,200));}catch(_){}throw new Error("서버 응답을 읽지 못했습니다. 잠시 뒤 다시 시도해 주세요.");}
+  .then(function(r){return r.text();},function(){throw new Error("연결이 잠시 끊겼어요. 다시 시도해 주세요.");})
+  .then(function(t){var j;try{j=JSON.parse(t);}catch(e){try{console.warn("dealer-api 응답",String(t).slice(0,200));}catch(_){}throw new Error(inLogin()?"정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.":"정보를 불러오지 못했어요. 다시 시도해 주세요.");}
     if(j&&j.__login){forget();S.err="로그인 시간이 지났습니다. 다시 로그인해 주세요.";render();throw new Error("로그인 시간이 지났습니다. 다시 로그인해 주세요.");}
     if(j&&j.__agree){S.agreed=false;S.view="agree";render();throw new Error("약관 동의가 필요합니다.");}
-    if(j&&j.__err)throw new Error(j.__err);
+    if(j&&j.__err)throw new Error(safeMsg(j.__err));
     if(!j||!("result" in j)){var m=(j&&(j.msg||j.message||j.error))||"";
       try{console.warn("dealer-api 응답",m||String(t).slice(0,200));}catch(_){}
-      throw new Error("서버에서 답을 받지 못했습니다. 잠시 뒤 다시 시도해 주세요.");}
+      throw new Error(inLogin()?"정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.":"정보를 불러오지 못했어요. 다시 시도해 주세요.");}
     return j.result;});
 }
-function forget(){S.carT=null;S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;ls("cgd_key",null);S.view="login";S.step=1;S.sheet=null;render();}
+function forget(){S.carT=null;S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;S.name="";S.phone="";S.detail=null;S.seen=null;ls("cgd_key",null);ls("cgd_phone",null);ls("cgd_seen",null);ls("cgd_pref",null);S.view="login";S.step=1;S.sheet=null;render();}
 
 /* ---------- 시연 자료 (시안과 같은 차) ---------- */
 function ago(d,h,m){return new Date(Date.now()-d*864e5-h*36e5-(m||0)*6e4).toISOString();}
@@ -1075,8 +1098,8 @@ function events(){
     var nm=((x.model||"").split(" ")[1]||x.model||"").trim(),who=x.plate+(nm?" "+nm:"");
     E.push({k:"in",t:x.shopName+" 입고",d:ga(who)+" "+x.shopName+"에 입고됐어요.",at:x.inAt,via:"기록"});
     if(x.outAt){
-      if(x.stage==="출고"&&x.dest)E.push({k:"out",t:x.shopName+" 출고",d:ga(who)+" 출고돼 "+ro(x.dest)+" 이동 중이에요.",at:x.outAt,via:"문자"});
-      else E.push({k:"arr",t:"목적지 도착",d:ga(who)+" "+(x.dest||"목적지")+"에 도착했어요.",at:x.outAt,via:"문자"});
+      if(x.stage==="출고"&&x.dest)E.push({k:"out",t:x.shopName+" 출고",d:ga(who)+" 출고돼 "+ro(x.dest)+" 이동 중이에요.",at:x.outAt,via:"알림톡"});
+      else E.push({k:"arr",t:"목적지 도착",d:ga(who)+" "+(x.dest||"목적지")+"에 도착했어요.",at:x.outAt,via:"알림톡"});
     }
   });
   E.sort(function(a,b){return a.at<b.at?1:a.at>b.at?-1:0;});
@@ -1085,7 +1108,7 @@ function events(){
 function unread(){var s=S.seen||"";return events().filter(function(e){return e.at>s;}).length;}
 
 /* ---------- 그리기 (시안과 같은 모양) ---------- */
-var NK={in:["입고","var(--tint)","var(--blue)"],out:["출고","var(--goodbg)","var(--good)"],arr:["도착","var(--goodbg)","var(--good)"],bill:["청구","var(--warnbg)","var(--warn)"],re:["재검","var(--badbg)","var(--bad)"]};
+var NK={in:["입고","var(--tint)","var(--blue)"],out:["출고","var(--goodbg)","var(--good)"],arr:["도착","var(--goodbg)","var(--good)"],bill:["청구","var(--warnbg)","var(--warn)"],re:["재검사","var(--badbg)","var(--bad)"]};
 function topBar(title,sub,back){
   var u=S.cars?unread():0;
   return '<div class="top">'+(back?'<button class="back" data-act="back" aria-label="뒤로">‹</button>':LOGO)+
@@ -1098,7 +1121,7 @@ function tabs(){
   return '<nav class="tabs" aria-label="메뉴">'+T.map(function(t){var on=cur===t[0]||(t[0]==="more"&&inMore);
     return '<button class="'+t[3]+'" data-act="tab" data-v="'+t[0]+'" '+(on?'aria-current="page"':'')+'>'+ICON[t[2]]+t[1]+'</button>';}).join("")+'</nav>';
 }
-function demoBar(){return DEMO?'<div style="background:var(--warnbg);color:var(--warn);font-size:12px;font-weight:700;text-align:center;padding:6px">시연 화면입니다. 실제 자료가 아닙니다.</div>':'';}
+function demoBar(){return DEMO?'<div style="background:var(--warnbg);color:var(--warn);font-size:12px;font-weight:700;text-align:center;padding:6px">시연 화면 — 실제 자료가 아니에요</div>':'';}
 
 /* ---------- d3.0 자료 계산 (서버에서 받은 내 차 기록만으로) ---------- */
 function sod(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
@@ -1133,10 +1156,10 @@ function today(){var d=new Date();return (d.getMonth()+1)+"월 "+d.getDate()+"�
 
 /* 홈 — 할 일 3가지 · 숫자 카드 4개 (둘 다 가안: 시안을 보고 대표님이 정함) */
 function homeView(){
-  if(S.cars===null)return '<div class="card" style="color:var(--sub);text-align:center">내 차를 불러오는 중…</div>';
+  if(S.cars===null)return '<div class="card" style="color:var(--sub);text-align:center">내 차를 불러오는 중이에요…</div>';
   var g=G(),who=S.name?esc(S.name)+" 님":"딜러님";
   var h1=!g.all.length?'아직 내 번호로 맡겨진 차가 없어요'
-    :g.arr.length?'도착한 차 <em>'+g.arr.length+'대</em>가 완료를 기다려요'
+    :g.arr.length?'도착한 차 <em>'+g.arr.length+'대</em>가 상품화 완료를 기다려요'
     :g.work.length?'작업 중인 차 <em>'+g.work.length+'대</em>가 있어요':'오늘 확인할 차가 없어요';
   var A=[
     g.arr.length?{tone:"chk",icon:"car",title:"도착한 차 "+g.arr.length+"대 «상품화 완료» 누르기",sub:names(g.arr)+" · 확인하고 눌러 주세요",go:"도착"}
@@ -1148,7 +1171,7 @@ function homeView(){
   S.todo=A;
   var d=g.wk-g.pwk;
   var K=[["작업 중인 차",g.work.length,"#1668C4","","작업 중"],["오늘 출고·도착",g.today.length,"#4C93E0","","전체"],
-         ["결제할 청구서 금액",S.bills?won(billSum()).replace("원",""):"…","#0B2545","","BILLS","원"],["완료 기다리는 차",g.arr.length,"#E08A00","","도착"]];
+         ["낼 청구서 금액",S.bills?won(billSum()).replace("원",""):"…","#0B2545","","BILLS","원"],["상품화 기다리는 차",g.arr.length,"#E08A00","","도착"]];
   return hello('안녕하세요, '+who+' · '+today(),h1,'')+
    '<div class="cgg-acts"></div>'+
    '<div class="kpis">'+K.map(function(k,i){return '<button class="kpi" data-act="go" data-v="'+k[4]+'"><small><i style="background:'+k[2]+'"></i>'+k[0]+'</small>'+''+
@@ -1165,10 +1188,10 @@ function moreView(){
 function carsList(list,mini){
   var sel=S.sel,n=list.filter(function(c){return sel[c.key];}).length;
   var rows=list.map(function(c){var st=stageOf(c),sm=sumOf(c.plate),k=esc(c.key),cls=isDone(c)?"p-fin":PILL[c.stage];
-    return {m:'<div class="mrow"><input type="checkbox" data-sel="'+k+'"'+(sel[c.key]?' checked':'')+' aria-label="'+esc(c.plate)+' 고르기">'+
+    return {m:'<div class="mrow"><input type="checkbox" data-sel="'+k+'"'+(sel[c.key]?' checked':'')+' aria-label="'+esc(c.plate)+' 선택">'+
       '<div class="t" data-act="car" data-s="'+esc(c.shop)+'" data-v="'+esc(c.id)+'"><b>'+esc(c.where)+'<span>'+esc(c.plate)+'</span></b><small>'+esc([c.model||"차종 없음",worksOf(c),lastAt(c.at)].filter(Boolean).join(" · "))+'</small></div>'+
       '<div class="r" data-act="car" data-s="'+esc(c.shop)+'" data-v="'+esc(c.id)+'"><b>'+(sm?won(sm):"—")+'</b><span class="pill '+cls+'" style="margin:0">'+esc(st)+'</span><span class="mbar">'+STAGES.map(function(_,i){return '<i class="'+(isDone(c)||i<=stepOf(c)?'on':'')+'"></i>';}).join("")+'</span></div></div>',
-     t:'<tr data-act="car" data-s="'+esc(c.shop)+'" data-v="'+esc(c.id)+'"><td class="c" data-stop><input type="checkbox" data-sel="'+k+'"'+(sel[c.key]?' checked':'')+' aria-label="'+esc(c.plate)+' 고르기"></td>'+
+     t:'<tr data-act="car" data-s="'+esc(c.shop)+'" data-v="'+esc(c.id)+'"><td class="c" data-stop><input type="checkbox" data-sel="'+k+'"'+(sel[c.key]?' checked':'')+' aria-label="'+esc(c.plate)+' 선택"></td>'+
       '<td><b>'+esc(c.where)+'</b></td><td>'+esc(c.plate)+'</td><td>'+esc(c.model||"차종 없음")+'</td><td>'+esc(worksOf(c))+'</td><td>'+esc(lastAt(c.at))+'</td>'+
       '<td class="n">'+(sm?won(sm):"—")+'</td><td class="c"><span class="pill '+cls+'" style="margin:0">'+esc(st)+'</span></td></tr>'};});
   return '<div class="lcard">'+(mini?'<div class="ltools" style="font-weight:700">최근 내 차<button class="btn sec2" data-act="tab" data-v="cars" style="width:auto;margin-left:auto">모두 보기</button></div>':'')+
@@ -1179,12 +1202,12 @@ function carsList(list,mini){
 }
 var STMAP={"입고":"run","작업 중":"run","출고":"run","도착":"chk","상품화 완료":"done"};
 function carsView(){
-  if(S.cars===null)return '<div class="card" style="color:var(--sub);text-align:center">내 차를 불러오는 중…</div>';
+  if(S.cars===null)return '<div class="card" style="color:var(--sub);text-align:center">내 차를 불러오는 중이에요…</div>';
   var g=G(),all=g.all;
   var h=CGG.head({crumb:'내 차 · '+today(),title:'작업 중인 차 <em>'+g.work.length+'대</em>, 도착한 차 <em>'+g.arr.length+'대</em>가 있어요',desc:'업체에 맡긴 내 차가 지금 어디 있는지, 어디까지 됐는지 확인해요.',
     acts:all.length?[{label:"선택한 차 상품화 완료",pri:true,id:"finSel",disabled:true}]:[]});
   if(!all.length)return h+'<div class="card lempty">아직 내 번호로 맡겨진 차가 없어요.<br>업체에 차를 맡길 때 <b>'+esc(telFmt(S.phone))+'</b> 번호를 알려 주세요.</div>';
-  return h+'<div id="carTbl"></div>'+CGG.help('업체가 입고 · 출고를 찍으면 여기에 바로 보여요. 지금 위치를 누르면 사진과 지나온 기록(최근이 위)이 나와요. 내 상사에 도착한 차는 골라서 «선택한 차 상품화 완료»를 눌러 주세요. 금액이 «—»이면 업체가 아직 금액을 넣지 않은 거예요.');
+  return h+'<div id="carTbl"></div>'+CGG.help('업체가 입고 · 출고를 기록하면 여기에 바로 보여요. 지금 위치를 누르면 사진과 지나온 기록(최근이 위)이 나와요. 내 상사에 도착한 차는 골라서 «선택한 차 상품화 완료»를 눌러 주세요. 금액이 «—»이면 업체가 아직 금액을 넣지 않은 거예요.');
 }
 function openCar(wait){
   var c=S.detail&&S.detail.car;
@@ -1201,7 +1224,7 @@ function wireCars(ph){
   var keep=S.carT.sel||{},n0=Object.keys(keep).filter(function(i){return keep[i]&&L[i];});
   n0.forEach(function(i){S.sel[L[i].key]=true;});
   CGG.table(el,{state:S.carT,cols:["지금 위치","차량번호","차종","작업","마지막 기록","들어간 금액","단계"],kinds:["name","id","text","text","date","money","state"],rows:rows,
-    tabs:[["","전체"],["입고","입고"],["작업 중","작업 중"],["출고","출고"],["도착","도착"]],stateMap:STMAP,find:"차량번호 · 차종 · 업체 찾기",
+    tabs:[["","전체"],["입고","입고"],["작업 중","작업 중"],["출고","출고"],["도착","도착"]],stateMap:STMAP,find:"차량번호 · 차종 · 업체 검색",
     sorts:[[4,-1,"최근 기록순"],[1,1,"차량번호순"],[5,-1,"금액 높은순"],[6,1,"단계순"]],
     mline:function(x){return [x[2],x[3],x[4]].filter(Boolean).join(" · ");},
     onName:function(x,i){var c=L[i];act("car",{getAttribute:function(k){return k==="data-s"?c.shop:c.id;}});},
@@ -1210,7 +1233,7 @@ function wireCars(ph){
   if(fin)fin.onclick=function(){act("finishSel");};
 }
 function carView(){
-  var D=S.detail;if(!D||!D.car)return '<div class="card" style="color:var(--sub);text-align:center">불러오는 중…</div>';
+  var D=S.detail;if(!D||!D.car)return '<div class="card" style="color:var(--sub);text-align:center">불러오는 중이에요…</div>';
   var c=D.car,trail=D.trail||[],sum=trail.reduce(function(a,x){return a+(Number(x.total)||0);},0),done=isDone(c);
   var shots=D.shots||[];
   var photo=shots.length?'<div class="photo" data-act="big" data-v="0" style="cursor:zoom-in"><img src="'+esc(shots[0].url)+'" alt="'+esc(shots[0].tag)+' 사진" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"><small style="background:rgba(11,37,69,.7);border-radius:6px;padding:2px 6px;opacity:1">'+esc(shots[0].tag)+' 사진 · '+shots.length+'장 · 눌러서 보기</small></div>'
@@ -1227,7 +1250,7 @@ function carView(){
   '<div class="card" style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--sub)">지금까지 들어간 금액</span>'+
     (sum?'<b class="num" style="font-size:18px">'+won(sum)+'</b>':'<span style="color:var(--sub);font-size:13px">업체가 아직 금액을 넣지 않았어요</span>')+'</div>'+
   '<div class="two"><button class="btn sec2" data-act="tab" data-v="hist">카히스토리 조회</button>'+
-  (done?'<button class="btn sec2" data-act="unfinish">완료 취소</button>':'<button class="btn pri" data-act="finish">상품화 완료</button>')+'</div>';
+  (done?'<button class="btn sec2" data-act="unfinish">상품화 완료 취소</button>':'<button class="btn pri" data-act="finish">상품화 완료</button>')+'</div>';
 }
 /* 상품화 진행 기록 — 택배 조회처럼 시간순 (최근이 맨 위) */
 function hm(iso){var d=new Date(iso);if(isNaN(d))return "";return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
@@ -1264,7 +1287,7 @@ function hasDue(b){return /^\d{4}-\d{2}-\d{2}/.test(String(b.dueDate||""));}
 function dueLeft(b){if(!hasDue(b))return 9999;var x=new Date(String(b.dueDate).slice(0,10)+"T00:00:00");return Math.round((x-sod(new Date()))/864e5);}
 function md(d){return String(d).slice(5,10).replace("-","/");}
 function monthKey(b){var m=String(b.month||""),y=m.match(/(\d{4})\D+(\d{1,2})/);if(y)return +y[1]*100+ +y[2];var k=m.match(/(\d{1,2})/);return k?+k[1]:99;}
-function dueTxt(b){if(isPaid(b))return "입금 확인됨";if(!hasDue(b))return "";var n=dueLeft(b);
+function dueTxt(b){if(isPaid(b))return "입금 확인";if(!hasDue(b))return "";var n=dueLeft(b);
   return n<0?"기한 "+md(b.dueDate)+" · "+(-n)+"일 지남":n===0?"기한 오늘("+md(b.dueDate)+")":"기한 "+md(b.dueDate)+" · "+n+"일 남음";}
 function billList(){var L=(S.bills||[]).slice();
   /* 입금 전 먼저 → 기한 있는 것은 기한 순 → 기한 없는 것은 월 순 (결제/10 D4) */
@@ -1272,15 +1295,15 @@ function billList(){var L=(S.bills||[]).slice();
     if(hasDue(a)&&hasDue(b))return dueLeft(a)-dueLeft(b);if(hasDue(a)!==hasDue(b))return hasDue(a)?-1:1;return monthKey(a)-monthKey(b);});return L;}
 function billSum(){return (S.bills||[]).filter(function(b){return !isPaid(b);}).reduce(function(a,b){return a+(Number(b.due)||0);},0);}
 function billsView(){
-  if(!S.bills)return '<div class="card" style="color:var(--sub);text-align:center">청구서를 불러오는 중…</div>';
+  if(!S.bills)return '<div class="card" style="color:var(--sub);text-align:center">청구서를 불러오는 중이에요…</div>';
   var L=billList(),open=L.filter(function(b){return !isPaid(b);}),late=open.filter(function(b){return dueLeft(b)<0;});
   var withDue=open.filter(hasDue),first=withDue.length?withDue.reduce(function(a,b){return dueLeft(a)<=dueLeft(b)?a:b;}):null;
-  var h=hello('청구서 · '+today(),open.length?'이번 달 낼 금액 <em>'+won(billSum())+'</em>':'낼 청구서가 없어요',
+  var h=hello('청구서 · '+today(),open.length?'낼 금액 <em>'+won(billSum())+'</em>':'낼 청구서가 없어요',
     open.length?'업체 '+open.length+'곳'+(late.length?' · <b style="color:var(--stop)">기한 지난 곳 '+late.length+'곳</b>':'')+(first?' · 가장 빠른 기한 '+md(first.dueDate):''):'업체가 내 번호로 청구서를 보내면 여기에 모여요.');
   if(!L.length)return h+(S.billsReady===false&&!DEMO?'<div class="card lempty">청구서 모아 보기를 준비하고 있어요. 그동안은 업체가 보낸 알림톡의 청구서를 봐 주세요.</div>':'');
   return h+'<div class="bills">'+L.map(function(b){var n=dueLeft(b),pd=isPaid(b),st=pd?"b-done":n<0?"b-late":"b-open";
     return '<div class="bill '+st+'"><div class="bh"><div><b>'+esc(b.shop)+'</b><small>'+esc([b.month,b.cars?b.cars+"대":"",b.name].filter(Boolean).join(" · "))+'</small></div>'+
-      '<span class="pill p-'+(pd?'fin':n<0?'late':'arr')+'" style="margin:0">'+(pd?'입금 확인됨':n<0?'기한 지남':'입금 전')+'</span></div>'+
+      '<span class="pill p-'+(pd?'fin':n<0?'late':'arr')+'" style="margin:0">'+(pd?'입금 확인':n<0?'기한 지남':'입금 전')+'</span></div>'+
       '<div class="bm"><strong class="num">'+won(pd?b.amount:b.due)+'</strong>'+(dueTxt(b)?'<span>'+esc(dueTxt(b))+'</span>':'')+'</div>'+
       (pd?'':(b.bank?'<div class="acct"><span>'+esc(b.bank)+'</span></div>':'')+
         '<div class="bb">'+(b.bank?'<button class="btn sec2" data-act="copy" data-v="'+esc(b.bank)+'" data-m="계좌를">계좌 복사</button>':'')+
@@ -1288,7 +1311,7 @@ function billsView(){
         '<button class="btn sec2" data-act="billView" data-v="'+esc(b.url||"")+'">내역 보기</button></div>')+
       (pd?'<div class="bb one"><button class="btn sec2" data-act="billView" data-v="'+esc(b.url||"")+'">내역 보기</button></div>':'')+'</div>';}).join("")+'</div>'+
    (open.length?'<div class="soon">'+CGG.ic("lock")+'<span><b>한 번에 결제는 곧 열려요.</b> 지금은 업체마다 계좌로 보내 주세요.</span></div>':'')+
-   (open.length?'<div class="note">휴대폰이면 «계좌 복사»를 누른 뒤 은행 앱을 열어 붙여 넣어 주세요. 금액도 따로 복사할 수 있어요.<br>입금하면 업체가 확인한 뒤 «입금 확인됨»으로 바뀌어요. 차곳간은 금액을 받지 않고, 업체 계좌로 바로 보내요.</div>':'')+
+   (open.length?'<div class="note">휴대폰이면 «계좌 복사»를 누른 뒤 은행 앱을 열어 붙여 넣어 주세요. 금액도 따로 복사할 수 있어요.<br>입금하면 업체가 확인한 뒤 «입금 확인»으로 바뀌어요. 차곳간은 금액을 받지 않고, 업체 계좌로 바로 보내요.</div>':'')+
    '<details class="help"><summary>이 화면 사용법</summary><p>업체가 내 번호로 보낸 청구서가 업체 · 달마다 한 장씩 모여요. 기한이 지난 것이 맨 위에 와요. «내역 보기»를 누르면 업체가 보낸 청구서(차별 작업과 금액)가 열려요. 한 번에 결제하는 기능은 나중에 열려요.</p></details>';
 }
 function histView(){
@@ -1316,7 +1339,7 @@ function meView(){
   '<div class="card" id="layBox"></div>'+
   '<div class="sec">번호</div>'+
   '<div class="card" style="padding-block:4px">'+
-    '<div class="set"><div>'+esc(telFmt(S.phone))+'<small>로그인 번호 · 업체에 알려 준 번호</small></div><span class="pill p-in" style="margin:0">대표</span></div>'+
+    '<div class="set"><div>'+esc(telFmt(S.phone))+'<small>로그인 번호 · 업체에 알려 준 번호</small></div><span class="pill p-in" style="margin:0">대표 번호</span></div>'+
     '<div class="set"><div>약관 동의<small>'+(S.agreedAt?esc(new Date(S.agreedAt).toLocaleDateString("ko-KR"))+' 동의':'')+'</small></div><button data-act="docs" style="border:0;background:none;color:var(--blue);font-weight:700">보기</button></div>'+
   '</div>'+
   '<div class="note">휴대폰 홈 화면에 추가하면 앱처럼 바로 열 수 있어요.<br>아이폰: 사파리 아래 <b>공유</b> 버튼 → <b>홈 화면에 추가</b><br>갤럭시: 크롬 오른쪽 위 <b>점 세 개</b> → <b>홈 화면에 추가</b></div>'+
@@ -1328,7 +1351,7 @@ function loginView(){
   var s=S.step;
   return demoBar()+'<div class="login">'+LOGO.replace('class="logo"','style="width:56px;height:56px"')+
   '<h2>'+(s===1?'휴대폰 번호로<br>시작하기':'인증번호 6자리를<br>입력해 주세요')+'</h2>'+
-  '<p>'+(s===1?'업체에 알려 주신 번호로 로그인하면 맡긴 차가 바로 보입니다. 비밀번호는 필요 없습니다.':esc(telFmt(S.phone))+' 로 인증번호를 보냈습니다. 5분 안에 입력해 주세요.'+(DEMO?' (시연: 123456)':''))+'</p>'+
+  '<p>'+(s===1?'업체에 알려 주신 번호로 로그인하면 맡긴 차가 바로 보입니다. 비밀번호는 필요 없습니다.':esc(telFmt(S.phone))+' 번호로 인증번호를 발송했습니다. 5분 안에 입력해 주세요.'+(DEMO?' (시연: 123456)':''))+'</p>'+
   (s===1?'<label for="ph">휴대폰 번호</label><input id="ph" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000" value="'+esc(telFmt(S.phone))+'">'+
     (S.err?'<p style="color:var(--bad);font-weight:700">'+esc(S.err)+'</p>':'')+
     '<button class="btn pri" data-act="otp" '+(S.sending?'disabled':'')+'>'+(S.sending?'보내는 중…':'인증번호 받기')+'</button>':
@@ -1344,7 +1367,7 @@ function agreeView(){
   var row=function(id,label,doc){return '<div class="set"><label style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer"><input type="checkbox" class="chk" id="'+id+'"><span>'+esc(label)+'</span></label>'+
     '<button data-act="doc" data-v="'+doc+'" style="border:0;background:none;color:var(--blue);font-weight:700;font-size:13px">'+(d===doc?'접기':'보기')+'</button></div>'+
     (d===doc?'<div class="note" style="white-space:pre-wrap;max-height:40vh;overflow:auto;margin-bottom:10px">'+esc(doc==="terms"?TERMS:doc==="privacy"?PRIVACY:MKT)+'</div>':'');};
-  return '<div class="note">내 번호로 맡겨진 차를 보여 드리려면 아래 동의가 필요합니다. 동의하지 않으면 차 목록이 보이지 않습니다.</div>'+
+  return '<div class="note">내 번호로 맡겨진 차를 보여 드리려면 아래 동의가 필요합니다. 동의하지 않으면 차 목록을 볼 수 없습니다.</div>'+
    '<label class="card" style="display:flex;align-items:center;gap:12px;background:var(--navy);color:#fff;cursor:pointer"><input type="checkbox" class="chk" id="aAll"><span><b>모두 동의</b><br><small style="color:var(--sky)">필수 2개 + 선택 1개</small></span></label>'+
    '<div class="card" style="padding-block:4px">'+row("aT","[필수] 이용약관","terms")+row("aP","[필수] 개인정보 수집·이용","privacy")+row("aM","[선택] 광고·소식 받기","mkt")+'</div>'+
    (S.err?'<p style="color:var(--bad);font-weight:700;margin:0">'+esc(S.err)+'</p>':'')+
@@ -1371,8 +1394,8 @@ var TITLES={home:"홈",cars:"내 차",noti:"알림",bills:"청구서",hist:"카�
 function render(){
   try{CGG.closeMenu();}catch(e){}
   var ph=$("phone"),h="";
-  if(S.view==="login")h=BETA()+loginView();
-  else if(S.view==="agree")h=BETA()+topBar("이용 동의","처음 한 번만 하면 돼요")+demoBar()+'<div class="body">'+agreeView()+'</div>';
+  if(S.view==="login")h=loginView();
+  else if(S.view==="agree")h=topBar("이용 동의","처음 한 번만 하면 돼요")+demoBar()+'<div class="body">'+agreeView()+'</div>';
   else if(S.view==="car")h=shell('<div class="backrow"><button data-act="back" aria-label="내 차로 돌아가기">‹ 내 차</button></div>'+carView());
   else{
     var V={home:homeView,cars:carsView,noti:notiView,bills:billsView,hist:histView,me:meView,more:moreView}[S.tab]||homeView;
@@ -1388,11 +1411,10 @@ function render(){
 }
 /* d3.1 — 공통 부품(cgg-j4) 틀 */
 var NAVS=[["home","홈","home"],["cars","내 차","car"],["noti","알림","bell"],["bills","청구서","receipt"],["hist","카히스토리","file"],["me","내 정보","user"]];
-function BETA(){return '<div class="beta" role="note"><div class="wrap"><b>OPEN BETA</b><span>차곳간은 지금 <strong>오픈 베타</strong>예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span></div></div>';}
 function shell(body){
   var cur=S.view==="car"?"cars":S.tab,u=S.cars?unread():0,co=(latest()[0]||{}).company||"";
-  return BETA()+'<header class="cgg-hdr"><div class="cgg-top">'+
-    '<div class="cgg-brand"><span class="cgg-ci">차</span><div><b>차곳간 딜러</b><small>내 차 상품화 · '+VER+'</small></div></div>'+
+  return '<header class="cgg-hdr"><div class="cgg-top">'+
+    '<div class="cgg-brand"><span class="cgg-ci">차</span><div><b>차곳간 딜러</b><small>내 차 상품화</small></div></div>'+
     '<div class="cgg-biz"><b>'+(S.name?esc(S.name)+' 딜러':'딜러')+'</b><small>'+esc([co,telFmt(S.phone)].filter(Boolean).join(" · "))+'</small></div>'+
     '<div class="cgg-right"><button class="bell" data-act="tab" data-v="noti">알림'+(u?'<span class="dot">'+(u>99?"99+":u)+'</span>':'')+'</button></div></div>'+
     '<nav class="cgg-nav" aria-label="메뉴">'+NAVS.map(function(n){return '<button data-act="tab" data-v="'+n[0]+'"'+(cur===n[0]?' aria-selected="true"':'')+'>'+CGG.ic(n[2])+'<span class="lbl">'+n[1]+'</span></button>';}).join("")+'</nav></header>'+
@@ -1438,7 +1460,7 @@ function loadBills(){return api("myBills").then(function(r){S.bills=(r&&r.list)|
 function loadCars(){
   loadBills();
   return api("cars").then(function(r){S.cars=(r&&r.list)||[];S.done=(r&&r.done)||{};if(S.carT)S.carT.sel={};render();},
-    function(e){if(S.cars===null)S.cars=[];render();toast(e.message);});
+    function(e){if(S.cars===null)S.cars=[];render();toast(errMsg(e));});
 }
 function enterMain(){S.view="main";S.tab="home";S.cars=null;render();loadCars();
   api("me").then(function(m){if(m){S.name=m.name||"";S.agreedAt=m.agreedAt||"";S.phone=m.phone||S.phone;render();}},function(){});}
@@ -1448,28 +1470,28 @@ function act(a,el){
   var v=el&&el.getAttribute("data-v");
   if(S.dlg&&(a==="tab"||a==="logout"||a==="go")){S.dlg=false;CGG.closeDialog();}
   if(a==="otp"||a==="resend"){
-    var p=dg(S.phone);if(!/^01\d{8,9}$/.test(p)){S.err="휴대폰 번호를 다시 확인해 주세요.";render();return;}
+    var p=dg(S.phone);if(!/^01\d{8,9}$/.test(p)){S.err="휴대폰 번호가 올바르지 않습니다. 다시 확인해 주세요.";render();return;}
     S.sending=true;S.err="";render();
-    api("sendCode",[p]).then(function(){S.sending=false;S.step=2;S.err="";render();if(a==="resend")toast("인증번호를 다시 보냈습니다.");},
-      function(e){S.sending=false;S.err=e.message;render();});return;
+    api("sendCode",[p]).then(function(){S.sending=false;S.step=2;S.err="";render();if(a==="resend")toast("인증번호를 다시 발송했습니다.");},
+      function(e){S.sending=false;S.err=errMsg(e);render();});return;
   }
   if(a==="otpback"){S.step=1;S.err="";render();return;}
   if(a==="enter"){
-    var c=code();if(c.length!==6){S.err="인증번호 6자리를 입력해 주세요.";render();return;}
+    var c=code();if(c.length!==6){S.err="인증번호 6자리를 모두 입력해 주세요.";render();return;}
     if(S.sending)return;S.sending=true;S.err="";
     api("verifyCode",[S.phone,c]).then(function(r){
       S.sending=false;S.key=r.key;S.phone=r.phone;S.name=r.name||"";S.agreed=!!r.agreed;
       if(!DEMO){ls("cgd_key",r.key);ls("cgd_phone",r.phone);}
       armBack();
       if(S.agreed){enterMain();toast((S.name?S.name+" 딜러님, ":"")+"로그인했습니다.");}else{S.view="agree";S.err="";render();}
-    },function(e){S.sending=false;S.err=e.message;render();});return;
+    },function(e){S.sending=false;S.err=errMsg(e);render();});return;
   }
   if(a==="doc"){keepChecks(function(){S.docOpen=S.docOpen===v?"":v;render();});return;}
   if(a==="agree"){
-    if(!$("aT").checked||!$("aP").checked){keepChecks(function(){S.err="필수 항목 두 개에 동의해 주세요.";render();});return;}
+    if(!$("aT").checked||!$("aP").checked){keepChecks(function(){S.err="필수 항목 2개에 동의해야 시작할 수 있습니다.";render();});return;}
     var mk=$("aM").checked;
-    api("agree",[mk]).then(function(){S.agreed=true;S.agreedAt=new Date().toISOString();S.err="";enterMain();toast("동의가 완료되었습니다.");},
-      function(e){keepChecks(function(){S.err=e.message;render();});});return;
+    api("agree",[mk]).then(function(){S.agreed=true;S.agreedAt=new Date().toISOString();S.err="";enterMain();toast("동의가 완료되었습니다. 어서 오세요.");},
+      function(e){keepChecks(function(){S.err=errMsg(e);render();});});return;
   }
   if(a==="tab"){if(S.view==="car"){S.skipPop=1;history.back();}S.tab=v;S.view="main";render();
     if(v==="noti"){setTimeout(function(){markSeen();},1500);}
@@ -1478,7 +1500,7 @@ function act(a,el){
   if(a==="copy"){var what=el.getAttribute("data-m")||"";
     var done=function(){toast(what+" 복사했어요");},fail=function(){S.sheet="copy";S.copyText=v;render();};
     try{navigator.clipboard.writeText(v).then(done,fail);}catch(e){fail();}return;}
-  if(a==="billView"){if(/^https:\/\/app\.cgg\.co\.kr\//.test(v||"")){try{window.open(v,"_blank","noopener");}catch(e){}}else toast(DEMO?"업체가 보낸 청구서 화면이 열려요 (시연이라 열리지 않아요)":"청구서 주소가 없어요. 업체에 문의해 주세요");return;}
+  if(a==="billView"){if(/^https:\/\/app\.cgg\.co\.kr\//.test(v||"")){try{window.open(v,"_blank","noopener");}catch(e){}}else toast(DEMO?"시연에서는 청구서 화면이 열리지 않아요.":"청구서를 열지 못했어요. 업체에 문의해 주세요.");return;}
   if(a==="go"&&v==="BILLS"){S.tab="bills";S.view="main";render();try{window.scrollTo(0,0);}catch(e){}return;}
   if(a==="go"){S.filter=v||"전체";S.carT=S.carT||{};if(S.carT.q==null){S.carT.q="";S.carT.k=0;S.carT.dir=1;S.carT.size=10;S.carT.sel={};}S.carT.f=(v&&v!=="전체")?v:"";S.carT.page=1;S.q="";S.tab="cars";S.view="main";render();try{window.scrollTo(0,0);}catch(e){}return;}
   if(a==="finishSel"){var ks=Object.keys(S.sel).filter(function(k){return S.sel[k];});
@@ -1486,25 +1508,25 @@ function act(a,el){
     S.sheet="fin";S.finL=L;render();return;}
   if(a==="finishDo"){var L2=S.finL||[];S.sheet=null;render();
     L2.reduce(function(p,c){return p.then(function(){return api("finish",[c.shop,c.id]).then(function(){S.done[c.key]=1;});});},Promise.resolve())
-      .then(function(){S.sel={};if(S.carT)S.carT.sel={};render();toast(L2.length+"대를 «상품화 완료»로 표시했어요");},function(e){render();toast(e.message);});return;}
+      .then(function(){S.sel={};if(S.carT)S.carT.sel={};render();toast(L2.length+"대를 «상품화 완료»로 표시했어요");},function(e){render();toast(errMsg(e));});return;}
   if(a==="nf"){S.nf=v;render();return;}
-  if(a==="car"){var sh=el.getAttribute("data-s");S.detail=null;S.dlg=true;openCar("불러오는 중…");
-    api("car",[sh,v]).then(function(r){S.detail=r;if(S.dlg)openCar();},function(e){S.dlg=false;CGG.closeDialog();toast(e.message);});return;}
+  if(a==="car"){var sh=el.getAttribute("data-s");S.detail=null;S.dlg=true;openCar("불러오는 중이에요…");
+    api("car",[sh,v]).then(function(r){S.detail=r;if(S.dlg)openCar();},function(e){S.dlg=false;CGG.closeDialog();toast(errMsg(e));});return;}
   if(a==="back"){history.back();return;}
   if(a==="big"){S.sheet="photos";render();return;}
   if(a==="finish"||a==="unfinish"){var c2=S.detail&&S.detail.car;if(!c2)return;
     api(a,[c2.shop,c2.id]).then(function(){if(a==="finish")S.done[c2.key]=1;else delete S.done[c2.key];
       if(a==="finish"){if(S.dlg){S.dlg=false;CGG.closeDialog();render();}else history.back();toast("«상품화 완료»로 표시했어요.");}
-      else{render();if(S.dlg)openCar();toast("완료를 취소했어요");}},function(e){toast(e.message);});return;}
+      else{render();if(S.dlg)openCar();toast("상품화 완료를 취소했어요");}},function(e){toast(errMsg(e));});return;}
   if(a==="soon"){toast("곧 열려요");return;}
   if(a==="logout"){S.sheet="logout";render();return;}
   if(a==="leaveAsk"){S.sheet="leave";render();return;}
   if(a==="nameAsk"){S.sheet="name";render();var n=$("nm");if(n)n.focus();return;}
   if(a==="docs"){S.sheet="docs";render();return;}
   if(a==="close"){S.sheet=null;render();return;}
-  if(a==="nameSave"){var nm=(($("nm")||{}).value||"").trim();api("setName",[nm]).then(function(r){S.name=r.name;S.sheet=null;render();toast("저장했어요");},function(e){toast(e.message);});return;}
+  if(a==="nameSave"){var nm=(($("nm")||{}).value||"").trim();api("setName",[nm]).then(function(r){S.name=r.name;S.sheet=null;render();toast("저장했어요");},function(e){toast(errMsg(e));});return;}
   if(a==="logoutdo"){S.sheet=null;api("logout").then(function(){},function(){}).then(function(){forget();toast("로그아웃했어요");});return;}
-  if(a==="leave"){S.sheet=null;api("leave").then(function(){forget();toast("동의를 철회했어요");},function(e){toast(e.message);});return;}
+  if(a==="leave"){S.sheet=null;api("leave").then(function(){forget();toast("동의를 철회했어요");},function(e){toast(errMsg(e));});return;}
 }
 document.addEventListener("change",function(e){var k=e.target.getAttribute&&e.target.getAttribute("data-sel");if(k==null)return;
   S.sel[k]=e.target.checked;render();});
@@ -1537,7 +1559,7 @@ window.addEventListener("popstate",function(){
   api("me").then(function(m){
     S.phone=m.phone;S.name=m.name||"";S.agreed=!!m.agreed;S.agreedAt=m.agreedAt||"";ls("cgd_phone",m.phone);
     if(!S.agreed){S.view="agree";render();}else loadCars();
-  },function(e){if(S.key){S.cars=[];render();toast(e.message);}});
+  },function(e){if(S.key){S.cars=[];render();toast(errMsg(e));}});
 })();
 </script>
 </body>

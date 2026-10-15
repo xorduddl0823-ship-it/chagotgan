@@ -19,8 +19,13 @@ class Q {
   is(k: string, v: any) { this.filters.push((r) => (r[k] ?? null) === v); return this; }
   in(k: string, v: any[]) { this.filters.push((r) => v.includes(r[k])); return this; }
   gt(k: string, v: any) { this.filters.push((r) => r[k] > v); return this; }
+  ilike(k: string, pat: string) {
+    const re = new RegExp("^" + pat.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".") + "$", "i");
+    this.filters.push((r) => re.test(String(r[k] ?? ""))); return this;
+  }
   gte(k: string, v: any) { this.filters.push((r) => r[k] >= v); return this; }
   lte(k: string, v: any) { this.filters.push((r) => r[k] <= v); return this; }
+  lt(k: string, v: any) { this.filters.push((r) => r[k] < v); return this; }
   neq(k: string, v: any) { this.filters.push((r) => r[k] !== v); return this; }
   order(k: string) { this.ord = k; return this; }
   limit(n: number) { this.lim = n; return this; }
@@ -80,6 +85,14 @@ function bump(r: Row) {
 
 /* SQL 함수 흉내 */
 function rpc(fn: string, a: any) {
+  /* SQL 11 check_rate_bump 흉내 — store.check_rate 가 없으면 «SQL 11 전» (함수 없음) */
+  if (fn === "check_rate_bump") {
+    if (!store.check_rate) return { data: null, error: { message: "function check_rate_bump does not exist" } };
+    let r = store.check_rate.find((x) => x.key === a.p_key);
+    if (!r) { r = { key: a.p_key, n: 0 }; store.check_rate.push(r); }
+    if (r.n >= a.p_max) return { data: false, error: null };
+    r.n++; return { data: true, error: null };
+  }
   if (fn === "cgg_attempt") {
     if (!store.cgg_access) return { data: null, error: { message: "function does not exist" } };
     const r = store.cgg_access.find((x) => x.phone === a.p_phone);

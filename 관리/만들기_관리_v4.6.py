@@ -58,10 +58,13 @@ rep('["ata","알림톡 템플릿",viewAta],', '["ata","알림톡 템플릿",view
 rep('["noti","알림",["sms","noti","ata"]],', '["noti","알림",["sms","noti","ata","slog"]],', False)
 rep('noti:"기한 안내 문자 · 공지사항 · 알림톡 템플릿 코드예요. 안내는 알림톡이 먼저 나가요.",',
     'noti:"기한 안내 문자 · 공지사항 · 알림톡 템플릿 코드 · 발송 기록이에요. 안내는 알림톡이 먼저 나가고, 안 되면 문자로 대신 나가요.",', False)
-rep('function navOf(t){', open(os.path.join(HERE, "v4재료", "sendlog.js"), encoding="utf-8").read() + '\nfunction navOf(t){', False)
+rep('function navOf(t){', open(os.path.join(HERE, "v4재료", "sendlog.js"), encoding="utf-8").read() + '\n' + open(os.path.join(HERE, "v4재료", "bizok.js"), encoding="utf-8").read() + '\nfunction navOf(t){', False)
+# 업체 › 사업자 확인 (서버 방 보안 고침 · 워시 sb15)
+rep('["wait","결제 대기",viewPayWait],', '["wait","결제 대기",viewPayWait],\n  ["bizok","사업자 확인",viewBizOk],', False)
+rep('["shops","업체",["shops","lock","wait"]],', '["shops","업체",["shops","lock","wait","bizok"]],', False)
 # ④ 말 대조표 — 디자인 방 디자인/말_대조표.md · 결제 방 결제/12_결제_말_대조표.md (관리 칸)
 # 화면에 서버 · 브라우저 글을 그대로 내보내지 않게: 한글이 없는 오류(영어 · 코드)는 쉬운 말로 바꿔요
-rep("function open_(fn,args){", 'function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }\nfunction open_(fn,args){', False)
+rep("function toast(msg,bad){", '/* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */\nfunction emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }\nfunction toast(msg,bad){', False)
 def cnt(a,b,n=None):
     global s
     k=s.count(a)

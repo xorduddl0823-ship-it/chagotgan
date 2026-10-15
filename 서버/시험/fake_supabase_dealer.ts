@@ -25,6 +25,10 @@ class Q {
   is(k: string, v: any) { this.filters.push((r) => (r[k] ?? null) === v); return this; }
   in(k: string, vs: any[]) { this.filters.push((r) => vs.includes(r[k])); return this; }
   gt(k: string, v: any) { this.filters.push((r) => r[k] > v); return this; }
+  ilike(k: string, pat: string) {
+    const re = new RegExp("^" + pat.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".") + "$", "i");
+    this.filters.push((r) => re.test(String(r[k] ?? ""))); return this;
+  }
   contains(k: string, vs: any[]) { this.filters.push((r) => Array.isArray(r[k]) && vs.every((x) => r[k].includes(x))); return this; }
   order(k: string, o: any = {}) { this.ord.push({ k, asc: o.ascending !== false }); return this; }
   limit(n: number) { this.lim = n; return this; }

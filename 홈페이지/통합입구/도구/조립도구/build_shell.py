@@ -104,7 +104,7 @@ body.multi .cggFrame{top:calc(var(--bh,0px) + 46px);height:calc(100% - var(--bh,
   <div style="width:100%;max-width:400px">
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:30px;font-weight:800;letter-spacing:-1px">차곳간</div>
-      <div style="font-size:13px;color:var(--muted,#667389);margin-top:4px">광택·세차 · 성능점검</div>
+      <div style="font-size:13px;color:var(--muted,#667389);margin-top:4px">광택·세차 · 성능점검 · 딜러</div>
     </div>
     <div style="background:var(--surface,#fff);border:1px solid var(--line,#dde3ec);border-radius:var(--r,14px);padding:22px 20px;box-shadow:var(--shadow,0 2px 10px rgba(16,32,52,.08))">
       <h2 style="margin:0 0 4px;font-size:20px">로그인</h2>
@@ -139,6 +139,7 @@ body.multi .cggFrame{top:calc(var(--bh,0px) + 46px);height:calc(100% - var(--bh,
   <button class="mini" id="cggOut">모두 로그아웃</button>
 </div>
 <div id="cggBusy" hidden>여는 중…</div>
+<div id="cggNote" role="status" hidden style="position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:100001;max-width:calc(100% - 32px);background:#14202e;color:#fff;font-size:14px;line-height:1.5;padding:12px 16px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25);word-break:keep-all;text-align:center"></div>
 
 <!-- ═══ 세 제품 — 파일 그대로 품어 둡니다 (고치지 않은 원본, base64) ═══ -->
 <script type="application/octet-stream" id="pkg-wash">@@WASH@@</script>
@@ -179,9 +180,9 @@ function said(e){ return (e && e.ko) ? e.message : FAIL; }
 function post(fn,args,token){
   return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify({shop:"",token:token||"",fn:fn,args:args||[]})})
-    .then(function(r){ return r.text(); },function(){ throw KO("서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요."); })
+    .then(function(r){ return r.text(); },function(){ throw KO("서버에 연결할 수 없습니다. 인터넷 연결을 확인하고 다시 시도해 주세요."); })
     .then(function(t){ var j; try{ j=JSON.parse(t); }catch(e){ throw KO(FAIL); }
-      if(j && j.__err){ if(/모르는 요청/.test(j.__err)) throw KO("로그인 서비스를 준비 중입니다. 잠시 후 다시 시도해 주세요."); throw KO(/[가-힣]/.test(j.__err)?j.__err:FAIL); }
+      if(j && j.__err){ if(/모르는 요청/.test(j.__err)) throw KO("로그인 서비스를 준비 중입니다. 잠시 후 다시 시도해 주세요."); throw KO(/[가-힣]/.test(j.__err)&&!/[A-Za-z_]{3,}/.test(j.__err)?j.__err:FAIL); }
       return j ? j.result : null; });
 }
 
@@ -201,7 +202,7 @@ function doLogin(){
   $("lgGo").disabled=true; msg("확인 중…");
   post("cggLogin",[id,pw]).then(function(r){
     $("lgGo").disabled=false;
-    if(r && r.tick){ TICK=r.tick; $("lgTo").innerHTML="<b>"+esc(r.to||"")+"</b>(으)로 인증번호를 발송했습니다."; msg(""); step2(true); return; }
+    if(r && r.tick){ TICK=r.tick; $("lgTo").innerHTML="<b>"+esc(r.to||"")+"</b>(으)로 인증번호를 발송했습니다. 5분 안에 입력해 주세요."; msg(""); step2(true); return; }
     enter(r);
   }).catch(function(e){ $("lgGo").disabled=false; msg(said(e),true); });
 }
@@ -215,7 +216,7 @@ function doCode(){
 
 /* ── 들어가기: 열 수 있는 제품만 저장 칸에 열쇠를 넣고, 띄웁니다 ── */
 function enter(r){
-  if(!r || !r.sid || !r.products || !r.products.length){ showLogin("이 계정으로 이용할 수 있는 서비스가 없습니다.",true); return; }
+  if(!r || !r.sid || !r.products || !r.products.length){ showLogin("이 계정으로 이용할 수 있는 서비스가 없습니다. 차곳간에 문의해 주세요.",true); return; }
   ME = { sid:r.sid, name:r.name||"", products:r.products.filter(function(p){ return PRODUCTS[p.code]; }) };
   ls(SKEY, r.sid);
   /* 제품마다 따로 쓰는 저장 칸 — cgg.<제품>.<원래 이름> */
@@ -283,7 +284,13 @@ function takeBuy(){
   return code;
 }
 var BUY_DONE=null;
-function toastNo(code){ try{ alertNo(code); }catch(e){} }
+/* 요금제를 고르고 왔는데 이 계정으로는 그 제품을 쓸 수 없을 때 — 화면 아래에 8초 동안 알려 줍니다 */
+function toastNo(code){
+  try{ alertNo(code); }catch(e){}
+  var n=$("cggNote"), nm=PRODUCTS[code]?PRODUCTS[code].name:"이 서비스";
+  n.textContent="이 계정으로는 "+nm+"를 이용할 수 없습니다. 차곳간에 문의해 주세요."; n.hidden=false;
+  clearTimeout(toastNo.t); toastNo.t=setTimeout(function(){ n.hidden=true; },8000);
+}
 
 
 function drawTabs(){

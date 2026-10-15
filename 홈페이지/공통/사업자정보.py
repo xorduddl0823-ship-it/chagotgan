@@ -31,8 +31,10 @@ def render(info=None, show_blank=False):
     parts = []
     for label, k in rows:
         v = val(k)
-        if not v and k == "통신판매업신고번호": v = "신고 진행 중"
-        if v: parts.append('<span style="white-space:nowrap">' + e(label) + " " + v + "</span>")
+        if not v and k == "통신판매업신고번호":   # 「신고번호 신고 진행 중」처럼 겹치지 않게 (알림톡 방 워딩 검토)
+            parts.append('<span style="white-space:nowrap">통신판매업 신고: 진행 중</span>'); continue
+        # 주소처럼 긴 값은 좁은 폰에서 줄을 바꿔야 해서 nowrap 을 걸지 않아요 (320px 가로 넘침 막기)
+        if v: parts.append('<span style="white-space:' + ("normal" if k == "주소" else "nowrap") + '">' + e(label) + " " + v + "</span>")
     biz = re.sub(r"\D", "", str(info.get("사업자등록번호", "")))
     if len(biz) == 10:
         parts.append('<a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=' + biz +
