@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>차곳간 공통 부품 예시</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+body{margin:0;background:var(--bg);font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px}
+.hello small{color:var(--muted);font-size:13px} .hello h1{margin:4px 0 4px;font-size:26px;letter-spacing:-.5px;text-wrap:balance} .hello p{margin:0 0 18px;color:var(--muted)}
+.hello h1 em{font-style:normal;color:var(--blue)}
+.demo-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px;font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px}
+.card h3{margin:0 0 10px;font-size:16px}
+.cgg-right .hb{height:32px;padding:0 11px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:12.5px;cursor:pointer}
+@media (min-width:1000px){ .lay-side .cgg-right .hb,.lay-icon .cgg-right .hb{height:40px;border-color:var(--ln2);background:var(--surface);color:var(--btn-ink)} }
+@media (max-width:600px){ .hello h1{font-size:19px} }
+</style>
+<link rel="stylesheet" href="cgg-j4.css">
+</head><body>
+<div class="cgg-app" id="app">
+  <header class="cgg-hdr">
+    <div class="cgg-top">
+      <div class="cgg-brand"><span class="cgg-ci">차</span><div><b>차곳간 체크</b><small>성능점검 정산 · 체크 v23 · UI 3.0</small></div></div>
+      <div class="cgg-biz"><b>예시 검사소</b><small>000-00-00000 · 대표 홍길순</small></div>
+      <div class="cgg-right"><button class="hb cgg-wide">공지사항</button><button class="hb cgg-wide">도움말</button><button class="hb">↻ 새로고침</button><button class="hb" id="btnLay">화면 설정</button></div>
+    </div>
+    <nav class="cgg-nav" id="nav" aria-label="메뉴"></nav>
+  </header>
+  <main class="cgg-main">
+    <div class="demo-pick">이 예시는 체크 메뉴로 그렸어요. 메뉴 배치는 «화면 설정»에서 바꿔요 (넓은 화면에서만 바뀌고, 폰은 늘 아래 탭바예요).</div>
+    <div class="hello"><small id="crumb">홈 · 10월 15일 수요일</small><h1>보험료가 안 맞는 건 <em>4건</em>, 재검사 안내 보낼 차 <em>6대</em>가 있어요</h1><p>오늘 할 일과 이번 달 검사를 한눈에 봐요.</p></div>
+    <div class="cgg-acts" id="acts"></div>
+    <div class="card" id="layBox" hidden><h3>화면 설정 › 메뉴 배치</h3><div id="layIn"></div></div>
+    <div class="card"><h3>여기부터는 제품 화면</h3><p style="margin:0;color:var(--muted)">공통 부품은 머리말 · 메뉴 · 할 일 카드 · 아래 탭바만 맡아요. 표 · 숫자 칸 · 창은 각 제품 원래 코드를 그대로 써요.</p></div>
+  </main>
+  <nav class="cgg-tbar" id="tbar"></nav>
+</div>
+<script src="cgg-j4.js"></script>
+<script>
+var MENU=[["home","home","홈"],["sales","chart","매출"],["work","car","정산 기록"],["bill","file","청구서"],["bank","wallet","입출금"],["tax","receipt","세금계산서"],["noti","bell","알림"],["set","gear","설정"]];
+var cur="home";
+function draw(){
+  document.getElementById("nav").innerHTML=MENU.map(function(m){ return '<button type="button" data-k="'+m[0]+'" aria-selected="'+(m[0]===cur)+'">'+CGG.ic(m[1])+'<span class="lbl">'+m[2]+'</span></button>'; }).join("");
+  Array.prototype.forEach.call(document.querySelectorAll("#nav [data-k]"),function(b){ b.onclick=function(){ go(b.getAttribute("data-k")); }; });
+  CGG.tabbar(document.getElementById("tbar"),[{key:"home",icon:"home",label:"홈"},{key:"work",icon:"car",label:"정산 기록"},{key:"bank",icon:"wallet",label:"입출금"},{key:"tax",icon:"receipt",label:"계산서"},{key:"all",icon:"more",label:"전체"}],
+    ["home","work","bank","tax"].indexOf(cur)>=0?cur:"all", function(k){ go(k==="all"?"set":k); });
+  var name=MENU.filter(function(m){return m[0]===cur;})[0][2];
+  document.getElementById("crumb").textContent=name+" · 10월 15일 수요일";
+}
+function go(k){ cur=k; draw(); }
+CGG.layout.init(document.getElementById("app"),"cgg_demo_layout");
+CGG.todos(document.getElementById("acts"),[
+  {tone:"chk",icon:"receipt",title:"보험료 대조 안 맞음 4건",sub:"솜카 외 2곳 · 이번 달"},
+  {tone:"stop",icon:"bell",title:"재검사 안내 문자 6건",sub:"기한 지난 차 2대 포함"},
+  {tone:"run",icon:"file",title:"10월 청구서 보내기",sub:"예시상사 · 보낼 날 10.20"}], function(i){ go(["bank","noti","bill"][i]); });
+document.getElementById("btnLay").onclick=function(){ var b=document.getElementById("layBox"); b.hidden=!b.hidden; CGG.layout.chooser(document.getElementById("layIn"), function(){}); };
+draw();
+</script>
+</body></html>
