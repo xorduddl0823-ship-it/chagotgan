@@ -2866,14 +2866,14 @@ function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 function post(bodyObj){
   return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify(bodyObj)})
-    .then(function(r){return r.text();},function(){throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");})
+    .then(function(r){return r.text();},function(){throw new Error("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");})
     .then(function(x){
-      var j; try{ j=JSON.parse(x); }catch(e){ throw new Error("응답을 읽지 못했습니다. 잠시 뒤 다시 시도해 주세요."); }
+      var j; try{ j=JSON.parse(x); }catch(e){ throw new Error("응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요."); }
       if(j && j.__err) throw new Error(j.__err);
       return j ? j.result : null;
     });
 }
-function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했습니다. 다시 시도해 주세요."); }
+function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }
 function open_(fn,args){ return post({shop:"",token:"",fn:fn,args:args||[]}); }
 function api(fn,args){
   var sid = ls(SIDKEY);
@@ -4218,12 +4218,12 @@ function opsLoad(){
     OPS.low      = (r&&r.low)||[];
     OPS.at       = (r&&r.at)||new Date().toISOString();
   },function(e){
-    OPS.loaded = true; OPS.err = emsg(e,"확인하지 못했습니다. 다시 시도해 주세요.");
+    OPS.loaded = true; OPS.err = emsg(e,"확인하지 못했어요. 다시 시도해 주세요.");
     toast(OPS.err,true);
   }).then(function(){
     OPS.busy=false;
     var b2=$("opsGo"); if(b2){ b2.disabled=false; b2.textContent="지금 다시 확인"; }
-    var at=$("opsAt"); if(at) at.textContent = OPS.at?("마지막 확인 "+dtTime(OPS.at)):"확인하지 못했습니다";
+    var at=$("opsAt"); if(at) at.textContent = OPS.at?("마지막 확인 "+dtTime(OPS.at)):"확인하지 못했어요";
     opsDraw();
   });
 }
@@ -4300,7 +4300,7 @@ function opsDraw(){
     '</div>';
 
   if(OPS.usageErr){
-    h += '<div class="hint"><b>용량을 아직 읽지 못했습니다.</b> 서버 방에 «사용량 준비»를 요청해 주세요.<br>'+
+    h += '<div class="hint"><b>용량을 아직 읽지 못했어요.</b> 서버 방에 «사용량 준비»를 요청해 주세요.<br>'+
       '준비가 끝나면 이 칸이 채워져요.</div>';
   }
 
@@ -4403,7 +4403,7 @@ function cashLoad(){
     CASH.on=!!(r&&r.on); CASH.note=(r&&r.note)||""; CASH.bank=(r&&r.bank)||"";
     CASH.price=(r&&r.price)||{}; CASH.wallets=(r&&r.wallets)||[]; CASH.logs=(r&&r.logs)||[];
     CASH.at=new Date().toISOString();
-  },function(e){ CASH.loaded=true; CASH.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+  },function(e){ CASH.loaded=true; CASH.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){
     CASH.busy=false;
     var b2=$("cashGo"); if(b2){ b2.disabled=false; b2.textContent="새로고침"; }
@@ -4417,7 +4417,7 @@ var PRICE_ROWS=[["sms","단문 문자",18],["lms","장문 문자",45],["mms","�
 
 function cashDraw(){
   var host=$("cashBody"); if(!host) return;
-  if(CASH.err){ host.innerHTML='<div class="hint"><b>캐시 정보를 불러오지 못했습니다.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
+  if(CASH.err){ host.innerHTML='<div class="hint"><b>캐시 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
   var p=CASH.price||{};
   var h='';
 
@@ -4604,7 +4604,7 @@ function expLoad(){
     if(!EXP.cfg.tpls || !EXP.cfg.tpls.length) EXP.cfg.tpls=[{name:"기본",text:""},{name:"",text:""},{name:"",text:""}];
     while(EXP.cfg.tpls.length<3) EXP.cfg.tpls.push({name:"",text:""});
     if(EXP.ti===undefined) EXP.ti=Number(EXP.cfg.tplIdx||0);
-  },function(e){ EXP.loaded=true; EXP.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+  },function(e){ EXP.loaded=true; EXP.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ EXP.busy=false;
     var at=$("expAt"); if(at) at.textContent=EXP.at?("마지막 확인 "+dtTime(EXP.at)):"";
     expDraw(); });
@@ -4927,14 +4927,14 @@ function pgLoad(){
     PG.note=(r&&r.note)||""; PG.hasSecret=!!(r&&r.hasSecret);
     PG.orders=(r&&r.orders)||[]; PG.names=(r&&r.names)||{};
     PG.at=new Date().toISOString();
-  },function(e){ PG.loaded=true; PG.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+  },function(e){ PG.loaded=true; PG.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ PG.busy=false;
     var at=$("pgAt"); if(at) at.textContent=PG.at?("마지막 확인 "+dtTime(PG.at)):"";
     pgDraw(); });
 }
 function pgDraw(){
   var host=$("pgBody"); if(!host) return;
-  if(PG.err){ host.innerHTML='<div class="hint"><b>카드 결제 정보를 불러오지 못했습니다.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
+  if(PG.err){ host.innerHTML='<div class="hint"><b>카드 결제 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
 
   var h='';
   /* 준비 상태 */
@@ -5081,11 +5081,11 @@ function secLoad(){
     SEC.ver    = (r&&r.ver)||"";
   },function(e){
     SEC.checks = null;
-    toast(emsg(e,"확인하지 못했습니다. 다시 시도해 주세요."),true);
+    toast(emsg(e,"확인하지 못했어요. 다시 시도해 주세요."),true);
   }).then(function(){
     SEC.busy=false;
     var b2=$("secGo"); if(b2){ b2.disabled=false; b2.textContent="지금 다시 확인"; }
-    var at=$("secAt"); if(at) at.textContent = SEC.at?("마지막 확인 "+dtTime(SEC.at)):"확인하지 못했습니다";
+    var at=$("secAt"); if(at) at.textContent = SEC.at?("마지막 확인 "+dtTime(SEC.at)):"확인하지 못했어요";
     secDraw();
   });
 }
@@ -5162,7 +5162,7 @@ function secDraw(){
         secDraw();
       },function(e){
         box.checked = !on; box.disabled = false;
-        toast(emsg(e,"저장하지 못했습니다. 다시 시도해 주세요."),true);
+        toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true);
       });
     };
   });
@@ -5253,7 +5253,7 @@ function svcRefresh(){
       var ok=(r&&r.done)||[], bad=(r&&r.failed)||[];
       render();
       if(bad.length) openSheet('<h3>상태를 새로 받았어요</h3>'+
-        '<div class="sub">'+ok.length+'곳 보냈어요 · '+bad.length+'곳은 보내지 못했습니다</div>'+
+        '<div class="sub">'+ok.length+'곳 보냈어요 · '+bad.length+'곳은 보내지 못했어요</div>'+
         (ok.length?('<label class="f">잘 읽은 곳</label><div class="hint">'+
           ok.map(function(x){return esc(x);}).join("<br>")+'</div>'):'')+
         '<label class="f">못 읽은 곳</label><div class="hint" style="color:var(--warn)">'+
@@ -5479,11 +5479,11 @@ function taxLogLoad(force){
   TAXLOG.busy=true;
   api("hqTaxLog",[]).then(function(r){
     TAXLOG.rows=(r&&r.logs)||[];
-    if(r&&r.warn) toast("세금계산서 기록을 다 불러오지 못했습니다. 다시 시도해 주세요.",true);
+    if(r&&r.warn) toast("세금계산서 기록을 다 불러오지 못했어요. 다시 시도해 주세요.",true);
   }).catch(function(e){
     TAXLOG.rows=[];
     var b=document.getElementById("tLog");
-    if(b) b.innerHTML='<div class="hint" style="color:var(--danger)">'+esc(emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."))+'</div>';
+    if(b) b.innerHTML='<div class="hint" style="color:var(--danger)">'+esc(emsg(e,"불러오지 못했어요. 다시 시도해 주세요."))+'</div>';
   }).then(function(){ TAXLOG.busy=false; if(TAXLOG.rows) taxLogDraw(); });
 }
 function taxLogDraw(){
@@ -5638,7 +5638,7 @@ function taxSend(sh,code,v,force){
       if(r && r.dup && !force){ closeSheet(); taxDupSheet(sh,code,v,r); return; }
       closeSheet(); taxLogLoad(true); taxDoneSheet(sh,r,"");
     })
-    .catch(function(e){ closeSheet(); taxLogLoad(true); taxDoneSheet(sh,null,emsg(e,"세금계산서를 보내지 못했습니다. 다시 시도해 주세요.")); });
+    .catch(function(e){ closeSheet(); taxLogLoad(true); taxDoneSheet(sh,null,emsg(e,"세금계산서를 보내지 못했어요. 다시 시도해 주세요.")); });
 }
 function taxDupSheet(sh,code,v,r){
   var pv=(r&&r.prev)||{};
@@ -5673,7 +5673,7 @@ function taxDoneSheet(sh,r,err){
   var test = ok ? !!(r&&r.test) : (D.hq&&D.hq.pb_test!==false);
   var nts = (r&&r.ntsConfirmNum)||"";
   openSheet(
-    '<h3>'+(ok?'세금계산서를 보냈어요':'세금계산서를 보내지 못했습니다. 아래 이유를 고치고 다시 보내 주세요.')+'</h3>'+
+    '<h3>'+(ok?'세금계산서를 보냈어요':'세금계산서를 보내지 못했어요. 아래 이유를 고치고 다시 보내 주세요.')+'</h3>'+
     '<div class="sub">'+esc(sh.name)+' · '+(test?'시험 발행':'실제 발행')+'</div>'+
     '<div class="card" style="margin:0 0 16px;padding:14px 16px">'+
      (ok
@@ -5884,7 +5884,7 @@ function lkLoad(){
     LOCK.cfg=(r&&r.cfg)||{}; LOCK.shops=(r&&r.shops)||[]; LOCK.logs=(r&&r.logs)||[];
     LOCK.today=(r&&r.today)||""; LOCK.purge=(rs[1]&&rs[1].list)||[];
     LOCK.at=new Date().toISOString();
-  },function(e){ LOCK.loaded=true; LOCK.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+  },function(e){ LOCK.loaded=true; LOCK.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ LOCK.busy=false;
     var at=$("lkAt"); if(at) at.textContent=LOCK.at?("마지막 확인 "+dtTime(LOCK.at)):"";
     lkDraw(); });
@@ -5896,7 +5896,7 @@ function lkPill(st){
 }
 function lkDraw(){
   var host=$("lkBody"); if(!host) return;
-  if(LOCK.err){ host.innerHTML='<div class="hint"><b>잠금 정보를 불러오지 못했습니다.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
+  if(LOCK.err){ host.innerHTML='<div class="hint"><b>잠금 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
   var c=LOCK.cfg||{};
   var ld=(c.lockDays===undefined?7:Number(c.lockDays));
   var dd=(c.delDays===undefined?90:Number(c.delDays));
@@ -6114,7 +6114,7 @@ function ntLoad(){
     NOTI.loaded=true; NOTI.err="";
     NOTI.list=(r&&r.list)||[]; NOTI.today=(r&&r.today)||"";
     NOTI.at=new Date().toISOString();
-  },function(e){ NOTI.loaded=true; NOTI.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+  },function(e){ NOTI.loaded=true; NOTI.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ NOTI.busy=false;
     var at=$("ntAt"); if(at) at.textContent=NOTI.at?("마지막 확인 "+dtTime(NOTI.at)):"";
     ntDraw(); });
@@ -6136,7 +6136,7 @@ function ntState(n){
 }
 function ntDraw(){
   var host=$("ntBody"); if(!host) return;
-  if(NOTI.err){ host.innerHTML='<div class="hint"><b>공지사항 정보를 불러오지 못했습니다.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
+  if(NOTI.err){ host.innerHTML='<div class="hint"><b>공지사항 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
   var list=NOTI.list||[];
   var live=list.filter(ntLive).length, pop=list.filter(function(n){return ntLive(n)&&n.pop;}).length;
 
@@ -6352,12 +6352,12 @@ function ataLoad(){
     ATA.loaded=true; ATA.err="";
     ATA.tpls=(r&&r.tpls)||{}; ATA.ready=(r&&r.ready)||[]; ATA.stats=(r&&r.stats)||null; ATA.pfSet=!!(r&&r.pfSet);
     ATA.at=new Date().toISOString();
-  },function(e){ ATA.loaded=true; ATA.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+  },function(e){ ATA.loaded=true; ATA.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ ATA.busy=false; ataDraw(); });
 }
 function ataDraw(){
   var host=$("ataBody"); if(!host) return;
-  if(ATA.err){ host.innerHTML='<div class="card"><div class="hint"><b>알림톡 템플릿 정보를 불러오지 못했습니다.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'+
+  if(ATA.err){ host.innerHTML='<div class="card"><div class="hint"><b>알림톡 템플릿 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'+
     '<div class="tools" style="margin:12px 0 0"><button class="btn" id="ataRe">새로고침</button></div></div>';
     $("ataRe").onclick=function(){ ATA.loaded=false; ataLoad(); }; return; }
   var have=ATA_LIST.filter(function(x){ return String(ATA.tpls[x[0]]||"").trim(); }).length;
@@ -6408,7 +6408,7 @@ function ataDraw(){
     confirmBox("코드를 저장할까요?","코드 넣음 "+n+"개 · 비어 있음(문자로 보냄) "+(ATA_LIST.length-n)+"개","저장",false,function(){
       $("ataSave").disabled=true;
       api("hqAtaSave",[map]).then(function(){ ATA.tpls=tp; if(pf) ATA.pfSet=true; toast("코드를 저장했어요"); ataDraw(); },
-        function(e){ $("ataSave").disabled=false; toast(emsg(e,"저장하지 못했습니다. 다시 시도해 주세요."),true); });
+        function(e){ $("ataSave").disabled=false; toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true); });
     });
   };
 }
@@ -6497,7 +6497,7 @@ function billBind(){
       on?"토스 자동 결제 계약과 열쇠(PAY_ENC_KEY)를 넣은 뒤에만 켜세요.":"새 등록과 자동 결제가 멈춰요.",
       on?"켜기":"끄기", !on, function(){
         api("hqBillingOn",[on]).then(function(r){ D.hq=D.hq||{}; D.hq.billing_on=!!(r&&r.on!==undefined?r.on:on); toast(on?"켰어요":"껐어요"); pgDraw(); },
-          function(e){ toast(emsg(e,"바꾸지 못했습니다. 다시 시도해 주세요."),true); });
+          function(e){ toast(emsg(e,"바꾸지 못했어요. 다시 시도해 주세요."),true); });
       });
   };
 }
@@ -6522,12 +6522,12 @@ function viewCwal(){
 function cwLoad(){
   if(CW.busy) return; CW.busy=true;
   api("hqCheckWallets",[]).then(function(r){ CW.loaded=true; CW.err=""; CW.list=(r&&r.offices)||[]; },
-    function(e){ CW.loaded=true; CW.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+    function(e){ CW.loaded=true; CW.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ CW.busy=false; cwDraw(); });
 }
 function cwDraw(){
   var host=$("cwBody"); if(!host) return;
-  if(CW.err){ host.innerHTML='<div class="card"><div class="hint"><b>체크 지갑 정보를 불러오지 못했습니다.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'+
+  if(CW.err){ host.innerHTML='<div class="card"><div class="hint"><b>체크 지갑 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'+
     '<div class="tools" style="margin:12px 0 0"><button class="btn" id="cwRe">새로고침</button></div></div>';
     $("cwRe").onclick=function(){ CW.loaded=false; cwLoad(); }; return; }
   var linked=CW.list.filter(function(o){ return o.wallet; }).length;
@@ -6609,7 +6609,7 @@ function cwSheet(code){
     confirmBox(t, body, w?"잇기":"끊기", m!=="same", function(){
       $("cwGo").disabled=true;
       api("hqCheckWallet",[o.code, w]).then(function(){ o.wallet=w; closeSheet(); toast(w?"이었어요":"끊었어요"); cwDraw(); },
-        function(e){ $("cwGo").disabled=false; toast(emsg(e,"바꾸지 못했습니다. 다시 시도해 주세요."),true); });
+        function(e){ $("cwGo").disabled=false; toast(emsg(e,"바꾸지 못했어요. 다시 시도해 주세요."),true); });
     });
   };
 }
@@ -6659,7 +6659,7 @@ function pplSwDraw(){
     confirmBox("체크 비밀번호 초기화 준비를 "+(to?"켤까요?":"끌까요?"),
       to?"체크 서버 준비가 끝났는지 서버 방에 먼저 확인해 주세요.":"끄면 관리에서 체크 비밀번호 초기화를 할 수 없어요.", to?"켜기":"끄기", !to, function(){
       api("hqCheckPwSms",[to]).then(function(x){ PPL.pwSms=!!(x&&x.on); toast(PPL.pwSms?"켰어요":"껐어요"); pplSwDraw(); },
-        function(e){ toast(emsg(e,"처리하지 못했습니다. 다시 시도해 주세요."),true); }); }); };
+        function(e){ toast(emsg(e,"처리하지 못했어요. 다시 시도해 주세요."),true); }); }); };
 }
 function viewPpl(){
   $("main").innerHTML='<div class="dashhead"><h2>번호로 계정 찾기</h2>'+
@@ -6681,7 +6681,7 @@ function pplFind(){
   PPL.busy=true; PPL.err=""; pplDraw();
   Promise.all([api("hqPerson",[q]), api("hqAudit",[q]).catch(function(){ return null; })])
     .then(function(x){ PPL.r=x[0]||{}; PPL.r.phone=PPL.r.phone||q; PPL.audit=(x[1]&&(x[1].log||x[1].rows||x[1].list))||(Array.isArray(x[1])?x[1]:[]); },
-          function(e){ PPL.err=emsg(e,"찾지 못했습니다. 다시 시도해 주세요."); PPL.r=null; })
+          function(e){ PPL.err=emsg(e,"찾지 못했어요. 다시 시도해 주세요."); PPL.r=null; })
     .then(function(){ PPL.busy=false; pplDraw(); });
 }
 /* 카드 하나 = 계정 하나 (대상 하나) */
@@ -6700,7 +6700,7 @@ function stPill(active, locked){
 function pplDraw(){
   var host=$("pplBody"); if(!host) return;
   if(PPL.busy){ host.innerHTML='<div class="hint">찾는 중이에요…</div>'; return; }
-  if(PPL.err){ host.innerHTML='<div class="card"><div class="hint"><b>계정 정보를 불러오지 못했습니다.</b> '+(/[가-힣]/.test(PPL.err)&&!/sb\d|SQL|설계/.test(PPL.err)?esc(PPL.err)+' ':'')+'서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div></div>'; return; }
+  if(PPL.err){ host.innerHTML='<div class="card"><div class="hint"><b>계정 정보를 불러오지 못했어요.</b> '+(/[가-힣]/.test(PPL.err)&&!/sb\d|SQL|설계/.test(PPL.err)?esc(PPL.err)+' ':'')+'서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div></div>'; return; }
   var r=PPL.r; if(!r){ host.innerHTML=''; return; }
   var L=r.locks||{}, S=r.sessions||{}, cards=[], nm="";
   /* 워시 — 대상 wash (여러 업체에 있어도 한 계정) */
@@ -6772,10 +6772,10 @@ function pplDraw(){
       var a=b.getAttribute("data-pa"), t=b.getAttribute("data-pt"), n=b.getAttribute("data-pn"), A=PACT[a];
       var label=b.textContent;
       confirmBox(label+" — "+n+"?", (nm||"")+" · "+phoneFmt(r.phone)+"\n"+A[1], label, A[2], function(){
-        function done(x){ if(x && x.sent===false){ toast("문자를 보내지 못했습니다. 다시 시도해 주세요.",true); pplFind(); return; }
+        function done(x){ if(x && x.sent===false){ toast("문자를 보내지 못했어요. 다시 시도해 주세요.",true); pplFind(); return; }
           var DONE={stop:"멈췄어요",resume:"다시 쓸 수 있게 했어요",pwReset:"비밀번호를 초기화했어요",unlock:"잠금을 풀었어요",kick:"접속을 끊었어요",grant:"제품을 열었어요",revoke:"제품을 닫았어요"};
           var nt=(x&&(x.warn||x.note))||""; toast((DONE[a]||"처리했어요")+(/[가-힣]/.test(nt)?" · "+nt:"")); pplFind(); }
-        function fail(e){ toast(emsg(e,"처리하지 못했습니다. 다시 시도해 주세요."),true); }
+        function fail(e){ toast(emsg(e,"처리하지 못했어요. 다시 시도해 주세요."),true); }
         api("hqPersonAct",[r.phone, a, t]).then(function(x){
           /* 제품 열기가 처음이면 서버가 한 번 더 물어요 — 다른 제품이 막힐 수 있어서 */
           if(x && x.confirm) return confirmBox("한 번 더 확인해 주세요", x.why||"", "그래도 "+label, false, function(){
@@ -6822,7 +6822,7 @@ function prLoad(){
   api("hqPayResults",[PR2.from, PR2.to, ""]).then(function(r){ PR2.rows=(r&&(r.list||r.rows||r.results))||(Array.isArray(r)?r:[]); PR2.err="";
       PR2.sum=(r&&r.sum!=null)?Number(r.sum):null; PR2.refunds=(r&&r.refunds!=null)?Number(r.refunds):null;
       PR2.bill=(r&&r.billingShops!=null)?Number(r.billingShops):null; },
-    function(e){ PR2.rows=null; PR2.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+    function(e){ PR2.rows=null; PR2.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ PR2.busy=false; if(PR2.rows===null){ viewPaysOld(); prOldNote(); } else prDraw(); });
 }
 function prOldNote(){
@@ -6896,7 +6896,7 @@ var PWROWS = [];
 var PW = {list:null, err:"", loaded:false, busy:false, sg:null};
 function pwLoad(after){
   if(PW.busy) return; PW.busy=true;
-  api("hqPayWait",[]).then(function(r){ PW.list=(r&&r.list)||[]; PW.err=""; }, function(e){ PW.list=null; PW.err=emsg(e,"불러오지 못했습니다. 다시 시도해 주세요."); })
+  api("hqPayWait",[]).then(function(r){ PW.list=(r&&r.list)||[]; PW.err=""; }, function(e){ PW.list=null; PW.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
     .then(function(){ PW.busy=false; PW.loaded=true; if(after) after(); });
 }
 function pwKind(x){ return x.paidOrder?"chk":(x.old?"stop":(Number(x.days)>=7?"wait7":"run")); }
@@ -6911,7 +6911,7 @@ function viewPayWait(){
 }
 function pwDraw(){
   var host=$("pwBody"); if(!host) return;
-  if(PW.list===null){ host.innerHTML='<div class="card"><div class="hint"><b>목록을 불러오지 못했습니다.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div></div>'; return; }
+  if(PW.list===null){ host.innerHTML='<div class="card"><div class="hint"><b>목록을 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div></div>'; return; }
   var L=PW.list, chk=L.filter(function(x){ return x.paidOrder; }).length, d7=L.filter(function(x){ return !x.paidOrder && Number(x.days)>=7 && !x.old; }).length, old=L.filter(function(x){ return x.old && !x.paidOrder; }).length;
   host.innerHTML='<div id="pwK"></div>'+
     (chk?'<div class="card" style="border:1px solid var(--chk);display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="cgg-st chk">확인 필요 '+chk+'곳</span>'+
@@ -6942,7 +6942,7 @@ function pwDraw(){
       confirmBox("결제 대기 업체를 지울까요?", "업체: "+(x.name||"-")+"\n코드: "+x.shop+"\n대표 번호: "+phoneFmt(x.ownerPhone||"")+"\n가입: "+(Number(x.days)||0)+"일 전\n남는 것: 주문 · 결제 장부",
         "지우기", true, function(){
           api("hqPayWaitDel",[x.shop]).then(function(){ toast("지웠어요 · "+(x.name||x.shop)); pwLoad(pwDraw); },
-            function(e){ toast(emsg(e,"지우지 못했습니다. 다시 시도해 주세요."),true); pwLoad(pwDraw); }); }); }; });
+            function(e){ toast(emsg(e,"지우지 못했어요. 다시 시도해 주세요."),true); pwLoad(pwDraw); }); }); }; });
 }
 /* 누구나 가입 — 가입 코드 없이 홈페이지에서 가입 (처음 꺼짐) · 한도 셋 */
 function sgDraw(){
@@ -6969,7 +6969,7 @@ function sgSheet(){
     confirmBox("누구나 가입을 "+(v.on?"켤까요?":"끈 채로 저장할까요?"),
       "누구나 가입: "+(v.on?"켜짐":"꺼짐")+"\n같은 곳 하루: "+v.perIp+"번\n전체 하루: "+v.allDay+"번\n결제 대기 같은 곳: "+v.waitPerIp+"개", "저장", false, function(){
       api("hqSignup",[v]).then(function(r){ PW.sg=r||v; closeSheet(); toast(v.on?"누구나 가입을 켰어요":"저장했어요"); sgDraw(); },
-        function(e){ toast(emsg(e,"저장하지 못했습니다. 다시 시도해 주세요."),true); }); });
+        function(e){ toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true); }); });
   };
 }
 

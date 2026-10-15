@@ -98,4 +98,12 @@ def apply(s):
         k=s_[0].count(a)
         if k: s_[0]=s_[0].replace(a,b); n[0]+=k
         else: miss.append((0,"좋음 "+a))
+    # 마지막: 정정 (알림톡/07_워딩_검토/00_대조표_우선.md) — 기준은 디자인/말_대조표.md
+    #   화면 오류는 해요체 «○○하지 못했어요. 다시 시도해 주세요.», 로그인 중 오류와 결제 · 환불 오류(결제 방 대조표)만 습니다체
+    out=[]
+    for line in s_[0].split("\n"):
+        if "못했습니다" in line and not re.search(r"gmsg|로그인|환불|결제하지|결제를 확인하지|showGate", line):
+            k=line.count("못했습니다"); line=line.replace("못했습니다","못했어요"); n[0]+=k
+        out.append(line)
+    s_[0]="\n".join(out)
     return s_[0], n[0], miss
