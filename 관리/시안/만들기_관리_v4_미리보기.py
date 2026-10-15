@@ -109,6 +109,13 @@ function FAKE(fn,a){
       return {ok:true};
     case "hqAudit": return {ok:true,list:F_LOG.concat([{at:dd(-5)+"T10:00:00",who:"hq:한본사",action:"pwReset",target_phone:a[0],product:"check:HANBIT2",result:"ok"}])};
     case "hqCheckPwSms": if(a[0]===true||a[0]===false){ F_PWSMS=a[0]; F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:"checkPwSms",product:String(a[0]),result:"ok"}); } return {ok:true,on:F_PWSMS};
+    case "hqSendLog": return {ok:true,list:[
+      {at:dd(0)+"T09:12:00",product:"워시",shop:"HANBIT",shopName:"한빛광택",tpl:"intake",to:"010-****-1234",via:"ata",result:"알림톡 도착",msgId:"M4V2026101500001"},
+      {at:dd(0)+"T10:40:00",product:"워시",shop:"DURI",shopName:"두리휠",tpl:"release",to:"010-****-5678",via:"lms",result:"문자 대체",msgId:"M4V2026101500002",err:"카카오톡 미사용 번호"},
+      {at:dd(-1)+"T15:02:00",product:"체크",shop:"SAEBIT",shopName:"새빛 성능검사소",tpl:"check_arrive",to:"010-****-2222",via:"sms",result:"문자 대체",msgId:"M4V2026101400003"},
+      {at:dd(-1)+"T18:30:00",product:"통합",shop:"",shopName:"통합 입구",tpl:"auth",to:"010-****-3333",via:"ata",result:"알림톡 도착",msgId:"M4V2026101400004"},
+      {at:dd(-2)+"T11:00:00",product:"딜러",shop:"HANBIT",shopName:"한빛광택",tpl:"bill",to:"010-****-4444",via:"ata",result:"실패",msgId:"M4V2026101300005",err:"받는 번호가 올바르지 않아요"},
+      {at:dd(0)+"T11:58:00",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"pay_done",to:"010-****-9999",via:"ata",result:"대기",msgId:"M4V2026101500006"}]};
     case "hqPayWait": return {ok:true,list:[
       {shop:"NEWCAR1",name:"새차모터스",ownerPhone:"01055556666",joinPlan:"pro",createdAt:dd(-2)+"T10:00:00",days:2,old:false,paidOrder:!F_PWDEL.NEWCAR1&&true},
       {shop:"GOLDWASH",name:"골드세차",ownerPhone:"01077778888",joinPlan:"basic",createdAt:dd(-9)+"T10:00:00",days:9,old:false,paidOrder:false},

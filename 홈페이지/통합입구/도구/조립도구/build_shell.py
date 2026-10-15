@@ -87,7 +87,8 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
 <body>
 
 <!-- ═══ 하나뿐인 로그인 — 워시 로그인 화면과 같은 모양 ═══ -->
-<div id="cggLogin" hidden style="position:fixed;inset:0;z-index:99999;background:var(--bg,#f4f6f9);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;font-family:inherit;color:var(--text,#14202e)">
+<div id="cggLogin" hidden style="position:fixed;inset:0;z-index:99999;background:var(--bg,#f4f6f9);display:flex;align-items:center;justify-content:center;padding:56px 20px 20px;overflow:auto;font-family:inherit;color:var(--text,#14202e)">
+  <div class="cggBeta" style="word-break:keep-all;position:absolute;top:0;left:0;right:0;background:#0B2545;color:#E8F0FB;font-size:13px;text-align:center;padding:8px max(16px,env(safe-area-inset-left,0px));line-height:1.5"><b style="background:#E8F0FB;color:#0B2545;border-radius:6px;padding:0 7px;font-size:11.5px;letter-spacing:.04em;margin-right:6px">OPEN BETA</b>차곳간은 지금 <b>오픈 베타</b>예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</div>
   <div style="width:100%;max-width:400px">
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:30px;font-weight:800;letter-spacing:-1px">차곳간</div>
@@ -169,7 +170,7 @@ function post(fn,args,token){
 }
 
 /* ── 로그인 화면 ── */
-function msg(t,bad){ var m=$("lgMsg"); m.textContent=t||""; m.style.color=bad?"var(--danger,#b3261e)":"var(--good,#127a4b)"; }
+function msg(t,bad){ var m=$("lgMsg"); if(bad && t && !/[가-힣]/.test(t)) t="일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."; m.textContent=t||""; m.style.color=bad?"var(--danger,#b3261e)":"var(--good,#127a4b)"; }
 function step2(on){ $("lgStep1").hidden=on; $("lgStep2").hidden=!on; if(on) setTimeout(function(){ try{$("lgCode").focus();}catch(e){} },60); }
 var TICK="";
 function showLogin(t,bad){
@@ -308,10 +309,12 @@ window.addEventListener("storage",function(e){
 });
 function logoutAll(t){
   var sid=ls(SKEY);
-  ORDER.forEach(function(code){
-    var kv=PRODUCTS[code].keys({});
-    Object.keys(kv).forEach(function(k){ ls("cgg."+code+"."+k, null); });
-  });
+  /* 오픈 베타 보안: 로그아웃하면 제품들이 이 기기에 남긴 칸(cgg.<제품>.*)을 모두 지웁니다 */
+  try{ var S=window.localStorage, gone=[];
+    for(var i=0;i<S.length;i++){ var k=S.key(i); if(k && /^cgg\.(wash|check)\./.test(k)) gone.push(k); }
+    gone.forEach(function(k){ S.removeItem(k); });
+  }catch(e){}
+  try{ sessionStorage.removeItem("cgg_buy"); }catch(e){}
   ls(SKEY,null); ME=null;
   if(sid) post("cggLogout",[sid]).catch(function(){});
   showLogin(t||"",false);

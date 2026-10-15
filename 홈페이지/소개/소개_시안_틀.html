@@ -1,4 +1,4 @@
-<title>차곳간 홈페이지 시안</title>
+<title>차곳간 홈페이지</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -185,18 +185,6 @@ a.pick{text-decoration:none}
 footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:var(--surface)}
 </style>
 
-<div class="drafter gut"><div class="wrap">
-  <b>시안 보기 전환</b>
-  <span>오픈 베타 띠</span>
-  <span class="seg" role="group" aria-label="오픈 베타 띠">
-    <button type="button" id="betaOn" aria-pressed="true">넣은 안</button>
-    <button type="button" id="betaOff" aria-pressed="false">뺀 안</button>
-  </span>
-  <span class="rec">추천: 넣은 안</span>
-  <a href="#flow">처음 오신 분 흐름 보기 ↓</a>
-  <span>· 이 줄은 시안에만 있어요</span>
-</div></div>
-
 <div class="beta gut" id="betaBand"><div class="wrap">
   <b>OPEN BETA</b><span>차곳간은 지금 <strong>오픈 베타</strong>예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span>
 </div></div>
@@ -327,10 +315,7 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&!$("dlg").
 /* 폰 ☰ 메뉴 */
 $("burger").onclick=function(){ var o=$("mnav").hidden; $("mnav").hidden=!o; $("burger").setAttribute("aria-expanded",String(o)); };
 [].forEach.call(document.querySelectorAll("#mnav a"),function(a){ a.addEventListener("click",function(){ $("mnav").hidden=true; $("burger").setAttribute("aria-expanded","false"); }); });
-/* 오픈 베타 띠 */
-function beta(on){ $("betaBand").hidden=!on; $("betaOn").setAttribute("aria-pressed",String(on)); $("betaOff").setAttribute("aria-pressed",String(!on)); store("cgg_draft_beta",on?"1":"0"); }
-$("betaOn").onclick=function(){ beta(true); }; $("betaOff").onclick=function(){ beta(false); };
-beta(store("cgg_draft_beta")!=="0");
+/* 오픈 베타 띠 — 「넣은 안」 확정 (2026-10-15) */
 
 /* ═══ 미리 써 보기 ═══ */
 var NAME={wash:"워시",check:"체크",dealer:"딜러"};
