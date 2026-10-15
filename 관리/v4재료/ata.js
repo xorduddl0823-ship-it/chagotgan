@@ -17,7 +17,8 @@ var ATA_LIST = [   /* [키, 템플릿 이름, 언제 나가는지, 검수 상태
   ["pay_done",    "결제완료",       "카드 결제 또는 입금 확인이 끝났을 때",   "통과"],
   ["cash_done",   "충전완료",       "캐시가 충전되었을 때",                  "통과"],
   ["balance",     "잔액안내",       "남은 금액이 정해둔 선 아래로 내려갔을 때", "재검수"],
-  ["auth",        "인증번호",       "인증번호를 보낼 때",                    "통과"]
+  ["auth",        "인증번호",       "인증번호를 보낼 때",                    "통과"],
+  ["check_arrive","차량도착 (체크)", "체크 — 차가 목적지에 도착했을 때 (본사 채널, 비면 검사소 템플릿 → 문자)", "심사 대기"]
 ];
 var ATA = {loaded:false, busy:false, err:"", tpls:{}, ready:[], stats:null, pfSet:false, at:""};
 function ataYm(){ var d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
@@ -57,7 +58,7 @@ function ataDraw(){
     '<div class="hint" style="margin:-6px 0 16px">지난달 합계 <b>'+won(tot)+'</b> (부가세 별도). 금액은 솔라피 단가로 계산한 값이라 실제 청구와 조금 다를 수 있어요.<br>'+
       '건수는 업체 화면에서 나간 발송만 세요. 인증번호와 업체 대표에게 가는 안내는 아직 세지 않아요.'+
       (st.error?' <b style="color:var(--stop)">'+esc(st.error)+'</b>':'')+'</div>'+
-    /* 템플릿 코드 13줄 */
+    /* 템플릿 코드 14줄 (확정본 13개 + 체크 차량도착) */
     '<div class="card"><h2>템플릿 코드 <span class="rt">'+have+' / '+ATA_LIST.length+' 넣음</span></h2>'+
       '<div class="csub">솔라피 › 카카오 알림톡 › 템플릿에서 코드를 복사해 넣어 주세요. 템플릿 본문과 보내는 글자가 똑같아야 해서, 문구는 여기서 고치지 않아요.'+
       '</div>'+
@@ -68,11 +69,11 @@ function ataDraw(){
       ATA_LIST.map(function(x){
         var code=String(ATA.tpls[x[0]]||"");
         return '<tr><td class="c-name">'+esc(x[1])+'</td><td>'+esc(x[2])+'</td>'+
-          '<td class="mid"><span class="pill '+(x[3]==="통과"?"ok":"wait")+'">'+(x[3]==="통과"?"완료":"확인 필요")+'</span></td>'+
+          '<td class="mid"><span class="pill '+(x[3]==="통과"?"ok":"wait")+'">'+(x[3]==="통과"?"완료":(x[3]==="심사 대기"?"심사 대기":"확인 필요"))+'</span></td>'+
           '<td><input type="text" data-ata="'+x[0]+'" value="'+esc(code)+'" placeholder="비어 있음" style="height:36px;font-size:13.5px;font-family:ui-monospace,monospace"></td>'+
           '<td class="mid" data-ataway="'+x[0]+'">'+ataWay(code,x[0])+'</td></tr>'; }).join("")+
       '</tbody></table></div>'+
-      '<div class="hint" style="margin:10px 0 0">«검수 확인 필요» 템플릿은 카카오 재검수 중이에요. 통과 전에 코드를 넣으면 알림톡이 실패하고 문자로 대신 나가요 — 안내가 끊기지는 않아요.</div>'+
+      '<div class="hint" style="margin:10px 0 0">«검수 확인 필요» 템플릿은 카카오 재검수 중이고, «심사 대기»는 새로 심사받는 중이에요. 통과 전에 코드를 넣으면 알림톡이 실패하고 문자로 대신 나가요 — 안내가 끊기지는 않아요.</div>'+
       '<div class="tools" style="margin:14px 0 0"><button class="btn primary" id="ataSave">코드 저장</button>'+
         '<button class="btn" id="ataRe">다시 불러오기</button></div>'+
     '</div>'+
@@ -95,6 +96,8 @@ function ataDraw(){
 }
 /* 코드 있음 + 서버 준비됨 → 알림톡 먼저 · 코드 있음 + 서버 아직 → 문자로 보냄(서버 준비 중) · 코드 없음 → 문자로 보냄 */
 function ataWay(code,key){
+  var row=ATA_LIST.filter(function(x){ return x[0]===key; })[0];
+  if(row && row[3]==="심사 대기") return '<span class="pill wait" title="카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 심사 대기</span>';
   if(!String(code||"").trim()) return '<span class="pill gray">문자로 보냄</span>';
   if(ATA.ready.length && ATA.ready.indexOf(key)<0) return '<span class="pill wait" title="서버가 이 안내를 아직 알림톡으로 보내지 않아요">문자로 보냄 · 서버 준비 중</span>';
   return '<span class="pill run">알림톡 먼저</span>'; }
