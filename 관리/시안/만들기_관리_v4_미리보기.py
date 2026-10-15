@@ -54,7 +54,7 @@ var F_SVCS=[{id:1,code:"supabase",name:"수파베이스",kind:"sub",cost:35000,n
  {id:2,code:"solapi",name:"솔라피 문자",kind:"charge",balance:8000,min_bal:10000,active:true,sort:2,auto:true,auto_note:"자동으로 읽음",what:"문자"},
  {id:3,code:"cloudflare",name:"클라우드플레어",kind:"sub",cost:0,next_due:dd(17),active:true,sort:3,what:"주소"}];
 var F_TODO=[{id:1,title:"QR 스티커 교체",done:false,due_at:dd(0)},{id:2,title:"문자 충전",done:false,due_at:dd(-2)},{id:3,title:"세금계산서 정리",done:false,due_at:dd(6)}], F_NEXT=10;
-var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_PWDEL={}, F_SG={on:false,cfg:{perIp:5,allDay:200,waitPerIp:3}}, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
+var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_BIZ={}, F_PWDEL={}, F_SG={on:false,cfg:{perIp:5,allDay:200,waitPerIp:3}}, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
 function FAKE(fn,a){
   a=a||[];
   switch(fn){
@@ -109,13 +109,21 @@ function FAKE(fn,a){
       return {ok:true};
     case "hqAudit": return {ok:true,list:F_LOG.concat([{at:dd(-5)+"T10:00:00",who:"hq:한본사",action:"pwReset",target_phone:a[0],product:"check:HANBIT2",result:"ok"}])};
     case "hqCheckPwSms": if(a[0]===true||a[0]===false){ F_PWSMS=a[0]; F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:"checkPwSms",product:String(a[0]),result:"ok"}); } return {ok:true,on:F_PWSMS};
-    case "hqSendLog": return {ok:true,list:[
-      {at:dd(0)+"T09:12:00",product:"워시",shop:"HANBIT",shopName:"한빛광택",tpl:"intake",to:"010-****-1234",via:"ata",result:"알림톡 도착",msgId:"M4V2026101500001"},
-      {at:dd(0)+"T10:40:00",product:"워시",shop:"DURI",shopName:"두리휠",tpl:"release",to:"010-****-5678",via:"lms",result:"문자 대체",msgId:"M4V2026101500002",err:"카카오톡 미사용 번호"},
-      {at:dd(-1)+"T15:02:00",product:"체크",shop:"SAEBIT",shopName:"새빛 성능검사소",tpl:"check_arrive",to:"010-****-2222",via:"sms",result:"문자 대체",msgId:"M4V2026101400003"},
-      {at:dd(-1)+"T18:30:00",product:"통합",shop:"",shopName:"통합 입구",tpl:"auth",to:"010-****-3333",via:"ata",result:"알림톡 도착",msgId:"M4V2026101400004"},
-      {at:dd(-2)+"T11:00:00",product:"딜러",shop:"HANBIT",shopName:"한빛광택",tpl:"bill",to:"010-****-4444",via:"ata",result:"실패",msgId:"M4V2026101300005",err:"받는 번호가 올바르지 않아요"},
-      {at:dd(0)+"T11:58:00",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"pay_done",to:"010-****-9999",via:"ata",result:"대기",msgId:"M4V2026101500006"}]};
+    case "hqSendLog": return {ok:true,from:a[0],to:a[1],list:[
+      {at:dd(0)+" 09:12",product:"워시",shop:"HANBIT",shopName:"한빛광택",tpl:"intake",to:"010-****-1234",via:"ata",result:"알림톡 도착",msgId:"M4V2026101500001",vars:["업체명","차량번호"]},
+      {at:dd(0)+" 10:40",product:"워시",shop:"DURI",shopName:"두리휠",tpl:"release",to:"010-****-5678",via:"lms",result:"문자 대체",msgId:"M4V2026101500002",err:"카카오톡을 쓰지 않는 번호예요"},
+      {at:dd(-1)+" 15:02",product:"체크",shop:"SAEBIT",shopName:"새빛 성능검사소",tpl:"check_arrive_sms",to:"010-****-2222",via:"sms",result:"문자 도착",msgId:"M4V2026101400003",ref:"A-1043"},
+      {at:dd(-1)+" 18:30",product:"통합",shop:"",shopName:"통합 입구",tpl:"auth",to:"010-****-3333",via:"ata",result:"알림톡 도착",msgId:"M4V2026101400004"},
+      {at:dd(-2)+" 11:00",product:"딜러",shop:"HANBIT",shopName:"한빛광택",tpl:"bill",to:"010-****-4444",via:"ata",result:"실패",msgId:"M4V2026101300005",err:"받는 번호가 올바르지 않아요"},
+      {at:dd(-2)+" 12:00",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"cash_done",to:"010-****-7777",via:"ata",result:"안 보냄",err:"템플릿 코드가 없어 보내지 않았어요"},
+      {at:dd(0)+" 11:58",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"pay_done",to:"010-****-9999",via:"ata",result:"대기",msgId:"M4V2026101500006"}]};
+    case "hqSendSum": return {ok:true,ym:a[0],rows:[],total:{ata:2,sms:1,sent:1,fail:1,wait:1,skip:1,cost:2*13+45+18},price:{ata:13,sms:18,lms:45,mms:110},note:"대략 요금이에요 (부가세 별도)"};
+    case "hqSendCheck": return {ok:true,n:3};
+    case "hqBizList": return {ok:true,list:[
+      {product:"워시",code:"NEWCAR1",name:"새차모터스",bizNo:"1188129312",ceo:"정새차",owner:"010-****-6666",ok:!!F_BIZ.NEWCAR1,okAt:F_BIZ.NEWCAR1?dd(0):""},
+      {product:"체크",code:"SAEBIT",name:"새빛 성능검사소",bizNo:"3120577810",ceo:"박바다",owner:"010-****-2222",ok:F_BIZ.SAEBIT!==false,okAt:dd(-3)},
+      {product:"워시",code:"HANBIT",name:"한빛광택",bizNo:"2118130415",ceo:"김하늘",owner:"010-****-1234",ok:F_BIZ.HANBIT!==false,okAt:dd(-30)}]};
+    case "hqBizOk": F_BIZ[a[1]]=a[2]; return {ok:true};
     case "hqPayWait": return {ok:true,list:[
       {shop:"NEWCAR1",name:"새차모터스",ownerPhone:"01055556666",joinPlan:"pro",createdAt:dd(-2)+"T10:00:00",days:2,old:false,paidOrder:!F_PWDEL.NEWCAR1&&true},
       {shop:"GOLDWASH",name:"골드세차",ownerPhone:"01077778888",joinPlan:"basic",createdAt:dd(-9)+"T10:00:00",days:9,old:false,paidOrder:false},

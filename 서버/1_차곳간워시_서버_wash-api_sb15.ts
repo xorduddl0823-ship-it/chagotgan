@@ -1251,7 +1251,7 @@ async function payDone(shop: string, kind: string, full: number, useCash: number
           await sb.from("wash_pay_order").update({ fail_msg: "캐시 모자람 — 이용기간 안 늘림(본사 확인)" }).eq("order_id", orderId);
           const admin = (await hqCfg()).adminPhone;
           if (admin) await noticeSms(admin, "[차곳간] " + shop + " 이용요금 결제(" + orderId + ")의 캐시 " + wonTxt2(useCash) +
-            "를 깎지 못해 이용기간을 늘리지 않았습니다. 관리에서 확인해 주세요");
+            "을 깎지 못해 이용기간을 늘리지 않았습니다. 관리에서 확인해 주세요");
         } catch (_) { /* */ }
         return;
       }
@@ -2384,7 +2384,7 @@ const FN: Record<string, Fn> = {
     dbCheck(error, "업체");
     /* sb15: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
     if (patch.biz_no) {
-      try { await sb.from("wash_shops").update({ biz_ok_at: null }).eq("shop", s); } catch (_) { /* */ }
+      try { await sb.from("wash_shops").update({ biz_ok_at: null, biz_set_at: new Date().toISOString() }).eq("shop", s); } catch (_) { /* */ }
       try { const admin = (await hqCfg()).adminPhone;
         if (admin) await noticeSms(admin, "[차곳간] " + s + " 업체가 사업자번호를 처음 넣었습니다. 관리 → 사업자번호 확인에서 확인해 주세요", { tpl: "notice", shop: s }); }
       catch (_) { /* */ }
@@ -4948,15 +4948,16 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
   /* sb15: 사업자번호 확인 목록 — 워시 업체 + 체크 검사소 (확인 안 된 것 먼저) — [] */
   hqBizList: async (shop, _a, ss) => {
     hqOnly(shop, ss);
-    const { data: ws, error } = await sb.from("wash_shops").select("shop,name,biz_no,biz_ok_at,owner_phone,ceo").neq("biz_no", "").limit(2000);
+    const { data: ws, error } = await sb.from("wash_shops").select("shop,name,biz_no,biz_ok_at,biz_set_at,owner_phone,ceo").neq("biz_no", "").limit(2000);
     if (error) return { ok: true, list: [], need: "SQL 11 을 먼저 실행해 주세요" };
-    const { data: co } = await sb.from("check_office").select("code,name,biz_no,biz_ok_at,owner_name").neq("biz_no", "").limit(500);
+    const { data: co } = await sb.from("check_office").select("code,name,biz_no,biz_ok_at,biz_set_at,owner_name").neq("biz_no", "").limit(500);
+    const kt = (v: unknown) => { const t = Date.parse(String(v || "")); return isNaN(t) ? "" : new Date(t + 9 * 3600e3).toISOString().slice(0, 16).replace("T", " "); };
     const mask = (p: unknown) => { const d = digits(p); return d.length >= 10 ? d.slice(0, 3) + "-****-" + d.slice(-4) : ""; };
     const list = [
       ...(ws || []).filter((r: any) => digits(r.biz_no)).map((r: any) => ({ product: "워시", code: r.shop, name: String(r.name || ""), bizNo: digits(r.biz_no),
-        ceo: String(r.ceo || ""), owner: mask(r.owner_phone), ok: r.biz_ok_at !== null, okAt: r.biz_ok_at || "" })),
+        ceo: String(r.ceo || ""), owner: mask(r.owner_phone), ok: r.biz_ok_at !== null, okAt: kt(r.biz_ok_at), setAt: kt(r.biz_set_at) })),
       ...(co || []).filter((r: any) => digits(r.biz_no)).map((r: any) => ({ product: "체크", code: r.code, name: String(r.name || ""), bizNo: digits(r.biz_no),
-        ceo: String(r.owner_name || ""), owner: "", ok: r.biz_ok_at !== null, okAt: r.biz_ok_at || "" })),
+        ceo: String(r.owner_name || ""), owner: "", ok: r.biz_ok_at !== null, okAt: kt(r.biz_ok_at), setAt: kt(r.biz_set_at) })),
     ];
     list.sort((x, y) => Number(x.ok) - Number(y.ok));
     return { ok: true, list };
@@ -5211,7 +5212,7 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     /* 큰 금액은 한 번 더 확인받습니다 (a[5] === true 면 확인된 것) */
     if (cfg.bigAmt > 0 && amt > cfg.bigAmt && a[5] !== true)
       return { ok: false, confirm: true, amount: amt,
-               why: wonTxt2(amt) + " 는 큰 금액입니다. 한 번 더 확인해 주세요" };
+               why: wonTxt2(amt) + "은 큰 금액입니다. 한 번 더 확인해 주세요" };
     const who = "hq:" + String((ss && (ss.who || ss.phone)) || "?");
     const { data, error } = await sb.rpc("wash_cash_add", {
       p_shop: code, p_amt: amt, p_kind: String(a[4] || "paid"),

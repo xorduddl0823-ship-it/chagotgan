@@ -1069,7 +1069,7 @@ async function importLegacy(ctx: Ctx, part: string, rows: any[]) {
     if (S(o.사업자등록번호) && !S(ctx.office?.biz_no)) {                    // v32(H1): 비어 있을 때만 · 본사 확인 기다림
       if (await bizTaken(S(o.사업자등록번호), S(ctx.office?.id))) throw new Error(BIZ_TAKEN_MSG);
       up.biz_no = S(o.사업자등록번호);
-      try { await db.from("check_office").update({ biz_ok_at: null }).eq("id", ctx.office.id); } catch (_) { /* SQL 11 전 */ }
+      try { await db.from("check_office").update({ biz_ok_at: null, biz_set_at: new Date().toISOString() }).eq("id", ctx.office.id); } catch (_) { /* SQL 11 전 */ }
     }
     if (S(o.대표자)) up.owner_name = S(o.대표자);
     if (S(o.연락처)) up.tel = S(o.연락처);
@@ -1622,7 +1622,7 @@ async function officeSave(ctx: Ctx, body: any) {
   const { error } = await db.from("check_office").update(up).eq("id", ctx.office.id);
   if (error) throw new Error(error.message);
   /* v32: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
-  if (newBiz) { try { await db.from("check_office").update({ biz_ok_at: null }).eq("id", ctx.office.id); } catch (_) { /* */ } }
+  if (newBiz) { try { await db.from("check_office").update({ biz_ok_at: null, biz_set_at: new Date().toISOString() }).eq("id", ctx.office.id); } catch (_) { /* */ } }
   await log(ctx, "검사소 설정 고침", Object.keys(up));
   return { ok: true };
 }
