@@ -94,4 +94,4 @@ deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/�
 deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/알림톡_워시_시험.ts
 ```
 
-- `알림톡_워시_시험.ts` — 시험 19개 (2026-10-15 전부 통과 · sb5 로 돌리면 11개 실패)
+- `알림톡_워시_시험.ts` — 시험 26개 (2026-10-15 전부 통과 · 워시 sb7 · sb6 으로 돌리면 22개 실패)

@@ -1,4 +1,4 @@
-// 워시 서버 sb6 시험 — 알림톡 먼저, 안 되면 문자 (noticeAta) · 2026-10-10 확정본 변수·대체 문구 대조 · 가짜 수파베이스
+// 워시 서버 sb7 시험 — 알림톡 먼저, 안 되면 문자 (noticeAta) · 2026-10-10 확정본 변수·대체 문구 대조 · 가짜 수파베이스
 // 실행:  deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/알림톡_워시_시험.ts
 import { store } from "./fake_supabase_wash.ts";
 
@@ -17,7 +17,7 @@ Object.assign(store, {
     { sid: OWN, phone: "01077778888", shop: "BT", role: "owner", expires_at: far },
   ],
   wash_payments: [{ id: "P1", shop: "BT", amount: 33000, status: "ready" }],
-  wash_otp: [], cgg_access: [],
+  wash_otp: [], cgg_access: [], wash_viewcode: [], wash_docs: [],
 });
 let mode: "ok" | "ataFail" = "ok";
 const sent: any[] = [];
@@ -35,7 +35,7 @@ const errs: string[] = [];
 console.error = (...a: unknown[]) => { errs.push(a.map(String).join(" ")); };
 const H: any[] = [];
 (Deno as any).serve = (h: any) => { H.push(h); return {}; };
-await import(Deno.env.get("WASH_SRC") ?? "../1_차곳간워시_서버_wash-api_sb6.ts");
+await import(Deno.env.get("WASH_SRC") ?? "../1_차곳간워시_서버_wash-api_sb7.ts");
 const call = async (fn: string, args: unknown[], token = "", shop = "") =>
   await (await H[0](new Request("http://x", { method: "POST", body: JSON.stringify({ shop, token, fn, args }) }))).json();
 let pass = 0, fail = 0;
@@ -50,11 +50,11 @@ await call("sendCode", ["01055556666", "reset"]);
 check("인증번호가 문자로 나감 (알림톡 아님)", sent.length === 1 && !sent[0].kakaoOptions && /인증번호 \d{6}/.test(sent[0].text), sent);
 
 console.log("② 관제센터에 코드 넣기");
-const sv = await call("hqAtaSave", [{ tpl: { otp: "KA01TP_OTP", charge: "KA01TP_CHG", pay: "KA01TP_PAY", out: "KA01TP_OUT", deposit: "KA01TP_DEP", nope: "X" } }], ADM, "ADMIN");
-check("본사 계정으로 저장됨 (모르는 이름은 버림)", sv.result?.ok && !sv.result.cfg.tpl.nope && sv.result.cfg.tpl.otp === "KA01TP_OTP", sv);
+const sv = await call("hqAtaSave", [{ tpl: { auth: "KA01TP_OTP", cash_done: "KA01TP_CHG", pay_done: "KA01TP_PAY", release: "KA01TP_OUT", deposit_ok: "KA01TP_DEP", nope: "X" } }], ADM, "ADMIN");
+check("본사 계정으로 저장됨 (모르는 이름은 버림)", sv.result?.ok && !store.wash_hq[0].ata_cfg.tpl.nope && store.wash_hq[0].ata_cfg.tpl.auth === "KA01TP_OTP", store.wash_hq[0]);
 check("업체 계정은 저장 못 함", !!(await call("hqAtaSave", [{ tpl: {} }], OWN, "BT")).__err);
-const gt = await call("hqAtaGet", [], ADM, "ADMIN");
-check("보기: 통과 8개 이름과 넣은 코드", gt.result?.list?.length === 8 && gt.result.list.find((x: any) => x.key === "otp").code === "KA01TP_OTP", gt.result?.list?.map((x: any) => x.name));
+const gt = await call("hqAta", [], ADM, "ADMIN");
+check("보기(관리 화면 모양): 13개 키 · pfSet · 통과 8개 ready", Object.keys(gt.result?.tpls ?? {}).length === 13 && gt.result.tpls.auth === "KA01TP_OTP" && gt.result.pfSet === true && gt.result.ready.length === 8 && !!gt.result.stats, gt.result);
 
 console.log("③ 인증번호 — 확정본 변수 #{인증번호}·#{유효시간}");
 reset();
@@ -84,28 +84,53 @@ const pv = pay?.kakaoOptions?.variables ?? {};
 check("본사 「입금됨」 표시는 결제완료 알림톡 (입금확인 아님)", pay?.to === "01077778888" && !sent.some((m) => m.kakaoOptions?.templateId === "KA01TP_DEP"), sent);
 check("결제완료 변수: #{금액}=33,000·#{결제수단}=계좌이체·#{요금제}·#{이용기한}", pv["#{금액}"] === "33,000" && pv["#{결제수단}"] === "계좌이체" && "#{요금제}" in pv && "#{이용기한}" in pv && Object.keys(pv).length === 5, pv);
 reset();
-store.wash_hq[0].ata_cfg = { tpl: { otp: "KA01TP_OTP" } };
-await call("hqAtaGet", [], ADM, "ADMIN");
+store.wash_hq[0].ata_cfg = { tpl: { auth: "KA01TP_OTP" } };
+await call("hqAta", [], ADM, "ADMIN");
 await call("hqCashAdd", ["BT", 10000, 365, "", "paid"], ADM, "ADMIN");
 check("충전완료 코드가 없으면 업체 대표에게 아무것도 안 보냄 (문자 비용 안 늚)", !sent.some((m) => m.to === "01077778888"), sent);
 
-console.log("⑤ 화면이 ataKey 로 — 출고안내·입금확인");
-store.wash_hq[0].ata_cfg = { tpl: { out: "KA01TP_OUT", deposit: "KA01TP_DEP" } };
-await call("hqAtaGet", [], ADM, "ADMIN");
+console.log("⑤ 화면이 ataKey 로 — 출고안내·입금확인 (sb7: 서버가 업체·보기코드를 정함)");
+store.wash_hq[0].ata_cfg = { tpl: { release: "KA01TP_OUT", deposit_ok: "KA01TP_DEP", bill: "KA01TP_BILL" } };
+await call("hqAta", [], ADM, "ADMIN");
+store.wash_shops[0].sms_from = "01011112222";
+store.wash_docs = [{ shop: "BT", demo: false, col: "intakes", id: "i1", data: { plate: "12가3456" } }];
+store.wash_viewcode = [];
 const OUTV = { 딜러명: "김딜러", 상사명: "좋은상사", 차량번호: "12가3456", 작업내용: "광택", 목적지: "본사 주차장",
-  출고일시: "10/15 14:00", 업체전화: "010-1111-2222", 업체명: "브라더세차", 보기코드: "ABCDEF" };
+  출고일시: "10/15 14:00", 업체전화: "010-9999-9999", 업체명: "차곳간 본사", 보기코드: "EVILEVILEVILEVILEVILEVIL" };
 reset();
-await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "out", variables: OUTV })], OWN, "BT");
-check("출고안내: 본사 템플릿 + 확정본 변수 9개", sent[0]?.kakaoOptions?.templateId === "KA01TP_OUT" && Object.keys(sent[0]?.kakaoOptions?.variables ?? {}).length === 9 && sent[0].kakaoOptions.variables["#{보기코드}"] === "ABCDEF", sent[0]);
-check("출고안내 대체 문구에 도착 사진 주소", /v\.html\?c=ABCDEF/.test(sent[0]?.text ?? ""), sent[0]?.text);
+await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "release", rec: "i1", variables: OUTV })], OWN, "BT");
+const ov = sent[0]?.kakaoOptions?.variables ?? {};
+check("출고안내: 본사 템플릿 + 확정본 변수 9개", sent[0]?.kakaoOptions?.templateId === "KA01TP_OUT" && Object.keys(ov).length === 9, sent[0]);
+check("업체명·업체전화는 화면 값이 아니라 서버 값 (가짜 「차곳간 본사」 못 씀)", ov["#{업체명}"] === "브라더세차" && ov["#{업체전화}"] === "010-1111-2222", ov);
+const made = store.wash_viewcode.find((x: any) => x.rec_id === "i1");
+check("보기코드는 화면이 준 값이 아니라 서버가 만든 그 차의 코드", !!made && ov["#{보기코드}"] === made.code && ov["#{보기코드}"] !== OUTV.보기코드, { ov, made });
+check("대신 보낼 문자에도 서버가 만든 주소", (sent[0]?.text ?? "").includes("v.html?c=" + (made?.code ?? "x")), sent[0]?.text);
 reset();
-const partial: any = { ...OUTV }; delete partial.보기코드;
-await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "out", variables: partial })], OWN, "BT");
+const noRec = await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "release", variables: OUTV })], OWN, "BT");
+check("입고 기록 번호 없이 출고안내는 거절 (아무것도 안 나감)", !!noRec.__err && sent.length === 0, noRec);
+const other = await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "release", rec: "남의차", variables: OUTV })], OWN, "BT");
+check("이 업체 차가 아니면 거절", /찾지 못했습니다/.test(other.__err ?? ""), other);
+reset();
+const partial: any = { ...OUTV }; delete partial.목적지;
+await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "release", rec: "i1", variables: partial })], OWN, "BT");
 check("확정본 변수가 하나라도 빠지면 알림톡 대신 문자 (실패하지 않음)", sent.length === 1 && !sent[0].kakaoOptions && /12가3456 출고되었습니다/.test(sent[0].text), sent[0]);
+console.log("⑥ 청구서 — 그 업체의 살아 있는 청구서 보기코드만");
+store.wash_viewcode.push({ code: "B".repeat(24), shop: "OTHER", rec_id: "b9", kind: "bill", expires_at: far },
+                         { code: "C".repeat(24), shop: "BT", rec_id: "b1", kind: "bill", expires_at: far });
+const BILLV = { 기간: "9월", 받는곳: "좋은상사", 건수: 12, 금액: "1,100,000", 입금기한: "10/31", 계좌: "국민 123", 보기코드: "B".repeat(24) };
 reset();
-await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "deposit",
-  variables: { "#{받는곳}": "좋은상사", "#{금액}": "1,100,000", "#{업체명}": "브라더세차", "#{확인일시}": "10/15 15:00", "#{기간}": "9월", "#{업체전화}": "010-1111-2222" } })], OWN, "BT");
-check("입금확인(업체→거래처): #{…} 모양으로 보내도 알림톡", sent[0]?.kakaoOptions?.templateId === "KA01TP_DEP" && sent[0].kakaoOptions.variables["#{받는곳}"] === "좋은상사", sent[0]);
+const bad = await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "bill", variables: BILLV })], OWN, "BT");
+check("남의 업체 청구서 보기코드는 거절", /이 업체 것이 아니거나/.test(bad.__err ?? "") && sent.length === 0, bad);
+reset();
+await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "bill", variables: { ...BILLV, 보기코드: "C".repeat(24) } })], OWN, "BT");
+check("우리 업체 청구서 보기코드는 알림톡", sent[0]?.kakaoOptions?.templateId === "KA01TP_BILL" && sent[0].kakaoOptions.variables["#{보기코드}"] === "C".repeat(24), sent[0]);
+console.log("⑦ 입금확인 · 권유 문구");
+reset();
+await call("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", kind: "ATA", ataKey: "deposit_ok",
+  variables: { "#{받는곳}": "좋은상사", "#{금액}": "1,100,000", "#{확인일시}": "10/15 15:00", "#{기간}": "9월" } })], OWN, "BT");
+check("입금확인: 업체명·전화는 서버가 채우고 알림톡", sent[0]?.kakaoOptions?.templateId === "KA01TP_DEP" && sent[0].kakaoOptions.variables["#{업체명}"] === "브라더세차", sent[0]);
+const src = await Deno.readTextFile(new URL("../1_차곳간워시_서버_wash-api_sb7.ts", import.meta.url));
+check("업체 대표 문자에서 「충전하기 ▶」 권유 문구가 사라짐 (주석 빼고)", !src.split("\n").filter((l) => !l.trim().startsWith("//")).some((l) => /충전하기 ▶/.test(l)));
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);
