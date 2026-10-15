@@ -13,8 +13,11 @@ import os, shutil
 ROOT = "/home/user/chagotgan"
 SRCDIR = ROOT + "/딜러/3_딜러앱_화면_d3.2"
 OUTDIR = ROOT + "/딜러/3_딜러앱_화면_d3.3"
-J4CSS = open(ROOT + "/디자인/공통/cgg-j4.css", encoding="utf-8").read()
-J4JS = open(ROOT + "/디자인/공통/cgg-j4.js", encoding="utf-8").read()
+# 공통 부품은 1.2 그대로 (커밋 b820d84) — 디자인 방이 다음 판을 내도 d3.3 은 같은 1.2 로 다시 만들어져요
+import subprocess
+J4_COMMIT = "b820d84"
+J4CSS = subprocess.run(["git", "-C", ROOT, "show", J4_COMMIT + ":디자인/공통/cgg-j4.css"], capture_output=True, check=True).stdout.decode("utf-8")
+J4JS = subprocess.run(["git", "-C", ROOT, "show", J4_COMMIT + ":디자인/공통/cgg-j4.js"], capture_output=True, check=True).stdout.decode("utf-8")
 assert "cgg-j4 1.2" in J4CSS and 'version:"cgg-j4 1.2"' in J4JS, "공통 부품이 1.2 가 아니에요"
 s = open(SRCDIR + "/index.html", encoding="utf-8").read()
 
@@ -58,6 +61,7 @@ rep("function demoApi(fn,a){", r'''function dday(n){var d=new Date(Date.now()+n*
 var DEMO_BILLS=[
  {shop:"한결광택 (예시)",month:"9월",name:"수원오토갤러리",cars:6,amount:780000,due:780000,dueDate:dday(-3),bank:"예시은행 000-1111-2222-01 한결광택",state:"입금 전",url:""},
  {shop:"바른리페어 (예시)",month:"9월",name:"수원오토갤러리",cars:3,amount:1250000,due:1250000,dueDate:dday(5),bank:"예시은행 000-3333-4444-02 바른리페어",state:"입금 전",url:""},
+ {shop:"맑은세차 (예시)",month:"8월",name:"수원오토갤러리",cars:1,amount:40000,due:40000,dueDate:"",bank:"예시은행 000-7777-8888-04 맑은세차",state:"입금 전",url:""},
  {shop:"새빛휠 (예시)",month:"9월",name:"수원오토갤러리",cars:2,amount:180000,due:0,dueDate:dday(-1),bank:"예시은행 000-5555-6666-03 새빛휠",state:"입금 확인됨",url:""}];
 function demoApi(fn,a){''')
 rep('      if(fn==="cars")return ok({list:DEMO_CARS.slice(),done:S.done});',
@@ -72,10 +76,13 @@ function isPaid(b){return b.state==="입금 확인됨";}
 function hasDue(b){return /^\d{4}-\d{2}-\d{2}/.test(String(b.dueDate||""));}
 function dueLeft(b){if(!hasDue(b))return 9999;var x=new Date(String(b.dueDate).slice(0,10)+"T00:00:00");return Math.round((x-sod(new Date()))/864e5);}
 function md(d){return String(d).slice(5,10).replace("-","/");}
-function dueTxt(b){if(isPaid(b))return "입금 확인됨";if(!hasDue(b))return "기한 없음";var n=dueLeft(b);
+function monthKey(b){var m=String(b.month||""),y=m.match(/(\d{4})\D+(\d{1,2})/);if(y)return +y[1]*100+ +y[2];var k=m.match(/(\d{1,2})/);return k?+k[1]:99;}
+function dueTxt(b){if(isPaid(b))return "입금 확인됨";if(!hasDue(b))return "";var n=dueLeft(b);
   return n<0?"기한 "+md(b.dueDate)+" · "+(-n)+"일 지남":n===0?"기한 오늘("+md(b.dueDate)+")":"기한 "+md(b.dueDate)+" · "+n+"일 남음";}
 function billList(){var L=(S.bills||[]).slice();
-  L.sort(function(a,b){if(isPaid(a)!==isPaid(b))return isPaid(a)?1:-1;return dueLeft(a)-dueLeft(b);});return L;}
+  /* 입금 전 먼저 → 기한 있는 것은 기한 순 → 기한 없는 것은 월 순 (결제/10 D4) */
+  L.sort(function(a,b){if(isPaid(a)!==isPaid(b))return isPaid(a)?1:-1;
+    if(hasDue(a)&&hasDue(b))return dueLeft(a)-dueLeft(b);if(hasDue(a)!==hasDue(b))return hasDue(a)?-1:1;return monthKey(a)-monthKey(b);});return L;}
 function billSum(){return (S.bills||[]).filter(function(b){return !isPaid(b);}).reduce(function(a,b){return a+(Number(b.due)||0);},0);}
 function billsView(){
   if(!S.bills)return '<div class="card" style="color:var(--sub);text-align:center">청구서를 불러오는 중…</div>';
@@ -87,7 +94,7 @@ function billsView(){
   return h+'<div class="bills">'+L.map(function(b){var n=dueLeft(b),pd=isPaid(b),st=pd?"b-done":n<0?"b-late":"b-open";
     return '<div class="bill '+st+'"><div class="bh"><div><b>'+esc(b.shop)+'</b><small>'+esc([b.month,b.cars?b.cars+"대":"",b.name].filter(Boolean).join(" · "))+'</small></div>'+
       '<span class="pill p-'+(pd?'fin':n<0?'late':'arr')+'" style="margin:0">'+(pd?'입금 확인됨':n<0?'기한 지남':'입금 전')+'</span></div>'+
-      '<div class="bm"><strong class="num">'+won(pd?b.amount:b.due)+'</strong><span>'+esc(dueTxt(b))+'</span></div>'+
+      '<div class="bm"><strong class="num">'+won(pd?b.amount:b.due)+'</strong>'+(dueTxt(b)?'<span>'+esc(dueTxt(b))+'</span>':'')+'</div>'+
       (pd?'':(b.bank?'<div class="acct"><span>'+esc(b.bank)+'</span></div>':'')+
         '<div class="bb">'+(b.bank?'<button class="btn sec2" data-act="copy" data-v="'+esc(b.bank)+'" data-m="계좌를">계좌 복사</button>':'')+
         '<button class="btn sec2" data-act="copy" data-v="'+esc(String(Math.round(Number(b.due)||0)))+'" data-m="금액을">금액 복사</button>'+
