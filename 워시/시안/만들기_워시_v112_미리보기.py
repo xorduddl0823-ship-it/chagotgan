@@ -85,8 +85,8 @@ FAKE = r'''<script>
         SENT.push({kind:mb.kind,ataKey:mb.ataKey||"",vars:mb.variables||null,text:mb.text||"",to:mb.to||""});
         SENT[SENT.length-1].rec=mb.rec||"";
         if(mb.kind==="ATA"&&mb.ataKey){
-          /* sb7 처럼: 키는 release · extra_work · bill · deposit_ok (옛 이름은 모르는 키 → 코드 없음과 같음) */
-          var K7={release:1,extra_work:1,bill:1,deposit_ok:1};
+          /* sb7 처럼: 키는 intake · release · extra_work · bill · deposit_ok (옛 이름은 모르는 키 → 코드 없음과 같음) */
+          var K7={intake:1,release:1,extra_work:1,bill:1,deposit_ok:1};
           if(!K7[mb.ataKey]||!/ata=on/.test(location.search)) return JSON.stringify({ok:false,error:"알림톡 템플릿 ID가 없습니다"});
           if((mb.ataKey==="release"||mb.ataKey==="extra_work")&&!mb.rec) throw new Error("어느 차인지 알 수 없습니다 (입고 기록 번호가 없습니다)");
           if(mb.ataKey==="bill"&&!(mb.variables&&mb.variables["#{보기코드}"]&&mb.variables["#{보기코드}"]!=="-")) throw new Error("청구서 보기 주소가 올바르지 않습니다");
@@ -123,7 +123,7 @@ if os.environ.get("SEEDMODE"):
     s = s.replace("function seedDemo(){", "window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};\nfunction seedDemo(){", 1)
 # 시험할 때만 (TESTHOOK=1): 같은 범위 안 함수를 밖에서 부를 수 있게 — 최종 미리보기에는 안 들어감
 if os.environ.get("TESTHOOK") and "function sendOutMsg(" in s:
-    s = s.replace("function sendOutMsg(", "window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;}};\nfunction sendOutMsg(", 1)
+    s = s.replace("function sendOutMsg(", "window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;}};\nfunction sendOutMsg(", 1)
 i = s.index("<script")
 s = s[:i] + FAKE + s[i:]
 s = s.replace("<title>차곳간 워시</title>", "<title>워시 %s 미리보기</title>" % VER, 1)

@@ -3113,7 +3113,7 @@ function cggAllSheet(all){
   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
     b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
 }
-var APP_VER="워시 v117 · UI 3.0 · 2026-10-15";
+var APP_VER="워시 v118 · UI 3.0 · 2026-10-15";
 /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
 var LAYOUTS=["top","side","icon"];
 function layoutMode(){
@@ -3896,8 +3896,10 @@ function doIntake(mode,btn){
   saveRec(rec)
   .then(function(){
     resetForm();renderAll();
+    var inAuto=!!(autoInOn()&&sendReady()&&rec.phone);
+    var inP=inAuto?sendInMsg(rec,"입고 알림",null):null;
     if(mode==="body")bodySheet(rec,function(){renderAll();});
-    else savedSheet(rec);
+    else savedSheet(rec,inP);
     if(pend)photoLater(rec,mainB,memoB);
   })
   .catch(function(e){banner("입고 저장 실패: "+errMsg(e));toast(errMsg(e),true);})
@@ -3955,7 +3957,7 @@ function upPhoto(){
   if(!S.photoFile||!S.assets)return Promise.resolve("");
   return S.assets.upload(S.photoFile,{type:"image/jpeg"}).then(function(r){return r.id;}).catch(function(){return "";});
 }
-function savedSheet(rec){
+function savedSheet(rec,inP){
   $("sheet").innerHTML=
    '<div class="center" style="padding:6px 0 2px"><div style="font-size:44px;line-height:1">✅</div>'+
    '<h3 style="margin-top:8px">입고되었습니다</h3>'+
@@ -3967,12 +3969,28 @@ function savedSheet(rec){
     (rec.works||[]).map(function(w){return '<div class="kv"><span>'+esc(w.name)+'</span><b>'+won(w.amount)+'</b></div>';}).join("")+
     '<div class="kv"><span>합계</span><b style="color:var(--brand);font-size:19px">'+won(rec.total)+'</b></div>'+
    '</div>'+
+   (rec.phone
+     ? '<div class="tools" style="margin-top:10px;align-items:center">'+
+         '<button class="btn" id="okInMsg" type="button">'+(inP?"입고 알림톡 다시 보내기":"딜러에게 입고 알림톡 보내기")+'</button>'+
+         '<span class="hint" id="okInHint">'+(inP?"딜러에게 입고 안내를 보내는 중…":"딜러 번호 "+esc(rec.phone))+'</span></div>'
+     : '<div class="hint" style="margin-top:10px">딜러 번호가 없어 입고 알림톡은 보내지 않았어요</div>')+
    '<div class="sheetbtns">'+
      '<button class="btn primary" id="okNext" style="flex:2">다음 차 올리기</button>'+
      '<button class="btn" id="okList">출고 화면 보기</button>'+
    '</div>';
   openSheet();
   $("okNext").onclick=function(){closeSheet();$("fPlate").focus();};
+  function inDone(o){
+    if($("okInHint"))$("okInHint").textContent=(o&&o.status==="보냄")?(o.sentKind==="ATA"?"입고 알림톡을 보냈어요":"입고 문자를 보냈어요"):"발송함에 남겼어요";
+  }
+  if(inP)inP.then(inDone,function(){inDone(null);});
+  if($("okInMsg"))$("okInMsg").onclick=function(){
+    var b=this;b.disabled=true;
+    var ios=/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
+    sendInMsg(rec,inP?"입고 알림(재발송)":"입고 알림",function(){
+      location.href="sms:"+digits(rec.phone)+(ios?"&":"?")+"body="+encodeURIComponent(inText(rec));
+    }).then(inDone).then(function(){b.disabled=false;},function(){b.disabled=false;});
+  };
   $("okList").onclick=function(){closeSheet();S.tab="out";decideMode(false);window.scrollTo(0,0);};
 }
 function resetForm(){
@@ -7697,6 +7715,21 @@ function outPlan(r,mode){
   if(mode==="photo")return {text:shortText(r),imageId:pid,kind:pid?"MMS":"SMS",mode:mode};
   return {text:smsText(r),imageId:pid,kind:pid?"MMS":"AUTO",mode:mode};
 }
+/* ===== 입고 알림톡 (v118 · 서버 sb7 intake · 확정본 «차곳간_입고안내») =====
+   업체명 · 업체전화는 서버가 채웁니다. 본사 알림톡이 안 되면 확정본 대체 문구로 문자. */
+function autoInOn(){return sendCfg().autoIn===true;}
+function inVars(r){
+  return {"딜러명":r.dealer||"","상사명":r.company||"","업체명":shopLabel(),"차량번호":r.plate||"",
+    "작업내용":workFull(r),"입고일시":dtKo(r.createdAt||nowIso()),"업체전화":shopTel()};
+}
+function inText(r){
+  var t=shopTel();
+  return "[차곳간] "+(r.plate||"")+" 입고되었습니다.\n"+shopLabel()+(t?" 문의 "+t:"");
+}
+function sendInMsg(r,type,openFallback){
+  var hq=HQATA.off?null:{key:HQKEY.intake,vars:hqVars(inVars(r))};
+  return sendOrOpen({type:type||"입고 알림",to:r.phone,text:inText(r),kind:"AUTO",hq:hq,ref:r.id},openFallback);
+}
 function sendOutMsg(r,type,openFallback){
   var p=outPlan(r);
   var useAta=(fmtOf("out")==="ata");
@@ -10699,7 +10732,7 @@ function saveFile(name,blob){
 }
 
 /* ===== 문자 연동 (솔라피 + 앱스스크립트) ===== */
-var SENDCFG_KEYS=["url","token","from","mode","tplOut","tplBill","autoOut","autoBill"];
+var SENDCFG_KEYS=["url","token","from","mode","tplOut","tplBill","autoOut","autoBill","autoIn"];
 function sendCfg(){return (S.cfg&&S.cfg.send)||{};}
 function sendReady(){var c=sendCfg();return !!c.from;}
 var OB={q:"",size:20,page:1,key:"createdAt",dir:"desc",sel:{}};
@@ -10794,7 +10827,7 @@ var KIND_NAME={AUTO:"자동",SMS:"단문",LMS:"장문",MMS:"사진 문자",ATA:"
    본사 코드가 아직 없거나 옛 서버면 «템플릿 ID가 없습니다» → 그 자리에서 예전처럼 문자로 다시 보냅니다. */
 var HQATA={off:false};
 /* 본사 템플릿 키 — 서버 sb7 · 관리 v4.1 의 13개 이름과 같게 */
-var HQKEY={out:"release",add:"extra_work",bill:"bill",deposit:"deposit_ok"};
+var HQKEY={out:"release",add:"extra_work",bill:"bill",deposit:"deposit_ok",intake:"intake"};
 function hqVars(o){var v={};Object.keys(o).forEach(function(k){var x=o[k];v["#{"+k+"}"]=(x==null||x==="")?"-":String(x);});return v;}
 function shopTel(){return phoneLine()||((S.cfg&&S.cfg.send&&S.cfg.send.from)||"");}
 function viewCode(url){var m=String(url||"").match(/[?&]c=([^&#]+)/);return m?decodeURIComponent(m[1]):"";}
@@ -10980,7 +11013,9 @@ function renderSend(){
    '<div class="tools" style="margin-top:10px">'+
      '<label class="chip"><input type="checkbox" id="sc_autoOut" style="width:18px;height:18px;vertical-align:-3px"'+(c.autoOut!==false?" checked":"")+'> 출고하면 자동 발송</label>'+
      '<label class="chip"><input type="checkbox" id="sc_autoBill" style="width:18px;height:18px;vertical-align:-3px"'+(c.autoBill!==false?" checked":"")+'> 청구서도 자동 발송</label>'+
+     '<label class="chip"><input type="checkbox" id="sc_autoIn" style="width:18px;height:18px;vertical-align:-3px"'+(c.autoIn===true?" checked":"")+'> 입고하면 딜러에게 알림톡 보내기</label>'+
    '</div>'+
+   '<div class="hint" style="margin-top:6px">입고 알림톡은 처음에 꺼져 있어요. 켜면 입고 등록이 끝날 때 딜러 번호로 «차량 입고 안내»가 나가요 (알림톡이 안 되면 문자). 끈 채로도 입고 완료 창에서 한 건씩 보낼 수 있어요.</div>'+
    '<div class="tools" style="margin-top:12px">'+
      '<button class="btn primary" id="scSave">연동 설정 저장</button>'+
      '<button class="btn" id="scPing">연결 확인</button>'+
@@ -10992,7 +11027,7 @@ function renderSend(){
   $("scSave").onclick=function(){
     var o=Object.assign({},sendCfg(),{url:"",from:$("sc_from").value.trim(),mode:$("sc_mode").value,
       token:$("sc_token").value.trim(),
-      autoOut:$("sc_autoOut").checked,autoBill:$("sc_autoBill").checked});
+      autoOut:$("sc_autoOut").checked,autoBill:$("sc_autoBill").checked,autoIn:$("sc_autoIn").checked});
     S.cfg=Object.assign({},S.cfg);S.cfg.send=o;
     saveCfg().then(function(){toast("연결 설정을 저장했습니다");renderSend();})
      .catch(function(e){toast(errMsg(e),true);});
