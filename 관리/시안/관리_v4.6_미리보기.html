@@ -7235,7 +7235,7 @@ function bizDraw(){
     tabs:[["","전체"],["need","확인 필요"],["ok","확인됨"]], tabOf:function(r){ return r.st; },
     rows:L.map(function(x,i){ return {i:i, name:String(x.name||x.code||""), code:String(x.code||""), product:String(x.product||"워시"),
       biz:fmtBizNo?fmtBizNo(String(x.bizNo||"")):String(x.bizNo||""), ceo:String(x.ceo||"-"), owner:slMask?slMask(x.owner):String(x.owner||""),
-      okAt:String(x.okAt||"").slice(0,10), st:x.ok?"ok":"need", raw:x}; }),
+      setAt:String(x.setAt||x.at||x.createdAt||x.updatedAt||"").slice(0,16).replace("T"," "), okAt:String(x.okAt||"").slice(0,10), st:x.ok?"ok":"need", raw:x}; }),
     search:["name","code","biz","ceo"],
     filters:[{k:"product",label:"제품",opts:[["","제품 전체"],["워시","워시"],["체크","체크"]]}],
     cols:[
@@ -7245,6 +7245,7 @@ function bizDraw(){
       {k:"product",label:"제품",w:80},
       {k:"ceo",label:"대표",w:100},
       {k:"owner",label:"대표 번호",w:130},
+      {k:"setAt",label:"넣은 때",w:130,html:function(r){ return esc(r.setAt||"-"); }},
       {k:"okAt",label:"확인한 날",w:100,html:function(r){ return esc(r.okAt||"-"); }},
       {k:"st",label:"상태",w:104,html:function(r){ return r.st==="ok"?'<span class="cgg-st done">확인됨</span>':'<span class="cgg-st chk">확인 필요</span>'; }},
       {k:"_a",label:"할 일",nosort:true,html:function(r){
