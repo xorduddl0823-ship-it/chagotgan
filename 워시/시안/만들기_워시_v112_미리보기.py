@@ -34,7 +34,7 @@ FAKE = r'''<script>
 /* ═══ 미리보기 전용 — 서버(wash-api)로 가는 요청을 가로채서 지어낸 자료로 답합니다 ═══ */
 (function(){
   var DB = __SEED__;
-  var SHOTN = 0, SENT = [], PAY = [], TOSS = [], AB = {};
+  var SHOTN = 0, SENT = [], PAY = [], TOSS = [], AB = {}, TRY = {};
   var OLDQ=location.search;   /* 미리보기: ?srv=old 이면 옛 서버처럼 */
   var AQ=(location.search.match(/ab=(open|on|fail|off)/)||[])[1]||"__ABDEF__"; if(AQ==="off")AQ="";   /* 미리보기: 처음 주소에서 한 번만 읽음 */   /* shotLinks 를 몇 번 불렀는지 (시험용) */
   function shotPic(id){ var t=id.split("/").pop().replace(/[^0-9A-Za-z가-힣._-]/g,"");
@@ -73,7 +73,12 @@ FAKE = r'''<script>
       case "apiStamp": return {rev:String(REV)};
       case "apiVer": return {ver:"미리보기"};
       case "ping": return {ok:true};
-      case "lockInfo": return {state:"ok"};
+      /* v122~: 주소 끝 ?wait=1 이면 서버 sb13 «결제 대기» 업체(체험판) */
+      case "lockInfo": return /wait=1/.test(OLDQ) ? {state:"pay",kind:"pay",joinPlan:"standard",shop:"PREVIEW",name:"미리보기 세차",msg:"결제를 마치면 모든 기능이 열립니다. 지금은 예시 자료로 둘러보실 수 있어요."} : {state:"ok"};
+      case "trialUse": PAY.push({fn:fn,a:a}); TRY[a[0]]=(TRY[a[0]]||0)+1;
+        return TRY[a[0]]>3 ? {ok:false,left:0} : {ok:true,left:3-TRY[a[0]]};
+      case "joinPlanSet": PAY.push({fn:fn,a:a}); if(!/^(basic|standard|pro)$/.test(String(a[0]))) throw new Error("고를 수 없는 요금제입니다");
+        return {ok:true,plan:a[0],name:"표준 요금제",price:55000};
       /* v115~: 사진 서명 주소 — 진짜 서버(sb4)처럼 'sb/PREVIEW/…' 사진만, 지어낸 그림 주소로 답함.
          주소 끝 ?shot=legacy 이면 옛 서버처럼 «모르는 요청»으로 답함 */
       case "shotLinks":
@@ -108,6 +113,9 @@ FAKE = r'''<script>
       /* v120~: 결제 (서버 sb10 처럼) — 주소 끝 ?ab=open|on|fail 이면 자동 결제 칸이 열림 (없으면 관리 스위치 꺼짐과 같음) */
       case "payDue": return {ok:true,trial:false,pgOn:true,planName:"기본 요금제",price:30000,vat:3000,full:33000,cash:0,
         period:new Date().toISOString().slice(0,7),paid:/paid=1/.test(location.search),paidUntil:"2026-11-14T15:00:00Z"};
+      case "payMine": return {ok:true,pgOn:true,orders:[
+          {order_id:"PV1",kind:"plan",amount:33000,use_cash:0,status:"paid",order_name:"차곳간 기본 요금제 2026-09 이용요금",period:"2026-09",paid_at:"2026-09-14T10:00:00Z",method:"카드",created_at:"2026-09-14T09:59:00Z"},
+          {order_id:"PV2",kind:"cash",amount:50000,use_cash:0,status:"canceled",order_name:"캐시 충전",period:"",paid_at:"2026-08-02T10:00:00Z",method:"카드",created_at:"2026-08-02T10:00:00Z"}]};
       case "cashInfo": return {ok:true,on:true,balance:0,free:0,paid:0,usedMonth:0,price:{},lots:[],logs:[]};
       case "payStart": PAY.push({fn:fn,a:a});
         if(/srv=old/.test(OLDQ)) return {ok:true,orderId:"PV"+Date.now(),amount:33000,orderName:"차곳간 기본 요금제 이용요금",
@@ -147,7 +155,7 @@ FAKE = r'''<script>
       return new Promise(function(res){ setTimeout(function(){
         res(new Response(JSON.stringify(out), {status:200, headers:{"Content-Type":"application/json"}})); }, 60); });
     }
-    if(/^https?:/i.test(u) && u.indexOf(location.host) < 0) return Promise.reject(new TypeError("미리보기: 바깥 연결 안 함"));
+    if(/^https?:/i.test(u) && (!location.host || u.indexOf(location.host) < 0)) return Promise.reject(new TypeError("미리보기: 바깥 연결 안 함"));   /* srcdoc 창(주인 없음)에서도 막음 */
     return realFetch ? realFetch(url, opt) : Promise.reject(new TypeError("no fetch"));
   };
 })();
