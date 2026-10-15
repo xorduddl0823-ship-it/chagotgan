@@ -190,6 +190,11 @@ const b2 = store.pay_billing.find((b: any) => b.shop === "BT");
 check("실패: 주문 failed · 실패 횟수 1 · 첫 실패일 오늘", b2.fail_count === 1 && b2.first_fail_at === TODAY &&
   store.wash_pay_order.some((o: any) => o.bill_date === TODAY && o.status === "failed"), b2);
 check("실패 알림톡 (정보성 · 대표에게)", sms.some((m) => m.kakaoOptions?.templateId === "KA_BILLFAIL" && m.to === "01077778888"), sms);
+const fv = sms.find((m) => m.kakaoOptions?.templateId === "KA_BILLFAIL")?.kakaoOptions?.variables ?? {};
+check("실패 알림톡 변수 = 알림톡/02 새 F (업체명·결제일·요금제·금액·사유·다음시도일)",
+  fv["#{업체명}"] === "브라더세차" && fv["#{요금제}"] === "프로" && fv["#{금액}"] === "33,000" && fv["#{사유}"] === "카드 한도 초과" &&
+  !!fv["#{결제일}"] && !!fv["#{다음시도일}"] && Object.keys(fv).length === 6, fv);
+check("사유에 영문 오류 코드 없음", !/[A-Z_]{4,}/.test(fv["#{사유}"] ?? ""));
 check("캐시는 안 깎임", knobs.cash.BT === 0 && shopRow().paid_until === TODAY);
 check("실패 기록 표", store.pay_billing_log.some((l: any) => l.result === "fail" && l.try_no === 1), store.pay_billing_log);
 /* 다음 날들: D+2 는 안 함, D+1·3·5 만 */
@@ -201,7 +206,13 @@ const tryOn = async (d: number) => {
   Date.now = realNow;
   return toss.filter((t) => t.method === "POST" && /^\/v1\/billing\/[^/]+$/.test(t.path) && !t.path.includes("authorizations")).length - n0;
 };
-const tries = [await tryOn(1), await tryOn(2), await tryOn(3), await tryOn(4), await tryOn(5), await tryOn(6)];
+sms.length = 0;
+const tries = [await tryOn(1), await tryOn(2), await tryOn(3), await tryOn(4)];
+const failSms = () => sms.filter((m) => m.kakaoOptions?.templateId === "KA_BILLFAIL").length;
+const beforeLast = failSms();
+tries.push(await tryOn(5));
+check("마지막(D+5) 실패에는 실패 알림톡을 안 보냄", failSms() === beforeLast && beforeLast === 2, { beforeLast, now: failSms() });
+tries.push(await tryOn(6));
 check("다시 결제는 D+1·D+3·D+5 에만 (D+2·4·6 은 안 함)", JSON.stringify(tries) === "[1,0,1,0,1,0]", tries);
 check("모두 실패하면 이용기간 그대로 (기존 잠금으로 넘어감)", shopRow().paid_until === TODAY);
 

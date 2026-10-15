@@ -510,7 +510,7 @@ async function tossCall(path: string, body: unknown, method = "POST", opt: { ide
   let j: any = null; try { j = JSON.parse(t); } catch (_) { /* */ }
   if (r.status >= 300) {
     const m = (j && (j.message || j.code)) || t.slice(0, 160);
-    throw new Error("카드사 응답: " + m);
+    throw Object.assign(new Error("카드사 응답: " + m), { tossCode: String((j && j.code) || "") });   // sb10: 실패 사유 고르기용
   }
   return j;
 }
@@ -628,6 +628,15 @@ async function billLog(shop: string, orderId: string, amount: number, tryNo: num
     await sb.from("pay_billing_log").insert({ shop, order_id: orderId, amount, try_no: tryNo, result, msg: String(msg || "").slice(0, 200) });
   } catch (_) { /* */ }
 }
+/* 실패 사유를 짧은 우리말로 (카드 번호·영문 오류 코드는 안 넣음 · 알림톡/02 새 F) */
+function billWhy(code: string, msg: string) {
+  const c = String(code || "").toUpperCase(), m = String(msg || "");
+  if (/BALANCE|잔액/.test(c + m)) return "잔액 부족";
+  if (/EXCEED|LIMIT|한도/.test(c + m)) return "카드 한도 초과";
+  if (/EXPIR|유효기간/.test(c + m)) return "카드 유효기간 지남";
+  if (/REJECT|거절/.test(c + m)) return "카드사 승인 거절";
+  return "카드사 사정";
+}
 /* 하루 한 번 — 이용기간이 끝나는 날 자동 결제. 실패하면 D+1·3·5 다시 (모두 4번), 그 뒤는 기존 잠금 그대로 */
 async function billRun(out: string[]) {
   const today = new Date(kstToday()).toISOString().slice(0, 10);
@@ -667,12 +676,12 @@ async function billRun(out: string[]) {
         await billLog(b.shop, orderId, 0, tryNo, "ok", "캐시");
         out.push("bill " + b.shop + " 캐시로"); continue;
       }
-      let r: any = null, err = "";
+      let r: any = null, err = "", errCode = "";
       try {
         const bk = await openBK(b.shop, String(b.billing_key_enc));
         r = await tossCall("/v1/billing/" + encodeURIComponent(bk),
           { customerKey: b.customer_key, amount: v.total, orderId, orderName }, "POST", { idem: orderId, billing: true });
-      } catch (e) { err = e instanceof Error ? e.message : String(e); }
+      } catch (e) { err = e instanceof Error ? e.message : String(e); errCode = String((e as any)?.tossCode || ""); }
       if (r && r.status === "DONE") {
         await payFinish(od, String(r.paymentKey || ""), r);    // 캐시는 여기(payDone)서 성공한 뒤에만 깎임
         await sb.from("pay_billing").update({ fail_count: 0, first_fail_at: null, last_fail_msg: null }).eq("shop", b.shop);
@@ -687,10 +696,12 @@ async function billRun(out: string[]) {
       await billLog(b.shop, orderId, v.total, tryNo, "fail", err);
       out.push("bill " + b.shop + " 실패 " + tryNo);
       try {
-        const next = tryNo === 1 ? ymdAdd(today, 1) : tryNo === 2 ? ymdAdd(today, 2) : tryNo === 3 ? ymdAdd(today, 2) : "";
-        if (sh.owner_phone)
-          await noticeAta(String(sh.owner_phone), "bill_fail", { 업체명: sh.name || b.shop, 금액: won(v.total),
-            다시결제일: next ? korDay(next) : "다시 결제하지 않음" });
+        /* 다음 시도일: D+1 → D+3 → D+5. 마지막(D+5) 실패에는 안 보냄 → 기존 잠금 안내가 나감 */
+        const first = ymd10(b.first_fail_at) || today;
+        const next = tryNo === 1 ? ymdAdd(first, 1) : tryNo === 2 ? ymdAdd(first, 3) : tryNo === 3 ? ymdAdd(first, 5) : "";
+        if (next && sh.owner_phone)
+          await noticeAta(String(sh.owner_phone), "bill_fail", { 업체명: sh.name || b.shop, 결제일: korDay(due || first),
+            요금제: String(pl.name || sh.plan), 금액: won(v.total), 사유: billWhy(errCode, err), 다음시도일: korDay(next) });
       } catch (_) { /* */ }
     } catch (e) { out.push("bill " + b.shop + " 오류"); console.error("billRun", b.shop, e instanceof Error ? e.message.slice(0, 120) : ""); }
   }
@@ -1209,8 +1220,9 @@ const ATA_TPL: Record<string, { name: string; vars: string[]; sms: string }> = {
 Object.assign(ATA_TPL, {
   bill_on: { name: "차곳간_자동결제등록", vars: ["업체명", "카드", "다음결제일"],
              sms: "[차곳간] #{업체명} 자동 결제 카드가 등록되었습니다(#{카드}). 다음 결제일 #{다음결제일}. 문의 010-9559-3663" },
-  bill_fail: { name: "차곳간_자동결제실패", vars: ["업체명", "금액", "다시결제일"],
-             sms: "[차곳간] #{업체명} 이용요금 #{금액}원 자동 결제가 되지 않았습니다. 다시 결제: #{다시결제일}. 문의 010-9559-3663" },
+  /* 알림톡/02 새 F (알림톡 방 초안 · 결제 방과 맞춘 변수) — D+5 마지막 실패에는 안 보냄 */
+  bill_fail: { name: "차곳간_자동결제실패", vars: ["업체명", "결제일", "요금제", "금액", "사유", "다음시도일"],
+             sms: "[차곳간] #{업체명} 이용요금 자동 결제 실패(#{사유}). 다음 시도 #{다음시도일}. 문의 010-9559-3663" },
 });
 /* sb10: 화면이 sendMsg 의 ataKey 로 고를 수 있는 것 — 화면 안내만 */
 const SCREEN_ATA = ["intake", "release", "extra_work", "bill", "deposit_ok", "staff_link"];
