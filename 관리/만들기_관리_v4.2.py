@@ -44,6 +44,10 @@ s = s[:a] + '''  billBind();
   });
 ''' + s[b:]
 rf = open(os.path.join(HERE, "v4재료", "refund.js"), encoding="utf-8").read()
-rep('function navOf(t){', rf + '\nfunction navOf(t){')
+cw = open(os.path.join(HERE, "v4재료", "wallet.js"), encoding="utf-8").read()
+rep('function navOf(t){', rf + '\n' + cw + '\nfunction navOf(t){')
+# 받는 금액 › 체크 지갑 잇기 (묶음 끝에 붙임 — 원래 화면 차례 그대로)
+rep('["pg","카드 결제",viewPg],', '["pg","카드 결제",viewPg],\n  ["cwal","체크 지갑 잇기",viewCwal],')
+rep('["pays","받는 금액",["plans","pays","packs","pg"]],', '["pays","받는 금액",["plans","pays","packs","pg","cwal"]],')
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")
