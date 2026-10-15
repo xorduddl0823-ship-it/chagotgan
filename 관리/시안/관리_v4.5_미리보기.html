@@ -3067,6 +3067,7 @@ function tKind(c,i){
 function makeTable(o){
   var st = TSTATE[o.id] || (TSTATE[o.id]={q:"",size:o.size||20,page:1,key:o.sortKey||"",dir:o.sortDir||"asc",sel:{},tab:""});
   if(!st.f) st.f = {};
+  st.sel = {};   /* 보안 ②: 새 자료면 고른 줄 비우기 */
   var host = $(o.id);
   if(!host) return;
   /* 칸 차례: 선택 → 이름 → 번호 → 내용 → 날짜 → 금액 → 상태 → 할 일 (같은 종류 안에서는 원래 차례) */
