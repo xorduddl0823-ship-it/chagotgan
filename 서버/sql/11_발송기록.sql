@@ -98,6 +98,8 @@ alter table wash_shops   add column if not exists biz_ok_at timestamptz default 
 alter table wash_shops   alter column biz_ok_at set default null;
 alter table check_office add column if not exists biz_ok_at timestamptz default now();
 alter table check_office alter column biz_ok_at set default null;
+alter table wash_shops   add column if not exists biz_set_at timestamptz;   -- 업체가 사업자번호를 처음 넣은 때 (관리 «넣은 때»)
+alter table check_office add column if not exists biz_set_at timestamptz;
 --    급한고침 SQL 을 아직 안 했으면 같이 해 주세요: 서버/sql/급한고침_사업자번호_잠금.sql
 
 -- 확인: 아래 네 줄이 모두 true 면 끝
