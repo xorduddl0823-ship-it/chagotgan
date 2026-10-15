@@ -42,7 +42,7 @@ def render(info=None, show_blank=False):
     links = []
     for label, k in (("이용약관", "이용약관"), ("개인정보처리방침", "개인정보처리방침"), ("환불 규정", "환불규정")):
         u = str(info.get(k, "")).strip()
-        if u.startswith("https://") or u.startswith("/"):
+        if u.startswith("https://") or (u.startswith("/") and not u.startswith("//")):   # 「//다른사이트」는 막음
             w = "font-weight:700;" if k == "개인정보처리방침" else ""
             links.append('<a href="' + e(u) + '" target="_blank" rel="noopener" style="color:inherit;' + w + '">' + e(label) + "</a>")
     return (START + '\n<footer class="cgg-biz" style="font-size:11.5px;line-height:1.75;color:var(--muted,#667389);'
