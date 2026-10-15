@@ -21,6 +21,10 @@ assert n == 1
 rep('<title>차곳간 관리</title>', '<title>관리 v4.0 미리보기</title>')
 rep('document.title = "차곳간 관리";', 'document.title = "관리 v4.0 미리보기";')
 
+# 미리보기는 대화 화면 안에 끼워서 보므로 «끼워 넣기 막기»를 뺍니다 (실제 판에는 있음)
+a0 = s.index('<script>/* 다른 사이트 안에 끼워 열리면'); b0 = s.index('</script>', a0) + len('</script>')
+s = s[:a0] + s[b0:]
+
 # 브라우저 저장이 막혀도 돌아가게 — 기억은 이 창 안에서만
 rep('function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k)||""; localStorage.setItem(k,v); }catch(e){} return ""; }',
     'var MEM={};\nfunction ls(k,v){ if(v===undefined){ try{ var x=localStorage.getItem(k); if(x!=null) return x; }catch(e){} return MEM[k]||""; } MEM[k]=v; try{ localStorage.setItem(k,v); }catch(e){} return ""; }')
