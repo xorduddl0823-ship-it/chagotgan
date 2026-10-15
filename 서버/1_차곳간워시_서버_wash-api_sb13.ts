@@ -4530,7 +4530,11 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
       .sort((x, y) => (String(y.at) > String(x.at) ? 1 : -1));
     const sum = list.filter((r) => !r.refOnly && (r.status === "paid")).reduce((t, r) => t + (Number(r.amount) || 0), 0);
     const refunds = list.filter((r) => r.tag === "환불").reduce((t, r) => t + (Number(r.amount) || 0), 0);
-    return { ok: true, from, to, list, sum, refunds };
+    /* sb13 고침: 지금 자동 결제를 켜 둔 업체 수 (기간과 상관없이 지금 기준 · 관리 결제 숫자 넷째 칸) */
+    let billingShops = 0;
+    try { const { data: pb } = await sb.from("pay_billing").select("shop").eq("status", "on"); billingShops = (pb || []).length; }
+    catch (_) { billingShops = 0; }
+    return { ok: true, from, to, list, sum, refunds, billingShops };
   },
 
   /* ===== sb12: 관리 한곳에서 — 계정 (휴대폰 번호 11자리로만) ===== */

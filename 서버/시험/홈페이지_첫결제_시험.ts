@@ -128,6 +128,8 @@ check("결제 뒤 trialUse 는 제한 없음", (await call("trialUse", ["intake"
 const pr = await call("hqPayResults", ["", "", ""], ADM, "ADMIN");
 const row = (pr.result?.list ?? []).find((x: any) => x.orderId === ps.result.orderId);
 check("관리 결제 결과: 꼬리표 홈페이지 · 첫 결제", row?.tag === "홈페이지" && row.first === true, row);
+store.pay_billing = [{ shop: "A", status: "on" }, { shop: "B", status: "off" }, { shop: "C", status: "on" }];
+check("관리 결제 요약: 자동 결제 켠 업체 수 = 2", (await call("hqPayResults", ["", "", ""], ADM, "ADMIN")).result?.billingShops === 2);
 
 console.log("⑦ 관리 — 결제 대기 목록 · 지우기");
 const j2 = await join(NEW2, "pro");
