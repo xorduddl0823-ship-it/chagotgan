@@ -5,6 +5,7 @@ const g = globalThis as any;
 g.__WDB = g.__WDB ?? {} as Record<string, Row[]>;
 export const store: Record<string, Row[]> = g.__WDB;
 export const rpcLog: { fn: string; args: any }[] = [];
+export const signLog: { bucket: string; paths: string[]; ttl: number }[] = [];
 export const knobs = { rateBroken: false, missing: new Set<string>() };
 
 const val = (r: Row, k: string) => {
@@ -84,6 +85,14 @@ export function createClient(..._a: any[]) {
   return {
     from: (t: string) => new Q(t),
     rpc: async (fn: string, a: any) => rpc(fn, a),
-    storage: { from: () => ({ upload: async () => ({ error: null }), getPublicUrl: () => ({ data: { publicUrl: "" } }) }) },
+    storage: { from: (b: string) => ({
+      upload: async () => ({ error: null }),
+      getPublicUrl: () => ({ data: { publicUrl: "" } }),
+      /* 서명 주소 흉내 — 실제 수파베이스처럼 [{ path, signedUrl, error }] */
+      createSignedUrls: async (paths: string[], ttl: number) => {
+        signLog.push({ bucket: b, paths: [...paths], ttl });
+        return { data: paths.map((p) => ({ path: p, signedUrl: `https://fake/sign/${b}/${p}?ttl=${ttl}`, error: null })), error: null };
+      },
+    }) },
   };
 }

@@ -78,3 +78,12 @@ deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/�
 ```
 
 - `체크v28_로그인_시험.ts` — 시험 22개 (2026-10-15 전부 통과 · v27 로 돌리면 4개 실패)
+
+사진 서명 주소 시험 (워시 sb4 shotLinks · 차량 보기 / 딜러 d4 차 상세):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/사진_서명주소_워시_시험.ts
+deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/시험/사진_서명주소_딜러_시험.ts
+```
+
+- 워시 10개 (sb3 면 8개 실패) · 딜러 4개 (d3 면 3개 실패) — 2026-10-15 전부 통과

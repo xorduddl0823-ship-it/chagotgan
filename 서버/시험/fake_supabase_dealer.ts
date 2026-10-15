@@ -61,10 +61,17 @@ class Q {
   }
 }
 
+export const signLog: { bucket: string; paths: string[]; ttl: number }[] = [];
 export function createClient(..._a: any[]) {
   return {
     from: (t: string) => new Q(t),
     rpc: async (fn: string, a: any) => { await Promise.resolve(); rpcCalls.push({ fn, args: a }); return rpc(fn, a); },
+    storage: { from: (b: string) => ({
+      createSignedUrls: async (paths: string[], ttl: number) => {
+        signLog.push({ bucket: b, paths: [...paths], ttl });
+        return { data: paths.map((p) => ({ path: p, signedUrl: `https://fake/sign/${b}/${p}?ttl=${ttl}`, error: null })), error: null };
+      },
+    }) },
   };
 }
 
