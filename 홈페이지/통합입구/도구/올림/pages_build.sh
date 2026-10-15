@@ -12,18 +12,19 @@ if [ "${1:-}" = "묶음" ]; then
   grep -v '^\s*#' "$LIST" | grep '|' | while IFS='|' read -r DEST SRC _; do
     DEST="$(echo "$DEST" | xargs)"; SRC="$(echo "$SRC" | xargs)"
     case "$DEST" in /*) ;; *) echo "경로는 / 로 시작해야 해요: $DEST"; exit 1;; esac
+    case "$SRC" in /*) echo "저장소 파일은 / 로 시작하면 안 돼요: $SRC"; exit 1;; esac
     case "$DEST$SRC" in *..*) echo "'..' 는 쓸 수 없어요"; exit 1;; esac
     echo "올림: $SRC → $DEST"
     if [ -d "$SRC" ]; then mkdir -p "out$DEST"; cp -R "$SRC"/. "out$DEST"
     else mkdir -p "$(dirname "out$DEST")"; cp "$SRC" "out$DEST"; fi
   done
   # 시안처럼 머리(<!doctype>)가 없는 화면 파일은 머리를 씌웁니다.
-  for f in $(find out -name '*.html'); do
+  find out -name '*.html' -print0 | while IFS= read -r -d '' f; do
     head -c 200 "$f" | grep -qi '<!doctype' || { { echo '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>'; cat "$f"; echo '</body></html>'; } > "$f.tmp" && mv "$f.tmp" "$f"; }
   done
   # 시험 주소 안에서는 «로그인·결제»가 시험 주소의 통합 입구(/)로 가게 합니다 (손님 주소로 새지 않게).
   for f in out/home/index.html out/join.html; do [ -f "$f" ] && sed -i 's#https://app\.cgg\.co\.kr/#/#g' "$f"; done
-  for f in $(grep -rl 'CGG-BIZ-START' out --include='*.html' || true); do python3 홈페이지/공통/사업자정보.py "$f" || true; done
+  grep -rlZ 'CGG-BIZ-START' out --include='*.html' | while IFS= read -r -d '' f; do python3 홈페이지/공통/사업자정보.py "$f" || true; done
 else
   SRC="홈페이지/통합입구/0_차곳간_통합_index${1:+_$1}.html"
   echo "올리는 판: $SRC"
