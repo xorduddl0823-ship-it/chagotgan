@@ -1,0 +1,152 @@
+/* 워시 v121 — J안 4판 «완성 모양» (디자인/01_J안_제품별_시안_기준.md · 08 J안 원본 값 그대로)
+   공통 부품 cgg-j4 1.2 + 워시 이음(cgg-j4_워시_이음.css) 다음에 붙습니다. 본문 칸(화면 일곱 칸 · 표 · 창 · 숫자 카드)을 J 값으로 맞춥니다.
+   색은 이름(변수)만 씁니다. 밝은 화면만 J 상태색으로 바꾸고, 어두운 화면은 원래 값을 둡니다. */
+@media (prefers-color-scheme:light){ :root:not([data-theme="dark"]){
+  --brand:#1668C4; --brand-soft:#E6F0FB; --good:#1E9E5A; --good-soft:#E4F5EC; --warn:#B26B00; --warn-soft:#FFF2DD;
+  --danger:#D64545; --danger-soft:#FDE8E8 } }
+:root[data-theme="light"]{
+  --brand:#1668C4; --brand-soft:#E6F0FB; --good:#1E9E5A; --good-soft:#E4F5EC; --warn:#B26B00; --warn-soft:#FFF2DD;
+  --danger:#D64545; --danger-soft:#FDE8E8 }
+
+/* ── 안쪽 작은 탭 — 남색 머리말 밖, 본문 맨 위 (J: 제목 아래 알약) ── */
+/* 가로 배치만 — 세로 · 아이콘 배치(넓은 화면)는 공통 부품 자리 그대로 */
+.cgg-app:not(.lay-side):not(.lay-icon) > .cgg-main > .cgg-sub{max-width:1400px;margin:0 auto;padding:16px 0 0;background:transparent}
+
+/* ── ② 묶음 이름 › 제목 + 설명 한 줄 ── */
+.jcrumb{display:block;font-size:13px;color:var(--muted);margin:0 0 6px;font-weight:500}
+.jcrumb b{font-weight:700;color:var(--muted)}
+.dashhead{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;margin:6px 0 18px}
+.dashhead > .jhd{flex:1 1 420px;min-width:0}
+.dashhead h2{margin:0;font-size:28px;font-weight:900;letter-spacing:-.8px;line-height:1.3;text-wrap:balance;color:var(--text)}
+.dashhead h2 em,.jsay em{font-style:normal;color:var(--blue)}
+.dashhead .sub2{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.dashhead .jacts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dashhead .jacts .btn{min-height:var(--ctl)}
+/* 홈 — 작은 줄(년·월 고르기) + 말하는 제목 */
+#vHome .dashhead{display:block}
+#vHome .dh-row{display:flex;align-items:center;gap:8px}
+#vHome #dhTitle{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:0}
+#vHome .calbtn{width:30px;height:30px;font-size:15px}
+.jsay{margin:4px 0 0;font-size:28px;font-weight:900;letter-spacing:-.8px;line-height:1.3;text-wrap:balance;color:var(--text)}
+
+/* ── ③ 할 일 카드 — 공통 부품 그대로 · 모두 보기는 오른쪽 작은 글 ── */
+.cgg-actsall .btn{border:0;background:transparent;color:var(--blue);min-height:28px;padding:0 4px;font-size:13px}
+
+/* ── ⑤ 숫자 카드 4개 (J: 이름 · 큰 숫자 + 단위 · 지난주보다 · 작은 그래프) ── */
+.sums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.sums .sum,.sums .s{position:relative;background:var(--surface);border:0;border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px;text-align:left;min-width:0}
+.sums .sum > span,.sums .s > span{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:500}
+.sums .sum > b,.sums .s > b{display:block;font-size:30px;font-weight:900;letter-spacing:-.8px;margin-top:8px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.sums .sum > b em{font-style:normal;font-size:14px;color:var(--muted);font-weight:700;margin-left:3px}
+.sums .sum.bad > b{color:var(--danger)}
+.sums .sum .tr{display:block;font-size:12.5px;font-weight:700;color:var(--good);margin-top:4px}
+.sums .sum .tr.dn{color:var(--danger)} .sums .sum .tr.eq{color:var(--muted)}
+.sums .sum .tr span{color:var(--muted);font-weight:500}
+.sums .sum svg.sp{position:absolute;right:18px;top:18px;width:72px;height:26px}
+.sums .sum svg.sp path{fill:none;stroke:var(--blue);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sums .sum .kd{width:10px;height:10px;border-radius:3px;flex:none}
+
+/* ── ④ 도구줄 · 입력 칸 (J: 높이 43 · 모서리 12) ── */
+.cgg-main .tools input[type=text],.cgg-main .tools input[type=search],.cgg-main .tools input[type=date],.cgg-main .tools select,
+.cgg-main .fld input,.cgg-main .fld select,#sheet input[type=text],#sheet input[type=tel],#sheet input[type=number],#sheet input[type=date],#sheet select,#sheet textarea{
+  border:1px solid var(--ln2);border-radius:var(--r-ctl);font:inherit;font-size:14px;color:var(--text);background-color:var(--surface)}
+.cgg-main .tools input[type=text],.cgg-main .tools select,.cgg-main .tools input[type=date]{min-height:var(--ctl)}
+.cgg-main select{appearance:none;-webkit-appearance:none;padding-right:30px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center}
+.btn{border-radius:var(--r-ctl);font-weight:700}
+.btn.primary{box-shadow:0 6px 16px -8px #1668C4cc}
+.btn.danger{background:var(--surface);color:var(--danger);border-color:#F3C2C2}
+.btn:disabled{opacity:.45}
+.btn.primary.jdemote{background:var(--surface);border-color:var(--ln2);color:var(--btn-ink);box-shadow:none}
+
+/* ── 선택 네모 20px — 직접 그린 네모 (기기의 어두운 설정을 따라가지 않음) ── */
+.cgg-main input[type=checkbox],#sheet input[type=checkbox],.askbox input[type=checkbox]{appearance:none;-webkit-appearance:none;margin:0;width:20px;height:20px;flex:none;
+  border:1.5px solid #C5CED8;border-radius:6px;background:#fff;display:inline-grid;place-content:center;cursor:pointer;vertical-align:middle;color-scheme:light}
+.cgg-main input[type=checkbox]::after,#sheet input[type=checkbox]::after,.askbox input[type=checkbox]::after{content:"";width:10px;height:6px;border:2.2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.cgg-main input[type=checkbox]:checked,#sheet input[type=checkbox]:checked,.askbox input[type=checkbox]:checked{background:var(--blue);border-color:var(--blue)}
+.cgg-main input[type=checkbox]:checked::after,#sheet input[type=checkbox]:checked::after,.askbox input[type=checkbox]:checked::after{opacity:1}
+.cgg-main input[type=checkbox]:disabled{opacity:.45;cursor:default}
+
+/* ── ⑥ 표 (J: 머리줄 40 · 줄 50 · 가로선만 얇게 · 금액 오른쪽) ── */
+.cgg-main table{border-collapse:separate;border-spacing:0;font-size:14px}
+.cgg-main table th{height:40px;padding:0 14px;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--surface);border:0;border-bottom:1px solid var(--line);white-space:nowrap}
+.cgg-main table td{height:50px;padding:0 14px;border:0;border-bottom:1px solid var(--line);background:var(--surface)}
+.cgg-main table tbody tr:hover td{background:var(--hov)}
+.cgg-main table td:first-child,.cgg-main table th:first-child{border-left:0}
+.cgg-main .tablebox,.cgg-main .tblwrap{border:0;border-radius:var(--r-card);box-shadow:var(--sh);background:var(--surface);overflow:auto}
+/* 상태 칩 — J 상태색 (진행 중 파랑 · 확인 필요 주황 · 보류 빨강 · 완료 초록) */
+.tag,.pill{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:6px;font-size:12px;font-weight:700;line-height:1}
+.tag.in{background:var(--run-bg);color:var(--run)} .tag.out{background:var(--chk-bg);color:var(--chk)}
+.tag.paid,.pill.ok,.pill.paid{background:var(--done-bg);color:var(--done)} .pill.no{background:var(--stop-bg);color:var(--stop)}
+.tag.dly,.tag.dly2{background:var(--stop);color:#fff}
+/* 쪽 넘김 */
+.pager .btn{min-height:34px;padding:0 12px;font-size:13px}
+
+/* 상태별 탭 + 개수 (J 데이터 카드 머리) — 입출고 내역 */
+.jstab{display:flex;gap:2px;padding:4px 16px 0;margin:0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;background:var(--surface);border-radius:var(--r-card) var(--r-card) 0 0;box-shadow:var(--sh)}
+.jstab button{border:0;background:transparent;font:inherit;font-size:14px;color:var(--muted);padding:13px 10px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-weight:500}
+.jstab button b{margin-left:5px;font-size:12px;font-weight:700;color:var(--muted);background:var(--bg);border-radius:999px;padding:1px 8px}
+.jstab button.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:700}
+.jstab button.on b{background:var(--tabon);color:var(--blue)}
+.jstab + #lateBox + #lTable .tablebox,.jstab ~ #lTable > .tablebox{border-radius:0 0 var(--r-card) var(--r-card)}
+
+/* ── ⑦ 접힌 도움 카드 «이 화면 사용법» ── */
+.jhelp{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:0 20px;margin:18px 0 0}
+.jhelp summary{height:50px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;list-style:none}
+.jhelp summary::-webkit-details-marker{display:none}
+.jhelp summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-4px}
+.jhelp[open] summary::after{transform:rotate(-135deg);margin-top:4px}
+.jhelp p{margin:0 0 12px;font-size:14px;color:var(--muted);line-height:1.7}
+.jhelp .btn{min-height:34px;font-size:13px;margin:0 0 16px}
+
+/* ── 창 3종 (J: 확인 400 · 입력 560 · 자세히 520 오른쪽에서) ── */
+.sheetbg,.askbg{background:#0B254573}
+.sheet{border-radius:22px 22px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 24px 60px #0B254559}
+.sheet h3{font-size:19px;font-weight:900;letter-spacing:-.3px;margin:0 0 6px}
+.sheetbtns{justify-content:flex-end}
+.askbox{width:min(400px,calc(100vw - 32px));border-radius:22px;padding:24px;box-shadow:0 24px 60px #0B254559}
+.askbox .msg{font-size:15px}
+.askbox .row{justify-content:flex-end}
+@media (min-width:900px){
+  .sheet{width:560px;border-radius:22px;padding:24px}
+  .sheetbtns .btn{flex:0 0 auto;min-width:96px}
+  .askbox .row .btn{flex:0 0 auto;min-width:96px;padding:0 18px}
+  /* 자세히 창 — 오른쪽에서 열림 (520) */
+  .sheet.jside{left:auto;right:0;top:0;bottom:0;transform:none;width:520px;max-height:none;height:100%;border-radius:22px 0 0 22px}
+}
+@media (max-width:600px){
+  .sheet{padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+  .sheet h3{font-size:17px}
+  .sheet input,.sheet select{min-height:40px}
+  .sheet .btn{min-height:42px}
+  .askbox{padding:18px}
+}
+
+/* ── 체험 모드 자리 (cgg-j4 1.2 CGG.trial) ── */
+#cggTrialBand:empty{display:none}
+#cggTrialBand{max-width:1400px;margin:16px auto 0;padding:0 22px}
+.jlock{display:inline-flex;margin-left:5px;vertical-align:-2px;opacity:.75}
+.jlock svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* 그림 문자 대신 선 아이콘 */
+svg.jic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex:none}
+.fin .ic svg,.fout .ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── 폰 (600 이하) — 제목 19 · 숫자 카드 2×2 · 칸 사이 10 ── */
+@media (max-width:600px){
+  .cgg-app > .cgg-main > .cgg-sub{padding:10px 12px 0}
+  #cggTrialBand{padding:0 12px;margin-top:10px}
+  .dashhead{margin:4px 0 12px}
+  .dashhead h2,.jsay{font-size:19px;letter-spacing:-.4px}
+  .dashhead .sub2{font-size:13px}
+  .dashhead .jacts{width:100%;margin-left:0}
+  .dashhead .jacts .btn{flex:1 1 auto;min-height:38px}
+  .sums{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .sums .sum,.sums .s{padding:14px;border-radius:14px}
+  .sums .sum > b,.sums .s > b{font-size:21px}
+  .sums .sum svg.sp{width:52px;height:20px;right:12px;top:14px}
+  .jstab{padding:2px 8px 0;border-radius:14px 14px 0 0}
+  .jstab button{padding:11px 8px;font-size:13px}
+  .jhelp{border-radius:14px;padding:0 14px}
+}
