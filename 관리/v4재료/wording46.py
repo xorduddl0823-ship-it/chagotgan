@@ -74,6 +74,9 @@ def apply(s):
     R('.split("{무엇}").join("무료 체험")', '.split("{무엇}").join("체험 기간")', 1)
     R("""    '<div class="keys"><span class="cnt">바꿔 넣을 수 있는 말 :</span>'+""",
       """    '<div class="hint" style="margin:6px 0">알림톡으로 나가는 글이라 결제 · 충전 · 연장을 권하는 말(예: «결제하시면 바로 다시 열립니다», «충전하기 ▶»)과 «무료»는 넣지 마세요.</div>'+\n    '<div class="keys"><span class="cnt">바꿔 넣을 수 있는 말:</span>'+""", 1)
+    # 모든 버튼 시험에서 찾음: 포인트 값이 없으면 «undefined» 가 보였어요
+    R('toast("팝빌 연결 정상"+(r&&r.point!==""?" · 남은 포인트 "+r.point:"")+(r&&r.test?" (시험)":""));',
+      'toast("팝빌 연결이 정상이에요"+(r&&r.point!=null&&r.point!==""&&!isNaN(Number(r.point))?" · 남은 포인트 "+Number(r.point).toLocaleString("ko-KR"):"")+(r&&r.test?" (시험 발행)":""));', 1)
     # 로그인 화면 — 표준형
     R('>문자로 받은 6자리</label>', '>문자로 받은 인증번호 6자리</label>', 1)
     R('</b> 로 6자리를 보냈습니다.<br>5분 안에 넣어 주세요."', '</b> 로 인증번호 6자리를 보냈습니다.<br>5분 안에 입력해 주세요."', 1)

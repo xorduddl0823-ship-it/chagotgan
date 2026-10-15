@@ -5620,7 +5620,7 @@ function viewTax(){
   $("hCheck").onclick = function(){
     toast("팝빌에 물어보는 중…");
     api("hqTaxCheck",[]).then(function(r){
-      toast("팝빌 연결 정상"+(r&&r.point!==""?" · 남은 포인트 "+r.point:"")+(r&&r.test?" (시험)":""));
+      toast("팝빌 연결이 정상이에요"+(r&&r.point!=null&&r.point!==""&&!isNaN(Number(r.point))?" · 남은 포인트 "+Number(r.point).toLocaleString("ko-KR"):"")+(r&&r.test?" (시험 발행)":""));
     }).catch(function(e){ toast(emsg(e),true); });
   };
 }
