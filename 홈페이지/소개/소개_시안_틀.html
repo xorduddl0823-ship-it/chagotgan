@@ -1,0 +1,304 @@
+<title>차곳간 홈페이지 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* 차곳간 대표 홈페이지 시안 — 위에서 아래로: 소개 → 미리 써 보기 → 요금제 → 사업자 정보. 제품 화면과 같은 남색 기준색 */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --surface2:#eef2f7; --ink:#14202e; --muted:#5d6b80; --line:#dbe2ec;
+  --brand:#1668c4; --brand-ink:#ffffff; --brand-soft:#e4eefa; --navy:#0d2440;
+  --lock:#9a5b00; --lock-soft:#fbf0dc; --ok:#1d7a4c; --ok-soft:#e2f3ea; --beta:#0d2440; --beta-ink:#e8f0fb;
+  --f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1520; --surface:#162131; --surface2:#1c2a3d; --ink:#e6edf5; --muted:#9aa8bb; --line:#2a384b;
+  --brand:#5ea6ee; --brand-ink:#0b1a2b; --brand-soft:#17304a; --navy:#0a1626;
+  --lock:#f0b35a; --lock-soft:#3a2a12; --ok:#6fd19e; --ok-soft:#173527; --beta:#1d3a5f; --beta-ink:#e8f0fb; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1520; --surface:#162131; --surface2:#1c2a3d; --ink:#e6edf5; --muted:#9aa8bb; --line:#2a384b;
+  --brand:#5ea6ee; --brand-ink:#0b1a2b; --brand-soft:#17304a; --navy:#0a1626;
+  --lock:#f0b35a; --lock-soft:#3a2a12; --ok:#6fd19e; --ok-soft:#173527; --beta:#1d3a5f; --beta-ink:#e8f0fb; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;margin:0;word-break:keep-all}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.3}
+p{margin:0}
+a{color:var(--brand)}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+
+/* 시안 보기 전환 (실제 홈페이지에는 없음) */
+.drafter{background:#fff7e0;color:#5b3d00;border-bottom:1px solid #e9cf8f;font-size:13.5px}
+.drafter .wrap{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding-block:8px}
+.drafter b{font-weight:700}
+.seg{display:inline-flex;background:#fff;border:1px solid #e0c27a;border-radius:999px;padding:2px}
+.seg button{border:0;background:transparent;padding:4px 12px;border-radius:999px;font-size:13px;cursor:pointer;color:#5b3d00}
+.seg button[aria-pressed="true"]{background:#5b3d00;color:#fff}
+.rec{font-size:12px;font-weight:700;background:#5b3d00;color:#fff;border-radius:999px;padding:1px 8px}
+
+/* 오픈 베타 띠 */
+.beta{background:var(--beta);color:var(--beta-ink);font-size:13.5px}
+.beta .wrap{padding-block:8px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center}
+.beta b{background:var(--beta-ink);color:var(--beta);border-radius:6px;padding:0 7px;font-size:12px;letter-spacing:.04em}
+
+header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+header.top .wrap{display:flex;align-items:center;gap:14px;padding-block:12px}
+.logo{font-weight:900;font-size:22px;letter-spacing:-.5px;color:var(--ink);text-decoration:none}
+nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+nav a{text-decoration:none;color:var(--muted);font-weight:700;font-size:14.5px;padding:6px 10px;border-radius:10px}
+nav a:hover{background:var(--surface2);color:var(--ink)}
+nav a.login{background:var(--brand);color:var(--brand-ink)}
+@media (max-width:560px){nav a.hide-s{display:none}}
+
+.hero{padding-block:44px 30px}
+.hero .wrap{display:grid;gap:18px}
+.eyebrow{font-family:var(--f-mono);font-size:12.5px;letter-spacing:.08em;color:var(--brand);text-transform:uppercase}
+.hero h1{font-size:clamp(28px,5.2vw,46px);font-weight:900;letter-spacing:-1px}
+.hero p{color:var(--muted);font-size:clamp(15.5px,2vw,18px);max-width:58ch}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:13px 20px;font-weight:700;font-size:16px;text-decoration:none;border:1px solid transparent;cursor:pointer}
+.btn.p{background:var(--brand);color:var(--brand-ink)}
+.btn.g{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:10px}
+.prod{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:4px}
+.prod .ic{font-weight:900;font-size:13px;color:var(--brand-ink);background:var(--brand);border-radius:10px;width:44px;height:44px;display:grid;place-items:center}
+.prod h3{font-size:17px;margin-top:6px}
+.prod p{color:var(--muted);font-size:14.5px}
+
+section.blk{padding-block:40px;scroll-margin-top:64px}
+section.blk>.wrap{display:flex;flex-direction:column;gap:16px}
+section.alt{background:var(--surface);border-block:1px solid var(--line)}
+.h2{font-size:clamp(22px,3.4vw,30px);font-weight:900;letter-spacing:-.5px}
+.sub{color:var(--muted);max-width:64ch}
+
+/* 미리 써 보기 */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:15px;padding:9px 16px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.trybox{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:860px){.trybox{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-width:0}
+.strip{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;background:var(--lock-soft);color:var(--lock);font-size:13.5px;font-weight:700;padding:9px 14px}
+.strip span{font-weight:500}
+.stage iframe{display:block;width:100%;height:min(78vh,760px);border:0;background:#fff}
+.soon{padding:40px 20px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:8px;align-items:center}
+.soon b{color:var(--ink);font-size:17px}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:8px}
+.card h3{font-size:16px}
+.locks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.locks li{display:grid;grid-template-columns:22px 1fr;gap:6px;font-size:14px;line-height:1.5}
+.locks li small{display:block;color:var(--muted);font-size:12.5px}
+.tease{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tease p{color:#c9d7ea;font-size:14px}
+.tease .btn{margin-top:4px}
+
+/* 요금제 */
+.ptabs{display:flex;gap:6px;flex-wrap:wrap}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:10px;position:relative}
+.plan.best{border:2px solid var(--brand)}
+.plan .tag{position:absolute;top:-11px;left:16px;background:var(--brand);color:var(--brand-ink);font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px}
+.plan h3{font-size:18px}
+.price{font-size:30px;font-weight:900;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.price small{font-size:14px;font-weight:500;color:var(--muted)}
+.ex{display:inline-block;font-size:12px;font-weight:700;color:var(--lock);background:var(--lock-soft);border-radius:6px;padding:1px 7px;width:max-content}
+.plan ul{margin:0;padding-left:18px;color:var(--muted);font-size:14.5px;display:flex;flex-direction:column;gap:3px}
+.plan .btn{margin-top:auto}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:f}
+.flow div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;font-size:14.5px;color:var(--muted)}
+.flow b{display:block;color:var(--ink);font-size:15px}
+.flow div::before{counter-increment:f;content:counter(f);display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13px;margin-bottom:6px}
+.note{font-size:13.5px;color:var(--muted)}
+
+footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:var(--surface)}
+</style>
+
+<div class="drafter gut" id="drafter"><div class="wrap">
+  <b>시안 보기 전환</b>
+  <span>오픈 베타 띠</span>
+  <span class="seg" role="group" aria-label="오픈 베타 띠">
+    <button type="button" id="betaOn" aria-pressed="true">넣은 안</button>
+    <button type="button" id="betaOff" aria-pressed="false">뺀 안</button>
+  </span>
+  <span class="rec">추천: 넣은 안</span>
+  <span>· 이 노란 줄은 시안에만 있어요</span>
+</div></div>
+
+<div class="beta gut" id="betaBand"><div class="wrap">
+  <b>OPEN BETA</b><span>차곳간은 지금 <strong>오픈 베타</strong>예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span>
+</div></div>
+
+<header class="top gut"><div class="wrap">
+  <a class="logo" href="#top">차곳간</a>
+  <nav aria-label="주요 메뉴">
+    <a href="#try">미리 써 보기</a>
+    <a href="#price">요금제</a>
+    <a class="hide-s" href="@@JOIN@@">회원가입</a>
+    <a class="login" href="@@APP@@">로그인</a>
+  </nav>
+</div></header>
+
+<main id="top">
+<section class="hero gut"><div class="wrap">
+  <div class="eyebrow">광택·세차 · 성능점검 · 딜러</div>
+  <h1>입고부터 정산까지,<br>차를 맡고 내주는 일을 한곳에서</h1>
+  <p>차곳간은 광택·세차장, 성능점검장, 딜러가 함께 쓰는 업무 장부예요. 가입하지 않아도 예시 자료로 지금 바로 눌러 볼 수 있어요.</p>
+  <div class="cta">
+    <a class="btn p" href="#try">가입 없이 미리 써 보기</a>
+    <a class="btn g" href="#price">요금제 보기</a>
+  </div>
+  <div class="prods">
+    <div class="prod"><div class="ic">워시</div><h3>차곳간 워시</h3><p>광택·세차·휠·판금 업체용. 입고·출고, 월별 청구서, 입금 확인, 세금계산서까지.</p></div>
+    <div class="prod"><div class="ic">체크</div><h3>차곳간 체크</h3><p>성능점검장용. 검사 건수와 청구, 입·출금, 세금계산서를 한 화면에서.</p></div>
+    <div class="prod"><div class="ic">딜러</div><h3>차곳간 딜러</h3><p>딜러용. 맡긴 차가 어디까지 됐는지, 도착·출고 소식을 휴대폰으로 받아요.</p></div>
+  </div>
+</div></section>
+
+<section class="blk alt gut" id="try"><div class="wrap">
+  <h2 class="h2">미리 써 보기</h2>
+  <p class="sub">실제 차곳간 화면에 예시 가게 자료를 넣어 두었어요. 마음껏 눌러 보세요. 바꾼 것은 이 창 안에서만 보이고, 저장·문자·결제는 실제로 일어나지 않아요.</p>
+  <div class="tabs" role="tablist" aria-label="제품 고르기">
+    <button type="button" role="tab" id="tWash" aria-selected="true" data-p="wash">워시</button>
+    <button type="button" role="tab" id="tCheck" aria-selected="false" data-p="check">체크</button>
+    <button type="button" role="tab" id="tDealer" aria-selected="false" data-p="dealer">딜러</button>
+  </div>
+  <div class="trybox">
+    <div class="stage">
+      <div class="strip">체험 모드 <span id="stripTx">예시 가게 · 저장·문자·결제는 실제로 되지 않아요</span></div>
+      <div id="stageBody"></div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h3>🔒 결제하면 열리는 기능</h3>
+        <ul class="locks" id="locks"></ul>
+      </div>
+      <div class="card tease">
+        <h3>우리 가게 숫자로 열어 보세요</h3>
+        <p id="teaseTx">지금 보시는 매출·청구서는 예시예요. 결제하면 우리 가게 입고 기록으로 바로 채워져요.</p>
+        <a class="btn p" href="#price">요금제 보기</a>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="blk gut" id="price"><div class="wrap">
+  <h2 class="h2">요금제</h2>
+  <p class="sub">한 달 단위로 결제해요. 결제하기를 누르면 차곳간에 로그인한 뒤 결제 창(토스페이먼츠)으로 이어져요.</p>
+  <div class="tabs ptabs" role="tablist" aria-label="요금제 제품">
+    <button type="button" role="tab" aria-selected="true" data-q="wash">워시</button>
+    <button type="button" role="tab" aria-selected="false" data-q="check">체크</button>
+    <button type="button" role="tab" aria-selected="false" data-q="dealer">딜러</button>
+  </div>
+  <div class="plans" id="plans"></div>
+  <p class="note"><strong>가격 예시</strong>예요. 확정되면 바뀔 수 있어요. 금액은 부가세 별도, 한 달 기준이에요. 환불은 <a href="@@REFUND@@" target="_blank" rel="noopener">환불 규정</a>을 따라요.</p>
+  <div class="flow">
+    <div><b>로그인 또는 가입</b>결제하기를 누르면 차곳간 입구로 가요.</div>
+    <div><b>결제 창에서 결제</b>토스페이먼츠 결제 창에서 카드로 결제해요.</div>
+    <div><b>바로 사용</b>결제가 끝나면 잠겨 있던 기능이 바로 열려요.</div>
+  </div>
+</div></section>
+</main>
+
+<footer class="site gut"><div class="wrap">
+@@BIZ@@
+</div></footer>
+
+<script type="application/octet-stream" id="pkg-wash">@@PKG_WASH@@</script>
+<script type="application/octet-stream" id="pkg-dealer">@@PKG_DEALER@@</script>
+<script>
+(function(){
+"use strict";
+var APP = "@@APP@@";
+var $ = function(id){ return document.getElementById(id); };
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+
+/* 오픈 베타 띠 넣은 안 / 뺀 안 */
+function beta(on){ $("betaBand").hidden=!on; $("betaOn").setAttribute("aria-pressed",String(on)); $("betaOff").setAttribute("aria-pressed",String(!on)); store("cgg_draft_beta",on?"1":"0"); }
+$("betaOn").onclick=function(){ beta(true); }; $("betaOff").onclick=function(){ beta(false); };
+beta(store("cgg_draft_beta")!=="0");
+
+/* 결제하면 열리는 기능 — 워시 방 체험판 분류표(대표님 확정 2026-10-15)의 🔒 항목 */
+var LOCKS = {
+  wash: [
+    ["출고 문자 자동 발송","출고하면 딜러에게 바로 알림이 가요"],
+    ["청구서 문자 · 예약 발송","한 달치 청구서를 거래처에 보내요"],
+    ["세금계산서 발급","국세청에 바로 발급돼요"],
+    ["통장 연결 · 입금 자동 확인","들어온 돈을 저절로 맞춰 줘요"],
+    ["엑셀 · 사진 내려받기","매출·청구서를 파일로 가져가요"]
+  ],
+  check: [
+    ["세금계산서 발급","검사 건을 모아 한 번에 발급해요"],
+    ["통장 연결 · 입금 자동 확인","들어온 돈을 저절로 맞춰 줘요"],
+    ["엑셀 내려받기","청구·매출을 파일로 가져가요"]
+  ],
+  dealer: [
+    ["도착 · 출고 알림톡","내 차 소식이 카카오톡으로 와요"],
+    ["업체와 내 차 연결","실제 맡긴 차가 자동으로 보여요"]
+  ]
+};
+var STRIP = {
+  wash: "예시 가게 · 저장·문자·결제는 실제로 되지 않아요",
+  check: "체험 화면 준비 중",
+  dealer: "시연 화면 · 번호는 아무거나, 인증번호 123456"
+};
+var TEASE = {
+  wash: "지금 보시는 매출·청구서는 예시예요. 결제하면 우리 가게 입고 기록으로 바로 채워져요.",
+  check: "체크 체험 화면은 곧 열려요. 먼저 요금제를 확인해 보세요.",
+  dealer: "지금은 예시 차예요. 업체와 연결하면 내가 맡긴 차가 바로 보여요."
+};
+function unpack(id){
+  var b=atob($(id).textContent.trim()), u=new Uint8Array(b.length);
+  for(var i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+  return new TextDecoder("utf-8").decode(u);
+}
+var CACHE={};
+function show(p){
+  [].forEach.call(document.querySelectorAll("#try [role=tab]"),function(t){ t.setAttribute("aria-selected",String(t.getAttribute("data-p")===p)); });
+  $("stripTx").textContent=STRIP[p]; $("teaseTx").textContent=TEASE[p];
+  $("locks").innerHTML=LOCKS[p].map(function(x){ return '<li><span aria-hidden="true">🔒</span><span>'+x[0]+'<small>'+x[1]+'</small></span></li>'; }).join("");
+  var body=$("stageBody"); body.innerHTML="";
+  if(p==="check"){
+    body.innerHTML='<div class="soon"><b>체크 체험 화면 준비 중</b><span>실제 체크 화면에 예시 검사소 자료를 넣는 중이에요.</span><a class="btn g" href="#price">체크 요금제 보기</a></div>';
+    return;
+  }
+  var f=document.createElement("iframe");
+  f.title=(p==="wash"?"차곳간 워시":"차곳간 딜러")+" 체험 화면";
+  if(!CACHE[p]) CACHE[p]=unpack(p==="wash"?"pkg-wash":"pkg-dealer");
+  f.srcdoc=CACHE[p];
+  body.appendChild(f);
+}
+[].forEach.call(document.querySelectorAll("#try [role=tab]"),function(t){ t.onclick=function(){ show(t.getAttribute("data-p")); }; });
+show("wash");
+
+/* 요금제 — 가격 예시 (확정 전) */
+var PLANS = {
+  wash: [
+    {n:"베이직", price:55000, items:["입고·출고 · 월별 청구서","출고 알림(알림톡)"], code:"wash-basic"},
+    {n:"스탠다드", price:77000, best:true, items:["베이직 전부","세금계산서 · 입금 자동 확인"], code:"wash-standard"},
+    {n:"프로", price:0, items:["스탠다드 전부","여러 지점 · 맞춤 상담"], code:"wash-pro"}
+  ],
+  check: [ {n:"체크", price:null, items:["검사 건수·청구 관리","입·출금 · 세금계산서"], code:"check"} ],
+  dealer: [ {n:"딜러", price:null, items:["맡긴 차 진행 보기","도착·출고 알림"], code:"dealer"} ]
+};
+function won(n){ return n.toLocaleString("ko-KR"); }
+function plans(q){
+  [].forEach.call(document.querySelectorAll(".ptabs [role=tab]"),function(t){ t.setAttribute("aria-selected",String(t.getAttribute("data-q")===q)); });
+  $("plans").innerHTML=PLANS[q].map(function(p){
+    var price = p.price===null ? '<div class="price">가격 미정</div>'
+              : p.price===0 ? '<div class="price">상담</div>'
+              : '<div class="price">'+won(p.price)+'원 <small>/ 월</small></div><span class="ex">가격 예시</span>';
+    var go = p.price ? '<a class="btn p" href="'+APP+'?buy='+p.code+'">결제하기</a>'
+           : p.price===0 ? '<a class="btn g" href="'+APP+'?ask='+p.code+'">상담 요청</a>'
+           : '<button class="btn g" type="button" disabled>가격이 정해지면 열려요</button>';
+    return '<div class="plan'+(p.best?' best':'')+'">'+(p.best?'<span class="tag">추천</span>':'')+
+      '<h3>'+p.n+'</h3>'+price+'<ul>'+p.items.map(function(i){return '<li>'+i+'</li>';}).join("")+'</ul>'+go+'</div>';
+  }).join("");
+}
+[].forEach.call(document.querySelectorAll(".ptabs [role=tab]"),function(t){ t.onclick=function(){ plans(t.getAttribute("data-q")); }; });
+plans("wash");
+})();
+</script>
