@@ -81,6 +81,15 @@ function rpc(fn: string, a: any) {
   }
   if (fn === "wash_write") return { data: "2", error: null };
   if (fn === "wash_sms_take") return { data: "free", error: null };
+  /* sb13 체험판 횟수 — SQL 09 wash_trial_bump 와 같음 (한 번에 셈) */
+  if (fn === "wash_trial_bump") {
+    if (knobs.missing.has("wash_trial_use")) return { data: null, error: { message: "function does not exist" } };
+    const t = store.wash_trial_use ?? (store.wash_trial_use = []);
+    let r = t.find((x) => x.key === a.p_key);
+    if (!r) { r = { key: a.p_key, n: 0 }; t.push(r); }
+    if (r.n >= a.p_max) return { data: false, error: null };
+    r.n++; return { data: true, error: null };
+  }
   /* 결제 시험: knobs.cash 에 업체 잔액을 넣으면 잔액을 흉내 (마이너스 안 됨) */
   if (fn === "wash_cash_bal") return { data: knobs.cash[a.p_shop] ?? 0, error: null };
   if (fn === "wash_cash_take") {
