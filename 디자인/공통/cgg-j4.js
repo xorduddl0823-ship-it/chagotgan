@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.0 (2026-10-15, 디자인 방)
-   ① 메뉴 배치 셋  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.1 (2026-10-15, 디자인 방)
+   ① 메뉴 배치 셋  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)
    바탕: 관리 v4.0 의 관리/v4재료/j4.js. 관리 전용 이름(TAB · render · NAV)에 묶이지 않게
          «무엇을 보여 줄지»와 «눌렀을 때 할 일»을 제품이 넘겨 주는 식으로 바꿨어요.
    서버를 부르지 않아요. 저장은 «이 기기에만»(localStorage) — 못 쓰면 가로 메뉴로 그냥 보여요.
@@ -12,6 +12,10 @@
        [{key:"home",icon:"home",label:"홈"}, … 5칸], 지금 key, function(key){ 화면 이동 });
      CGG.todos(document.querySelector(".cgg-acts"),
        [{tone:"chk",icon:"car",title:"출고 확인 3대",sub:"한빛모터스 외 2곳 · 오늘"}, … 3장], function(i){ 그 화면으로 });
+     CGG.menu(사람단추, {name:"홍길순", role:"대표"}, [                                    // 1.1
+       {key:"me",icon:"user",label:"마이페이지"}, {key:"trash",icon:"trash",label:"휴지통",count:3}, "-",
+       {key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()}, "-", {key:"out",icon:"out",label:"로그아웃"}], function(key){ … });
+     CGG.badge(사람단추, 3);   // 사람 단추 위 빨간 개수 (0이면 숨김)
    tone: run(파랑 · 진행 중) · chk(주황 · 확인 필요) · stop(빨강 · 보류)
    ═══════════════════════════════════════════════════════════════════ */
 var CGG = (function(){
@@ -30,6 +34,8 @@ var CGG = (function(){
     today:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
     out:'<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>', in:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
     more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+    trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    pc:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
     lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
   };
   function ic(n){ return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+(IC[n]||"")+'</svg>'; }
@@ -70,5 +76,35 @@ var CGG = (function(){
       +'<span class="tx"><b>'+esc(t.title)+'</b><small>'+esc(t.sub||"")+'</small></span><span class="ar" aria-hidden="true">→</span></button>'; }).join("");
     Array.prototype.forEach.call(el.querySelectorAll("[data-act]"),function(b){ b.onclick=function(){ onPick && onPick(+b.getAttribute("data-act")); }; });
   }
-  return { ic:ic, layout:layout, tabbar:tabbar, todos:todos, version:"cgg-j4 1.0" };
+  /* ④ 사람 단추 ▾ 펼침 (1.1) — 단추 아래(자리가 없으면 위)에 열리고, 바깥 누르기 · Esc · 화면 크기 바뀜에 닫혀요 */
+  var drop=null, dropBtn=null;
+  function closeMenu(){ if(drop){ drop.hidden=true; } if(dropBtn){ dropBtn.setAttribute("aria-expanded","false"); var b=dropBtn; dropBtn=null; return b; } }
+  function menu(btn, who, items, onPick){
+    btn.setAttribute("aria-haspopup","menu"); btn.setAttribute("aria-expanded","false");
+    btn.addEventListener("click", function(e){ e.stopPropagation();
+      if(dropBtn===btn){ closeMenu(); return; }
+      if(!drop){ drop=document.createElement("div"); drop.className="cgg-drop"; drop.setAttribute("role","menu"); drop.hidden=true; document.body.appendChild(drop);
+        drop.addEventListener("click", function(ev){ ev.stopPropagation(); }); }
+      var list=typeof items==="function"?items():items;
+      drop.innerHTML=(who?'<div class="who"><b>'+esc(who.name)+'</b>'+esc(who.role||"")+'</div><hr>':'')+list.map(function(x){
+        if(x==="-") return '<hr>';
+        return '<button type="button" role="menuitem" data-mk="'+esc(x.key)+'">'+ic(x.icon)+esc(x.label)
+          +(x.count?'<span class="cnt">'+esc(x.count)+'</span>':x.note?'<small>'+esc(x.note)+'</small>':'')+'</button>'; }).join("");
+      drop.hidden=false; dropBtn=btn; btn.setAttribute("aria-expanded","true");
+      var r=btn.getBoundingClientRect(), w=drop.offsetWidth, h=drop.offsetHeight;
+      drop.style.left=Math.min(window.innerWidth-w-8, Math.max(8, r.right-w))+"px";
+      drop.style.top=(r.bottom+6+h>window.innerHeight ? Math.max(8, r.top-6-h) : r.bottom+6)+"px";
+      Array.prototype.forEach.call(drop.querySelectorAll("[data-mk]"), function(b){
+        b.onclick=function(){ var k=b.getAttribute("data-mk"); closeMenu(); onPick && onPick(k); }; });
+      var f=drop.querySelector("[data-mk]"); if(f) f.focus();
+    });
+  }
+  document.addEventListener("click", function(){ closeMenu(); });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ var b=closeMenu(); if(b) b.focus(); } });
+  window.addEventListener("resize", function(){ closeMenu(); });
+  function badge(btn, n){ var i=btn.querySelector(".cgg-badge"); if(!n){ if(i) i.remove(); return; }
+    if(!i){ i=document.createElement("i"); i.className="cgg-badge"; if(getComputedStyle(btn).position==="static") btn.style.position="relative"; btn.appendChild(i); }
+    i.textContent=n; i.setAttribute("aria-label","휴지통 "+n+"건"); }
+
+  return { ic:ic, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, version:"cgg-j4 1.1" };
 })();

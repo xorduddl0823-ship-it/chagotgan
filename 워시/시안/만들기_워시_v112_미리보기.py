@@ -1,14 +1,16 @@
 """워시 v112 미리보기 만들기 — 대표님이 눌러 볼 수 있게, 서버 대신 지어낸 자료를 넣은 사본.
-쓰는 법: python3 워시/시안/만들기_워시_v112_미리보기.py
+쓰는 법: python3 워시/시안/만들기_워시_v112_미리보기.py [v113]   (판 이름을 주면 그 판으로 만듭니다. 기본 v112)
 - 재료: 워시/1_차곳간_워시_index_v112.html (읽기만)
 - 결과: 워시/시안/워시_v112_미리보기.html — 실제 서버(wash-api)에 연결하지 않습니다.
   서버로 가는 요청을 이 파일 안에서 가로채서 지어낸 자료로 답합니다. 저장을 눌러도 이 창 안에서만 바뀝니다.
 - 예시 자료는 워시 파일 안 «샘플 자료 넣기»(seedDemo)와 같은 지어낸 값입니다 (기준서 6-3).
 """
 import os, json
+import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "..", "1_차곳간_워시_index_v112.html")
-OUT = os.path.join(HERE, "워시_v112_미리보기.html")
+VER = sys.argv[1] if len(sys.argv) > 1 else "v112"
+SRC = os.path.join(HERE, "..", "1_차곳간_워시_index_%s.html" % VER)
+OUT = os.path.join(HERE, "워시_%s_미리보기.html" % VER)
 SEED = os.path.join(HERE, "워시_v112_미리보기_자료.json")
 s = open(SRC, encoding="utf-8").read()
 seed = "{}"
@@ -91,9 +93,9 @@ if os.environ.get("SEEDMODE"):
     s = s.replace("function seedDemo(){", "window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};\nfunction seedDemo(){", 1)
 i = s.index("<script")
 s = s[:i] + FAKE + s[i:]
-s = s.replace("<title>차곳간 워시</title>", "<title>워시 v112 미리보기</title>", 1)
+s = s.replace("<title>차곳간 워시</title>", "<title>워시 %s 미리보기</title>" % VER, 1)
 # 미리보기 띠 — 실제 서버가 아니라는 것을 늘 보이게
-k = s.index('<div class="wrap" id="app" hidden>')
+k = s.rindex('<div', 0, s.index('id="app" hidden>'))
 s = s[:k] + '<div style="position:sticky;top:0;z-index:100000;background:#FFF2DD;color:#7A4A00;font:600 12.5px/1.5 \'Noto Sans KR\',sans-serif;padding:6px 14px;text-align:center">미리보기 — 지어낸 자료예요. 실제 서버에 연결하지 않고, 저장해도 이 창 안에서만 바뀌어요.</div>\n' + s[k:]
 open(OUT, "w", encoding="utf-8").write(s)
 print("OK", OUT, len(s))
