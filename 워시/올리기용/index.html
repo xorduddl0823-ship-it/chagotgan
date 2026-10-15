@@ -3113,7 +3113,7 @@ function cggAllSheet(all){
   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
     b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
 }
-var APP_VER="워시 v118 · UI 3.0 · 2026-10-15";
+var APP_VER="워시 v119 · UI 3.0 · 2026-10-15";
 /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
 var LAYOUTS=["top","side","icon"];
 function layoutMode(){
@@ -7717,7 +7717,7 @@ function outPlan(r,mode){
 }
 /* ===== 입고 알림톡 (v118 · 서버 sb7 intake · 확정본 «차곳간_입고안내») =====
    업체명 · 업체전화는 서버가 채웁니다. 본사 알림톡이 안 되면 확정본 대체 문구로 문자. */
-function autoInOn(){return sendCfg().autoIn===true;}
+function autoInOn(){return sendCfg().autoIn!==false;}   /* v119: 기본 켜짐 (끈 업체만 꺼짐) */
 function inVars(r){
   return {"딜러명":r.dealer||"","상사명":r.company||"","업체명":shopLabel(),"차량번호":r.plate||"",
     "작업내용":workFull(r),"입고일시":dtKo(r.createdAt||nowIso()),"업체전화":shopTel()};
@@ -11013,9 +11013,9 @@ function renderSend(){
    '<div class="tools" style="margin-top:10px">'+
      '<label class="chip"><input type="checkbox" id="sc_autoOut" style="width:18px;height:18px;vertical-align:-3px"'+(c.autoOut!==false?" checked":"")+'> 출고하면 자동 발송</label>'+
      '<label class="chip"><input type="checkbox" id="sc_autoBill" style="width:18px;height:18px;vertical-align:-3px"'+(c.autoBill!==false?" checked":"")+'> 청구서도 자동 발송</label>'+
-     '<label class="chip"><input type="checkbox" id="sc_autoIn" style="width:18px;height:18px;vertical-align:-3px"'+(c.autoIn===true?" checked":"")+'> 입고하면 딜러에게 알림톡 보내기</label>'+
+     '<label class="chip"><input type="checkbox" id="sc_autoIn" style="width:18px;height:18px;vertical-align:-3px"'+(c.autoIn!==false?" checked":"")+'> 입고하면 딜러에게 알림톡 보내기</label>'+
    '</div>'+
-   '<div class="hint" style="margin-top:6px">입고 알림톡은 처음에 꺼져 있어요. 켜면 입고 등록이 끝날 때 딜러 번호로 «차량 입고 안내»가 나가요 (알림톡이 안 되면 문자). 끈 채로도 입고 완료 창에서 한 건씩 보낼 수 있어요.</div>'+
+   '<div class="hint" style="margin-top:6px">입고 알림톡은 처음부터 켜져 있어요. 입고 등록이 끝날 때 딜러 번호로 «차량 입고 안내»가 나가요 (알림톡이 안 되면 문자). 끄고 저장하면 안 나가고, 꺼 두어도 입고 완료 창에서 한 건씩 보낼 수 있어요.</div>'+
    '<div class="tools" style="margin-top:12px">'+
      '<button class="btn primary" id="scSave">연동 설정 저장</button>'+
      '<button class="btn" id="scPing">연결 확인</button>'+
