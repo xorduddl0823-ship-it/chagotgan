@@ -3113,7 +3113,7 @@ function cggAllSheet(all){
   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
     b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
 }
-var APP_VER="워시 v116 · UI 3.0 · 2026-10-15";
+var APP_VER="워시 v117 · UI 3.0 · 2026-10-15";
 /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
 var LAYOUTS=["top","side","icon"];
 function layoutMode(){
@@ -6798,7 +6798,7 @@ function sendOneBill(b,sched){
   if(sched){
     if(!sendReady())return Promise.reject({message:"예약 발송은 문자 연동(발신번호)이 돼 있어야 합니다"});
     return billCode(b).then(function(code){
-    var hq=(!useAta&&code&&!HQATA.off)?{key:"bill",vars:hqVars(onlyKeys(billVars(b,code),ATA_VARS.bill))}:null;
+    var hq=(!useAta&&code&&!HQATA.off)?{key:HQKEY.bill,vars:hqVars(onlyKeys(billVars(b,code),ATA_VARS.bill))}:null;
     return (useAta||!plan.photo?Promise.resolve({id:"",b64:""}):billImageId(b)).then(function(img){
     return queueSend({type:"월 청구(예약)",to:b.phone,text:text,imageId:useAta?"":img.id,__b64:img.b64,
         kind:useAta?"ATA":(img.id?"MMS":plan.kind),forceAta:useAta,
@@ -6815,7 +6815,7 @@ function sendOneBill(b,sched){
   return markBilled(b,true).then(function(){
     if(sendReady()&&c.autoBill!==false)
       return billCode(b).then(function(code){
-      var hq=(!useAta&&code&&!HQATA.off)?{key:"bill",vars:hqVars(onlyKeys(billVars(b,code),ATA_VARS.bill))}:null;
+      var hq=(!useAta&&code&&!HQATA.off)?{key:HQKEY.bill,vars:hqVars(onlyKeys(billVars(b,code),ATA_VARS.bill))}:null;
       return (useAta||!plan.photo?Promise.resolve({id:"",b64:""}):billImageId(b)).then(function(img){
         return sendOrOpen({type:"월 청구",to:b.phone,text:text,imageId:useAta?"":img.id,__b64:img.b64,
           kind:useAta?"ATA":(img.id?"MMS":plan.kind),forceAta:useAta,
@@ -7702,7 +7702,7 @@ function sendOutMsg(r,type,openFallback){
   var useAta=(fmtOf("out")==="ata");
   /* v116: 업체 알림톡을 안 켰으면 본사 «출고안내» 알림톡 먼저 (안 되면 아래 문자 그대로) */
   return (sendReady()&&(useAta||!HQATA.off)?outCode(r):Promise.resolve("")).then(function(code){
-    var hq=(!useAta&&code&&!HQATA.off)?{key:"out",vars:hqVars(onlyKeys(outVars(r,code),ATA_VARS.out))}:null;
+    var hq=(!useAta&&!HQATA.off)?{key:HQKEY.out,rec:r.id,vars:hqVars(onlyKeys(outVars(r,code),ATA_VARS.out))}:null;
     return sendOrOpen({type:type||"출고 알림",to:r.phone,text:p.text,imageId:useAta?"":p.imageId,
       kind:useAta?"ATA":p.kind,forceAta:useAta,
       ata:useAta?{key:"out",vars:outVars(r,code)}:null,hq:hq,ref:r.id},openFallback);
@@ -9556,7 +9556,7 @@ function depositNotice(b, v, day){
   var vars={"받는곳":b.comp||b.dealer||"","금액":comma(v),"업체명":shopLabel(),"확인일시":dtKo(isNaN(d)?nowIso():d.toISOString()),
     "기간":periodLabel(b.month),"업체전화":shopTel()};
   var text="["+shopLabel()+"] "+comma(v)+"원 입금 확인되었습니다. 감사합니다.\n"+shopLabel()+(shopTel()?(" "+shopTel()):"");
-  queueSend({type:"입금 확인",to:rec.phone,text:text,kind:"AUTO",hq:{key:"deposit",vars:hqVars(vars)},ref:b.key})
+  queueSend({type:"입금 확인",to:rec.phone,text:text,kind:"AUTO",hq:{key:HQKEY.deposit,vars:hqVars(vars)},ref:b.key})
     .then(function(o){return sendNow(o);})
     .then(function(o){ if(o.status==="보냄") toast(o.sentKind==="ATA"?"«입금 확인» 알림톡을 보냈어요":"«입금 확인» 문자를 보냈어요");
       else toast("«입금 확인» 안내를 보내지 못했어요: "+sendErrText(o.err),true); })
@@ -10793,6 +10793,8 @@ var KIND_NAME={AUTO:"자동",SMS:"단문",LMS:"장문",MMS:"사진 문자",ATA:"
    업체가 자기 알림톡을 켜 두지 않았을 때 본사 채널 템플릿(출고안내 · 청구서 · 추가작업)으로 보냅니다.
    본사 코드가 아직 없거나 옛 서버면 «템플릿 ID가 없습니다» → 그 자리에서 예전처럼 문자로 다시 보냅니다. */
 var HQATA={off:false};
+/* 본사 템플릿 키 — 서버 sb7 · 관리 v4.1 의 13개 이름과 같게 */
+var HQKEY={out:"release",add:"extra_work",bill:"bill",deposit:"deposit_ok"};
 function hqVars(o){var v={};Object.keys(o).forEach(function(k){var x=o[k];v["#{"+k+"}"]=(x==null||x==="")?"-":String(x);});return v;}
 function shopTel(){return phoneLine()||((S.cfg&&S.cfg.send&&S.cfg.send.from)||"");}
 function viewCode(url){var m=String(url||"").match(/[?&]c=([^&#]+)/);return m?decodeURIComponent(m[1]):"";}
@@ -10811,7 +10813,7 @@ function billCode(b){
 function hqAdd(r,w,url){
   if(HQATA.off)return null;
   var code=viewCode(url); if(!code)return null;
-  return {key:"add",vars:hqVars({"차량번호":r.plate||"","업체명":shopLabel(),"작업내용":w.text||"",
+  return {key:HQKEY.add,rec:r.id,vars:hqVars({"차량번호":r.plate||"","업체명":shopLabel(),"작업내용":w.text||"",
     "금액":comma(w.amount||0),"업체전화":shopTel(),"보기코드":code})};
 }
 function sendNow(o){
@@ -10825,21 +10827,29 @@ function sendNow(o){
       templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||""};
     if(plan){body.kind="ATA";body.templateId=plan.tpl;body.pfId=plan.pfId;
       body.variables=plan.vars;body.text=plan.text;body.disableSms=!plan.fallback;}
-    else if(o.hq&&!HQATA.off){body.kind="ATA";body.ataKey=o.hq.key;body.variables=o.hq.vars;body.imageB64="";body.disableSms=false;}
+    else if(o.hq&&!HQATA.off){body.kind="ATA";body.ataKey=o.hq.key;body.variables=o.hq.vars;body.imageB64="";body.disableSms=false;
+      if(o.hq.rec)body.rec=String(o.hq.rec);}
     o.sentKind=body.kind;
+    /* 알림톡이 안 되면 그 자리에서 예전처럼 문자로 다시 */
+    function asSms(){
+      var o2=Object.assign({},o);delete o2.hq;
+      return jobImage(o2).then(function(b2){
+        body.kind=o.kind||c.mode||"AUTO";if(body.kind==="ATA")body.kind="AUTO";
+        delete body.ataKey;delete body.variables;delete body.disableSms;delete body.rec;body.imageB64=b2||"";
+        o.sentKind=body.kind;
+        return GS.send(body);
+      });
+    }
     return GS.send(body).then(function(res){
-      /* 본사 템플릿이 아직 없거나 옛 서버 → 예전처럼 문자로 (이 화면에서는 다시 묻지 않음) */
+      /* 본사 템플릿이 아직 없거나 옛 서버 → 문자로 (이 화면에서는 다시 묻지 않음) */
       if(body.ataKey&&!(res&&res.ok)&&/템플릿 ID|채널 ID|pfId/.test(String((res&&(res.error||res.message))||""))){
-        HQATA.off=true;
-        var o2=Object.assign({},o);delete o2.hq;
-        return jobImage(o2).then(function(b2){
-          body.kind=o.kind||c.mode||"AUTO";if(body.kind==="ATA")body.kind="AUTO";
-          delete body.ataKey;delete body.variables;delete body.disableSms;body.imageB64=b2||"";
-          o.sentKind=body.kind;
-          return GS.send(body);
-        });
+        HQATA.off=true; return asSms();
       }
       return res;
+    },function(err){
+      /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
+      if(body.ataKey) return asSms();
+      throw err;
     });
   }).then(function(res){
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";}

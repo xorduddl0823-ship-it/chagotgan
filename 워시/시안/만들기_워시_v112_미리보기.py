@@ -83,7 +83,14 @@ FAKE = r'''<script>
       case "sendMsg":   /* 서버 sb5 처럼: 본사 알림톡(ataKey)은 주소 끝 ?ata=on 일 때만 «코드 있음» */
         var mb={}; try{ mb=JSON.parse(a[0]||"{}"); }catch(e){}
         SENT.push({kind:mb.kind,ataKey:mb.ataKey||"",vars:mb.variables||null,text:mb.text||"",to:mb.to||""});
-        if(mb.kind==="ATA"&&mb.ataKey&&!/ata=on/.test(location.search)) return JSON.stringify({ok:false,error:"알림톡 템플릿 ID가 없습니다"});
+        SENT[SENT.length-1].rec=mb.rec||"";
+        if(mb.kind==="ATA"&&mb.ataKey){
+          /* sb7 처럼: 키는 release · extra_work · bill · deposit_ok (옛 이름은 모르는 키 → 코드 없음과 같음) */
+          var K7={release:1,extra_work:1,bill:1,deposit_ok:1};
+          if(!K7[mb.ataKey]||!/ata=on/.test(location.search)) return JSON.stringify({ok:false,error:"알림톡 템플릿 ID가 없습니다"});
+          if((mb.ataKey==="release"||mb.ataKey==="extra_work")&&!mb.rec) throw new Error("어느 차인지 알 수 없습니다 (입고 기록 번호가 없습니다)");
+          if(mb.ataKey==="bill"&&!(mb.variables&&mb.variables["#{보기코드}"]&&mb.variables["#{보기코드}"]!=="-")) throw new Error("청구서 보기 주소가 올바르지 않습니다");
+        }
         return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G"});
       case "viewLink": return {url:"https://app.cgg.co.kr/v.html?c=CAR"+String(a[0]||"").slice(-4)};
       case "viewBill": return {url:"https://app.cgg.co.kr/v.html?c=BILL01"};
