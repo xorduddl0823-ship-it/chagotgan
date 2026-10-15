@@ -88,10 +88,10 @@ deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/�
 
 - 워시 10개 (sb3 면 8개 실패) · 딜러 4개 (d3 면 3개 실패) — 2026-10-15 전부 통과
 
-알림톡 전환 시험 (워시 sb5 noticeAta):
+알림톡 전환 시험 (워시 sb6 noticeAta · 확정본 변수):
 
 ```
 deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/알림톡_워시_시험.ts
 ```
 
-- `알림톡_워시_시험.ts` — 시험 14개 (2026-10-15 전부 통과 · sb4 로 돌리면 10개 실패)
+- `알림톡_워시_시험.ts` — 시험 19개 (2026-10-15 전부 통과 · sb5 로 돌리면 11개 실패)
