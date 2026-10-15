@@ -74,5 +74,11 @@ s = s.replace("관리 v4.3 (2026-10-15) · 공통 부품 cgg-j4 1.3 위에", "�
 s = s.replace("디자인 방 공통 부품 cgg-j4 1.3 (CGG) 를 써요", "디자인 방 공통 부품 cgg-j4 1.4 (CGG) 를 써요")
 # 시각은 번호 칸 너비(130)에 맞게 «10-14 09:00» (연도는 기간 칸에 있음) — 정렬은 그대로 시간 순
 rep('''return { i:i, at:String(r.at||"").slice(0,16).replace("T"," "),''', '''return { i:i, at:String(r.at||"").slice(5,16).replace("T"," "),''')
+# 결제 내역 넷째 숫자 — 서버 sb13 billingShops (지금 자동 결제를 켜 둔 업체 수). 없으면 예전처럼 이 기간 자동 결제된 곳
+rep('''PR2.refunds=(r&&r.refunds!=null)?Number(r.refunds):null; },''', '''PR2.refunds=(r&&r.refunds!=null)?Number(r.refunds):null;
+      PR2.bill=(r&&r.billingShops!=null)?Number(r.billingShops):null; },''')
+rep('''    {label:"자동 결제 업체", value:String(Object.keys(billShops).length), unit:"곳", color:"#0B2545"}]);''',
+    '''    PR2.bill!=null?{label:"자동 결제 켠 업체", value:String(PR2.bill), unit:"곳", color:"#0B2545"}
+                  :{label:"자동 결제 업체 (이 기간)", value:String(Object.keys(billShops).length), unit:"곳", color:"#0B2545"}]);''')
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")
