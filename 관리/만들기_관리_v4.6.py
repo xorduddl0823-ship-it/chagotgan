@@ -107,12 +107,16 @@ rep("""(x.url?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noo
     """(/^https:\\/\\//i.test(String(x.url||""))?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">바로 가기</a>'):'')+""", False)
 # ⑦ 알림톡 방 버그 알림 — 템플릿 표에 자동결제등록 · 자동결제실패 두 줄 + «코드 저장»이 표에 없는 코드를 지우지 않게
 a = s.index('  ["staff_link",'); b = s.index('\n', a)
-s = s[:b] + ',\n  ["bill_on",     "차곳간_자동결제등록",   "자동 결제 카드를 등록했을 때",          "심사 대기"],\n  ["bill_fail",   "차곳간_자동결제실패",   "자동 결제가 되지 않았을 때 (다음 시도일 안내)", "심사 대기"]' + s[b:]
+s = s[:b] + ',\n  ["bill_on",     "차곳간_자동결제등록",   "자동 결제 카드를 등록했을 때",          "등록 전"],\n  ["bill_fail",   "차곳간_자동결제실패",   "자동 결제가 되지 않았을 때 (다음 시도일 안내)", "등록 전"]' + s[b:]
 rep("""    var map={}, n=0, pf=$("ataPf").value.trim(); if(pf) map.pfId=pf;""",
     """    /* 표에 없는 코드도 그대로 다시 보내요 — 서버는 보낸 것으로 통째로 바꿔서, 빠진 키는 지워져요 */
     var map={}, n=0, pf=$("ataPf").value.trim(); Object.keys(ATA.tpls||{}).forEach(function(k){ if(ATA.tpls[k]) map[k]=ATA.tpls[k]; }); if(pf) map.pfId=pf;""", False)
 rep("""    var tp={}; ATA_LIST.forEach(function(x){ tp[x[0]]=map[x[0]]; });""",
     """    var tp={}; Object.keys(map).forEach(function(k){ if(k!=="pfId") tp[k]=map[k]; });""", False)
+# «등록 전» (솔라피에 아직 안 낸 템플릿) — 표 상태 칩 · 보낼 방법 글
+rep("""(x[3]==="통과"?"완료":(x[3]==="심사 대기"?"심사 대기":"확인 필요"))""", """(x[3]==="통과"?"완료":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))""", False)
+rep("""  if(row && row[3]==="심사 대기") return""", """  if(row && row[3]==="등록 전") return '<span class="pill wait" title="솔라피에 등록하고 카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 등록 전</span>';\n  if(row && row[3]==="심사 대기") return""", False)
+rep("«심사 대기»는 새로 심사받는 중이에요.", "«심사 대기»는 새로 심사받는 중이고, «등록 전»은 아직 솔라피에 내지 않은 템플릿이에요.", False)
 # ⑥ 알림톡 방 워딩 검토 (알림톡/07_워딩_검토/관리_v4.5.md) — v4재료/wording46.py
 import sys; sys.path.insert(0, os.path.join(HERE, "v4재료")); import wording46
 s, k, miss = wording46.apply(s); N["말"] += k
