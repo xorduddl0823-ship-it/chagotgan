@@ -26,11 +26,13 @@ body{margin:0;background:var(--bg);font-family:"Noto Sans KR",-apple-system,"App
   </header>
   <main class="cgg-main">
     <div class="demo-pick">이 예시는 체크 메뉴로 그렸어요. 메뉴 배치는 머리말 «홍길순 ▾» › «화면 설정»에서 바꿔요 (넓은 화면에서만 바뀌고, 폰은 늘 아래 탭바예요).</div>
-    <div class="hello"><small id="crumb">홈 · 10월 15일 수요일</small><h1>보험료가 안 맞는 건 <em>4건</em>, 재검사 안내 보낼 차 <em>6대</em>가 있어요</h1><p>오늘 할 일과 이번 달 검사를 한눈에 봐요.</p></div>
+    <div id="hd"></div>
     <div id="trialBand"></div>
     <div class="cgg-acts" id="acts"></div>
     <div class="card" id="layBox" hidden><h3>화면 설정 › 메뉴 배치</h3><div id="layIn"></div></div>
-    <div class="card"><h3>여기부터는 제품 화면</h3><p style="margin:0;color:var(--muted)">공통 부품은 머리말 · 메뉴 · 할 일 카드 · 아래 탭바만 맡아요. 표 · 숫자 칸 · 창은 각 제품 원래 코드를 그대로 써요.</p></div>
+    <div id="kp"></div>
+    <div id="tb"></div>
+    <div id="hp"></div>
   </main>
   <nav class="cgg-tbar" id="tbar"></nav>
 </div>
@@ -44,7 +46,11 @@ function draw(){
   CGG.tabbar(document.getElementById("tbar"),[{key:"home",icon:"home",label:"홈"},{key:"work",icon:"car",label:"정산 기록"},{key:"bank",icon:"wallet",label:"입출금"},{key:"tax",icon:"receipt",label:"계산서"},{key:"all",icon:"more",label:"전체"}],
     ["home","work","bank","tax"].indexOf(cur)>=0?cur:"all", function(k){ go(k==="all"?"set":k); });
   var name=MENU.filter(function(m){return m[0]===cur;})[0][2];
-  document.getElementById("crumb").textContent=name+" · 10월 15일 수요일";
+  document.getElementById("hd").innerHTML=CGG.head({crumb:name+" · 10월 15일 수요일", title:'보험료가 안 맞는 건 <em>4건</em>, 재검사 안내 보낼 차 <em>6대</em>가 있어요', desc:"오늘 할 일과 이번 달 검사를 한눈에 봐요.",
+    acts:[{label:"엑셀 다운로드",icon:"down"},{label:"선택한 건 청구서 만들기",id:"selBtn",disabled:!SEL.length},{label:"검사 등록",icon:"plus",pri:true,id:"newBtn"}]});
+  document.getElementById("selBtn").onclick=function(){ var rs=SEL.map(function(i){return ROWS[i];});
+    CGG.dialog({title:"청구서를 만들까요?", rows:[["청구처",rs.map(function(r){return r[0];}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(", ")],["건수",rs.length+"건"],["합계 금액",CGG.won(rs.reduce(function(a,r){return a+r[5];},0))+"원"]], ok:"청구서 만들기", onOk:function(){ CGG.toast("청구서를 만들었어요"); }}); };
+  document.getElementById("newBtn").onclick=function(){ CGG.dialog({size:"form", title:"검사 등록", desc:"내용을 입력하고 저장을 눌러 주세요.", body:'<div class="fg"><label>상사<input id="f1" placeholder="예시상사"></label><label>차량번호<input placeholder="12가 3456"></label><label>검사일<input type="date" value="2026-10-15"></label><label>금액<input type="number" placeholder="0"></label></div>', ok:"저장", onOk:function(){ CGG.toast("저장했어요"); }}); };
 }
 function go(k){ cur=k; draw(); }
 CGG.layout.init(document.getElementById("app"),"cgg_demo_layout");
@@ -58,6 +64,13 @@ CGG.menu(me, {name:"홍길순", role:"대표"}, function(){ return [
   {key:"me",icon:"user",label:"마이페이지"},{key:"plan",icon:"wallet",label:"요금제"},{key:"trash",icon:"trash",label:"휴지통",count:3},"-",
   {key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()},"-",{key:"out",icon:"out",label:"로그아웃"}]; },
   function(k){ if(k==="lay"){ var b=document.getElementById("layBox"); b.hidden=false; CGG.layout.chooser(document.getElementById("layIn"), function(){}); b.scrollIntoView({block:"nearest"}); } });
+var SEL=[];
+var ROWS=[["예시상사","12가 3456","그랜저 IG","성능점검","10.15",33000,"진행 중"],["가람모터스","34나 7788","쏘렌토","성능점검","10.14",33000,"완료"],["누리상사","56다 1122","K5","재검사","10.14",22000,"확인 필요"],["다온카","78라 9090","BMW 520d","성능점검","10.13",44000,"보류"],["예시상사","90마 4545","카니발","성능점검","10.13",33000,"완료"],["라온오토","11바 2323","GV80","성능점검","10.12",44000,"진행 중"]];
+CGG.kpis(document.getElementById("kp"),[{label:"오늘 검사",value:"8",unit:"건",delta:"+2",spark:[3,5,4,6,5,7,8],color:"#1668C4"},{label:"청구 대기",value:"5",unit:"건",delta:"−1",down:true,spark:[6,6,5,7,6,6,5],color:"#4C93E0"},{label:"보험료 안 맞음",value:"4",unit:"건",delta:"+1",down:true,spark:[1,2,2,1,3,2,4],color:"#E08A00"},{label:"이번 달 청구 금액",value:"4,820,000",unit:"원",delta:"+12%",spark:[2,2.4,2.9,3.1,3.6,4.2,4.82],color:"#0B2545"}]);
+CGG.table(document.getElementById("tb"),{cols:["상사명","차량번호","차종","검사","검사일","금액","상태"],kinds:["name","id","text","text","date","money","state"],rows:ROWS,
+  filters:["검사일: 최근 7일 ✕","＋ 상사","＋ 금액"], sorts:[[4,-1,"최신순"],[0,1,"상사명순"],[5,-1,"금액 높은순"]], mline:function(x){return x[2]+" · "+x[3]+" · "+x[4];},
+  onSelect:function(l){ SEL=l; draw(); }, onName:function(r){ CGG.dialog({size:"detail", title:r[0]+" · "+r[1], rows:[["차종",r[2]],["검사",r[3]],["검사일",r[4]],["금액",CGG.won(r[5])+"원"],["상태",r[6]]]}); }});
+document.getElementById("hp").innerHTML=CGG.help("검사가 끝난 차를 골라 «선택한 건 청구서 만들기»를 누르면 청구처별로 청구서가 만들어져요.");
 CGG.trial.init("preview","cgg_demo_try");
 document.getElementById("trialBand").innerHTML=CGG.trial.band({seen:5,total:20})+CGG.trial.card([["매출 엑셀 다운로드","lock","매출 표를 엑셀 파일로 받아요."],["입고 등록","try","차가 들어오면 상사 · 작업 · 금액을 적어요."],["매출 둘러보기","see"]]);
 draw();

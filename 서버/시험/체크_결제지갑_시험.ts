@@ -76,7 +76,9 @@ store.wash_sessions.push({ sid: "w".repeat(48), phone: "01077778888", shop: "BT"
 const wps = await call("payStart", ["cash", 10000, 0], "w".repeat(48), "BT");
 check("로그인한 워시 대표의 payStart → 카드 주문이 만들어짐", wps.result?.ok === true && !!wps.result.orderId && store.wash_pay_order.at(-1)?.shop === "BT", wps);
 const hp = await call("payStart", ["01012345678", "새업체", "pro"]);
-check("열쇠 없는 홈페이지 가입 payStart 는 예전 그대로", hp.result?.ok === true && hp.result.orderId?.startsWith("ord_"), hp);
+const sbOld = /sb11/.test(Deno.env.get("WASH_SRC") ?? "sb11");
+check("열쇠 없는 홈페이지 payStart 는 가입 쪽으로 감 (sb12 부터는 «로그인 먼저» 안내로 꺼짐)",
+  hp.result?.ok === true && (sbOld ? hp.result.orderId?.startsWith("ord_") : hp.result.login === true), hp);
 console.log("④ 지갑 잇기 (본사만)");
 check("없는 업체로는 못 이음", !!(await call("hqCheckWallet", ["NEW", "NOPE"], ADM, "ADMIN")).__err);
 check("본사 계정(ADMIN)을 지갑으로 못 씀", !!(await call("hqCheckWallet", ["NEW", "ADMIN"], ADM, "ADMIN")).__err);
