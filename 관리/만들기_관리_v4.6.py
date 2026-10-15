@@ -102,5 +102,8 @@ s = s.replace('label:"계산서"},{key:', 'label:"\u0001"},{key:')
 k = len(re.findall(r'(?<!세금)(?<!전자)계산서', s)); N["말"] += k
 s = re.sub(r'(?<!세금)(?<!전자)계산서', '세금계산서', s)
 s = s.replace('label:"\u0001"},{key:', 'label:"계산서"},{key:')
+# ⑤ 보안 방 낮음 ① — 유지비 «바로 가기» 링크는 https:// 로 시작할 때만
+rep("""(x.url?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noopener">바로 가기</a>'):'')+""",
+    """(/^https:\\/\\//i.test(String(x.url||""))?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">바로 가기</a>'):'')+""", False)
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자 · 고친 말", N["말"], "곳")
