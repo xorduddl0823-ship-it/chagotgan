@@ -6,7 +6,7 @@ g.__WDB = g.__WDB ?? {} as Record<string, Row[]>;
 export const store: Record<string, Row[]> = g.__WDB;
 export const rpcLog: { fn: string; args: any }[] = [];
 export const signLog: { bucket: string; paths: string[]; ttl: number }[] = [];
-export const knobs = { rateBroken: false, missing: new Set<string>() };
+export const knobs = { rateBroken: false, missing: new Set<string>(), cash: {} as Record<string, number>, cashLog: [] as any[] };
 
 const val = (r: Row, k: string) => {
   if (k.includes("->>")) { const [a, b] = k.split("->>"); return r[a]?.[b]; }
@@ -81,7 +81,14 @@ function rpc(fn: string, a: any) {
   }
   if (fn === "wash_write") return { data: "2", error: null };
   if (fn === "wash_sms_take") return { data: "free", error: null };
-  if (fn === "wash_cash_take") return { data: { ok: true, logId: 1, balance: 10000 }, error: null };
+  /* 결제 시험: knobs.cash 에 업체 잔액을 넣으면 잔액을 흉내 (마이너스 안 됨) */
+  if (fn === "wash_cash_bal") return { data: knobs.cash[a.p_shop] ?? 0, error: null };
+  if (fn === "wash_cash_take") {
+    if (knobs.cash[a.p_shop] === undefined) return { data: { ok: true, logId: 1, balance: 10000 }, error: null };
+    if (knobs.cash[a.p_shop] < a.p_amt) return { data: { ok: false, balance: knobs.cash[a.p_shop] }, error: null };
+    knobs.cash[a.p_shop] -= a.p_amt; knobs.cashLog.push({ shop: a.p_shop, amt: a.p_amt, what: a.p_what, memo: a.p_memo });
+    return { data: { ok: true, logId: knobs.cashLog.length, balance: knobs.cash[a.p_shop] }, error: null };
+  }
   return { data: null, error: null };
 }
 

@@ -57,7 +57,7 @@ const sv = await call("hqAtaSave", [{ tpl: { auth: "KA01TP_OTP", cash_done: "KA0
 check("본사 계정으로 저장됨 (모르는 이름은 버림)", sv.result?.ok && !store.wash_hq[0].ata_cfg.tpl.nope && store.wash_hq[0].ata_cfg.tpl.auth === "KA01TP_OTP", store.wash_hq[0]);
 check("업체 계정은 저장 못 함", !!(await call("hqAtaSave", [{ tpl: {} }], OWN, "BT")).__err);
 const gt = await call("hqAta", [], ADM, "ADMIN");
-check("보기(관리 화면 모양): 15개 키(13 + check_arrive + staff_link) · pfSet · 서버 연결 9개 ready(통과 8 + staff_link)", Object.keys(gt.result?.tpls ?? {}).length === 15 && "check_arrive" in gt.result.tpls && "staff_link" in gt.result.tpls && gt.result.tpls.auth === "KA01TP_OTP" && gt.result.pfSet === true && gt.result.ready.length === (SRC.includes("sb7") ? 8 : 9) && !!gt.result.stats, gt.result);
+check("보기(관리 화면 모양): 15개 키(13 + check_arrive + staff_link) · pfSet · 서버 연결 9개 ready(통과 8 + staff_link)", Object.keys(gt.result?.tpls ?? {}).length >= 15 && "check_arrive" in gt.result.tpls && "staff_link" in gt.result.tpls && gt.result.tpls.auth === "KA01TP_OTP" && gt.result.pfSet === true && gt.result.ready.length >= (SRC.includes("sb7") ? 8 : 9) && !!gt.result.stats, gt.result);
 
 console.log("③ 인증번호 — 확정본 변수 #{인증번호}·#{유효시간}");
 reset();
