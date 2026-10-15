@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.4 (2026-10-15, 디자인 방)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.5 (2026-10-15, 디자인 방)
    ① 메뉴 배치 셋  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)  ⑤ 체험 모드 (1.2)  ⑥ 본문 (1.3)
    바탕: 관리 v4.0 의 관리/v4재료/j4.js. 관리 전용 이름(TAB · render · NAV)에 묶이지 않게
          «무엇을 보여 줄지»와 «눌렀을 때 할 일»을 제품이 넘겨 주는 식으로 바꿨어요.
@@ -159,10 +159,16 @@ var CGG = (function(){
           stateMap, filters:["입고일: 최근 7일 ✕", …], sorts:[[열번호,1|-1,"이름"]…], mline:function(row){폰 둘째 줄},
           onName:function(row,i){자세히 창}, onSelect:function(골라진 줄 번호들){} , size:10, find:"검색",
           actions:function(row,i){ return [{key:"refund",label:"환불"}] },   // 1.4 줄 버튼 — 맨 오른쪽 «할 일» 칸 (없으면 칸도 없음)
-          onAction:function(key,row,i){} } */
-  var WID={name:180,id:130,text:0,date:96,money:130,state:104,time:84,act:120};
+          onAction:function(key,row,i){},
+          // 1.5 (체크 방 요청)
+          bulk:[{key:"del",label:"선택항목 삭제",needSel:true,danger:true},{key:"xls",label:"엑셀 다운로드",icon:"down"}],  // 표 위 일괄 버튼 (거르기 줄 오른쪽)
+          onBulk:function(key, 골라진 줄 번호들){},
+          state:{},        // 넘겨 두면 화면을 다시 그려도 찾기 · 쪽 · 정렬 · 고른 줄이 남아요 (제품의 전역 변수 하나)
+          render:function(row,k){ return HTML 또는 undefined }   // 칸 안에 링크 · 날짜 칸 같은 HTML. undefined 면 기본 모양
+        } */
+  var WID={name:180,id:130,text:0,date:96,money:130,state:104,time:84,act:150};
   function table(el, o){ if(!el) return;
-    var T={f:"",q:"",k:0,dir:1,size:o.size||10,page:1,sel:{}};
+    var T=o.state||{}; if(T.q==null){ T.f=""; T.q=""; T.k=0; T.dir=1; T.size=o.size||10; T.page=1; T.sel={}; }
     var si=o.kinds.indexOf("state"), mi=o.kinds.indexOf("money");
     function list(){ var q=T.q.trim();
       var r=o.rows.map(function(x,i){ return {x:x,i:i}; }).filter(function(w){ return (!T.f||w.x[si]===T.f)&&(!q||w.x.join(" ").indexOf(q)>=0); });
@@ -170,6 +176,7 @@ var CGG = (function(){
     function cnt(f){ return o.rows.filter(function(x){ return !f||x[si]===f; }).length; }
     function selList(){ return Object.keys(T.sel).filter(function(k){ return T.sel[k]; }).map(Number); }
     function cell(x,k){ var v=x[k], kd=o.kinds[k];
+      if(o.render){ var h=o.render(x,k); if(h!==undefined) return h; }
       if(kd==="money") return Number(v)?won(v)+'원':'—';
       if(kd==="state") return status(v,o.stateMap);
       return esc(v); }
@@ -183,6 +190,7 @@ var CGG = (function(){
       el.className="cgg-card";
       el.innerHTML=(si>=0?'<div class="cgg-tabsH" role="tablist">'+tabs.map(function(t){ return '<button type="button" role="tab" data-f="'+esc(t[0])+'" aria-selected="'+(T.f===t[0])+'">'+esc(t[1])+'<b>'+cnt(t[0])+'</b></button>'; }).join("")+'</div>':'')
         +'<div class="cgg-filters">'+(o.filters||[]).map(function(f,i){ return '<button type="button" class="cgg-fp'+(i?'':' on')+'">'+esc(f)+'</button>'; }).join("")+'<span class="sp"></span>'
+        +(o.bulk||[]).map(function(b){ var n=selList().length; return '<button type="button" class="cgg-btn sm'+(b.danger?' danger':'')+'" data-bulk="'+esc(b.key)+'"'+(b.needSel&&!n?' disabled':'')+'>'+(b.icon?ic(b.icon):'')+esc(b.label)+(b.needSel&&n?' ('+n+')':'')+'</button>'; }).join("")
         +'<label class="cgg-find">'+ic("search")+'<input data-q="1" placeholder="'+esc(o.find||"검색")+'" value="'+esc(T.q)+'" aria-label="검색"></label></div>'
         +'<div class="cgg-twrap"><table class="cgg-table"><colgroup><col style="width:56px">'+o.kinds.map(function(k){ return '<col'+(WID[k]?' style="width:'+WID[k]+'px"':'')+'>'; }).join("")+(o.actions?'<col style="width:'+(o.actWidth||WID.act)+'px">':'')+'</colgroup>'
         +'<thead><tr><th class="fx0"><input type="checkbox" data-all="1" aria-label="전체 선택"'+(all?' checked':'')+'></th>'
@@ -206,6 +214,7 @@ var CGG = (function(){
       on("[data-size]","onchange",function(n){ T.size=+n.value; T.page=1; draw(); });
       on("[data-sort]","onchange",function(n){ var p2=n.value.split(","); T.k=+p2[0]; T.dir=+p2[1]; draw(); });
       on("[data-nm]","onclick",function(n){ var i=+n.getAttribute("data-nm"); o.onName(o.rows[i],i); });
+      on("[data-bulk]","onclick",function(n){ o.onBulk&&o.onBulk(n.getAttribute("data-bulk"), selList()); });
       on("[data-act]","onclick",function(n){ var i=+n.getAttribute("data-ai"); o.onAction&&o.onAction(n.getAttribute("data-act"),o.rows[i],i); });
       var q=el.querySelector("[data-q]"); if(q) q.oninput=function(e){ var p3=e.target.selectionStart; T.q=e.target.value; T.page=1; draw(); var q2=el.querySelector("[data-q]"); q2.focus(); q2.setSelectionRange(p3,p3); };
     }
@@ -241,5 +250,5 @@ var CGG = (function(){
     tb.textContent=msg; tb.hidden=false; clearTimeout(tt); tt=setTimeout(function(){ tb.hidden=true; },2400); }
 
   return { ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
-           status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.4" };
+           status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.5" };
 })();
