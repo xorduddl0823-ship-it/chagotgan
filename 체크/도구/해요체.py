@@ -36,6 +36,9 @@ def ida(prev):
         return "이에요"
     return "이에요" if (ord(prev) - 0xAC00) % 28 else "예요"
 
+# errors=True (v40 · 말 대조표 3장): 화면 오류 글도 해요체로 — 가입 · 로그인 · 결제 안내, 알림톡 · 문자 원문만 그대로
+KEEP_LINE_ERR = re.compile(r'lg-|\\n|#\{|문의 ?:|보내드립니다|확인하실 수 있습니다|본 안내는')
+KEEP_FRAG_ERR = re.compile(r'로그인|비밀번호|확인 번호|인증번호|가입|결제')
 KEEP_LINE = re.compile(r'"err"|\'err\'|fail\(|throw |Error\(|reject|bad\(|tell\(|pbKo|pbSay|niceMsg|whyBad|readJson|lg-|msg err|\\n|#\{|문의 ?:|보내드립니다|확인하실 수 있습니다|본 안내는')
 KEEP_FRAG = re.compile(r'못했습니다|못 했습니다|실패|잠겼습니다|로그인|비밀번호|확인 번호|가입')
 
@@ -47,7 +50,9 @@ def conv(t):
     out = re.sub(r'([가-힣]?)((?:</?[a-z]+[^>]*>|[»」)\]]| )*)입니다', lambda m: m.group(1) + m.group(2) + ida(m.group(1)), out)
     return out
 
-def make(s, ctx_skip=()):
+def make(s, ctx_skip=(), errors=False):
+    kl = KEEP_LINE_ERR if errors else KEEP_LINE
+    kf = KEEP_FRAG_ERR if errors else KEEP_FRAG
     lines = s.split("\n")
     done, left = [], []
     ctx = ""
@@ -57,10 +62,10 @@ def make(s, ctx_skip=()):
         st = l.strip()
         if st.startswith("/*") or st.startswith("//") or st.startswith("*"): continue
         if "\0" in l: continue
-        if ctx in ctx_skip or KEEP_LINE.search(l): continue
+        if ctx in ctx_skip or kl.search(l): continue
         def fix(q):
             t = q.group(0)
-            if not re.search(r'[가-힣]', t) or KEEP_FRAG.search(t): return t
+            if not re.search(r'[가-힣]', t) or kf.search(t): return t
             if not re.search(r'니다|니까', t): return t
             n = conv(t)
             if n != t: done.append((i + 1, ctx, t.strip()[:150], n.strip()[:150]))
