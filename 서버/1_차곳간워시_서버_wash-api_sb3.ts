@@ -1310,7 +1310,7 @@ const FN: Record<string, Fn> = {
     const role = String((ss && ss.role) || "");
     if (ss && role !== "owner" && role !== "admin" && role !== "manager") {
       if (!await rateOk("staffmsg:" + String(ss.phone || "") + ":" + new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10),
-                        Number(env("STAFF_MSG_MAX", "100"))))
+                        Number(env("STAFF_MSG_MAX", "300"))))   // 대표님 결정 2026-10-15: 하루 300통
         return { ok: false, error: "오늘 직원 계정으로 보낼 수 있는 문자를 다 썼습니다. 대표님께 말씀해 주세요", stopped: true };
     }
     return sendMsg(s, a[0]);
