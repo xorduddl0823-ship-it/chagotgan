@@ -2888,7 +2888,7 @@ var F_SVCS=[{id:1,code:"supabase",name:"수파베이스",kind:"sub",cost:35000,n
  {id:2,code:"solapi",name:"솔라피 문자",kind:"charge",balance:8000,min_bal:10000,active:true,sort:2,auto:true,auto_note:"자동으로 읽음",what:"문자"},
  {id:3,code:"cloudflare",name:"클라우드플레어",kind:"sub",cost:0,next_due:dd(17),active:true,sort:3,what:"주소"}];
 var F_TODO=[{id:1,title:"QR 스티커 교체",done:false,due_at:dd(0)},{id:2,title:"문자 충전",done:false,due_at:dd(-2)},{id:3,title:"세금계산서 정리",done:false,due_at:dd(6)}], F_NEXT=10;
-var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_PWDEL={}, F_SG={on:false,cfg:{perIp:5,allDay:200,waitPerIp:3}}, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
+var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_BIZ={}, F_PWDEL={}, F_SG={on:false,cfg:{perIp:5,allDay:200,waitPerIp:3}}, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
 function FAKE(fn,a){
   a=a||[];
   switch(fn){
@@ -2943,13 +2943,21 @@ function FAKE(fn,a){
       return {ok:true};
     case "hqAudit": return {ok:true,list:F_LOG.concat([{at:dd(-5)+"T10:00:00",who:"hq:한본사",action:"pwReset",target_phone:a[0],product:"check:HANBIT2",result:"ok"}])};
     case "hqCheckPwSms": if(a[0]===true||a[0]===false){ F_PWSMS=a[0]; F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:"checkPwSms",product:String(a[0]),result:"ok"}); } return {ok:true,on:F_PWSMS};
-    case "hqSendLog": return {ok:true,list:[
-      {at:dd(0)+"T09:12:00",product:"워시",shop:"HANBIT",shopName:"한빛광택",tpl:"intake",to:"010-****-1234",via:"ata",result:"알림톡 도착",msgId:"M4V2026101500001"},
-      {at:dd(0)+"T10:40:00",product:"워시",shop:"DURI",shopName:"두리휠",tpl:"release",to:"010-****-5678",via:"lms",result:"문자 대체",msgId:"M4V2026101500002",err:"카카오톡 미사용 번호"},
-      {at:dd(-1)+"T15:02:00",product:"체크",shop:"SAEBIT",shopName:"새빛 성능검사소",tpl:"check_arrive",to:"010-****-2222",via:"sms",result:"문자 대체",msgId:"M4V2026101400003"},
-      {at:dd(-1)+"T18:30:00",product:"통합",shop:"",shopName:"통합 입구",tpl:"auth",to:"010-****-3333",via:"ata",result:"알림톡 도착",msgId:"M4V2026101400004"},
-      {at:dd(-2)+"T11:00:00",product:"딜러",shop:"HANBIT",shopName:"한빛광택",tpl:"bill",to:"010-****-4444",via:"ata",result:"실패",msgId:"M4V2026101300005",err:"받는 번호가 올바르지 않아요"},
-      {at:dd(0)+"T11:58:00",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"pay_done",to:"010-****-9999",via:"ata",result:"대기",msgId:"M4V2026101500006"}]};
+    case "hqSendLog": return {ok:true,from:a[0],to:a[1],list:[
+      {at:dd(0)+" 09:12",product:"워시",shop:"HANBIT",shopName:"한빛광택",tpl:"intake",to:"010-****-1234",via:"ata",result:"알림톡 도착",msgId:"M4V2026101500001",vars:["업체명","차량번호"]},
+      {at:dd(0)+" 10:40",product:"워시",shop:"DURI",shopName:"두리휠",tpl:"release",to:"010-****-5678",via:"lms",result:"문자 대체",msgId:"M4V2026101500002",err:"카카오톡을 쓰지 않는 번호예요"},
+      {at:dd(-1)+" 15:02",product:"체크",shop:"SAEBIT",shopName:"새빛 성능검사소",tpl:"check_arrive_sms",to:"010-****-2222",via:"sms",result:"문자 도착",msgId:"M4V2026101400003",ref:"A-1043"},
+      {at:dd(-1)+" 18:30",product:"통합",shop:"",shopName:"통합 입구",tpl:"auth",to:"010-****-3333",via:"ata",result:"알림톡 도착",msgId:"M4V2026101400004"},
+      {at:dd(-2)+" 11:00",product:"딜러",shop:"HANBIT",shopName:"한빛광택",tpl:"bill",to:"010-****-4444",via:"ata",result:"실패",msgId:"M4V2026101300005",err:"받는 번호가 올바르지 않아요"},
+      {at:dd(-2)+" 12:00",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"cash_done",to:"010-****-7777",via:"ata",result:"안 보냄",err:"템플릿 코드가 없어 보내지 않았어요"},
+      {at:dd(0)+" 11:58",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"pay_done",to:"010-****-9999",via:"ata",result:"대기",msgId:"M4V2026101500006"}]};
+    case "hqSendSum": return {ok:true,ym:a[0],rows:[],total:{ata:2,sms:1,sent:1,fail:1,wait:1,skip:1,cost:2*13+45+18},price:{ata:13,sms:18,lms:45,mms:110},note:"대략 요금이에요 (부가세 별도)"};
+    case "hqSendCheck": return {ok:true,n:3};
+    case "hqBizList": return {ok:true,list:[
+      {product:"워시",code:"NEWCAR1",name:"새차모터스",bizNo:"1188129312",ceo:"정새차",owner:"010-****-6666",ok:!!F_BIZ.NEWCAR1,okAt:F_BIZ.NEWCAR1?dd(0):""},
+      {product:"체크",code:"SAEBIT",name:"새빛 성능검사소",bizNo:"3120577810",ceo:"박바다",owner:"010-****-2222",ok:F_BIZ.SAEBIT!==false,okAt:dd(-3)},
+      {product:"워시",code:"HANBIT",name:"한빛광택",bizNo:"2118130415",ceo:"김하늘",owner:"010-****-1234",ok:F_BIZ.HANBIT!==false,okAt:dd(-30)}]};
+    case "hqBizOk": F_BIZ[a[1]]=a[2]; return {ok:true};
     case "hqPayWait": return {ok:true,list:[
       {shop:"NEWCAR1",name:"새차모터스",ownerPhone:"01055556666",joinPlan:"pro",createdAt:dd(-2)+"T10:00:00",days:2,old:false,paidOrder:!F_PWDEL.NEWCAR1&&true},
       {shop:"GOLDWASH",name:"골드세차",ownerPhone:"01077778888",joinPlan:"basic",createdAt:dd(-9)+"T10:00:00",days:9,old:false,paidOrder:false},
@@ -6396,6 +6404,7 @@ var TABS = [
   ["sms","기한 안내 문자",viewExp],
   ["lock","잠금 · 차단",viewLock],
   ["wait","결제 대기",viewPayWait],
+  ["bizok","사업자 확인",viewBizOk],
   ["noti","공지사항",viewNotice],
   ["ata","알림톡 템플릿",viewAta],
   ["slog","발송 기록",viewSendLog],
@@ -6409,7 +6418,7 @@ var TAB = "sum";
 var NAV = [   /* J안 4판 차례 = 지금 쓰는 메뉴 차례 그대로 (관리/시안/00_비교와_추천안.md) — 대표님 최종 확인 전 */
   ["sum","홈",["sum","ops"]],
   ["users","계정",["inv","users","ppl"]],
-  ["shops","업체",["shops","lock","wait"]],
+  ["shops","업체",["shops","lock","wait","bizok"]],
   ["pays","받는 금액",["plans","pays","packs","pg","cwal"]],
   ["settle","내는 금액",["settle","svc"]],
   ["tax","세금계산서",["tax"]],
@@ -7082,30 +7091,43 @@ function sgSheet(){
 }
 
 /* ═══════ 알림 › 발송 기록 (관리 v4.6) — 대표님 «알림톡 발송 데이터 기록» (운영/요청서/07 덧붙임) ═══════
-   창구: 서버 방이 만들 hqSendLog([시작일, 끝일]) — 모든 서버가 같은 모양으로 남긴 발송 기록
+   창구: 워시 서버 sb15 (서버/설계/18) — 모든 서버가 같은 모양으로 남긴 발송 기록
+     hqSendLog([시작일, 끝일, {거르기}]) → {from, to, list:[…], need?(준비 전 안내)}  · hqSendSum(["YYYY-MM"]) → {total:{ata, sms, sent, fail, wait, skip, cost}, price}
+     hqSendCheck([]) → {n} (솔라피 결과 새로 받기 — 서버가 10분마다도 채워요)
+     result 6가지: ata(알림톡 도착) · sent(문자 도착, 처음부터 문자) · sms(문자 대체) · fail(실패) · skip(안 보냄) · wait(대기)
      줄: {at, product(워시·체크·딜러·통합), shop, shopName, tpl(템플릿 키), to(받는 번호 — 가린 모양), via/kind(알림톡 · SMS · LMS),
           result(알림톡 도착 · 문자 대체 · 실패 · 대기), msgId(솔라피 번호), err(오류)}
    칸 이름은 서버 판이 나오면 맞춰요. 지금은 이름이 조금 달라도 읽게 넉넉히 받아요.
    받는 번호는 서버가 가려 주지만, 화면에서도 한 번 더 가려요 (앞 3자리 · 끝 4자리만).
    요금은 대략: 알림톡 13원 · SMS 18원 · LMS 45원 (VAT 별도) — 알림톡 방 · 결제 방 기준 */
-var SLOG = {from:"", to:"", list:null, err:"", busy:false};
-var SL_COST = {ata:13, sms:18, lms:45};
+var SLOG = {from:"", to:"", list:null, err:"", busy:false, sum:null, need:""};
+var SL_COST = {ata:13, sms:18, lms:45, mms:110};
 function slv(o,ks,d){ for(var i=0;i<ks.length;i++){ var v=o&&o[ks[i]]; if(v!==undefined&&v!==null&&v!=="") return v; } return d; }
 function slMask(p){ var t=String(p||""), d=t.replace(/\D/g,"");
   if(!d) return "-";
   if(/\*/.test(t) && d.length<=7) return t;            /* 서버가 이미 가린 모양 (010-****-1234) 그대로 */
   if(d.length>=8) return d.slice(0,3)+"-****-"+d.slice(-4);
   return t.replace(/\d/g,"*"); }
-/* 최종 결과 넷: ata(알림톡 도착) · sms(문자 대체) · fail(실패) · wait(대기) */
-function slRes(r){ var t=String(slv(r,["result","final","status","state"],"")).toLowerCase();
+/* 최종 결과 여섯: ata(알림톡 도착) · sent(문자 도착) · sms(문자 대체) · fail(실패) · skip(안 보냄) · wait(대기) */
+var SL_CODE={ata:"ata",sent:"sent",sms:"sms",fail:"fail",skip:"skip",wait:"wait","알림톡 도착":"ata","문자 도착":"sent","문자 대체":"sms","실패":"fail","안 보냄":"skip","대기":"wait"};
+function slRes(r){ var raw=String(slv(r,["result","final","status","state"],"")).trim(); if(SL_CODE[raw]) return SL_CODE[raw];
+  var t=raw.toLowerCase();
+  if(/안 보냄|skip/.test(t)) return "skip";
+  if(/문자 도착|^sent/.test(t)) return "sent";
   if(/fail|실패|오류|err|reject|거부/.test(t)) return "fail";
   if(/sms|lms|문자|대체|fallback|replace/.test(t)) return "sms";
   if(/ata|알림톡|도착|deliver|success|성공|완료|done/.test(t)) return "ata";
   return "wait"; }
 function slVia(r){ var t=String(slv(r,["via","kind","type","msgType"],"")).toLowerCase();
-  if(/lms|mms/.test(t)) return "lms"; if(/sms/.test(t)) return "sms"; return slRes(r)==="sms"?"sms":"ata"; }
-var SL_RES = {ata:["알림톡 도착","done"], sms:["문자 대체","chk"], fail:["실패","stop"], wait:["대기","run"]};
-function slTplName(k){ var f=(typeof ATA_LIST!=="undefined"?ATA_LIST:[]).filter(function(x){ return x[0]===k; })[0]; return f?f[1]:(k||"-"); }
+  if(/mms/.test(t)) return "mms"; if(/lms/.test(t)) return "lms"; if(/sms/.test(t)) return "sms"; return slRes(r)==="sms"?"sms":"ata"; }
+var SL_RES = {ata:["알림톡 도착","done"], sent:["문자 도착","done"], sms:["문자 대체","chk"], fail:["실패","stop"], skip:["안 보냄","stop"], wait:["대기","run"]};
+/* 템플릿 이름 — «키_sms» 는 그 안내의 문자, sms_free 는 직접 쓴 문자, check_arrive_office 는 검사소 템플릿 */
+function slTplName(k){ k=String(k||""); var L=(typeof ATA_LIST!=="undefined"?ATA_LIST:[]);
+  function nm(x){ var f=L.filter(function(r){ return r[0]===x; })[0]; return f?f[1]:""; }
+  if(!k) return "-"; if(k==="sms_free") return "직접 쓴 문자";
+  if(/_sms$/.test(k)){ var b=nm(k.replace(/_sms$/,"")); return (b||k.replace(/_sms$/,""))+" (문자)"; }
+  if(k==="check_arrive_office") return (nm("check_arrive")||"차량 도착")+" (검사소 템플릿)";
+  return nm(k)||k; }
 function viewSendLog(){
   var d=new Date(); if(!SLOG.from){ SLOG.from=d.toISOString().slice(0,8)+"01"; SLOG.to=d.toISOString().slice(0,10); }
   $("main").innerHTML='<div class="dashhead"><h2>발송 기록</h2>'+
@@ -7115,39 +7137,43 @@ function viewSendLog(){
 }
 function slLoad(){
   if(SLOG.busy) return; SLOG.busy=true;
-  api("hqSendLog",[SLOG.from, SLOG.to]).then(function(r){ var L=r&&(r.list||r.rows||r.logs); if(!L && Array.isArray(r)) L=r;
-      SLOG.list=Array.isArray(L)?L:null; SLOG.err=""; },   /* 목록이 없는 답 = 서버 새 판 전 */
-    function(e){ SLOG.list=null; SLOG.err=emsg(e,""); })
-    .then(function(){ SLOG.busy=false; slDraw(); });
+  var ym=SLOG.from.slice(0,7), whole=SLOG.from===ym+"-01" && SLOG.to.slice(0,7)===ym;
+  Promise.all([
+    api("hqSendLog",[SLOG.from, SLOG.to, {}]).then(function(r){ var L=r&&(r.list||r.rows||r.logs); if(!L && Array.isArray(r)) L=r;
+      SLOG.need=(r&&r.need)?String(r.need):""; SLOG.list=(Array.isArray(L) && !(SLOG.need && !L.length))?L:null; SLOG.err=""; },   /* 목록이 없는 답 = 서버 새 판 전 */
+      function(e){ SLOG.list=null; SLOG.err=emsg(e,""); }),
+    whole ? api("hqSendSum",[ym]).then(function(r){ SLOG.sum=(r&&r.total)||null; }, function(){ SLOG.sum=null; }) : Promise.resolve(SLOG.sum=null)
+  ]).then(function(){ SLOG.busy=false; slDraw(); });
 }
 function slDraw(){
   var host=$("slBody"); if(!host) return;
   var tools='<div class="tools"><label class="f" style="margin:0">기간</label><input type="date" id="slFrom" value="'+esc(SLOG.from)+'"><span>~</span><input type="date" id="slTo" value="'+esc(SLOG.to)+'">'+
-    '<button class="btn" id="slGo">새로고침</button></div>';
+    '<button class="btn" id="slGo">새로고침</button><span class="sp"></span><button class="btn" id="slCheck" title="솔라피에 최종 결과를 다시 물어봐요. 10분마다 자동으로도 채워요.">결과 새로 받기</button></div>';
   if(SLOG.list===null){
     host.innerHTML=tools+'<div class="card"><div class="hint"><b>발송 기록은 서버 새 판이 아직이에요.</b><br>서버 방이 모든 제품의 발송 기록 창구를 올리면 이 화면에 바로 보여요. 지금 나가는 알림톡 · 문자는 그대로 나가요.'+
       (SLOG.err?'<br><span style="opacity:.7">서버 안내: '+esc(SLOG.err)+'</span>':'')+'</div></div>';
     slBind(); return; }
-  var L=SLOG.list, ata=0, sms=0, lms=0, fail=0, wait=0;
-  L.forEach(function(r){ var k=slRes(r); if(k==="ata") ata++; else if(k==="sms"){ if(slVia(r)==="lms") lms++; else sms++; } else if(k==="fail") fail++; else wait++; });
-  var won0=ata*SL_COST.ata+sms*SL_COST.sms+lms*SL_COST.lms;
+  var L=SLOG.list, ata=0, sms=0, sent=0, fail=0, skip=0, won0=0;
+  L.forEach(function(r){ var k=slRes(r); if(k==="ata") ata++; else if(k==="sms") sms++; else if(k==="sent") sent++; else if(k==="fail") fail++; else if(k==="skip") skip++;
+    if(k==="ata"||k==="sms"||k==="sent") won0+=SL_COST[k==="ata"?"ata":slVia(r)]||SL_COST.sms; });
+  var T=SLOG.sum; if(T){ ata=Number(T.ata)||0; sms=Number(T.sms)||0; sent=Number(T.sent)||0; fail=Number(T.fail)||0; skip=Number(T.skip)||0; won0=Number(T.cost)||0; }
   var thisMonth=SLOG.from===new Date().toISOString().slice(0,8)+"01";
   host.innerHTML=tools+'<div id="slK"></div>'+
-    '<div class="hint" style="margin:-6px 0 12px">요금은 대략이에요: 알림톡 13원 · SMS 18원 · LMS 45원 (VAT 별도). 정확한 금액은 솔라피 청구서를 봐 주세요.</div>'+
+    '<div class="hint" style="margin:-6px 0 12px">요금은 대략이에요: 알림톡 13원 · SMS 18원 · LMS 45원 · MMS 110원 (VAT 별도). 정확한 금액은 솔라피 청구서를 봐 주세요.</div>'+
     '<div id="tSL"></div>';
   CGG.kpis($("slK"),[
     {label:(thisMonth?"이번 달 ":"이 기간 ")+"알림톡 도착", value:String(ata), unit:"건", color:"#1E9E5A"},
-    {label:"문자 대체", value:String(sms+lms), unit:"건", color:"#E08A00"},
-    {label:"실패", value:String(fail), unit:"건", color:"#D64545"},
+    {label:"문자 대체 · 문자 도착", value:String(sms+sent), unit:"건", color:"#E08A00"},
+    {label:"실패"+(skip?" (안 보냄 "+skip+"건 따로)":""), value:String(fail), unit:"건", color:"#D64545"},
     {label:"대략 요금 (VAT 별도)", value:won(won0).replace(/원$/,""), unit:"원", color:"#0B2545"}]);
   var prods=[], shops=[], tpls=[];
   var rows=L.map(function(r,i){ var p=String(slv(r,["product","prod","app"],"워시")), sh=String(slv(r,["shopName","shop_name","shop","office"],"-")), tk=String(slv(r,["tpl","template","tplKey","key"],""));
     if(prods.indexOf(p)<0) prods.push(p); if(shops.indexOf(sh)<0) shops.push(sh); if(tk && tpls.indexOf(tk)<0) tpls.push(tk);
     return {i:i, at:String(slv(r,["at","created_at","sentAt"],"")).slice(5,16).replace("T"," "), atFull:String(slv(r,["at","created_at","sentAt"],"")),
-      product:p, shop:sh, tk:tk, tpl:slTplName(tk), to:slMask(slv(r,["to","phone","receiver"],"")), via:{ata:"알림톡",sms:"SMS",lms:"LMS"}[slVia(r)],
+      product:p, shop:sh, tk:tk, tpl:slTplName(tk), to:slMask(slv(r,["to","to_mask","phone","receiver"],"")), via:{ata:"알림톡",sms:"SMS",lms:"LMS",mms:"MMS"}[slVia(r)],
       res:slRes(r), raw:r}; });
   makeTable({ id:"tSL", sortKey:"atFull", sortDir:"desc", rowId:function(r){ return String(r.i); },
-    tabs:[["","전체"],["ata","알림톡 도착"],["sms","문자 대체"],["fail","실패"],["wait","대기"]], tabOf:function(r){ return r.res; },
+    tabs:[["","전체"],["ata","알림톡 도착"],["sent","문자 도착"],["sms","문자 대체"],["fail","실패"],["skip","안 보냄"],["wait","대기"]], tabOf:function(r){ return r.res; },
     rows:rows, search:["shop","to","tpl","product"],
     filters:[{k:"product",label:"제품",opts:[["","제품 전체"]].concat(prods.map(function(v){ return [v,v]; }))},
              {k:"shop",label:"업체",opts:[["","업체 전체"]].concat(shops.map(function(v){ return [v,v]; }))},
@@ -7166,15 +7192,72 @@ function slDraw(){
 }
 function slBind(){
   if($("slGo")) $("slGo").onclick=function(){ SLOG.from=$("slFrom").value; SLOG.to=$("slTo").value; slLoad(); };
+  if($("slCheck")) $("slCheck").onclick=function(){ var b=$("slCheck"); b.disabled=true;
+    api("hqSendCheck",[]).then(function(r){ toast("결과를 새로 받았어요"+(r&&r.n!=null?" · "+Number(r.n)+"건":"")); slLoad(); },
+      function(e){ b.disabled=false; toast(emsg(e,"결과를 받지 못했어요. 다시 시도해 주세요."),true); }); };
 }
 /* 자세히 창 — 받는 번호는 가린 모양, 본문은 템플릿 이름뿐 (서버도 본문을 남기지 않아요) */
 function slDetail(r){ if(!r) return; var x=r.raw, R=SL_RES[r.res];
   var err=String(slv(x,["err","error","reason"],""));
   CGG.dialog({size:"detail", title:"발송 기록 자세히", desc:r.shop+" · "+r.tpl,
     rows:[["시각",String(r.atFull).slice(0,19).replace("T"," ")],["제품",r.product],["업체",r.shop],["템플릿",r.tpl+(r.tk?" ("+r.tk+")":"")],
-          ["받는 번호",r.to],["보낸 방법",r.via],["결과",R[0]],["대략 요금",r.res==="fail"||r.res==="wait"?"0원":won(SL_COST[{알림톡:"ata",SMS:"sms",LMS:"lms"}[r.via]]||0)+" (VAT 별도)"],
-          ["솔라피 번호",String(slv(x,["msgId","messageId","msg_id"],"-"))]].concat(err?[["안 된 이유",err]]:[]),
+          ["받는 번호",r.to],["보낸 방법",r.via],["결과",R[0]],["대략 요금",(r.res==="ata"||r.res==="sms"||r.res==="sent")?won(SL_COST[{알림톡:"ata",SMS:"sms",LMS:"lms",MMS:"mms"}[r.via]]||0)+" (VAT 별도)":"0원"],
+          ["솔라피 번호",String(slv(x,["msgId","messageId","msg_id"],"-"))]].concat(slv(x,["ref"],"")?[["관련 번호",String(x.ref)]]:[])
+          .concat(Array.isArray(x.vars)&&x.vars.length?[["넣은 말 (이름만)",x.vars.join(" · ")]]:[]).concat(err?[["안 된 이유",err]]:[]),
     cancel:"닫기"});
+}
+
+/* ═══════ 업체 › 사업자 확인 (관리 v4.6) — 서버 방 보안 고침 (워시 sb15 · 서버/설계/18) ═══════
+   업체가 사업자번호를 처음 넣으면, 본사가 확인하기 전까지 실제 세금계산서 · 팝빌을 쓸 수 없어요.
+     hqBizList([]) → {list:[{product "워시"|"체크", code, name, bizNo, ceo, owner(가린 번호), ok(true|false), okAt}]}  — 확인 안 된 것이 먼저
+     hqBizOk([product, code, true|false]) → {ok}
+   지금 있는 업체는 모두 «확인됨»으로 시작해요. */
+var BIZ = {list:null, err:"", busy:false};
+function viewBizOk(){
+  $("main").innerHTML='<div class="dashhead"><h2>사업자 확인</h2>'+
+    '<div class="sub2">업체가 사업자번호를 처음 넣거나 바꾸면, 본사가 확인할 때까지 실제 세금계산서를 보낼 수 없어요. 국세청 사업자 조회 등으로 번호와 대표 이름을 확인한 뒤 [확인]을 눌러 주세요.</div></div>'+
+    '<div id="bizBody"><div class="hint">불러오는 중이에요…</div></div>';
+  bizLoad();
+}
+function bizLoad(){
+  if(BIZ.busy) return; BIZ.busy=true;
+  api("hqBizList",[]).then(function(r){ var L=r&&(r.list||r.rows); BIZ.list=Array.isArray(L)?L:null; BIZ.err=""; },
+    function(e){ BIZ.list=null; BIZ.err=emsg(e,""); })
+    .then(function(){ BIZ.busy=false; bizDraw(); });
+}
+function bizDraw(){
+  var host=$("bizBody"); if(!host) return;
+  if(BIZ.list===null){ host.innerHTML='<div class="card"><div class="hint"><b>사업자 확인 목록을 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div></div>'; return; }
+  var L=BIZ.list, need=L.filter(function(x){ return !x.ok; }).length;
+  host.innerHTML='<div id="bizK"></div><div id="tBiz"></div>';
+  CGG.kpis($("bizK"),[{label:"확인 필요",value:String(need),unit:"곳",color:"#E08A00"},{label:"확인됨",value:String(L.length-need),unit:"곳",color:"#1E9E5A"}]);
+  makeTable({ id:"tBiz", sortKey:"", rowId:function(r){ return String(r.i); },
+    tabs:[["","전체"],["need","확인 필요"],["ok","확인됨"]], tabOf:function(r){ return r.st; },
+    rows:L.map(function(x,i){ return {i:i, name:String(x.name||x.code||""), code:String(x.code||""), product:String(x.product||"워시"),
+      biz:fmtBizNo?fmtBizNo(String(x.bizNo||"")):String(x.bizNo||""), ceo:String(x.ceo||"-"), owner:slMask?slMask(x.owner):String(x.owner||""),
+      okAt:String(x.okAt||"").slice(0,10), st:x.ok?"ok":"need", raw:x}; }),
+    search:["name","code","biz","ceo"],
+    filters:[{k:"product",label:"제품",opts:[["","제품 전체"],["워시","워시"],["체크","체크"]]}],
+    cols:[
+      {k:"name",label:"업체명",w:170},
+      {k:"biz",label:"사업자번호",w:130,mono:true},
+      {k:"code",label:"코드",w:110,mono:true},
+      {k:"product",label:"제품",w:80},
+      {k:"ceo",label:"대표",w:100},
+      {k:"owner",label:"대표 번호",w:130},
+      {k:"okAt",label:"확인한 날",w:100,html:function(r){ return esc(r.okAt||"-"); }},
+      {k:"st",label:"상태",w:104,html:function(r){ return r.st==="ok"?'<span class="cgg-st done">확인됨</span>':'<span class="cgg-st chk">확인 필요</span>'; }},
+      {k:"_a",label:"할 일",nosort:true,html:function(r){
+        return r.st==="ok"?'<button type="button" class="btn sm danger" data-bizx="'+r.i+'">확인 취소</button>':'<button type="button" class="btn sm" data-bizok="'+r.i+'">확인</button>'; }}
+    ]});
+  function act(i,on){ var x=L[Number(i)]; if(!x) return;
+    confirmBox(on?"사업자번호를 확인했나요?":"확인을 취소할까요?",
+      "업체: "+(x.name||x.code)+"\n사업자번호: "+(fmtBizNo?fmtBizNo(String(x.bizNo||"")):x.bizNo||"-")+"\n대표: "+(x.ceo||"-")+"\n그 뒤: "+(on?"세금계산서를 보낼 수 있어요":"세금계산서를 다시 보낼 수 없게 돼요"),
+      on?"확인":"확인 취소", !on, function(){
+        api("hqBizOk",[String(x.product||"워시"), String(x.code||""), !!on]).then(function(){ toast(on?"확인했어요":"확인을 취소했어요"); bizLoad(); },
+          function(e){ toast(emsg(e,"바꾸지 못했어요. 다시 시도해 주세요."),true); }); }); }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-bizok]"),function(b){ b.onclick=function(ev){ ev.stopPropagation(); act(b.getAttribute("data-bizok"),true); }; });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-bizx]"),function(b){ b.onclick=function(ev){ ev.stopPropagation(); act(b.getAttribute("data-bizx"),false); }; });
 }
 
 function navOf(t){ return NAV.filter(function(g){ return g[2].indexOf(t)>=0; })[0]||null; }
