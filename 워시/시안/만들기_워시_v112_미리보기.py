@@ -35,6 +35,7 @@ FAKE = r'''<script>
 (function(){
   var DB = __SEED__;
   var SHOTN = 0, SENT = [], PAY = [], TOSS = [], AB = {};
+  var OLDQ=location.search;   /* 미리보기: ?srv=old 이면 옛 서버처럼 */
   var AQ=(location.search.match(/ab=(open|on|fail|off)/)||[])[1]||"__ABDEF__"; if(AQ==="off")AQ="";   /* 미리보기: 처음 주소에서 한 번만 읽음 */   /* shotLinks 를 몇 번 불렀는지 (시험용) */
   function shotPic(id){ var t=id.split("/").pop().replace(/[^0-9A-Za-z가-힣._-]/g,"");
     return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420"><rect width="640" height="420" fill="#1668C4"/><text x="320" y="200" font-size="34" fill="#fff" text-anchor="middle" font-family="sans-serif">서명 주소 사진</text><text x="320" y="250" font-size="22" fill="#cfe3fa" text-anchor="middle" font-family="sans-serif">'+t+'</text></svg>'); }
@@ -104,9 +105,12 @@ FAKE = r'''<script>
         period:new Date().toISOString().slice(0,7),paid:/paid=1/.test(location.search),paidUntil:"2026-11-14T15:00:00Z"};
       case "cashInfo": return {ok:true,on:true,balance:0,free:0,paid:0,usedMonth:0,price:{},lots:[],logs:[]};
       case "payStart": PAY.push({fn:fn,a:a});
+        if(/srv=old/.test(OLDQ)) return {ok:true,orderId:"PV"+Date.now(),amount:33000,orderName:"차곳간 기본 요금제 이용요금",
+          clientKey:"test_ck_PREVIEW",customerName:"미리보기 세차"};   /* 옛 서버(sb7~sb9): sdk 없음 */
         return {ok:true,orderId:"PV"+Date.now(),amount:33000,orderName:"차곳간 기본 요금제 이용요금",
           clientKey:"test_ck_PREVIEW",customerName:"미리보기 세차",customerKey:"ANONYMOUS",sdk:"v2"};
       case "billInfo": case "billStart": case "billIssue": case "billOff":
+        if(/srv=old/.test(OLDQ)) throw new Error("모르는 요청입니다: "+fn);
         if(ROLE!=="owner") throw new Error("대표만 할 수 있습니다");
         PAY.push({fn:fn,a:a});
         if(fn==="billInfo"){ if(!AQ) return {ok:true,open:false,on:false};
