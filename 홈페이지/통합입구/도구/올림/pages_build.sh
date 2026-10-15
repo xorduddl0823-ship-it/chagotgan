@@ -13,6 +13,7 @@ cat > out/_headers <<'H'
 /*
   X-Robots-Tag: noindex, nofollow
   X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
   Content-Security-Policy: frame-ancestors 'self'
   Referrer-Policy: strict-origin-when-cross-origin
 H
