@@ -1251,7 +1251,7 @@ async function payDone(shop: string, kind: string, full: number, useCash: number
           await sb.from("wash_pay_order").update({ fail_msg: "캐시 모자람 — 이용기간 안 늘림(본사 확인)" }).eq("order_id", orderId);
           const admin = (await hqCfg()).adminPhone;
           if (admin) await noticeSms(admin, "[차곳간] " + shop + " 이용요금 결제(" + orderId + ")의 캐시 " + wonTxt2(useCash) +
-            "를 깎지 못해 이용기간을 늘리지 않았습니다. 관리에서 확인해 주세요");
+            "을 깎지 못해 이용기간을 늘리지 않았습니다. 관리에서 확인해 주세요");
         } catch (_) { /* */ }
         return;
       }
@@ -2086,7 +2086,8 @@ async function bizTaken(corp: string, selfShop: string): Promise<string> {
     if (e2) return "check";
     if ((ws || []).some((r: any) => digits(r.biz_no) === n)) return "wash";
     const { data: co, error: e3 } = await sb.from("check_office").select("biz_no,popbill_corp").limit(1000);
-    if (!e3 && (co || []).some((r: any) => digits(r.biz_no) === n || digits(r.popbill_corp) === n)) return "check";
+    if (e3) return "check";
+    if ((co || []).some((r: any) => digits(r.biz_no) === n || digits(r.popbill_corp) === n)) return "check";
   } catch (_) { return "check"; }
   return "";
 }
@@ -2097,9 +2098,10 @@ async function bizApproved(shop: string): Promise<boolean> {
   if (shop === "ADMIN") return true;
   try {
     const { data, error } = await sb.from("wash_shops").select("biz_ok_at").eq("shop", shop).maybeSingle();
-    if (error || !data || !("biz_ok_at" in data)) return true;
+    if (error) return String((error as any).code || "") === "42703";   // 칸이 없을 때(SQL 11 전)만 허락 · 다른 읽기 오류는 막음
+    if (!data || !("biz_ok_at" in data)) return true;
     return data.biz_ok_at !== null;
-  } catch (_) { return true; }
+  } catch (_) { return false; }
 }
 const BIZ_TAKEN_MSG = "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다. 우리 사업자번호가 맞다면 차곳간(010-9559-3663)으로 알려 주세요.";
 async function pbIssue(shop: string, json: string) {
@@ -5209,7 +5211,7 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     /* 큰 금액은 한 번 더 확인받습니다 (a[5] === true 면 확인된 것) */
     if (cfg.bigAmt > 0 && amt > cfg.bigAmt && a[5] !== true)
       return { ok: false, confirm: true, amount: amt,
-               why: wonTxt2(amt) + " 는 큰 금액입니다. 한 번 더 확인해 주세요" };
+               why: wonTxt2(amt) + "은 큰 금액입니다. 한 번 더 확인해 주세요" };
     const who = "hq:" + String((ss && (ss.who || ss.phone)) || "?");
     const { data, error } = await sb.rpc("wash_cash_add", {
       p_shop: code, p_amt: amt, p_kind: String(a[4] || "paid"),
