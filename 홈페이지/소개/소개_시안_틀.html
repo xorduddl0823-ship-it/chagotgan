@@ -28,6 +28,7 @@
   --warn:#f0b35a; --warn-soft:#3a2a12; --ok:#6fd19e; --ok-soft:#173527; --bad:#ff8a80; --bad-soft:#3d1a18;
   --beta:#1d3a5f; --beta-ink:#e8f0fb; --draft:#3a2e10; --draft-ink:#f3dca6; --draft-line:#6b5420; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;margin:0;word-break:keep-all}
 .gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .wrap{max-width:1080px;margin:0 auto}
@@ -56,7 +57,11 @@ nav.mn{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
 nav.mn a{text-decoration:none;color:var(--muted);font-weight:700;font-size:14.5px;padding:6px 10px;border-radius:10px}
 nav.mn a:hover{background:var(--surface2);color:var(--ink)}
 nav.mn a.login{background:var(--surface2);color:var(--ink)}
-@media (max-width:600px){nav.mn a.hide-s{display:none}}
+.burger{display:none;border:0;background:transparent;color:var(--ink);padding:6px;border-radius:10px;cursor:pointer}
+.mnav{display:flex;flex-direction:column;padding:6px 0 10px}
+.mnav a{padding:10px 4px;color:var(--ink);text-decoration:none;font-weight:700;border-top:1px solid var(--line)}
+@media (max-width:600px){nav.mn a.hide-s,nav.mn a:not(.login){display:none}.burger{display:inline-flex}}
+@media (min-width:601px){.mnav{display:none!important}}
 
 .hero{padding-block:44px 30px}
 .hero .wrap{display:grid;gap:18px}
@@ -116,6 +121,12 @@ section.alt{background:var(--surface);border-block:1px solid var(--line)}
 .plan .opens{font-size:13px;font-weight:700;color:var(--muted);margin-top:4px}
 .plan ul{margin:0;padding-left:18px;color:var(--ink);font-size:14.5px;display:flex;flex-direction:column;gap:3px}
 .plan .btn{margin-top:auto}
+.plan .member{font-size:13px;text-align:center}
+.steps3{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:s}
+.steps3 li{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:14px 16px;font-size:14.5px;color:var(--muted)}
+.steps3 li::before{counter-increment:s;content:counter(s);display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13px;margin-bottom:6px}
+.steps3 b{display:block;color:var(--ink);font-size:15px}
+a.pick{text-decoration:none}
 
 .flowwrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:860px){.flowwrap{grid-template-columns:minmax(0,1fr)}}
@@ -195,10 +206,14 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
   <nav class="mn" aria-label="주요 메뉴">
     <a href="#try">미리 써 보기</a>
     <a href="#price">요금제</a>
+    <a class="hide-s" href="#flow">회원가입</a>
     <a class="hide-s" href="#ask">문의</a>
     <a class="login" href="@@APP@@">로그인</a>
   </nav>
-</div></header>
+  <button type="button" class="burger" id="burger" aria-expanded="false" aria-controls="mnav" aria-label="메뉴 열기"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</div>
+  <nav class="mnav" id="mnav" hidden aria-label="전체 메뉴"><a href="#try">미리 써 보기</a><a href="#price">요금제</a><a href="#flow">회원가입</a><a href="#ask">문의</a><a href="@@APP@@">로그인</a></nav>
+</header>
 
 <main id="top">
 <section class="hero gut"><div class="wrap">
@@ -208,6 +223,11 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
   <div class="cta">
     <a class="btn p" href="#try">가입 없이 미리 써 보기</a>
     <a class="btn g" href="#price">요금제 보기</a>
+  </div>
+  <div class="picks">
+    <a class="pick" href="#try" data-hp="wash"><span class="ic2">워시</span><h3>차곳간 워시</h3><p>광택·세차·휠·판금 업체용 업무 장부</p></a>
+    <a class="pick" href="#try" data-hp="check"><span class="ic2">체크</span><h3>차곳간 체크</h3><p>성능점검장용 검사·청구·정산</p></a>
+    <a class="pick" href="#try" data-hp="dealer"><span class="ic2">딜러</span><h3>차곳간 딜러</h3><p>맡긴 차 진행을 휴대폰으로</p></a>
   </div>
 </div></section>
 
@@ -243,6 +263,7 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
     <button type="button" role="tab" aria-selected="false" data-q="dealer">딜러</button>
   </div>
   <div class="plans" id="plans"></div>
+  <ol class="steps3"><li><b>가입 · 로그인</b>휴대폰 인증으로 가입해요. 회원이면 로그인해요.</li><li><b>결제</b>토스페이먼츠 결제 창에서 카드로 결제해요.</li><li><b>바로 사용</b>결제가 끝나면 고른 제품이 바로 열려요.</li></ol>
   <p class="note"><strong>가격 예시</strong>예요. 확정되면 바뀔 수 있어요. 표시 금액은 <strong>부가세 별도</strong>, 한 달 기준이에요. 환불은 <a href="@@REFUND@@" target="_blank" rel="noopener">환불 규정</a>을 따라요. 이미 쓰고 계신 분은 <a href="@@APP@@">로그인</a>한 뒤 같은 요금제 화면에서 결제해요.</p>
 </div></section>
 
@@ -303,6 +324,9 @@ $("dlgNo").onclick=closeDlg; $("dlgOk").onclick=function(){ closeDlg(); if(dlgOk
 $("dlg").onclick=function(e){ if(e.target===$("dlg")) closeDlg(); };
 document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&!$("dlg").hidden) closeDlg(); });
 
+/* 폰 ☰ 메뉴 */
+$("burger").onclick=function(){ var o=$("mnav").hidden; $("mnav").hidden=!o; $("burger").setAttribute("aria-expanded",String(o)); };
+[].forEach.call(document.querySelectorAll("#mnav a"),function(a){ a.addEventListener("click",function(){ $("mnav").hidden=true; $("burger").setAttribute("aria-expanded","false"); }); });
 /* 오픈 베타 띠 */
 function beta(on){ $("betaBand").hidden=!on; $("betaOn").setAttribute("aria-pressed",String(on)); $("betaOff").setAttribute("aria-pressed",String(!on)); store("cgg_draft_beta",on?"1":"0"); }
 $("betaOn").onclick=function(){ beta(true); }; $("betaOff").onclick=function(){ beta(false); };
@@ -359,6 +383,7 @@ function openTry(p){
   var body=$("stageBody"); body.innerHTML="";
   var f=frameFor(p); body.appendChild(f); startWatch(p,f); markSeen(p,"home");
 }
+[].forEach.call(document.querySelectorAll("[data-hp]"),function(b){ b.addEventListener("click",function(){ openTry(b.getAttribute("data-hp")); }); });
 [].forEach.call(document.querySelectorAll(".pick, .trybar [data-p]"),function(b){ b.onclick=function(){ openTry(b.getAttribute("data-p")); }; });
 $("backPick").onclick=function(){ $("tryView").hidden=true; $("pickView").hidden=false; if(watch) clearInterval(watch); showResume(); };
 /* 띠 · 카드 안 버튼 (공통 부품이 그린 것) */
@@ -404,7 +429,7 @@ function drawPlans(q){
     var price = p.price===null ? '<div class="price">가격 미정</div><div class="pmeta">가격이 정해지면 열려요</div>'
               : p.price===0 ? '<div class="price">상담</div><div class="pmeta">지점 수에 맞춰 안내해 드려요</div>'
               : '<div class="price">'+won(p.price)+'원 <small>/ 월</small></div><div class="pmeta">부가세 별도 · 매달 결제</div><span class="ex">가격 예시</span>';
-    var btn = p.price ? '<button type="button" class="btn '+(p.best?'p':'g')+'" data-start="'+q+':'+i+'">이 요금제로 시작하기</button>'
+    var btn = p.price ? '<button type="button" class="btn '+(p.best?'p':'g')+'" data-start="'+q+':'+i+'">이 요금제로 시작하기</button><a class="member" href="'+APP+'?buy='+q+'-'+p.code+'">이미 회원이면 로그인하고 결제</a>'
             : p.price===0 ? '<a class="btn g" href="#ask">상담 요청</a>'
             : '<button class="btn g" type="button" disabled>가격이 정해지면 열려요</button>';
     return '<div class="plan'+(p.best?' best':'')+'">'+(p.best?'<span class="tag">추천</span>':'')+
