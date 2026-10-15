@@ -130,6 +130,9 @@ const before = sms.length;
 await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "알림톡 문구", kind: "ATA", templateId: "T1", pfId: "P1" })], (await login(P.owner)).key, "BT");
 check("알림톡은 등록 문구 그대로 (앞에 붙이지 않음)", sms.length === before + 1 && sms.at(-1)?.text === "알림톡 문구", sms.at(-1));
 Deno.env.delete("STAFF_MSG_MAX");
+rpcLog.length = 0;
+await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "기본 한도", kind: "LMS" })], (await login(P.staff)).key, "BT");
+check("직원 문자 기본 한도는 하루 300통 (대표님 결정)", rpcLog.some((r) => String(r.args?.p_key).startsWith("staffmsg:") && r.args?.p_max === 300), rpcLog);
 
 console.log("④ 횟수 장치 · IP (보안 ③)");
 knobs.rateBroken = true;

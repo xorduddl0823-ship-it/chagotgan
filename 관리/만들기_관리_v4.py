@@ -213,6 +213,13 @@ rep('''body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;
 rep('/* 이미 로그인해 둔 기기라면 바로 들어갑니다 */', js + '\n/* 이미 로그인해 둔 기기라면 바로 들어갑니다 */')
 rep('<meta name="theme-color" content="#1668C4">', '<meta name="theme-color" content="#0B2545">')
 
+# ───────── 4-6. 다른 사이트에 끼워 넣기 막기 (보안 방 권장, 2026-10-15) ─────────
+# 서버 쪽 막기(X-Frame-Options · frame-ancestors)는 관리/올리기용/_headers 에. 이 줄은 그 설정이 빠졌을 때를 대비한 화면 쪽 막기예요.
+rep('<meta name="robots" content="noindex, nofollow">',
+    '<meta name="robots" content="noindex, nofollow">\n<meta name="referrer" content="no-referrer">\n'
+    '<script>/* 다른 사이트 안에 끼워 열리면 화면을 숨기고 관리 주소로 바로 엽니다 */'
+    'if(window.top!==window.self){document.documentElement.style.display="none";try{window.top.location.replace(window.self.location.href);}catch(e){}}</script>')
+
 # ───────── 5. 「돈」 → 「금액」 (기준서 6-4) ─────────
 # 「돈」과 「금액」은 둘 다 받침이 있어 뒤 토씨(을 · 이 · 은 · 도 · 과)가 그대로 맞습니다.
 for a, b in [("이번 달 번 돈", "이번 달 들어온 금액"), ("이번 달 쓴 돈", "이번 달 나간 금액"),
