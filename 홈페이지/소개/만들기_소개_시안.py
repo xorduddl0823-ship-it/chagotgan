@@ -40,6 +40,8 @@ MEMLS = ("<script>window.__DEMO=true;(function(){var M={};var S={getItem:functio
          "try{Object.defineProperty(window,'localStorage',{value:S,configurable:true});}catch(e){}"
          "try{Object.defineProperty(window,'sessionStorage',{value:S,configurable:true});}catch(e){}})();</script>")
 dealer = dealer.replace("<head>", "<head>" + MEMLS, 1)
+# 홈페이지 맨 위에 오픈 베타 띠가 이미 있어요 — 미리 써 보기 안의 딜러 띠는 숨겨 띠를 하나만 보여요
+dealer = dealer.replace("</head>", "<style>#cggBeta,.cgg-beta,.beta[role=note]{display:none!important}</style></head>", 1)
 GUARD_OLD = 'u.indexOf(location.host) < 0) return Promise.reject'
 GUARD_NEW = '(!location.host || u.indexOf(location.host) < 0)) return Promise.reject'
 def guard(s, name):
