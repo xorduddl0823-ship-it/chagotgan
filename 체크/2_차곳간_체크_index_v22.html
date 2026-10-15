@@ -1873,7 +1873,7 @@ function tell(title, html, kind){
   ask({ title:title, html:'<p style="margin:0;font-size:13.5px;line-height:1.7">'+html+'</p>',
         yes:"알겠습니다", no:false, warnKind:kind });
 }
-function fail(e){ bar((e&&e.message)||"뭔가 잘못되었습니다.", "err"); busy(false); }
+function fail(e){ bar((e&&e.message)||"오류가 발생했습니다. 잠시 후 다시 시도해 주세요.", "err"); busy(false); }
 
 /* ───────── 로그인 화면 ───────── */
 function drawLogin(){
@@ -1888,7 +1888,7 @@ function drawLogin(){
         '<input type="text" id="lg-ph" inputmode="numeric" placeholder="010-0000-0000" autocomplete="username"></div>'+
       '<div class="fld"><label class="f" for="lg-pw">비밀번호</label>'+
         '<input type="password" id="lg-pw" placeholder="비밀번호" autocomplete="current-password"></div>'+
-      '<button class="go" id="lg-go">들어가기</button>'+
+      '<button class="go" id="lg-go">로그인</button>'+
       '<div id="lg-msg" class="hide"></div>'+
       '<hr>'+
       '<button class="sub2" id="lg-find">비밀번호를 잊으셨나요?</button>'+
@@ -1906,7 +1906,7 @@ function drawLogin(){
     var p=ph.value.replace(/[^0-9]/g,""), w=pw.value;
     if(p.length<10){ say("lg-msg","휴대폰 번호를 다시 확인해 주세요.","err"); return; }
     if(w.length<4){ say("lg-msg","비밀번호를 4자 이상 적어 주세요.","err"); return; }
-    say("lg-msg","들어가는 중…","info"); busy(true); $("lg-go").disabled=true;
+    say("lg-msg","로그인 중…","info"); busy(true); $("lg-go").disabled=true;
     fetch(API,{ method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ fn:"login", args:[p, w, "", navigator.userAgent] }) })
       .then(readJson)
@@ -1919,7 +1919,7 @@ function drawLogin(){
         set("cgg_role",d.role); set("cgg_shopname",d.shopName); set("cgg_lastph",p);
         openApp();
       })
-      .catch(function(e){ say("lg-msg", e.message||"들어가지 못했습니다.","err"); })
+      .catch(function(e){ say("lg-msg", e.message||"로그인하지 못했습니다.","err"); })
       .then(function(){ busy(false); var b=$("lg-go"); if(b) b.disabled=false; });
   }
   $("lg-go").onclick=go;
@@ -1929,7 +1929,7 @@ function signOut(quiet){
   if(ST.key){ try{ call("logout",[ST.key]); }catch(e){} }
   ST.key=""; del("cgg_key"); del("cgg_shop"); del("cgg_who"); del("cgg_role"); del("cgg_shopname");
   LOADED={}; drawLogin();
-  if(quiet) setTimeout(function(){ say("lg-msg","로그인이 풀렸습니다. 다시 들어와 주세요.","info"); },30);
+  if(quiet) setTimeout(function(){ say("lg-msg","로그인 시간이 지났습니다. 다시 로그인해 주세요.","info"); },30);
 }
 </script>
 <script>
@@ -5048,7 +5048,7 @@ function pbSay(text, kind){
   if(e){ e.className="msg "+(kind||"info"); e.textContent=text; }
   bar(text, kind, true);
 }
-function pbBad(e){ busy(false); pbSay(pbKo((e&&e.message)||"뭔가 잘못되었습니다."),"err"); }
+function pbBad(e){ busy(false); pbSay(pbKo((e&&e.message)||"오류가 발생했습니다. 잠시 후 다시 시도해 주세요."),"err"); }
 AFTER.popbill=function(){
   if(BANKS.length) wireTable("bnk",function(){ draw(); });
 
@@ -5258,7 +5258,7 @@ function openApp(){
     $("dbState").innerHTML='연결됨 <span id="clock"></span>';
   }).catch(function(e){
     $("dbState").textContent="연결 안 됨";
-    bar(e.message||"서버에 닿지 못했습니다.","err");
+    bar(e.message||"서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.","err");
   });
 }
 
