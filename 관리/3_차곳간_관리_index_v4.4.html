@@ -6808,7 +6808,8 @@ function viewPays(){
 function prLoad(){
   if(PR2.busy) return; PR2.busy=true;
   api("hqPayResults",[PR2.from, PR2.to, ""]).then(function(r){ PR2.rows=(r&&(r.list||r.rows||r.results))||(Array.isArray(r)?r:[]); PR2.err="";
-      PR2.sum=(r&&r.sum!=null)?Number(r.sum):null; PR2.refunds=(r&&r.refunds!=null)?Number(r.refunds):null; },
+      PR2.sum=(r&&r.sum!=null)?Number(r.sum):null; PR2.refunds=(r&&r.refunds!=null)?Number(r.refunds):null;
+      PR2.bill=(r&&r.billingShops!=null)?Number(r.billingShops):null; },
     function(e){ PR2.rows=null; PR2.err=e.message||"불러오지 못했습니다"; })
   .then(function(){ PR2.busy=false; if(PR2.rows===null){ viewPaysOld(); prOldNote(); } else prDraw(); });
 }
@@ -6835,7 +6836,8 @@ function prDraw(){
     {label:thisMonth?"이번 달 받은 금액":"이 기간 받은 금액", value:won(got).replace(/원$/,""), unit:"원", color:"#1668C4"},
     {label:"환불 합계", value:won(ref).replace(/원$/,""), unit:"원", color:"#D64545"},
     {label:"실패 · 결제 중", value:String(bad), unit:"건", color:"#E08A00"},
-    {label:"자동 결제 업체", value:String(Object.keys(billShops).length), unit:"곳", color:"#0B2545"}]);
+    PR2.bill!=null?{label:"자동 결제 켠 업체", value:String(PR2.bill), unit:"곳", color:"#0B2545"}
+                  :{label:"자동 결제 업체 (이 기간)", value:String(Object.keys(billShops).length), unit:"곳", color:"#0B2545"}]);
   $("prGo").onclick=function(){ PR2.from=$("prFrom").value; PR2.to=$("prTo").value; prLoad(); };
   $("payNew").onclick=payAddSheet;
   makeTable({ id:"tPR", sortKey:"at", sortDir:"desc", tabs:PR_ST, tabOf:function(r){ return prStK(r.raw); },

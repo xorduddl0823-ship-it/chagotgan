@@ -116,7 +116,7 @@ function FAKE(fn,a){
       {shop:"FRESH",name:"프레시카",ownerPhone:"01012121212",joinPlan:"standard",createdAt:dd(-1)+"T10:00:00",days:1,old:false,paidOrder:false}].filter(function(x){ return !F_PWDEL[x.shop]; })};
     case "hqPayWaitDel": if(a[0]==="NEWCAR1") throw new Error("결제가 진행 중이거나 끝난 주문이 있어 지울 수 없습니다"); F_PWDEL[a[0]]=1; return {ok:true};
     case "hqSignup": if(a[0]!==undefined){ F_SG={on:!!a[0].on,cfg:{perIp:a[0].perIp,allDay:a[0].allDay,waitPerIp:a[0].waitPerIp}}; } return {ok:true,on:F_SG.on,cfg:F_SG.cfg};
-    case "hqPayResults": return {ok:true,from:a[0],to:a[1],sum:55000+33000+77000,refunds:27500,list:[
+    case "hqPayResults": return {ok:true,from:a[0],to:a[1],sum:55000+33000+77000,refunds:27500,billingShops:F_BILL?3:2,list:[
       {tag:"워시",at:dd(-12)+"T10:20:00",shop:"HANBIT",shopName:"한빛광택",kind:"월 요금",method:"카드",amount:55000,useCash:0,status:"paid",period:"~11/14",orderId:"CGG-PLAN-0001",from:"워시"},
       {tag:"체크 · 새빛 성능검사소",at:dd(-3)+"T15:02:00",shop:"SAEBIT",shopName:"새빛 성능장",office:"새빛 성능검사소",kind:"캐시",method:"카드",amount:33000,status:"paid",period:"",orderId:"CGG-CASH-0002",from:"체크"},
       {tag:"자동 결제",at:dd(-1)+"T09:00:00",shop:"BAREUN",shopName:"바른 카모터스",kind:"월 요금",method:"카드",amount:99000,status:"failed",period:"",orderId:"CGG-BILL-0003",from:"워시"},
