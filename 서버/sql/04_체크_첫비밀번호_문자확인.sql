@@ -13,3 +13,5 @@ create table if not exists check_pw_first (
   created_at  timestamptz not null default now()
 );
 alter table check_pw_first enable row level security;   -- 정책 없음 = 서버 함수만 읽음
+-- v28: login 이 준 무작위 tick 과 짝이 맞을 때만 확인 (남이 중간에 바꿔치기 못 하게) — 다시 실행해도 안전
+alter table check_pw_first add column if not exists tick text;

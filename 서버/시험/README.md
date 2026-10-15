@@ -70,3 +70,11 @@ deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/�
 ```
 
 - `체크_급한고침_v27_시험.ts` — 시험 10개 (2026-10-15 전부 통과 · v21 원본이면 5개 실패)
+
+체크 서버 v28 시험 (v26 로그인 시험 + 첫 비밀번호 확인 tick 짝 맞추기):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/시험/체크v28_로그인_시험.ts
+```
+
+- `체크v28_로그인_시험.ts` — 시험 22개 (2026-10-15 전부 통과 · v27 로 돌리면 4개 실패)
