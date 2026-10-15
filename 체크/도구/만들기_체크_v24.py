@@ -157,7 +157,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
 s = s[:a] + PRODUCT + s[b:]
 
 GLUE = '''
-<!-- ===== 차곳간 공통 부품 cgg-j4 1.0 (디자인/공통 — 글자 그대로. 고칠 것은 디자인 방에 요청) ===== -->
+<!-- ===== 차곳간 공통 부품 cgg-j4 (디자인/공통 최신판 — 글자 그대로. 고칠 것은 디자인 방에 요청) ===== -->
 <style id="cgg-j4-common">
 ''' + CSS + '''
 </style>
