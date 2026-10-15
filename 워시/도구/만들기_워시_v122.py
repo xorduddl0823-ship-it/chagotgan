@@ -1,7 +1,7 @@
 """워시 v121 → 워시 v122 새 판. 디자인 방 완성 기준(디자인/완성기준/00_공통 · 01_워시) · 공통 부품 cgg-j4 1.4 마무리 + 홈페이지 결제 받기
 쓰는 법: 만들기_워시_v112 → … → v121 → v122 차례로 (`워시/도구/`)
 바꾸는 것 (총괄 전달 2026-10-15 ①~⑥):
-  ① 공통 부품 cgg-j4 1.2 → 1.4 (글자 그대로) · 홈 숫자 카드 CGG.kpis · 도움 카드 CGG.help
+  ① 공통 부품 cgg-j4 1.2 → 1.5 동결판 (글자 그대로 · 1.5 보안 규칙: render 안 씀 · 자료가 바뀌면 고른 줄 비움 · 일괄은 줄 id) · 홈 숫자 카드 CGG.kpis · 도움 카드 CGG.help
   ② 휴지통 네 곳 → 사람 버튼 ▾ 한 곳 (머리말 버튼 · 설정 탭은 이미 뺌 → 마이페이지 칸 · 더보기 창도 뺌, 안내 글도 고침)
   ③ «시연 모드» 주황 띠 → 체험 띠 모양(cgg-trial, 그림 문자 없음)
   ④ 대표 목록(일감 › 입출고 내역) 표 → CGG.table (표 완성 기준 10가지) · 청구서 표에 «입금 기한» 열
@@ -20,7 +20,7 @@ SRC = os.path.join(BASE, "1_차곳간_워시_index_v121.html")
 OUT = os.path.join(BASE, "1_차곳간_워시_index_v122.html")
 CSS = open(os.path.join(ROOT, "디자인", "공통", "cgg-j4.css"), encoding="utf-8").read()
 JS = open(os.path.join(ROOT, "디자인", "공통", "cgg-j4.js"), encoding="utf-8").read()
-assert 'version:"cgg-j4 1.4"' in JS, "공통 부품이 1.4 가 아님"
+assert 'version:"cgg-j4 1.5"' in JS, "공통 부품이 1.5 가 아님"
 DONE = open(os.path.join(HERE, "cgg-j4_워시_완성.css"), encoding="utf-8").read()
 s = open(SRC, encoding="utf-8").read()
 
@@ -36,10 +36,10 @@ rep('var APP_VER="워시 v121 · UI 3.0 · 2026-10-15";', 'var APP_VER="워시 v
 # ───── ① 공통 부품 1.2 → 1.4 · 완성 CSS 새로 ─────
 a = s.index('<style id="cgg-j4">\n') + len('<style id="cgg-j4">\n'); b = s.index('\n</style>', a)
 s = s[:a] + CSS + s[b:]
-rep('<!-- ===== 차곳간 공통 부품 cgg-j4 1.2 (디자인/공통 — 글자 그대로) ===== -->', '<!-- ===== 차곳간 공통 부품 cgg-j4 1.4 (디자인/공통 — 글자 그대로) ===== -->')
+rep('<!-- ===== 차곳간 공통 부품 cgg-j4 1.2 (디자인/공통 — 글자 그대로) ===== -->', '<!-- ===== 차곳간 공통 부품 cgg-j4 1.5 (디자인/공통 — 글자 그대로 · 동결판) ===== -->')
 mark = '/* 차곳간 공통 부품 cgg-j4 1.2 (디자인/공통/cgg-j4.js — 글자 그대로) */\n'
 a = s.index(mark); b = s.index('\n</script>', a)
-s = s[:a] + '/* 차곳간 공통 부품 cgg-j4 1.4 (디자인/공통/cgg-j4.js — 글자 그대로) */\n' + JS + s[b:]
+s = s[:a] + '/* 차곳간 공통 부품 cgg-j4 1.5 (디자인/공통/cgg-j4.js — 글자 그대로) */\n' + JS + s[b:]
 EXTRA = """
 /* ── v122 덧붙임 ── 창 · 알림 글 층은 이름으로 (완성 기준 00 · 4장) */
 .sheetbg,.askbg{z-index:var(--z-dialog)} .sheet,.askbox{z-index:calc(var(--z-dialog) + 1)} #toast,.toast{z-index:var(--z-toast)}
@@ -68,7 +68,7 @@ def fix(t):
     for o, n in P: t = t.replace(o, n)
     return ESC.sub(lambda m: m.group(0) if m.group(0)[:6].lower() in KEEPESC else "", t)
 a = s.index('<style id="cgg-j4">'); b = s.index('</style>', a) + 8
-c = s.index('/* 차곳간 공통 부품 cgg-j4 1.4 (디자인/공통/cgg-j4.js'); d = s.index('\n</script>', c)
+c = s.index('/* 차곳간 공통 부품 cgg-j4 1.5 (디자인/공통/cgg-j4.js'); d = s.index('\n</script>', c)
 out, pos = [], 0
 for x, y in sorted([(a, b), (c, d)]):
     out.append(fix(s[pos:x])); out.append(s[x:y]); pos = y
@@ -105,7 +105,7 @@ rep('''  else if(k==="lay")screenSheet();''', '''  else if(k==="lay")screenSheet
 a = s.index('  var tb=$("jLTabs");'); b = s.index('\n}', s.index('tb.querySelectorAll("[data-st]")', a)) + 2
 s = s[:a] + '  var old=$("jLTabs");if(old)old.remove();\n}' + s[b:]
 rep('function renderLedger(){\n  renderLateTable();', r'''/* v122: 대표 목록 — 공통 부품 CGG.table. 열: 선택 → 상사명 → 차량번호 → 차종 → 작업 → 입고일 → 금액 → 상태 → 할 일 */
-var JLT={o:null,h:null,sig:"",ids:[]};
+var JLT={o:null,h:null,sig:"",ids:[],st:{}};   /* 1.5 state — 찾기 · 쪽 · 정렬 · 고른 줄이 다시 그려도 남음 */
 function jLedgerState(r){var st=statusOf(r);if(st==="입고")return atBody(r)?"판금·도색 중":"입고";return st==="수금완료"?"수금 완료":st;}
 function jMD(iso){var d=new Date(iso);return isNaN(d)?"":(String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0"));}
 function jLedgerTable(){
@@ -116,7 +116,7 @@ function jLedgerTable(){
   ["lTable","lInfo"].forEach(function(id){var e=$(id);if(e)e.hidden=on;});
   var pg=document.querySelector("#vLedger .pager");if(pg)pg.hidden=on;
   ["lStatus","lq","lSize"].forEach(function(id){var e=$(id);if(e)e.hidden=on;});
-  if(!on)return;
+  if(!on){var hj0=document.querySelector("#vLedger .dashhead .jacts");if(hj0)hj0.hidden=false;return;}
   var recs=S.records.filter(function(r){return !L.month||(r.month||mKey(r.createdAt))===L.month;})
     .sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt));});
   var rows=recs.map(function(r){return [r.company||"-",r.plate||"-",r.model||"-",workText(r)||"-",jMD(r.createdAt),Number(r.total)||0,jLedgerState(r)];});
@@ -124,11 +124,18 @@ function jLedgerTable(){
   if(JLT.h&&JLT.sig===sig&&host.firstChild)return;
   var sameIds=JLT.ids.join(",")===recs.map(function(r){return r.id;}).join(",");
   JLT.ids=recs.map(function(r){return r.id;});JLT.recs=recs;JLT.sig=sig;
+  var hj=document.querySelector("#vLedger .dashhead .jacts");if(hj)hj.hidden=true;   /* 표에서는 일괄 버튼이 표 위에 */
   if(!JLT.o){
     JLT.o={cols:["상사명","차량번호","차종","작업","입고일","금액","상태"],kinds:["name","id","text","text","date","money","state"],rows:[],
       tabs:[["","전체"],["입고","작업 중"],["판금·도색 중","판금·도색 중"],["출고","수금 대기"],["수금 완료","수금 완료"]],
       stateMap:{"입고":"run","판금·도색 중":"stop","출고":"chk","수금 완료":"done"},
-      filters:[],find:"검색 · 상사 · 차량번호 · 작업",size:20,
+      filters:[],find:"검색 · 상사 · 차량번호 · 작업",size:20,state:JLT.st,
+      /* 1.5 일괄 버튼 (거르기 줄 오른쪽 · 검색 앞) — 고른 줄 번호 → 줄 id 로 바꿔서 기존 확인 창 · 서버 길 그대로 */
+      bulk:[{key:"paid",label:"선택한 차 입금 완료",needSel:true},{key:"del",label:"선택한 차 지우기",needSel:true,danger:true},{key:"xls",label:"엑셀 다운로드",icon:"down"}],
+      onBulk:function(k,ix){L.sel={};ix.forEach(function(i){var id=JLT.ids[i];if(id)L.sel[id]=true;});
+        if(k==="paid"){if(!ix.length)return toast("먼저 줄을 골라 주세요",true);$("lPayed").click();}
+        else if(k==="del"){if(!ix.length)return toast("먼저 줄을 골라 주세요",true);$("lDelSel").click();}
+        else if(k==="xls")$("lCsv").click();},
       sorts:[[4,-1,"최신 입고순"],[4,1,"오래된 입고순"],[5,-1,"금액 큰 순"],[0,1,"상사명 순"]],
       mline:function(x){return [x[2],x[3],x[4]].filter(function(v){return v&&v!=="-";}).join(" · ");},
       onName:function(x,i){var r=JLT.recs[i];if(r)sheetEdit(r);},
@@ -147,7 +154,7 @@ function jLedgerTable(){
   if(!JLT.h||!host.firstChild){JLT.h=CGG.table(host,JLT.o);
     /* 처음 정렬은 «최신 입고순» (입고일 머리 두 번 = 내림차순) */
     for(var k=0;k<2;k++){var th=host.querySelector('th[data-k="4"]');if(th)th.click();}}
-  else{if(!sameIds){JLT.h.clear();L.sel={};}JLT.h.redraw();}
+  else{if(!sameIds){JLT.st.sel={};L.sel={};}JLT.h.redraw();}   /* 1.5 보안 규칙 ②: 자료가 바뀌면 고른 줄 비움 */
 }
 function renderLedger(){
   renderLateTable();''')
@@ -303,6 +310,10 @@ rep('''  /* 요금제만 결제하는 창 */
 
   /* 요금제만 결제하는 창 */
   window.ccwPlanPay = function(){''')
+
+# 1.5 보안 규칙 ② — 일괄 확인 창에 고른 줄 이름(차량번호) 목록
+rep('  return "상사 · "+((cs.slice(0,2).join(", ")+(cs.length>2?" 외 "+(cs.length-2)+"곳":""))||"-")+"\\n대수 · "+rs.length+"대\\n합계 금액 · "+won(amt);',
+    '  var ps=rs.map(function(r){return r.plate||"-";});\n  return "상사 · "+((cs.slice(0,2).join(", ")+(cs.length>2?" 외 "+(cs.length-2)+"곳":""))||"-")+"\\n차량 · "+ps.slice(0,5).join(", ")+(ps.length>5?" 외 "+(ps.length-5)+"대":"")+"\\n대수 · "+rs.length+"대\\n합계 금액 · "+won(amt);')
 
 open(OUT, "w", encoding="utf-8").write(s)
 print("OK", OUT, len(s))
