@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "npm:@supabase/supabase-js@2": "./fake_supabase_wash.ts",
+    "https://esm.sh/@supabase/supabase-js@2.45.4": "./fake_supabase_wash.ts"
+  }
+}

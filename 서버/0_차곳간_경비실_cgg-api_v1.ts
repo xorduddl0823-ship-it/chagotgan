@@ -29,7 +29,7 @@ const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const db = createClient(SUPA_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   { auth: { persistSession: false } });
 
-const VER = "cgg-api v1.1 · 2026-10-14 (보안 검사 반영: 잠금 횟수 원자적 증가)";
+const VER = "cgg-api v1.2 · 2026-10-15 (워시 로그인에 손님 기기 정보 넘기기)";
 const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
 const WASH_API = () => SUPA_URL + "/functions/v1/wash-api";
 const DAYS = 14;                 // 로그인 유지 기간 (체크와 같음)
@@ -76,19 +76,25 @@ async function pwOk(pw: string, stored: string) {
   return sameText(b2hex(new Uint8Array(bits)), want);
 }
 
-/* ───────── 워시 (wash-api 를 그대로 부릅니다) ───────── */
-async function washCall(fn: string, args: unknown[]) {
+/* ───────── 워시 (wash-api 를 그대로 부릅니다) ─────────
+   v1.2: 손님 기기의 UA·IP 를 같이 넘깁니다. wash-api sb2 부터 서비스 열쇠(x-cgg-internal)가 맞을 때만 받아 씁니다.
+   (그 전 판은 이 값들을 모른 척하므로 함께 올려도 안전) */
+type Who = { ua: string; ip: string };
+async function washCall(fn: string, args: unknown[], who?: Who) {
   const res = await fetch(WASH_API(), {
-    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ shop: "", token: "", fn, args }),
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8",
+               "x-cgg-internal": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "" },
+    body: JSON.stringify({ shop: "", token: "", fn, args,
+                           __via: "cgg", __ua: who?.ua ?? "", __ip: who?.ip ?? "" }),
   });
   const j = await res.json().catch(() => ({}));
   if (j?.__err) throw new Error(S(j.__err));
   return j?.result;
 }
-async function washLogin(phone: string, pw: string) {
+async function washLogin(phone: string, pw: string, who?: Who) {
   try {
-    const r = await washCall("login", [phone, pw]);
+    const r = await washCall("login", [phone, pw], who);
     return S(r?.key) ? { sid: S(r.key), shop: S(r.shop) } : null;
   } catch (_) { return null; }
 }
@@ -240,7 +246,7 @@ async function meOf(sid: string) {
 }
 
 /* ───────── 창구 4개 ───────── */
-async function cggLogin(idRaw: unknown, pwRaw: unknown) {
+async function cggLogin(idRaw: unknown, pwRaw: unknown, who?: Who) {
   const phone = digits(idRaw), pw = S(pwRaw);
   if (phone.length < 10) throw new Error("휴대폰 번호를 다시 확인해 주세요.");
   if (!pw) throw new Error("비밀번호를 넣어 주세요.");
@@ -251,7 +257,7 @@ async function cggLogin(idRaw: unknown, pwRaw: unknown) {
     throw new Error(`비밀번호를 여러 번 틀려 ${LOCK_MIN}분 동안 잠겼습니다. 잠시 뒤 다시 해 주세요.`);
 
   const grants = grantsOf(acc);
-  const wash = grants.includes("wash") ? await washLogin(phone, pw) : null;
+  const wash = grants.includes("wash") ? await washLogin(phone, pw, who) : null;
   let proven = !!wash;
   if (!proven && grants.includes("check")) {
     for (const u of await checkUsers(phone)) {
@@ -317,11 +323,19 @@ async function cggLogout(sidRaw: unknown) {
    들어오는 문 — { shop, token, fn, args }
    네 창구 모두 로그인 전에 부르는 창구라 token 은 보지 않습니다 (sid 는 args 로 받음)
    ============================================================ */
-const FN: Record<string, (...a: any[]) => Promise<unknown>> = {
-  cggLogin: (id, pw) => cggLogin(id, pw),
-  cggLogin2: (tick, code) => cggLogin2(tick, code),
-  cggMe: (sid) => cggMe(sid),
-  cggLogout: (sid) => cggLogout(sid),
+/** 손님 IP — 꾸밀 수 있는 x-forwarded-for 맨 앞 값은 쓰지 않습니다 (wash-api sb2 와 같은 규칙) */
+function ipOf(req: Request) {
+  const cf = S(req.headers.get("cf-connecting-ip"));
+  if (cf) return cf;
+  const xs = S(req.headers.get("x-forwarded-for")).split(",").map((x) => x.trim()).filter(Boolean);
+  return xs[xs.length - 1] || "0";
+}
+/* 마지막 칸(who)은 화면이 보낸 값이 아니라 서버가 요청에서 읽은 손님 기기 정보입니다 */
+const FN: Record<string, (who: Who, ...a: any[]) => Promise<unknown>> = {
+  cggLogin: (who, id, pw) => cggLogin(id, pw, who),
+  cggLogin2: (_w, tick, code) => cggLogin2(tick, code),
+  cggMe: (_w, sid) => cggMe(sid),
+  cggLogout: (_w, sid) => cggLogout(sid),
 };
 
 async function handle(req: Request): Promise<Response> {
@@ -334,7 +348,8 @@ async function handle(req: Request): Promise<Response> {
     if (!fn || fn === "ping") return ok({ ok: true, ver: VER });
     const f = FN[fn];
     if (!f) return err("없는 기능입니다: " + fn);
-    return ok(await f(...(Array.isArray(body.args) ? body.args : [])));
+    const who: Who = { ua: S(req.headers.get("user-agent")).slice(0, 300), ip: ipOf(req) };
+    return ok(await f(who, ...(Array.isArray(body.args) ? body.args : [])));
   } catch (e) {
     return err(e instanceof Error ? e.message : String(e));
   }
