@@ -114,7 +114,8 @@ function userMsg(raw: unknown): string {
   if (!m) return "처리하지 못했습니다. " + MSG_HELP;
   const probe = m.replace(MSG_OK_WORDS, "");
   if (!/[A-Za-z]{3,}/.test(probe)) return m;
-  console.error("userMsg hidden:", m.slice(0, 300));
+  /* 보안 낮음 b: 기록에도 휴대폰·계좌 같은 긴 숫자(8자리 이상)는 가운데를 가림 */
+  console.error("userMsg hidden:", m.slice(0, 300).replace(/\d{8,}/g, (d) => d.slice(0, 3) + "*".repeat(d.length - 7) + d.slice(-4)));
   const head = m.split(/\s*[:(—]\s*/)[0].trim();
   if (head && /[가-힣]/.test(head) && !/[A-Za-z]{3,}/.test(head.replace(MSG_OK_WORDS, "")))
     return head.replace(/\s*실패$/, "에 실패했습니다").replace(/[.\s]*$/, ".") + " " + MSG_HELP;
@@ -660,6 +661,8 @@ function popWho(office: any) {
     throw new Error("세금계산서 설정이 아직 끝나지 않았습니다. 차곳간(010-9559-3663)으로 알려 주세요.");
   if (!corp) throw new Error("이 검사소의 사업자번호가 비어 있습니다. 설정 → 팝빌에서 넣어 주세요.");
   if (!user) throw new Error("이 검사소의 팝빌 회원아이디가 비어 있습니다. 설정 → 팝빌에서 넣어 주세요.");
+  /* v32(보안 H1 남은 위험): 처음 넣은 사업자번호는 본사가 확인한 뒤에만 실제 팝빌을 씀 (시험 모드는 됨 · SQL 11 전이면 칸이 없어 그대로) */
+  if (office?.biz_ok_at === null && !test) throw new Error(BIZ_WAIT_MSG);
   return { corp, user, test };
 }
 
@@ -790,6 +793,7 @@ async function popJoin(ctx: Ctx, form: any) {
   if (S(o.popbill_corp) && onlyDigits(o.popbill_corp) !== corp)
     throw new Error("이미 다른 번호로 팝빌에 연결되어 있습니다. 차곳간(010-9559-3663)으로 알려 주세요.");
   if (corp && await bizTaken(corp, S(o.id))) throw new Error(BIZ_TAKEN_MSG);
+  if (o.biz_ok_at === null && !test) throw new Error(BIZ_WAIT_MSG);          // v32: 본사 확인 뒤에만
   const id = S(form?.id), pw = S(form?.password);
   if (corp.length !== 10) throw new Error("사업자번호를 - 없이 10자리로 넣어 주세요.");
   if (id.length < 6) throw new Error("아이디는 6자 이상으로 적어 주세요.");
@@ -1062,7 +1066,11 @@ async function importLegacy(ctx: Ctx, part: string, rows: any[]) {
     const o = rows[0] ?? {};
     const up: Record<string, unknown> = {};
     if (S(o.상호)) up.name = S(o.상호);
-    if (S(o.사업자등록번호) && !S(ctx.office?.biz_no)) up.biz_no = S(o.사업자등록번호);   // v32(H1): 비어 있을 때만
+    if (S(o.사업자등록번호) && !S(ctx.office?.biz_no)) {                    // v32(H1): 비어 있을 때만 · 본사 확인 기다림
+      if (await bizTaken(S(o.사업자등록번호), S(ctx.office?.id))) throw new Error(BIZ_TAKEN_MSG);
+      up.biz_no = S(o.사업자등록번호);
+      try { await db.from("check_office").update({ biz_ok_at: null }).eq("id", ctx.office.id); } catch (_) { /* SQL 11 전 */ }
+    }
     if (S(o.대표자)) up.owner_name = S(o.대표자);
     if (S(o.연락처)) up.tel = S(o.연락처);
     if (S(o.검사비계좌)) up.bank_fee = S(o.검사비계좌);
@@ -1570,6 +1578,7 @@ async function officeGet(ctx: Ctx) {
    · 팝빌 번호(popbill_corp): 팝빌 가입(popJoin) 때 서버가 이 검사소 사업자번호로만 적음
    바꾸려면 차곳간 본사가 고칩니다. */
 const OFFICE_LOCKED = ["biz_no", "popbill_corp", "popbill_userid"];
+const BIZ_WAIT_MSG = "사업자번호를 차곳간에서 확인하는 중입니다. 확인이 끝나면 쓸 수 있습니다. 급하시면 차곳간(010-9559-3663)으로 알려 주세요.";
 const BIZ_TAKEN_MSG = "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다. 우리 사업자번호가 맞다면 차곳간(010-9559-3663)으로 알려 주세요.";
 const onlyDigits = (v: unknown) => S(v).replace(/[^0-9]/g, "");
 /** 이 번호를 다른 곳이 쓰고 있으면 true (확인을 못 하면 막는 쪽으로) */
@@ -1594,6 +1603,7 @@ async function officeSave(ctx: Ctx, body: any) {
   const up: any = {};
   for (const k of OFFICE_FIELDS) if (body?.[k] !== undefined && !OFFICE_LOCKED.includes(k)) up[k] = body[k];
   const cur = ctx.office ?? {};
+  let newBiz = false;
   if (body?.biz_no !== undefined) {
     const nb = onlyDigits(body.biz_no), ob = onlyDigits(cur.biz_no);
     if (nb && nb !== ob) {
@@ -1601,6 +1611,7 @@ async function officeSave(ctx: Ctx, body: any) {
       if (nb.length !== 10) throw new Error("사업자번호 10자리를 넣어 주세요.");
       if (await bizTaken(nb, S(cur.id))) throw new Error(BIZ_TAKEN_MSG);
       up.biz_no = S(body.biz_no);
+      newBiz = true;
     }
   }
   if (body?.popbill_userid !== undefined && S(body.popbill_userid) && !S(cur.popbill_userid))
@@ -1608,6 +1619,8 @@ async function officeSave(ctx: Ctx, body: any) {
   if (!Object.keys(up).length) return { ok: true };
   const { error } = await db.from("check_office").update(up).eq("id", ctx.office.id);
   if (error) throw new Error(error.message);
+  /* v32: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
+  if (newBiz) { try { await db.from("check_office").update({ biz_ok_at: null }).eq("id", ctx.office.id); } catch (_) { /* */ } }
   await log(ctx, "검사소 설정 고침", Object.keys(up));
   return { ok: true };
 }

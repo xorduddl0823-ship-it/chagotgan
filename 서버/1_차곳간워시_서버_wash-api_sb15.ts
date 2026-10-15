@@ -248,7 +248,8 @@ function userMsg(raw: unknown): string {
   if (!m) return "처리하지 못했습니다. " + MSG_HELP;
   const probe = m.replace(MSG_OK_WORDS, "");
   if (!/[A-Za-z]{3,}/.test(probe)) return m;
-  console.error("userMsg hidden:", m.slice(0, 300));
+  /* 보안 낮음 b: 기록에도 휴대폰·계좌 같은 긴 숫자(8자리 이상)는 가운데를 가림 */
+  console.error("userMsg hidden:", m.slice(0, 300).replace(/\d{8,}/g, (d) => d.slice(0, 3) + "*".repeat(d.length - 7) + d.slice(-4)));
   const head = m.split(/\s*[:(—]\s*/)[0].trim();
   if (head && /[가-힣]/.test(head) && !/[A-Za-z]{3,}/.test(head.replace(MSG_OK_WORDS, "")))
     return head.replace(/\s*실패$/, "에 실패했습니다").replace(/[.\s]*$/, ".") + " " + MSG_HELP;
@@ -739,6 +740,14 @@ async function sendRecord(payload: any, resp: any, err: unknown, meta?: SendMeta
     const { error } = await sb.from("cgg_sendlog").insert(rows);
     if (error) console.error("sendRecord", String(error.message || "").slice(0, 80));
   } catch (e) { console.error("sendRecord", e instanceof Error ? e.message.slice(0, 80) : ""); }
+}
+/* sb15(결제 방): 일부러 안 보낸 것도 한 줄 — «안 보냄(skip)» + 이유 (코드 없음 · 번호 없음) */
+async function sendSkip(to: string, why: string, meta?: SendMeta) {
+  try {
+    await sb.from("cgg_sendlog").insert({ product: SEND_PRODUCT, shop: String((meta && meta.shop) || "").slice(0, 40),
+      tpl: String((meta && meta.tpl) || "").slice(0, 40), to_mask: sendMask(to), via: "", result: "skip",
+      err: why, ref: String((meta && meta.ref) || "").slice(0, 60) });
+  } catch (_) { /* 기록 실패는 무시 */ }
 }
 async function solapi(method: string, path: string, payload?: unknown, meta?: SendMeta) {
   const isSend = method === "POST" && /^\/messages\/v4\/send/.test(path);
@@ -1384,6 +1393,7 @@ async function sendMsg(shop: string, json: string) {
     await sendLog(shop, { type: (o.scheduledDate ? `[예약 ${o.scheduledDate}] ` : "") + (o.type || ""), to: o.to, kind, ok: true, id: id || gid, text: o.text, ref: o.ref });
     if (!gate.cash) await smsWarnOwner(gate);
     return { ok: true, id: id || gid, groupId: gid, from: gate.from,
+             via: kind === "ATA" ? "ata" : "sms",            // sb15(알림톡 방): 실제로 보낸 방식 — 알림톡 코드가 없어 문자로 바꿨으면 "sms"
              cash: gate.cash ? { price: gate.price, balance: gate.balance } : undefined };
   } catch (e) {
     const m = e instanceof Error ? e.message : String(e);
@@ -1834,7 +1844,7 @@ const won = (n: unknown) => Math.round(Number(n) || 0).toLocaleString("ko-KR"); 
 async function noticeAta(phone: string, key: string, v: Record<string, unknown>, smsIfNoCode = false, meta?: SendMeta): Promise<string> {
   const mt: SendMeta = Object.assign({}, meta || {}, { tpl: key });   // sb15: 발송 기록 — 템플릿 키 그대로
   const to = digits(phone);
-  if (!to || to.length < 10) return "skip";
+  if (!to || to.length < 10) { await sendSkip(to, "받는 번호가 없어 보내지 않음", mt); return "skip"; }
   const c = await ataCfg();
   const tid = c.tpl[key];
   const pk = ataPick(key, v);
@@ -1859,7 +1869,7 @@ async function noticeAta(phone: string, key: string, v: Record<string, unknown>,
     await noticeSms(to, smsText, mt);          // 알림톡 요청 자체가 거절되면 서버가 바로 문자로
     return "sms";
   }
-  if (!smsIfNoCode) return "skip";
+  if (!smsIfNoCode) { await sendSkip(to, "알림톡 코드가 없어 보내지 않음(설계대로)", mt); return "skip"; }
   await noticeSms(to, smsText, mt);
   return "sms";
 }
@@ -2080,6 +2090,17 @@ async function bizTaken(corp: string, selfShop: string): Promise<string> {
   } catch (_) { return "check"; }
   return "";
 }
+/* sb15(보안 W-H1 남은 위험): 처음 넣은 사업자번호는 본사가 확인(biz_ok_at)한 뒤에만 실제 발행·인증서·팝빌 가입.
+   지금 있는 업체는 SQL 11 이 «확인됨»으로 시작. 칸이 없으면(SQL 11 전) 그대로 둠. */
+const BIZ_WAIT_MSG = "사업자번호를 차곳간에서 확인하는 중입니다. 확인이 끝나면 쓸 수 있습니다. 급하시면 차곳간(010-9559-3663)으로 알려 주세요.";
+async function bizApproved(shop: string): Promise<boolean> {
+  if (shop === "ADMIN") return true;
+  try {
+    const { data, error } = await sb.from("wash_shops").select("biz_ok_at").eq("shop", shop).maybeSingle();
+    if (error || !data || !("biz_ok_at" in data)) return true;
+    return data.biz_ok_at !== null;
+  } catch (_) { return true; }
+}
 const BIZ_TAKEN_MSG = "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다. 우리 사업자번호가 맞다면 차곳간(010-9559-3663)으로 알려 주세요.";
 async function pbIssue(shop: string, json: string) {
   let req: any = {};
@@ -2110,6 +2131,10 @@ async function pbIssue(shop: string, json: string) {
   if (shop !== "ADMIN" && await bizTaken(mine, shop)) {
     await log(false, "", "사업자번호 확인 필요");
     return { ok: false, error: BIZ_TAKEN_MSG };
+  }
+  if (!req.test && !(await bizApproved(shop))) {
+    await log(false, "", "사업자번호 본사 확인 전");
+    return { ok: false, error: BIZ_WAIT_MSG };
   }
   req.corpNum = mine;
   d.invoicerCorpNum = mine;
@@ -2355,7 +2380,14 @@ const FN: Record<string, Fn> = {
     if (!Object.keys(patch).length) return { ok: true };
     const { error } = await sb.from("wash_shops").update(patch).eq("shop", s);
     dbCheck(error, "업체");
-    return { ok: true };
+    /* sb15: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
+    if (patch.biz_no) {
+      try { await sb.from("wash_shops").update({ biz_ok_at: null }).eq("shop", s); } catch (_) { /* */ }
+      try { const admin = (await hqCfg()).adminPhone;
+        if (admin) await noticeSms(admin, "[차곳간] " + s + " 업체가 사업자번호를 처음 넣었습니다. 관리 → 사업자번호 확인에서 확인해 주세요", { tpl: "notice", shop: s }); }
+      catch (_) { /* */ }
+    }
+    return { ok: true, bizWait: !!patch.biz_no };
   },
   /* 우리 업체가 팝빌에 들어가 있는지 · 인증서는 올렸는지 — 한 번에 봅니다 */
   pbReady: async (s, a, ss) => {
@@ -2404,6 +2436,7 @@ const FN: Record<string, Fn> = {
   pbJoin: async (s, a, ss) => {
     ownerOnly(ss);
     if (await bizTaken(await bizNoOf(s), s)) throw new Error(BIZ_TAKEN_MSG);   // sb15(W-H1)
+    if (!a[0] && !(await bizApproved(s))) throw new Error(BIZ_WAIT_MSG);      // 실제(시험 아님)는 본사 확인 뒤
     return await pbJoinShop(s, !!a[0]);
   },
   /* 인증서 올리는 창 주소 — 대표만 */
@@ -2412,6 +2445,7 @@ const FN: Record<string, Fn> = {
     const corp = await bizNoOf(s);
     if (!corp) throw new Error("사업자등록번호를 먼저 넣어 주세요");
     if (await bizTaken(corp, s)) throw new Error(BIZ_TAKEN_MSG);                 // sb15(W-H1)
+    if (!a[0] && !(await bizApproved(s))) throw new Error(BIZ_WAIT_MSG);
     return await pbCertUrlOf(corp, !!a[0]);
   },
   pbCheck: async (s, a, ss) => {
@@ -4909,6 +4943,46 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     if (error) throw new Error("기록 표가 없습니다 (SQL 08 을 먼저 실행해 주세요)");
     return { ok: true, list: data || [] };
   },
+  /* sb15: 사업자번호 확인 목록 — 워시 업체 + 체크 검사소 (확인 안 된 것 먼저) — [] */
+  hqBizList: async (shop, _a, ss) => {
+    hqOnly(shop, ss);
+    const { data: ws, error } = await sb.from("wash_shops").select("shop,name,biz_no,biz_ok_at,owner_phone,ceo").neq("biz_no", "").limit(2000);
+    if (error) return { ok: true, list: [], need: "SQL 11 을 먼저 실행해 주세요" };
+    const { data: co } = await sb.from("check_office").select("code,name,biz_no,biz_ok_at,owner_name").neq("biz_no", "").limit(500);
+    const mask = (p: unknown) => { const d = digits(p); return d.length >= 10 ? d.slice(0, 3) + "-****-" + d.slice(-4) : ""; };
+    const list = [
+      ...(ws || []).filter((r: any) => digits(r.biz_no)).map((r: any) => ({ product: "워시", code: r.shop, name: String(r.name || ""), bizNo: digits(r.biz_no),
+        ceo: String(r.ceo || ""), owner: mask(r.owner_phone), ok: r.biz_ok_at !== null, okAt: r.biz_ok_at || "" })),
+      ...(co || []).filter((r: any) => digits(r.biz_no)).map((r: any) => ({ product: "체크", code: r.code, name: String(r.name || ""), bizNo: digits(r.biz_no),
+        ceo: String(r.owner_name || ""), owner: "", ok: r.biz_ok_at !== null, okAt: r.biz_ok_at || "" })),
+    ];
+    list.sort((x, y) => Number(x.ok) - Number(y.ok));
+    return { ok: true, list };
+  },
+  /* sb15: 사업자번호 확인 — [제품("워시"|"체크"), 코드, 확인(true) | 취소(false)] · 기록 먼저 · 다른 곳과 겹치면 거절 */
+  hqBizOk: async (shop, a, ss) => {
+    hqOnly(shop, ss);
+    const prod = String(a[0] || ""), code = String(a[1] || "").trim(), on = a[2] !== false;
+    if (!code || (prod !== "워시" && prod !== "체크")) throw new Error("어느 업체인지 골라 주세요");
+    const tbl = prod === "워시" ? "wash_shops" : "check_office", key = prod === "워시" ? "shop" : "code";
+    const { data: row } = await sb.from(tbl).select("biz_no").eq(key, code).maybeSingle();
+    if (!row || !digits(row.biz_no)) throw new Error("사업자번호가 없는 곳입니다");
+    if (on) {
+      if (prod === "워시" && await bizTaken(String(row.biz_no), code)) throw new Error(BIZ_TAKEN_MSG);
+      if (prod === "체크") {
+        const n = digits(row.biz_no);
+        const { data: others } = await sb.from("check_office").select("code,biz_no,popbill_corp").neq("code", code);
+        const { data: wsx } = await sb.from("wash_shops").select("biz_no").ilike("biz_no", "%" + n.slice(-5) + "%");
+        if ((others || []).some((r: any) => digits(r.biz_no) === n || digits(r.popbill_corp) === n) || (wsx || []).some((r: any) => digits(r.biz_no) === n))
+          throw new Error(BIZ_TAKEN_MSG);
+      }
+    }
+    if (!await hqAuditLog(ss, on ? "bizOk" : "bizUndo", "", prod === "워시" ? "wash" : "check", "try", { code })) throw new Error("기록을 남기지 못해 멈췄습니다 (SQL 08 확인)");
+    const { error } = await sb.from(tbl).update({ biz_ok_at: on ? new Date().toISOString() : null }).eq(key, code);
+    if (error) throw new Error("칸이 없습니다 (SQL 11 을 먼저 실행해 주세요)");
+    await hqAuditLog(ss, on ? "bizOk" : "bizUndo", "", prod === "워시" ? "wash" : "check", "ok", { code });
+    return { ok: true };
+  },
   /* sb15: 발송 기록 보기 — [시작일 "YYYY-MM-DD", 끝일 "YYYY-MM-DD", {product, shop, tpl, result}]
      받는 번호는 가린 모양(010-****-1234)만 · 본문 없음(템플릿 키와 변수 이름만) */
   hqSendLog: async (shop, a, ss) => {
@@ -4922,7 +4996,7 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
       .lt("at", new Date(Date.parse(ymdAdd(to, 1) + "T00:00:00+09:00")).toISOString())
       .order("at", { ascending: false }).limit(3000);
     const PROD: Record<string, string> = { wash: "워시", check: "체크", dealer: "딜러", cgg: "통합" };
-    const RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기" };
+    const RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기", skip: "안 보냄" };
     const back = (m: Record<string, string>, v: unknown) => { const k = Object.keys(m).find((x) => m[x] === String(v)); return k || String(v || ""); };
     if (f.product) q = q.eq("product", back(PROD, f.product));
     if (f.shop) q = q.eq("shop", String(f.shop).toUpperCase().slice(0, 40));
@@ -4958,10 +5032,10 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     const acc: Record<string, any> = {};
     const add = (product: string, tpl: string, result: string, via: string, n: number) => {
       const k = product + "|" + tpl;
-      const r = acc[k] || (acc[k] = { product, tpl, ata: 0, sms: 0, sent: 0, fail: 0, wait: 0, cost: 0 });
+      const r = acc[k] || (acc[k] = { product, tpl, ata: 0, sms: 0, sent: 0, fail: 0, wait: 0, skip: 0, cost: 0 });
       if (r[result] === undefined) return;
       r[result] += n;
-      if (result !== "fail" && result !== "wait") r.cost += n * (SEND_PRICE[via] || SEND_PRICE[result === "ata" ? "ata" : "sms"]);
+      if (result !== "fail" && result !== "wait" && result !== "skip") r.cost += n * (SEND_PRICE[via] || SEND_PRICE[result === "ata" ? "ata" : "sms"]);
     };
     let page = 0;
     for (;;) {
@@ -4976,8 +5050,8 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
       (mo || []).forEach((r: any) => add(String(r.product), String(r.tpl), String(r.result), String(r.via), Number(r.n) || 0));
     } catch (_) { /* */ }
     const rows = Object.values(acc).sort((x: any, y: any) => (y.ata + y.sms + y.sent) - (x.ata + x.sms + x.sent));
-    const total = rows.reduce((t: any, r: any) => { ["ata", "sms", "sent", "fail", "wait", "cost"].forEach((k) => (t[k] += r[k])); return t; },
-      { ata: 0, sms: 0, sent: 0, fail: 0, wait: 0, cost: 0 });
+    const total = rows.reduce((t: any, r: any) => { ["ata", "sms", "sent", "fail", "wait", "skip", "cost"].forEach((k) => (t[k] += r[k])); return t; },
+      { ata: 0, sms: 0, sent: 0, fail: 0, wait: 0, skip: 0, cost: 0 });
     return { ok: true, ym, rows, total, price: SEND_PRICE, note: "요금은 대략(부가세 별도)이에요. 정확한 금액은 솔라피 청구서로 맞춰요." };
   },
   /* sb15: 발송 최종 결과 지금 채우기 (관리에서 누를 때) — [] */
@@ -6173,6 +6247,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   let body: any = {};
   try { body = JSON.parse(await req.text()); } catch { return out({ __err: "요청을 읽지 못했습니다" }); }
+  let hqRaw = false;              // sb15(보안 낮음 a): 원문 오류는 «본사 세션»일 때만 (shop 글자만 ADMIN 이면 안 됨)
   try {
     const shop = String(body.shop || "");
     const fn = String(body.fn || "");
@@ -6216,6 +6291,7 @@ Deno.serve(async (req) => {
     if (ss) { ss.ip = ipOf(req); ss.ua = String(req.headers.get("user-agent") || "").slice(0, 200); }   // sb12: 관리 기록용
     if (ss) {
       if (ss.shop !== shop) throw new Error("다른 업체의 자료는 볼 수 없습니다");
+      hqRaw = ss.shop === "ADMIN";
       if (ss.shop !== "ADMIN") await needWash(ss.phone);     // sb2: 경비실 명단에서 워시를 빼면 바로 막힘
     } else {
       /* 예전 «업체 주소(?shop=&key=)» 방식은 잠겨 있습니다 — 로그인해서 쓰셔야 합니다 */
@@ -6251,6 +6327,6 @@ Deno.serve(async (req) => {
   } catch (e) {
     const em = e instanceof Error ? e.message : String(e);
     /* sb14: 본사(관리) 말고는 영어·코드·원문을 숨김 */
-    return out(String(body && body.shop) === "ADMIN" ? { __err: em, __raw: true } : { __err: em });
+    return out(hqRaw ? { __err: em, __raw: true } : { __err: em });
   }
 });

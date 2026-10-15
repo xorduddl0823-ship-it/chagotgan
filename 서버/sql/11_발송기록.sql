@@ -19,7 +19,7 @@ create table if not exists cgg_sendlog (
   final_via   text not null default '',      -- 결과 확인 뒤 실제로 간 것: ata / sms / lms / mms
   msg_id      text not null default '',      -- 솔라피 메시지 번호
   group_id    text not null default '',
-  result      text not null default 'wait',  -- wait(대기) / ata(알림톡 도착) / sms(문자 대체) / sent(문자 도착) / fail(실패)
+  result      text not null default 'wait',  -- wait(대기) / ata(알림톡 도착) / sms(문자 대체) / sent(문자 도착) / fail(실패) / skip(일부러 안 보냄: 코드 없음 등)
   status_code text not null default '',      -- 솔라피 상태 코드
   err         text not null default '',      -- 안 된 이유 (쉬운 말)
   vars        text[] not null default '{}',  -- 변수 이름만
@@ -92,10 +92,16 @@ begin
   end if;
 end $$;
 
--- 5) 사업자번호 확인 (보안 W-H1 · 체크 H1) — 급한고침 SQL 을 아직 안 했으면 같이 해 주세요:
---    서버/sql/급한고침_사업자번호_잠금.sql
+-- 5) 사업자번호 본사 확인 (보안 W-H1 · 체크 H1 남은 위험) — 처음 넣은 번호는 관리에서 확인한 뒤에만 실제 세금계산서·팝빌
+--    지금 있는 업체·검사소는 «확인됨»으로 시작해요 (칸을 더할 때 지금 시각을 넣고, 그 뒤 기본값을 비움 → 새로 넣는 번호는 «확인 중»)
+alter table wash_shops   add column if not exists biz_ok_at timestamptz default now();
+alter table wash_shops   alter column biz_ok_at set default null;
+alter table check_office add column if not exists biz_ok_at timestamptz default now();
+alter table check_office alter column biz_ok_at set default null;
+--    급한고침 SQL 을 아직 안 했으면 같이 해 주세요: 서버/sql/급한고침_사업자번호_잠금.sql
 
--- 확인: 아래 세 줄이 모두 나오면 끝
+-- 확인: 아래 네 줄이 모두 true 면 끝
 select 'cgg_sendlog' as 표, to_regclass('public.cgg_sendlog') is not null as 있음
 union all select 'cgg_sendlog_month', to_regclass('public.cgg_sendlog_month') is not null
-union all select 'check_rate_bump', exists (select 1 from pg_proc where proname = 'check_rate_bump');
+union all select 'check_rate_bump', exists (select 1 from pg_proc where proname = 'check_rate_bump')
+union all select '사업자번호 확인 칸', exists (select 1 from information_schema.columns where table_name = 'wash_shops' and column_name = 'biz_ok_at');

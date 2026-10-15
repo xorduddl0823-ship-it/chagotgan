@@ -112,6 +112,19 @@ check("다른 곳과 겹친 번호로는 세금계산서 발행 안 함", !!(r.r
 r = await call("pbCertUrl", [true]);
 check("인증서 올리는 창 주소도 안 줌", !!r.__err && /다른 곳/.test(r.__err), r);
 shopRow("ZZ").biz_no = "1112233333";
+check("처음 넣은 번호는 «본사 확인 중»", shopRow("BT").biz_ok_at === null, shopRow("BT"));
+r = await call("pbIssue", [JSON.stringify({ doc: { invoiceeCorpNum: "1111111111", totalAmount: 1000 } })]);
+check("본사 확인 전에는 실제 발행 안 함", !!(r.result && r.result.ok === false && /확인하는 중/.test(r.result.error)), r);
+r = await call("pbCertUrl", [false]);
+check("본사 확인 전에는 인증서 창도 안 줌", !!r.__err && /확인하는 중/.test(r.__err), r);
+r = await call("hqBizList", [], ADM, "ADMIN");
+check("관리: 사업자번호 확인 목록에 «확인 안 됨»이 먼저", r.result && r.result.list[0] && r.result.list[0].code === "BT" && r.result.list[0].ok === false, r.result && r.result.list.slice(0, 2));
+r = await call("hqBizOk", ["워시", "BT"], OWN);
+check("업체 계정은 확인 못 함", !!r.__err, r);
+r = await call("hqBizOk", ["워시", "BT"], ADM, "ADMIN");
+check("관리: 확인하면 기록 남고 확인됨", !r.__err && !!shopRow("BT").biz_ok_at && store.hq_audit.some((x: any) => x.action === "bizOk"), [r, shopRow("BT").biz_ok_at]);
+r = await call("pbIssue", [JSON.stringify({ doc: { invoiceeCorpNum: "1111111111", totalAmount: 1000 } })]);
+check("확인 뒤에는 «확인 중»으로 막히지 않음", !(r.result && /확인하는 중/.test(String(r.result.error || ""))) && !/확인하는 중/.test(String(r.__err || "")), r);
 
 console.log("■ W-H2 알림톡 템플릿 직접 고르기 막기");
 sent.length = 0;
@@ -237,6 +250,18 @@ check("본사 알림 문자도 기록됨(notice)", store.cgg_sendlog.some((x: an
 store.cgg_sendlog.length = 0;
 r = await call("sendCode", ["01033334444", "reset"], "", "");
 check("인증번호 문자 기록: 값은 없음", store.cgg_sendlog.length > 0 && !/\d{6}/.test(JSON.stringify(store.cgg_sendlog.map((x: any) => [x.err, x.vars, x.ref]))), store.cgg_sendlog);
+
+console.log("■ 보안 낮음 a · 결제 방 skip · 알림톡 방 via");
+r = await call("nopeFn", [], "", "ADMIN");
+check("로그인 안 한 채 shop:ADMIN 만 적으면 원문 대신 다듬은 글", !!r.__err && !/[A-Za-z]{4,}/.test(r.__err.replace(/\b(SMS|LMS|MMS|QR)\b|[a-z0-9.-]+\.(co\.kr|com)\b/gi, "")), r);
+check("숨긴 원문 기록의 긴 숫자는 가림", logs.filter((l) => /userMsg hidden/.test(l)).every((l) => !/\d{8,}/.test(l)));
+store.cgg_sendlog.length = 0;
+store.wash_pay_order.push(Object.assign(order("O10", 0, 55000), { kind: "cash" }));   // 충전완료(cash_done)는 코드가 없음
+r = await call("payConfirm", ["O10", "pk_O10", 55000]);
+const sk = store.cgg_sendlog.find((x: any) => x.tpl === "cash_done");
+check("코드 없어 안 보낸 결제 알림도 «안 보냄(skip)» 줄", !!sk && sk.result === "skip" && /코드가 없어/.test(sk.err) && sk.ref === "wash:O10", store.cgg_sendlog);
+r = await call("sendMsg", [JSON.stringify({ kind: "SMS", to: "01099998888", from: "0212345678", text: "x", type: "출고" })]);
+check("sendMsg 응답에 실제 방식(via)", r.result && r.result.via === "sms", r);
 
 console.log("■ 최종 결과 채우기 · 관리 창구");
 store.cgg_sendlog.length = 0;

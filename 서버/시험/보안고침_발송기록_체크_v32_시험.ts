@@ -76,6 +76,12 @@ r = await call("officeSave", [{ popbill_userid: "bbbuser2" }], "chk_own");
 check("팝빌 아이디는 비어 있을 때 처음 한 번", !r.__err && off("o1").popbill_userid === "bbbuser2", r);
 r = await call("officeSave", [{ popbill_userid: "other" }], "chk_own");
 check("팝빌 아이디도 한 번 넣으면 안 바뀜", off("o1").popbill_userid === "bbbuser2", off("o1"));
+check("처음 넣은 번호는 «본사 확인 중»", off("o1").biz_ok_at === null, off("o1"));
+r = await call("popLogin", ["LOGIN"], "chk_own");
+check("본사 확인 전에는 팝빌 바로 열기 안 됨", !!r.__err && /확인하는 중/.test(r.__err), r);
+off("o1").biz_ok_at = new Date().toISOString();
+r = await call("popLogin", ["LOGIN"], "chk_own");
+check("확인 뒤에는 «확인 중»으로 막히지 않음", !/확인하는 중/.test(String(r.__err || "")), r);
 r = await call("popJoin", [{ corpNum: "5556677777", id: "abcdefg", password: "12345678" }], "chk_own");
 check("팝빌 가입은 검사소 사업자번호로만", !!r.__err && /등록된 사업자번호로만/.test(r.__err), r);
 
