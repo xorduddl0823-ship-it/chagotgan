@@ -15,7 +15,7 @@ Date.now = () => realNow() + shift;
 Object.assign(store, {
   dealer_otp: [] as any[], dealer_users: [] as any[], dealer_sessions: [] as any[],
   dealer_agreements: [] as any[], dealer_done: [] as any[], wash_shops: [] as any[], wash_docs: [] as any[],
-  wash_rate: [] as any[], wash_hq: [{ id: 1, ata_cfg: {} }] as any[],
+  wash_rate: [] as any[], wash_hq: [{ id: 1, ata_cfg: {} }] as any[], cgg_sendlog: [] as any[],
 });
 
 let mode: "ok" | "failed" | "http" | "throw" = "ok";
@@ -95,5 +95,12 @@ sent.length = 0;
 r = await call("sendCode", [phone()]);
 check("PF_ID 비밀값을 채널로", sent[0]?.kakaoOptions?.pfId === "PF_ENV", sent[0]?.kakaoOptions);
 
+console.log("⑨ 발송 기록 (d8 이상 · SQL 11)");
+if (/^d([89]|\d\d)$/.test((await call("ping")).result?.ver ?? "")) {
+  const rows: any[] = store.cgg_sendlog || [];
+  check("보낸 것이 모두 기록됨 (제품 dealer · 가린 번호)", rows.length > 0 && rows.every((x) => x.product === "dealer" && /^01\d-\*\*\*\*-\d{4}$/.test(x.to_mask)), rows.slice(0, 2));
+  check("알림톡 실패·문자 대체 줄도 있음", rows.some((x) => x.result === "fail") && rows.some((x) => x.via === "sms"), rows.map((x) => x.via + ":" + x.result));
+  check("인증번호 값·본문은 기록에 없음", !/\d{6}/.test(JSON.stringify(rows.map((x) => [x.err, x.vars, x.ref, x.tpl]))) && JSON.stringify(rows).indexOf("인증번호 ") < 0);
+}
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패`);
 if (fail) Deno.exit(1);

@@ -1,0 +1,118 @@
+기사 화면 v26 해요체로 바꾼 말
+139	
+  전: > 중입니다 — 딜러에게 실제로 나가지 않고 기록만 남습니다.<
+  후: > 중이에요 — 딜러에게 실제로 나가지 않고 기록만 남아요.<
+141	
+  전: >📝 쓰던 내용(사진 포함)을 다시 불러왔습니다.<
+  후: >📝 쓰던 내용(사진 포함)을 다시 불러왔어요.<
+146	
+  전: >카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 됩니다.<
+  후: >카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 돼요.<
+157	
+  전: > — 그 부분만 크게 키우고 밝기를 고쳐 다시 읽습니다. 차량번호는 몰라도 보낼 수 있습니다.<
+  후: > — 그 부분만 크게 키우고 밝기를 고쳐 다시 읽어요. 차량번호는 몰라도 보낼 수 있어요.<
+161	
+  전: >이 붙고, 추가 사진은 배달 기록에 같이 보관됩니다.<
+  후: >이 붙고, 추가 사진은 배달 기록에 같이 보관돼요.<
+342	function start
+  전: '지금은 <b>시험</b> 중입니다 — 딜러 대신 <b>'
+  후: '지금은 <b>시험</b> 중이에요 — 딜러 대신 <b>'
+342	function start
+  전: '</b> 로 문자가 갑니다.'
+  후: '</b> 로 문자가 가요.'
+344	function start
+  전: '지금은 <b>시험 발송</b> 중입니다 — 딜러에게 실제로 나가지 않고 기록만 남습니다.'
+  후: '지금은 <b>시험 발송</b> 중이에요 — 딜러에게 실제로 나가지 않고 기록만 남아요.'
+460	function pwBox
+  전: '<h3>바꿨습니다</h3><button class="big b-main" id="cp-ok">확인</button>'
+  후: '<h3>바꿨어요</h3><button class="big b-main" id="cp-ok">확인</button>'
+612	function readPlate
+  전: '<h3>사진에서 읽은 글자</h3><div class="hint" style="margin-bottom:10px">번호판 글자가 아예 없으면 번호판만 가까이 한 장 더 찍어 보세요. 자주 이러면 설정에 비전 키(또는 OCR.space 키)를 넣으면 좋아집니다.</di
+  후: '<h3>사진에서 읽은 글자</h3><div class="hint" style="margin-bottom:10px">번호판 글자가 아예 없으면 번호판만 가까이 한 장 더 찍어 보세요. 자주 이러면 설정에 비전 키(또는 OCR.space 키)를 넣으면 좋아져요.</div
+628	function readPlate
+  전: '읽은 번호가 여러 개입니다'
+  후: '읽은 번호가 여러 개예요'
+717	function lineApply
+  전: '명부에 없는 이름입니다 — 아래 연락처를 넣어 주세요'
+  후: '명부에 없는 이름이에요 — 아래 연락처를 넣어 주세요'
+727	function lineOut
+  전: '카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 됩니다.'
+  후: '카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 돼요.'
+733	function askDealer
+  전: ' 님이 여러 분입니다</h3><div class="hint" style="margin-bottom:12px">어느 상사의 '
+  후: ' 님이 여러 분이에요</h3><div class="hint" style="margin-bottom:12px">어느 상사의 '
+743	function askDealer
+  전: '</b> 로 정했습니다'
+  후: '</b> 로 정했어요'
+763	function lookup
+  전: '정확히 같은 번호는 없습니다. 뒷자리가 같은 차:'
+  후: '정확히 같은 번호는 없어요. 뒷자리가 같은 차:'
+763	function lookup
+  전: '차량 목록에 없는 번호입니다 — 딜러를 직접 골라 주세요.'
+  후: '차량 목록에 없는 번호예요 — 딜러를 직접 골라 주세요.'
+811	function drawTelList
+  전: '<div class="hint" style="margin:6px 0 2px">문자 받을 번호 — 체크한 번호로 모두 보냅니다</div>'
+  후: '<div class="hint" style="margin:6px 0 2px">문자 받을 번호 — 체크한 번호로 모두 보내요</div>'
+829	function drawDealer
+  전: '<span></span><span class="warn" style="margin:0">번호 없음 — 아래에 넣으면 이번 건에 씁니다</span>'
+  후: '<span></span><span class="warn" style="margin:0">번호 없음 — 아래에 넣으면 이번 건에 써요</span>'
+838	function drawDealerList
+  전: '<div class="item">목록에 없습니다. <b>'
+  후: '<div class="item">목록에 없어요. <b>'
+869	function askKind
+  전: '</h3><div class="hint" style="margin-bottom:12px">어떤 곳인지 정해 두면 나중에 목적지별로 모아 볼 수 있습니다.</div>'
+  후: '</h3><div class="hint" style="margin-bottom:12px">어떤 곳인지 정해 두면 나중에 목적지별로 모아 볼 수 있어요.</div>'
+871	function askKind
+  전: '<button class="big b-main" id="k-yes">예, 맞습니다</button><div style="height:8px"></div>'
+  후: '<button class="big b-main" id="k-yes">예, 맞아요</button><div style="height:8px"></div>'
+945	function drawDests
+  전: '찾는 목적지가 없습니다. <b>[+ 새 목적지]</b> 로 넣으세요.'
+  후: '찾는 목적지가 없어요. <b>[+ 새 목적지]</b> 로 넣으세요.'
+986	function openDestEdit
+  전: '<div class="hint">고쳐도 지난 배달 기록은 그대로 남습니다.</div>'
+  후: '<div class="hint">고쳐도 지난 배달 기록은 그대로 남아요.</div>'
+1018	function check
+  전: '딜러 번호가 없어 기록만 남고 문자는 안 나갑니다'
+  후: '딜러 번호가 없어 기록만 남고 문자는 안 나가요'
+1018	function check
+  전: '차량번호 없이 보냅니다 (문자에 번호는 안 들어갑니다)'
+  후: '차량번호 없이 보내요 (문자에 번호는 안 들어가요)'
+1024	function check
+  전: ' 로 갑니다</div>'
+  후: ' 로 가요</div>'
+1024	function check
+  전: '<div class="warn">시험 발송 중 — 실제로 나가지 않습니다</div>'
+  후: '<div class="warn">시험 발송 중 — 실제로 나가지 않아요</div>'
+1029	function doSend
+  전: '<h3><span class="spin"></span> 보내는 중…</h3><div class="hint">사진을 올리고 문자를 보내고 있습니다.</div>'
+  후: '<h3><span class="spin"></span> 보내는 중…</h3><div class="hint">사진을 올리고 문자를 보내고 있어요.</div>'
+1035	function doSend
+  전: '<h3>방금 보낸 기록이 있습니다</h3><div class="warn">'
+  후: '<h3>방금 보낸 기록이 있어요</h3><div class="warn">'
+1035	function doSend
+  전: ' 에 같은 차·같은 목적지로 보냈습니다.</div>'
+  후: ' 에 같은 차·같은 목적지로 보냈어요.</div>'
+1057	function clearForm
+  전: '카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 됩니다.'
+  후: '카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 돼요.'
+1121	function trashAsk
+  전: '건을 지울까요?</h3><div class="hint" style="margin-bottom:14px">휴지통으로 갑니다. 잘못 지웠으면 바로 [되돌리기]를 누르거나, 사무실 화면 휴지통에서 되살릴 수 있습니다.</div>'
+  후: '건을 지울까요?</h3><div class="hint" style="margin-bottom:14px">휴지통으로 가요. 잘못 지웠으면 바로 [되돌리기]를 누르거나, 사무실 화면 휴지통에서 되살릴 수 있어요.</div>'
+1128	function trashAsk
+  전: '건을 지웠습니다</h3>'
+  후: '건을 지웠어요</h3>'
+1128	function trashAsk
+  전: '건은 지우지 않았습니다.</div>'
+  후: '건은 지우지 않았어요.</div>'
+1169	function paintList
+  전: '찾는 것이 없습니다.'
+  후: '찾는 것이 없어요.'
+1169	function paintList
+  전: '아직 없습니다.'
+  후: '아직 없어요.'
+1237	function patch
+  전: '<h3><span class="spin"></span> 보내는 중…</h3><div class="hint">저장한 뒤 다시 보냅니다.</div>'
+  후: '<h3><span class="spin"></span> 보내는 중…</h3><div class="hint">저장한 뒤 다시 보내요.</div>'
+1242	function patch
+  전: '보냈습니다'
+  후: '보냈어요'

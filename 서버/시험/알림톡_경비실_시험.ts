@@ -22,7 +22,7 @@ Object.assign(store, {
   check_user: [{ id: "u1", office_id: "o1", phone: PH, name: "문자", role: "owner", active: true, pw_hash: await pwHash("two-pw") }],
   cgg_access: [{ phone: PH, name: "문자확인", products: ["check"], active: true, two_step: true, fail_count: 0 }],
   cgg_session: [] as any[], cgg_tick: [] as any[],
-  wash_hq: [{ id: 1, ata_cfg: {} }] as any[],
+  wash_hq: [{ id: 1, ata_cfg: {} }] as any[], cgg_sendlog: [] as any[],
 });
 
 let mode: "ok" | "failed" | "http" | "throw" = "ok";
@@ -97,5 +97,12 @@ delete (store as any).wash_hq;
 t = await login();
 check("설정 표가 없어도 문자로", !!t.result?.tick && sent.length === 1 && !sent[0].kakaoOptions, { t, sent });
 
+console.log("⑨ 발송 기록 (v1.6 이상 · SQL 11)");
+if (/v1\.([6-9])/.test((await call("ping")).result?.ver ?? "")) {
+  const rows: any[] = store.cgg_sendlog || [];
+  check("보낸 것이 모두 기록됨 (제품 cgg · 가린 번호)", rows.length > 0 && rows.every((x) => x.product === "cgg" && /^01\d-\*\*\*\*-\d{4}$/.test(x.to_mask)), rows.slice(0, 2));
+  check("알림톡 실패·문자 대체 줄도 있음", rows.some((x) => x.result === "fail") && rows.some((x) => x.via === "sms"), rows.map((x) => x.via + ":" + x.result));
+  check("인증번호 값·본문은 기록에 없음", !/\d{6}/.test(JSON.stringify(rows.map((x) => [x.err, x.vars, x.ref, x.tpl]))) && JSON.stringify(rows).indexOf("인증번호 ") < 0);
+}
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패`);
 if (fail) Deno.exit(1);
