@@ -5,7 +5,7 @@
          «무엇을 보여 줄지»와 «눌렀을 때 할 일»을 제품이 넘겨 주는 식으로 바꿨어요.
    서버를 부르지 않아요. 저장은 «이 기기에만»(localStorage) — 못 쓰면 가로 메뉴로 그냥 보여요.
 
-   쓰는 법 (제품 파일 <script> 맨 끝에 이 파일 내용을 넣고)
+   쓰는 법 (이 파일 내용을 제품 스크립트보다 «먼저» 따로 <script> 하나로 넣고, 제품 스크립트 안에서)
      CGG.layout.init(document.querySelector(".cgg-app"), "cgg_check_layout");   // 저장 이름은 제품마다
      CGG.layout.chooser(상자, function(v){ 창 닫기 · 알림 });                     // 화면 설정 창 안에 고르기 칸 그리기
      CGG.tabbar(document.querySelector(".cgg-tbar"),
