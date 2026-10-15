@@ -18,7 +18,8 @@ var ATA_LIST = [   /* [키, 템플릿 이름, 언제 나가는지, 검수 상태
   ["cash_done",   "충전완료",       "캐시가 충전되었을 때",                  "통과"],
   ["balance",     "잔액안내",       "남은 금액이 정해둔 선 아래로 내려갔을 때", "재검수"],
   ["auth",        "인증번호",       "인증번호를 보낼 때",                    "통과"],
-  ["check_arrive","차량도착 (체크)", "체크 — 차가 목적지에 도착했을 때 (본사 채널, 비면 검사소 템플릿 → 문자)", "심사 대기"]
+  ["check_arrive","차량도착 (체크)", "체크 — 차가 목적지에 도착했을 때 (본사 채널, 비면 검사소 템플릿 → 문자)", "심사 대기"],
+  ["staff_link",  "접속주소안내",   "직원에게 접속 주소를 보낼 때 (직원용 주소만, 로그인 열쇠 없음)", "심사 대기"]
 ];
 var ATA = {loaded:false, busy:false, err:"", tpls:{}, ready:[], stats:null, pfSet:false, at:""};
 function ataYm(){ var d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
@@ -58,7 +59,7 @@ function ataDraw(){
     '<div class="hint" style="margin:-6px 0 16px">지난달 합계 <b>'+won(tot)+'</b> (부가세 별도). 금액은 솔라피 단가로 계산한 값이라 실제 청구와 조금 다를 수 있어요.<br>'+
       '건수는 업체 화면에서 나간 발송만 세요. 인증번호와 업체 대표에게 가는 안내는 아직 세지 않아요.'+
       (st.error?' <b style="color:var(--stop)">'+esc(st.error)+'</b>':'')+'</div>'+
-    /* 템플릿 코드 14줄 (확정본 13개 + 체크 차량도착) */
+    /* 템플릿 코드 15줄 (확정본 13개 + 체크 차량도착 + 접속주소안내) */
     '<div class="card"><h2>템플릿 코드 <span class="rt">'+have+' / '+ATA_LIST.length+' 넣음</span></h2>'+
       '<div class="csub">솔라피 › 카카오 알림톡 › 템플릿에서 코드를 복사해 넣어 주세요. 템플릿 본문과 보내는 글자가 똑같아야 해서, 문구는 여기서 고치지 않아요.'+
       '</div>'+
