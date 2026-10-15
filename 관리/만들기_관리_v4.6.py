@@ -53,5 +53,11 @@ rep("""      .then(function(){ D={me:null,sum:null,shops:[],users:[],pays:[],inv
         /* 메모리에 남은 목록(결제 · 계정 · 기록 …)까지 비우려고 처음 화면으로 다시 열어요 */
         try{ location.replace(location.href.split("#")[0]); }catch(e){} });""", False)
 
+# ③ 알림 › 발송 기록 (대표님 «알림톡 발송 데이터 기록», 요청서 07 덧붙임) — 창구 hqSendLog 는 서버 방이 만들어요
+rep('["ata","알림톡 템플릿",viewAta],', '["ata","알림톡 템플릿",viewAta],\n  ["slog","발송 기록",viewSendLog],', False)
+rep('["noti","알림",["sms","noti","ata"]],', '["noti","알림",["sms","noti","ata","slog"]],', False)
+rep('noti:"기한 안내 문자 · 공지사항 · 알림톡 템플릿 코드예요. 안내는 알림톡이 먼저 나가요.",',
+    'noti:"기한 안내 문자 · 공지사항 · 알림톡 템플릿 코드 · 발송 기록이에요. 안내는 알림톡이 먼저 나가고, 안 되면 문자로 대신 나가요.",', False)
+rep('function navOf(t){', open(os.path.join(HERE, "v4재료", "sendlog.js"), encoding="utf-8").read() + '\nfunction navOf(t){', False)
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자 · 고친 말", N["말"], "곳")
