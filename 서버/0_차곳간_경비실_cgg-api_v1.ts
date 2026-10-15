@@ -30,7 +30,7 @@ const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const db = createClient(SUPA_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   { auth: { persistSession: false } });
 
-const VER = "cgg-api v1.5 · 2026-10-15 (오픈 베타 말 다듬기)";
+const VER = "cgg-api v1.6 · 2026-10-15 (발송 기록)";
 const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
 const WASH_API = () => SUPA_URL + "/functions/v1/wash-api";
 const DAYS = 14;                 // 로그인 유지 기간 (체크와 같음)
@@ -182,6 +182,96 @@ async function solapiAuth() {
   const sig = b2hex(new Uint8Array(await crypto.subtle.sign("HMAC", k, te.encode(date + salt))));
   return `HMAC-SHA256 apiKey=${key}, date=${date}, salt=${salt}, signature=${sig}`;
 }
+/* ===== 발송 기록 (SQL 11 · cgg_sendlog) — 네 서버 같은 모양 =====
+   솔라피로 «보내는» 요청은 모두 solapi() 한 곳을 지나고, 여기서 메시지마다 한 줄씩 남깁니다.
+   (솔라피를 부르는 곳 = 기록을 남기는 곳)
+   남기는 것: 제품 · 업체(검사소) 코드 · 템플릿 키 · 가린 번호(010-****-1234) · 알림톡/문자 · 솔라피 번호 · 결과 · 쉬운 오류
+   남기지 않는 것: 본문 · 변수 «값»(인증번호·임시 비밀번호 등) · 열쇠·서명. 변수는 «이름»만.
+   기록이 안 돼도 발송은 그대로 합니다(try 로 무시). */
+type SendMeta = { shop?: string; tpl?: string; ref?: string };
+const SEND_PRODUCT = "cgg";
+function sendMask(v: unknown) {
+  const d = String(v ?? "").replace(/[^0-9]/g, "");
+  if (d.length >= 10) return d.slice(0, 3) + "-****-" + d.slice(-4);
+  return d ? "****" + d.slice(-2) : "";
+}
+/* 솔라피 상태 코드 → 쉬운 말 (모르는 코드는 «보내지 못함 (코드)») */
+const SEND_WHY: Record<string, string> = {
+  "1062": "보내는 번호가 등록되지 않음", "3059": "받는 번호가 올바르지 않음", "1020": "받는 번호가 올바르지 않음",
+  "3104": "카카오톡을 쓰지 않는 번호", "3105": "카카오톡을 쓰지 않는 번호", "3018": "전화가 꺼져 있거나 받을 수 없음",
+  "3015": "받는 번호가 없는 번호", "3016": "받는 쪽에서 막음(스팸 차단)", "3022": "받는 쪽에서 막음",
+  "3040": "알림톡 문구가 등록된 것과 다름", "3041": "알림톡 템플릿을 찾지 못함", "3043": "알림톡 채널을 찾지 못함",
+  "2252": "잔액이 모자람", "1030": "잔액이 모자람",
+};
+function sendErrEasy(code: string, msg: string, err?: unknown) {
+  if (code && SEND_WHY[code]) return SEND_WHY[code];
+  if (err) {
+    const m = err instanceof Error ? err.message : String(err);
+    const st = /솔라피 (\d{3})/.exec(m);
+    if (st) return "솔라피가 요청을 받지 않음 (" + st[1] + ")";
+    if (/[가-힣]/.test(m) && !/[A-Za-z]{3,}/.test(m)) return m.slice(0, 80);
+    return "솔라피에 연결하지 못함";
+  }
+  if (msg && /[가-힣]/.test(msg) && !/[A-Za-z]{3,}/.test(msg)) return msg.slice(0, 80);
+  return "보내지 못함" + (code ? " (" + code + ")" : "");
+}
+async function sendRecord(payload: any, resp: any, err: unknown, meta?: SendMeta) {
+  try {
+    const msgs: any[] = Array.isArray(payload && payload.messages) ? payload.messages : [];
+    if (!msgs.length) return;
+    const dg = (x: unknown) => String(x ?? "").replace(/[^0-9]/g, "");
+    const failed: any[] = (resp && resp.failedMessageList) || [];
+    const ml = resp && resp.messageList;
+    const okList: any[] = Array.isArray(ml) ? ml
+      : (ml && typeof ml === "object" ? Object.keys(ml).map((k) => Object.assign({ messageId: k }, ml[k])) : []);
+    const gi = (resp && resp.groupInfo) || {};
+    const gid = String(gi.groupId || gi._id || (resp && resp.groupId) || "");
+    const rows = msgs.map((m: any, i: number) => {
+      const ko = m && m.kakaoOptions;
+      const to = dg(m && m.to);
+      const f = failed.find((x: any) => dg(x && x.to) === to);
+      const hit = okList.find((x: any) => dg(x && x.to) === to) || okList[i] || null;
+      const bad = !!err || !!f;
+      const code = String((f && f.statusCode) || "");
+      return {
+        product: SEND_PRODUCT, shop: String((meta && meta.shop) || "").slice(0, 40),
+        tpl: String((meta && meta.tpl) || (ko ? "ata" : "sms")).slice(0, 40),
+        to_mask: sendMask(to), via: ko ? "ata" : (String((m && m.type) || "").toLowerCase() || "auto"),
+        msg_id: bad ? "" : String((hit && hit.messageId) || "").slice(0, 60), group_id: gid.slice(0, 60),
+        result: bad ? "fail" : "wait", status_code: code.slice(0, 20),
+        err: bad ? sendErrEasy(code, String((f && (f.statusMessage || f.reason)) || ""), err) : "",
+        vars: ko && ko.variables ? Object.keys(ko.variables).map((k) => k.replace(/^#\{|\}$/g, "").slice(0, 20)).slice(0, 20) : [],
+        ref: String((meta && meta.ref) || "").slice(0, 60), scheduled: !!(payload && payload.scheduledDate),
+      };
+    });
+    const { error } = await db.from("cgg_sendlog").insert(rows);
+    if (error) console.error("sendRecord", String(error.message || "").slice(0, 80));
+  } catch (e) { console.error("sendRecord", e instanceof Error ? e.message.slice(0, 80) : ""); }
+}
+async function solapi(method: string, path: string, payload?: unknown, meta?: SendMeta) {
+  const isSend = method === "POST" && /^\/messages\/v4\/send/.test(path);
+  let res: Response, body = "";
+  try {
+    res = await fetch("https://api.solapi.com" + path, {
+      method,
+      headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
+      body: payload ? JSON.stringify(payload) : undefined,
+    });
+    body = await res.text();
+  } catch (e) {
+    if (isSend) await sendRecord(payload, null, e, meta);
+    throw e;
+  }
+  if (res.status >= 300) {
+    const e = new Error("솔라피 " + res.status + ": " + body);
+    if (isSend) await sendRecord(payload, null, e, meta);
+    throw e;
+  }
+  const j = body ? JSON.parse(body) : {};
+  if (isSend) await sendRecord(payload, j, null, meta);
+  return j;
+}
+
 /* v1.4 규칙 5-6: 확인 번호는 알림톡 먼저 (차곳간_인증번호 · 코드는 관리 설정 wash_hq.ata_cfg.tpl.auth), 안 되면 문자.
    보내는 번호는 CGG_SMS_FROM → 없으면 SMS_FROM (워시와 같은 대표번호) */
 async function sendCode(to: string, code: string) {
@@ -193,22 +283,20 @@ async function sendCode(to: string, code: string) {
   const pf = S(c.pfId) || S(Deno.env.get("PF_ID")), tpl = S(c.tpl && c.tpl.auth);
   if (pf && tpl) {
     try {
-      const r = await fetch("https://api.solapi.com/messages/v4/send-many/detail", {
-        method: "POST", headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ to, from, text: `[차곳간] 인증번호 ${code} (5분 안에 입력)`,
+      /* v1.6: 솔라피는 solapi() 한 곳으로 — 발송 기록이 남음 */
+      const j: any = await solapi("POST", "/messages/v4/send-many/detail", { messages: [{ to, from, text: `[차곳간] 인증번호 ${code} (5분 안에 입력)`,
           kakaoOptions: { pfId: pf, templateId: tpl, disableSms: false,
-            variables: { "#{인증번호}": code, "#{유효시간}": "5" } } }] }),
-      });
-      const j: any = await r.json().catch(() => ({}));
-      if (r.status < 300 && !((j && j.failedMessageList) || []).length) return;
-      console.error("cgg ata failed", r.status, JSON.stringify(((j && j.failedMessageList) || [])[0] || {}).slice(0, 200));
-    } catch (e) { console.error("cgg ata", e); }
+            variables: { "#{인증번호}": code, "#{유효시간}": "5" } } }] }, { tpl: "auth" });
+      if (!((j && j.failedMessageList) || []).length) return;
+      console.error("cgg ata failed", JSON.stringify(((j && j.failedMessageList) || [])[0] || {}).slice(0, 200));
+    } catch (e) { console.error("cgg ata", e instanceof Error ? e.message.slice(0, 120) : ""); }
   }
-  const res = await fetch("https://api.solapi.com/messages/v4/send-many/detail", {
-    method: "POST", headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: [{ to, from, type: "SMS", text: `[차곳간] 확인 번호 ${code} (5분 안에 넣어 주세요)` }] }),
-  });
-  if (res.status >= 300) throw new Error("확인 문자를 보내지 못했습니다. 잠시 뒤 다시 해 주세요.");
+  try {
+    await solapi("POST", "/messages/v4/send-many/detail",
+      { messages: [{ to, from, type: "SMS", text: `[차곳간] 확인 번호 ${code} (5분 안에 넣어 주세요)` }] }, { tpl: "auth_sms" });
+  } catch (_) {
+    throw new Error("확인 문자를 보내지 못했습니다. 잠시 뒤 다시 해 주세요.");
+  }
 }
 
 /* ───────── 들어가기 · 내 정보 ───────── */

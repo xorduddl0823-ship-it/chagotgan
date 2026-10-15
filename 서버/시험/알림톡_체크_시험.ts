@@ -24,7 +24,9 @@ Object.assign(store, {
   ],
   check_session: [{ sid: "chk_o1", phone: "01011110000", office_id: "o1", role: "owner", expires_at: day }],
   check_pw_first: [], check_deliv_fail: [], cgg_access: [], wash_sessions: [],
-  check_deliv: [], check_deliv_dest: [], check_dealer: [], check_deliv_photo: [], check_deliv_conf: [],
+  check_deliv: [], check_deliv_dest: [], check_deliv_photo: [], check_deliv_conf: [],
+  /* v32(보안 M2): 도착 알림은 등록된 딜러 번호로만 나가므로 딜러를 등록해 둠 */
+  check_dealer: [{ id: "d1", office_id: "o1", name: "홍딜러", tel: "010-3333-4444", active: true }],
   wash_hq: [{ id: 1, ata_cfg: {} }],
 });
 

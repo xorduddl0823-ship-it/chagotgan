@@ -33,6 +33,10 @@ class Q {
     const re = new RegExp("^" + pat.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".") + "$");
     this.filters.push((r) => re.test(String(val(r, k) ?? ""))); return this;
   }
+  ilike(k: string, pat: string) {
+    const re = new RegExp("^" + pat.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".") + "$", "i");
+    this.filters.push((r) => re.test(String(val(r, k) ?? ""))); return this;
+  }
   filter() { return this; } not() { return this; } or() { return this; }
   order(k: string, o: any = {}) { this.ord = [k, o.ascending !== false]; return this; }
   limit(n: number) { this.lim = n; return this; }
@@ -81,6 +85,7 @@ function rpc(fn: string, a: any) {
   }
   if (fn === "wash_write") return { data: "2", error: null };
   if (fn === "wash_sms_take") return { data: "free", error: null };
+  if (fn === "wash_tax_take") return { data: "free", error: null };
   /* sb13 체험판 횟수 — SQL 09 wash_trial_bump 와 같음 (한 번에 셈) */
   if (fn === "wash_trial_bump") {
     if (knobs.missing.has("wash_trial_use")) return { data: null, error: { message: "function does not exist" } };

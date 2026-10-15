@@ -166,3 +166,15 @@ deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시
 ```
 
 - 6개 (2026-10-15 전부 통과 · sb13 이면 실패) · 예전 시험도 새 판으로 모두 통과 (판 이름 줄 제외)
+
+오픈 베타 보안 고침 + 발송 기록 (워시 sb15 · 체크 v32 · 딜러 d8 · 경비실 v1.6 · SQL 11 · 설계 18):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/보안고침_발송기록_워시_sb15_시험.ts
+deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/시험/보안고침_발송기록_체크_v32_시험.ts
+DEALER_SRC=file://$PWD/서버/3_딜러앱_서버_dealer-api_d8.ts deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/시험/알림톡_딜러_시험.ts
+deno run -A --no-lock --import-map=서버/시험/import_map.json 서버/시험/알림톡_경비실_시험.ts
+```
+
+- 워시 59개 · 체크 30개 · 딜러 18개 · 경비실 20개 (2026-10-15 전부 통과 · sb14·v31 이면 실패) — 사업자번호 잠금 · 템플릿 직접 고르기 막기 · 캐시 결제 · 입금했습니다 한 번 · 본사 인증 횟수 · 옛 계정 도구 · importRows 없앰 · 직원 장부 · 대표만 · 등록 딜러만 · 청구서 다시 만들기 · 발송 기록(가린 번호·본문 없음·결과 채우기·관리 창구)
+- 예전 시험도 새 판으로 같은 결과 (판 이름 줄 · 예전부터 있던 줄 제외). 바뀐 규칙에 맞춰 `워시_시험`(알림톡 템플릿 직접 고르기)·`알림톡_체크_시험`(딜러 등록) 한 줄씩 고침

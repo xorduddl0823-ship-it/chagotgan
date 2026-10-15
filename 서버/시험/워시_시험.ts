@@ -128,7 +128,9 @@ const m4 = await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x",
 check("대표는 직원 한도와 상관없이 나감", m4.result?.ok === true, m4);
 const before = sms.length;
 await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "알림톡 문구", kind: "ATA", templateId: "T1", pfId: "P1" })], (await login(P.owner)).key, "BT");
-check("알림톡은 등록 문구 그대로 (앞에 붙이지 않음)", sms.length === before + 1 && sms.at(-1)?.text === "알림톡 문구", sms.at(-1));
+/* sb15(보안 W-H2): 화면이 템플릿을 직접 고른 알림톡은 받지 않고 보통 문자(업체 이름이 앞에)로 — 예전 판은 등록 문구 그대로 */
+check("알림톡 템플릿 직접 고르기: sb15 부터는 보통 문자로 (예전 판은 그대로)", sms.length === before + 1 &&
+  (sms.at(-1)?.text === "알림톡 문구" || (sms.at(-1)?.text === "[브라더세차] 알림톡 문구" && !sms.at(-1)?.kakaoOptions)), sms.at(-1));
 Deno.env.delete("STAFF_MSG_MAX");
 rpcLog.length = 0;
 await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "기본 한도", kind: "LMS" })], (await login(P.staff)).key, "BT");
