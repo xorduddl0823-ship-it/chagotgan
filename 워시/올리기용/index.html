@@ -3111,7 +3111,7 @@ function cggAllSheet(all){
   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
     b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
 }
-var APP_VER="워시 v114 · UI 3.0 · 2026-10-15";
+var APP_VER="워시 v115 · UI 3.0 · 2026-10-15";
 /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
 var LAYOUTS=["top","side","icon"];
 function layoutMode(){
@@ -13915,6 +13915,7 @@ GS.load=function(fresh){
     else GS.newCode=false;                     // 옛 Code.gs — 번호표를 안 보냅니다
     if("__fast" in d){GS.fast=!!d.__fast;delete d.__fast;}
     GS.cache=d;GS.ready=true;
+    shotPrefetch();
     fireSubs();
     return GS.cache;
   });
@@ -13945,11 +13946,84 @@ GS.b64=function(id){return gsCall("driveB64",[id]);};
 GS.send=function(body){return gsCall("sendMsg",[JSON.stringify(body)]).then(function(t){
   return typeof t==="string"?JSON.parse(t):t;});};
 GS.ping=function(){return gsCall("ping").then(function(t){return typeof t==="string"?JSON.parse(t):t;});};
+/* ===== 사진 서명 주소 (v115 · 보안 ⑤) =====
+   보관함을 비공개로 바꿔도 사진이 보이게, 'sb/' 사진은 서버가 주는 «잠깐만 열리는 주소»를 씁니다.
+   SHOT.map[id] = {u:주소, t:받은 때} · 유지 시간(ttl)의 80%가 지나면 다시 받습니다. */
+var SHOT={map:{},want:{},ttl:21600,busy:false,timer:0,legacy:false,
+  blank:"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"};
+function shotFresh(id){var h=SHOT.map[id];return !!(h&&(Date.now()-h.t)<SHOT.ttl*800);}
+function shotHold(id){return SHOT.blank+"#shot="+encodeURIComponent(id);}
+/* 받아 온 주소로 화면에 이미 그려진 빈 그림을 바로 바꿔 끼웁니다 (열린 창 안까지) */
+function shotSwap(){
+  Array.prototype.forEach.call(document.querySelectorAll('img[src*="#shot="],[data-big*="#shot="]'),function(el){
+    ["src","data-big"].forEach(function(at){
+      var v=el.getAttribute(at); if(!v||v.indexOf("#shot=")<0)return;
+      var id=decodeURIComponent(v.split("#shot=")[1]||"");
+      var h=SHOT.map[id]; if(h)el.setAttribute(at,h.u);
+      else if(SHOT.legacy)el.setAttribute(at,shotPublic(id));
+    });
+  });
+}
+function shotPublic(id){return SUPA_URL+"/storage/v1/object/public/wash/"+encodeURI(id.slice(3));}
+/* 모아 둔 사진 id 를 300장씩 서버에 물어봅니다 */
+function shotPull(){
+  if(SHOT.busy||SHOT.legacy)return;
+  var ids=Object.keys(SHOT.want).filter(function(id){return !shotFresh(id);});
+  SHOT.want={};
+  if(!ids.length)return;
+  SHOT.busy=true;
+  var chunks=[];for(var i=0;i<ids.length;i+=300)chunks.push(ids.slice(i,i+300));
+  var at=Date.now();
+  chunks.reduce(function(p,ch){
+    return p.then(function(){
+      return gsCall("shotLinks",[ch]).then(function(r){
+        var v=typeof r==="string"?JSON.parse(r):r;
+        if(v&&v.ttl)SHOT.ttl=Math.max(60,Number(v.ttl)||21600);
+        var L=(v&&v.links)||{};
+        Object.keys(L).forEach(function(id){SHOT.map[id]={u:L[id],t:at};});
+      });
+    });
+  },Promise.resolve()).catch(function(e){
+    /* 서버가 아직 shotLinks 를 모르는 옛 판이면 예전처럼 공개 주소로 */
+    var m=String((e&&e.message)||e||"");
+    if(/모르는|unknown|not.*(found|allowed)/i.test(m))SHOT.legacy=true;
+  }).then(function(){
+    SHOT.busy=false; shotSwap();
+    if(Object.keys(SHOT.want).length)setTimeout(shotPull,50);
+  });
+}
+function shotAsk(id){SHOT.want[id]=1;clearTimeout(SHOT.timer);SHOT.timer=setTimeout(shotPull,30);}
+/* 자료를 불러온 뒤 — 자료 안의 'sb/' 사진 id 를 모두 모아 미리 받아 둡니다 */
+function shotPrefetch(){
+  try{
+    var seen={};
+    (function walk(v,d){
+      if(d>6||v==null)return;
+      if(typeof v==="string"){if(v.indexOf("sb/")===0&&!shotFresh(v))seen[v]=1;return;}
+      if(typeof v!=="object")return;
+      if(Array.isArray(v)){v.forEach(function(x){walk(x,d+1);});return;}
+      Object.keys(v).forEach(function(k){walk(v[k],d+1);});
+    })(GS.cache,0);
+    Object.keys(seen).forEach(function(id){SHOT.want[id]=1;});
+    shotPull();
+  }catch(e){}
+}
+/* 유지 시간이 지나기 전에 알고 있는 사진을 모두 다시 받습니다 */
+setInterval(function(){
+  if(SHOT.legacy)return;
+  Object.keys(SHOT.map).forEach(function(id){if(!shotFresh(id))SHOT.want[id]=1;});
+  if(Object.keys(SHOT.want).length)shotPull();
+},60000);
 function blobUrl(id){
   /* 주소에 따옴표·꺾쇠 같은 글자가 섞여 화면에 코드가 심어지지 않게 먼저 지웁니다 */
   id=String(id==null?"":id).replace(/[<>"'`\\\s]/g,"");
   if(!id)return "";
-  if(id.indexOf("sb/")===0)return SUPA_URL+"/storage/v1/object/public/wash/"+encodeURI(id.slice(3));
+  if(id.indexOf("sb/")===0){
+    if(SHOT.legacy)return shotPublic(id);
+    if(SHOT.map[id]){ if(!shotFresh(id))shotAsk(id); return SHOT.map[id].u; }
+    shotAsk(id);
+    return shotHold(id);
+  }
   if(id.indexOf("data:")===0)return id;
   return "https://drive.google.com/thumbnail?id="+encodeURIComponent(id)+"&sz=w1600";
 }

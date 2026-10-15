@@ -20,12 +20,22 @@ if os.path.exists(SEED):
         for k in d[col]:
             if isinstance(d[col][k], str):
                 d[col][k] = json.loads(d[col][k])
+    if VER >= "v115":
+        n = 0
+        for k, r in (d.get("intakes") or {}).items():
+            for f in ("photoId", "outPhotoId"):
+                if r.get(f):
+                    n += 1
+                    r[f] = "sb/PREVIEW/%s_%s.jpg" % (r.get("plate", "car"), "in" if f == "photoId" else "out")
     seed = json.dumps(d, ensure_ascii=False)
 
 FAKE = r'''<script>
 /* ═══ 미리보기 전용 — 서버(wash-api)로 가는 요청을 가로채서 지어낸 자료로 답합니다 ═══ */
 (function(){
   var DB = __SEED__;
+  var SHOTN = 0;   /* shotLinks 를 몇 번 불렀는지 (시험용) */
+  function shotPic(id){ var t=id.split("/").pop().replace(/[^0-9A-Za-z가-힣._-]/g,"");
+    return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420"><rect width="640" height="420" fill="#1668C4"/><text x="320" y="200" font-size="34" fill="#fff" text-anchor="middle" font-family="sans-serif">서명 주소 사진</text><text x="320" y="250" font-size="22" fill="#cfe3fa" text-anchor="middle" font-family="sans-serif">'+t+'</text></svg>'); }
   var REV = 1;
   /* 주소에 ?role=manager 또는 ?role=staff 를 붙이면 매니저 · 직원으로 들어가 봅니다 (서버 sb2 처럼 돈 자료를 비워서 줌) */
   var RQ = ""; try{ RQ = (new URLSearchParams(location.search).get("role")||"").toLowerCase(); }catch(e){}
@@ -59,6 +69,13 @@ FAKE = r'''<script>
       case "apiVer": return {ver:"미리보기"};
       case "ping": return {ok:true};
       case "lockInfo": return {state:"ok"};
+      /* v115~: 사진 서명 주소 — 진짜 서버(sb4)처럼 'sb/PREVIEW/…' 사진만, 지어낸 그림 주소로 답함.
+         주소 끝 ?shot=legacy 이면 옛 서버처럼 «모르는 요청»으로 답함 */
+      case "shotLinks":
+        if(/shot=legacy/.test(location.search)) throw new Error("모르는 요청입니다: shotLinks");
+        SHOTN++; var L={};
+        (a[0]||[]).forEach(function(id){ id=String(id); if(id.indexOf("sb/PREVIEW/")===0) L[id]=shotPic(id); });
+        return {links:L, ttl:21600};
       case "apiSet": put(a[0],a[1],a[2]); return "ok";
       case "apiSetMany": var rows=a[0]; if(typeof rows==="string"){ try{rows=JSON.parse(rows);}catch(e){rows=[];} }
         (rows||[]).forEach(function(r){ put(r.col,r.id,r.data); }); return "ok";
@@ -70,7 +87,7 @@ FAKE = r'''<script>
       default: return {ok:true};
     }
   }
-  window.__PV = {DB:function(){return DB;}};
+  window.__PV = {DB:function(){return DB;}, shotCalls:function(){return SHOTN;}};
   var realFetch = window.fetch ? window.fetch.bind(window) : null;
   window.fetch = function(url, opt){
     var u = String((url && url.url) || url || "");
