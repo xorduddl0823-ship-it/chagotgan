@@ -105,5 +105,9 @@ s = s.replace('label:"\u0001"},{key:', 'label:"계산서"},{key:')
 # ⑤ 보안 방 낮음 ① — 유지비 «바로 가기» 링크는 https:// 로 시작할 때만
 rep("""(x.url?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noopener">바로 가기</a>'):'')+""",
     """(/^https:\\/\\//i.test(String(x.url||""))?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">바로 가기</a>'):'')+""", False)
+# ⑥ 알림톡 방 워딩 검토 (알림톡/07_워딩_검토/관리_v4.5.md) — v4재료/wording46.py
+import sys; sys.path.insert(0, os.path.join(HERE, "v4재료")); import wording46
+s, k, miss = wording46.apply(s); N["말"] += k
+for m in miss: print("  못 찾음:", m)
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자 · 고친 말", N["말"], "곳")
