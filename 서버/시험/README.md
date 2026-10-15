@@ -107,3 +107,11 @@ deno run -A --no-lock --import-map=서버/시험/import_map.json 서버/시험/�
 - 체크 30개 (v28 이면 19개 실패) · 딜러 15개 (d4 면 11개 실패) · 경비실 17개 (v1.3 이면 13개 실패) — 2026-10-15 전부 통과
 - `fake_supabase_check.ts` 에 `insert().select()` 가 번호(id)를 붙여 돌려주는 것 · gte/lte/neq 를 더함 (예전 체크 시험 그대로 통과)
 - 워시 알림톡 시험은 sb7 의 키 14개(13 + check_arrive)로 맞춤
+
+워시 sb8 시험 (알림톡 방 요청서 04 — 입금됨은 요금제 건만 · 빈 값 · 「무료」 금지어 · 접속주소는 서버가):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/알림톡_워시_sb8_시험.ts
+```
+
+- 34개 (2026-10-15 전부 통과 · sb7 이면 7개 실패). sb7 시험(`알림톡_워시_시험.ts`)은 sb7 그대로 둠
