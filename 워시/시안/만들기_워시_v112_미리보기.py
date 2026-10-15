@@ -33,7 +33,7 @@ FAKE = r'''<script>
 /* ═══ 미리보기 전용 — 서버(wash-api)로 가는 요청을 가로채서 지어낸 자료로 답합니다 ═══ */
 (function(){
   var DB = __SEED__;
-  var SHOTN = 0;   /* shotLinks 를 몇 번 불렀는지 (시험용) */
+  var SHOTN = 0, SENT = [];   /* shotLinks 를 몇 번 불렀는지 (시험용) */
   function shotPic(id){ var t=id.split("/").pop().replace(/[^0-9A-Za-z가-힣._-]/g,"");
     return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420"><rect width="640" height="420" fill="#1668C4"/><text x="320" y="200" font-size="34" fill="#fff" text-anchor="middle" font-family="sans-serif">서명 주소 사진</text><text x="320" y="250" font-size="22" fill="#cfe3fa" text-anchor="middle" font-family="sans-serif">'+t+'</text></svg>'); }
   var REV = 1;
@@ -80,14 +80,20 @@ FAKE = r'''<script>
       case "apiSetMany": var rows=a[0]; if(typeof rows==="string"){ try{rows=JSON.parse(rows);}catch(e){rows=[];} }
         (rows||[]).forEach(function(r){ put(r.col,r.id,r.data); }); return "ok";
       case "apiDel": if(DB[a[0]]) delete DB[a[0]][a[1]]; REV++; return "ok";
-      case "sendMsg": return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G"});
+      case "sendMsg":   /* 서버 sb5 처럼: 본사 알림톡(ataKey)은 주소 끝 ?ata=on 일 때만 «코드 있음» */
+        var mb={}; try{ mb=JSON.parse(a[0]||"{}"); }catch(e){}
+        SENT.push({kind:mb.kind,ataKey:mb.ataKey||"",vars:mb.variables||null,text:mb.text||"",to:mb.to||""});
+        if(mb.kind==="ATA"&&mb.ataKey&&!/ata=on/.test(location.search)) return JSON.stringify({ok:false,error:"알림톡 템플릿 ID가 없습니다"});
+        return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G"});
+      case "viewLink": return {url:"https://app.cgg.co.kr/v.html?c=CAR"+String(a[0]||"").slice(-4)};
+      case "viewBill": return {url:"https://app.cgg.co.kr/v.html?c=BILL01"};
       case "pbIssue": return JSON.stringify({ok:true,ntsConfirmNum:"미리보기-0001"});
       case "pbCheck": case "pbReady": return JSON.stringify({ok:true,test:true,point:""});
       case "webAppUrl": return location.href.split("?")[0];
       default: return {ok:true};
     }
   }
-  window.__PV = {DB:function(){return DB;}, shotCalls:function(){return SHOTN;}};
+  window.__PV = {DB:function(){return DB;}, shotCalls:function(){return SHOTN;}, sent:function(){return SENT;}};
   var realFetch = window.fetch ? window.fetch.bind(window) : null;
   window.fetch = function(url, opt){
     var u = String((url && url.url) || url || "");
@@ -108,6 +114,9 @@ FAKE = r'''<script>
 # 자료 만들기 때만: 같은 범위 안에서 샘플 자료 넣기를 부를 수 있게 (최종 미리보기에는 안 들어감)
 if os.environ.get("SEEDMODE"):
     s = s.replace("function seedDemo(){", "window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};\nfunction seedDemo(){", 1)
+# 시험할 때만 (TESTHOOK=1): 같은 범위 안 함수를 밖에서 부를 수 있게 — 최종 미리보기에는 안 들어감
+if os.environ.get("TESTHOOK") and "function sendOutMsg(" in s:
+    s = s.replace("function sendOutMsg(", "window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;}};\nfunction sendOutMsg(", 1)
 i = s.index("<script")
 s = s[:i] + FAKE + s[i:]
 s = s.replace("<title>차곳간 워시</title>", "<title>워시 %s 미리보기</title>" % VER, 1)
