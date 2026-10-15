@@ -131,5 +131,13 @@ deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시
 deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/시험/딜러_청구서목록_시험.ts
 ```
 
-- 53개 (sb9 면 실패가 나옴) · 9개 (d5 면 5개 실패) — 2026-10-15 전부 통과
+- 58개 (sb9 면 실패가 나옴) · 9개 (d5 면 5개 실패) — 2026-10-15 전부 통과
 - 가짜에 더함: 워시 `knobs.cash`(잔액 흉내 · 마이너스 안 됨) · 딜러 `contains`·`gt`
+
+체크 결제는 워시 지갑으로 (워시 sb11):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/체크_결제지갑_시험.ts
+```
+
+- 21개 (2026-10-15 전부 통과 · sb10 이면 14개 실패) — 체크 대표만 · 이어 둔 지갑만 · 다른 창구 못 부름 · 워시 카드 payStart 가려짐 고침

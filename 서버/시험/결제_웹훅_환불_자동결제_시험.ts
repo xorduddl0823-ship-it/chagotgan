@@ -9,6 +9,7 @@ Deno.env.set("SMS_FROM", "0212345678"); Deno.env.set("PF_ID", "PF_TEST");
 Deno.env.set("TOSS_SECRET_KEY", "test_sk_fake");
 const encKey = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
 Deno.env.set("PAY_ENC_KEY", encKey);
+Deno.env.set("CGG_INTERNAL_KEY", "i".repeat(40));
 const far = new Date(Date.now() + 864e5).toISOString();
 const ADM = "b".repeat(48), OWN = "c".repeat(48), MGR = "d".repeat(48);
 const kst = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -47,14 +48,18 @@ const tossOrders: Record<string, any> = {
   CGG261015EEEEEEEEEE: { status: "DONE", paymentKey: "pk_E", totalAmount: 33000, method: "카드" },
   CGG261015FFFFFFFFFF: { status: "DONE", paymentKey: "pk_F", method: "카드" },
 };
-let billMode: "ok" | "fail" = "ok";
+let billMode: "ok" | "fail" | "drop" = "ok";
+const hookHeaders: string[] = [];
 const deletedKeys: string[] = [];
 const sms: any[] = [];
 const H: any[] = [];
 globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
   const u = String(url);
   if (u.includes("solapi")) { sms.push(JSON.parse(String(init?.body)).messages[0]); return Response.json({}); }
-  if (u.endsWith("/functions/v1/wash-api")) return await H[0](new Request("http://x", { method: "POST", body: init?.body }));
+  if (u.endsWith("/functions/v1/wash-api")) {
+    hookHeaders.push(String((init?.headers as any)?.["x-cgg-internal"] || ""));
+    return await H[0](new Request("http://x", { method: "POST", body: init?.body, headers: init?.headers as any }));
+  }
   if (u.startsWith("https://api.tosspayments.com")) {
     const path = u.replace("https://api.tosspayments.com", "");
     const method = String(init?.method || "GET");
@@ -69,6 +74,7 @@ globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
     m = path.match(/^\/v1\/billing\/([^/]+)$/);
     if (m && method === "DELETE") { deletedKeys.push(decodeURIComponent(m[1])); return Response.json({}); }
     if (m && method === "POST") {
+      if (billMode === "drop") { const oid = body.orderId; tossOrders[oid] = { status: "DONE", paymentKey: "pk_" + oid, totalAmount: body.amount, method: "카드" }; throw new Error("connection reset"); }
       if (billMode === "fail") return new Response(JSON.stringify({ code: "REJECT_CARD_COMPANY", message: "한도 초과" }), { status: 400 });
       return Response.json({ status: "DONE", orderId: body.orderId, paymentKey: "pk_bill_" + body.orderId, totalAmount: body.amount, method: "카드" });
     }
@@ -114,6 +120,13 @@ check("다른 이벤트는 무시", res.status === 200);
 const bad = await call("payCheck", ["'; drop table"]);
 check("payCheck 는 주문번호 모양이 아니면 아무것도 안 함", bad.result?.ok === false, bad);
 
+check("pay-hook 은 전용 열쇠를 붙여 부름 → 바깥 요청과 횟수를 따로 셈",
+  hookHeaders.every((h) => h === "i".repeat(40)) && (store.wash_rate ?? []).some((r: any) => r.key === "paychk:hook"), { hookHeaders, rate: store.wash_rate });
+check("pay-hook 은 보내는 IP 마다 셈", (store.wash_rate ?? []).some((r: any) => String(r.key).startsWith("hook:")));
+const hk = (store.wash_rate as any[]).find((r) => String(r.key).startsWith("hook:"));
+const keepN = hk.n; hk.n = 5000;
+check("한 IP 가 너무 많이 보내면 429 (토스가 나중에 다시 보냄)", (await hookPost(ev("CGG261015AAAAAAAAAA"))).status === 429);
+hk.n = keepN;
 console.log("② 정리 예약 (30분 넘게 ready)");
 const nc = await call("cronPay", ["wrong"]);
 check("cron 열쇠가 틀리면 거절", !!nc.__err);
@@ -182,6 +195,18 @@ check("Idempotency-Key = 주문번호", !!bt && bt.idem === bo[0].order_id, bt);
 check("캐시 3,000 은 성공한 뒤 깎임", knobs.cash.BT === 0);
 await call("cronPay", ["CRONKEY"]);
 check("같은 날 다시 돌려도 두 번 청구 안 함", toss.filter((t) => t.path.startsWith("/v1/billing/") && t.method === "POST" && !t.path.includes("authorizations")).length === 1);
+/* 응답이 끊기면(실제로는 승인됐을 수 있음) ready 로 두고 다음 정리에서 토스에 물어봄 */
+store.wash_pay_order = store.wash_pay_order.filter((o: any) => o.bill_date !== TODAY);
+shopRow().paid_until = TODAY; knobs.cash.BT = 0; billMode = "drop";
+await call("cronPay", ["CRONKEY"]);
+const dropped = store.wash_pay_order.find((o: any) => o.bill_date === TODAY && o.shop === "BT");
+const bd = store.pay_billing.find((b: any) => b.shop === "BT");
+check("끊김: 주문은 ready 그대로 · 실패로 안 셈", dropped?.status === "ready" && !bd.first_fail_at && Number(bd.fail_count || 0) === 0, { dropped, bd });
+billMode = "ok";
+dropped.created_at = new Date(Date.now() - 3600e3).toISOString();
+await call("cronPay", ["CRONKEY"]);
+check("다음 정리에서 토스 조회 → 실제 승인이면 반영 (+30일 · 다시 청구 안 함)", dropped.status === "paid" && shopRow().paid_until === addD(TODAY, 30) &&
+  toss.filter((t) => t.method === "POST" && /^\/v1\/billing\/[^/]+$/.test(t.path) && !t.path.includes("authorizations")).length === 2, { dropped, pu: shopRow().paid_until });
 /* 실패 → D+1·3·5 */
 store.wash_pay_order = store.wash_pay_order.filter((o: any) => o.bill_date !== TODAY);
 shopRow().paid_until = TODAY; knobs.cash.BT = 0; billMode = "fail"; sms.length = 0;
