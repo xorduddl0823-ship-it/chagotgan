@@ -21,14 +21,14 @@ deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/�
 - `import_map_check.json` — 이 사본으로 바꿔 끼움
 - `체크기사_시험.ts` — 시험 44개 (2026-10-15 전부 통과)
 
-워시 서버 sb2 + 경비실 v1.2 시험 (경비실 명단 권한 · 대표 전용 자료 · 직원 문자 · 횟수 장치 · 직급 변경 · 손님 기기 정보):
+워시 서버 sb3 + 경비실 v1.3 시험 (경비실 명단 권한 · 대표 전용 자료 · 직원 문자 · 횟수 장치 · 직급 변경 · 손님 기기 정보):
 
 ```
 deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/워시_시험.ts
 ```
 
 - `fake_supabase_wash.ts` · `import_map_wash.json` — 워시 서버용 가짜 (없는 표는 빈 표)
-- `워시_시험.ts` — 시험 35개 (2026-10-15 전부 통과 · sb1 로 돌리면 21개 실패)
+- `워시_시험.ts` — 시험 37개 (2026-10-15 전부 통과 · `WASH_SRC` 로 옛 판을 넣으면 실패가 나옴)
 
 딜러 서버 d3 시험 (인증번호 횟수 · 횟수 장치 고장 · IP · 솔라피 오류 숨김):
 
@@ -38,3 +38,11 @@ deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/�
 
 - `fake_supabase_dealer.ts` · `import_map_dealer.json`
 - `딜러_시험.ts` — 시험 29개 (2026-10-15 전부 통과)
+
+체크 서버 v24 시험 (가온 고정값 정리 · 예전 자료 가져오기는 가온만):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/시험/체크v24_시험.ts
+```
+
+- `체크v24_시험.ts` — 시험 7개 (2026-10-15 전부 통과 · v23 으로 돌리면 4개 실패)

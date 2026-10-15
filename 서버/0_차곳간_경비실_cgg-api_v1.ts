@@ -15,6 +15,7 @@
 //  먼저 할 일: 서버/sql/01_경비실_표_만들기.sql 실행 (cgg_access · cgg_session · cgg_tick)
 //  비밀값 (서버에만 둡니다 · 이름만 적음):
 //    SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+//    CGG_INTERNAL_KEY                   ← 워시 서버와 서로 확인하는 전용 열쇠 (32자 이상 무작위, wash-api 와 같은 값)
 //    SOLAPI_KEY, SOLAPI_SECRET          ← two_step 계정 문자 보낼 때만
 //    CGG_SMS_FROM                       ← 문자 보내는 번호 (two_step 계정이 있을 때만)
 //
@@ -29,7 +30,7 @@ const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const db = createClient(SUPA_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   { auth: { persistSession: false } });
 
-const VER = "cgg-api v1.2 · 2026-10-15 (워시 로그인에 손님 기기 정보 넘기기)";
+const VER = "cgg-api v1.3 · 2026-10-15 (워시와 확인하는 열쇠를 전용 비밀값으로)";
 const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
 const WASH_API = () => SUPA_URL + "/functions/v1/wash-api";
 const DAYS = 14;                 // 로그인 유지 기간 (체크와 같음)
@@ -77,14 +78,15 @@ async function pwOk(pw: string, stored: string) {
 }
 
 /* ───────── 워시 (wash-api 를 그대로 부릅니다) ─────────
-   v1.2: 손님 기기의 UA·IP 를 같이 넘깁니다. wash-api sb2 부터 서비스 열쇠(x-cgg-internal)가 맞을 때만 받아 씁니다.
+   v1.2: 손님 기기의 UA·IP 를 같이 넘깁니다. wash-api 는 확인 열쇠(x-cgg-internal)가 맞을 때만 받아 씁니다.
+   v1.3: 확인 열쇠는 서비스 열쇠가 아니라 전용 비밀값 CGG_INTERNAL_KEY (wash-api sb3 와 짝). 없으면 보내지 않음.
    (그 전 판은 이 값들을 모른 척하므로 함께 올려도 안전) */
 type Who = { ua: string; ip: string };
 async function washCall(fn: string, args: unknown[], who?: Who) {
   const res = await fetch(WASH_API(), {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8",
-               "x-cgg-internal": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "" },
+               "x-cgg-internal": Deno.env.get("CGG_INTERNAL_KEY") ?? "" },
     body: JSON.stringify({ shop: "", token: "", fn, args,
                            __via: "cgg", __ua: who?.ua ?? "", __ip: who?.ip ?? "" }),
   });

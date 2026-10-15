@@ -48,6 +48,7 @@ begin
   return n <= 5;
 end $$;
 revoke all on function check_deliv_attempt(text) from public, anon, authenticated;
+grant execute on function check_deliv_attempt(text) to service_role;   -- 서버 함수만 부를 수 있게 (2026-10-15 보안 재검사)
 
 -- 표 보안(RLS) 켜기 — 정책을 하나도 만들지 않으므로
 -- 브라우저(공개 열쇠)로는 아무도 못 읽고, 서버 함수(서비스 열쇠)만 읽습니다.

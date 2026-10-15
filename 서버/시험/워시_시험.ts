@@ -1,4 +1,4 @@
-// 워시 서버(wash-api sb2) + 경비실(cgg-api v1.2) 시험 — 가짜 수파베이스로만 돌립니다.
+// 워시 서버(wash-api sb3) + 경비실(cgg-api v1.3) 시험 — 가짜 수파베이스로만 돌립니다.
 // 실행:  deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/워시_시험.ts
 import { store, knobs, rpcLog } from "./fake_supabase_wash.ts";
 
@@ -6,6 +6,9 @@ const KEY = "fake-service-role-key";
 Deno.env.set("SUPABASE_URL", "http://fake.local");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", KEY);
 Deno.env.set("SMS_FROM", "01095593663");
+const IKEY = "test-internal-key-0123456789abcdef0123456789";
+Deno.env.set("CGG_INTERNAL_KEY", IKEY);
+const WASH_SRC = Deno.env.get("WASH_SRC") ?? "../1_차곳간워시_서버_wash-api_sb3.ts";
 Deno.env.set("SOLAPI_KEY", "k"); Deno.env.set("SOLAPI_SECRET", "s");
 
 /* 워시 비밀번호 (워시 서버와 같은 방식) */
@@ -60,7 +63,7 @@ globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
 
 const HS: any[] = [];
 (Deno as any).serve = (h: any) => { HS.push(h); return {}; };
-await import("../1_차곳간워시_서버_wash-api_sb2.ts");
+await import(WASH_SRC);
 await import("../0_차곳간_경비실_cgg-api_v1.ts");
 washH = HS[0]; const cggH = HS[1];
 
@@ -82,7 +85,7 @@ function check(name: string, cond: boolean, extra: unknown = "") {
 const login = async (ph: string, ua = MOBILE) => (await wash("login", [ph, "pw1234"], "", "", { "user-agent": ua })).result;
 
 console.log("① 경비실 명단으로 워시 권한 확인");
-check("버전이 sb2", (await wash("apiVer", [], (await login(P.owner)).key, "BT")).result?.ver === "sb2");
+check("버전이 sb3", (await wash("apiVer", [], (await login(P.owner)).key, "BT")).result?.ver === "sb3");
 const lg = await wash("login", [P.gone, "pw1234"]);
 check("명단에 있지만 워시가 없는 번호는 로그인 거절", /워시를 쓸 권한/.test(lg.__err ?? ""), lg);
 check("명단에 없는 번호(예전 워시 손님)는 그대로 로그인", !!(await login(P.legacy))?.key);
@@ -114,7 +117,11 @@ const m1 = await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x",
 check("직원 문자가 나감", m1.result?.ok === true, m1);
 check("문자 맨 앞에 [업체이름]이 붙음", sms.at(-1)?.text === "[브라더세차] 차가 나왔어요", sms.at(-1));
 await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "[브라더세차] 두번째", kind: "LMS" })], st.key, "BT");
-check("이미 [ 로 시작하면 두 번 붙이지 않음", sms.at(-1)?.text === "[브라더세차] 두번째");
+check("이미 [우리 업체이름] 으로 시작하면 두 번 붙이지 않음", sms.at(-1)?.text === "[브라더세차] 두번째");
+Deno.env.set("STAFF_MSG_MAX", "3");
+await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "[차곳간] 결제해 주세요", kind: "LMS" })], st.key, "BT");
+check("sb3: [차곳간] 처럼 남의 이름으로 시작해도 [업체이름]이 붙음", sms.at(-1)?.text === "[브라더세차] [차곳간] 결제해 주세요", sms.at(-1));
+Deno.env.set("STAFF_MSG_MAX", "2");
 const m3 = await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "세번째", kind: "LMS" })], st.key, "BT");
 check("직원은 하루 한도를 넘으면 멈춤", m3.result?.ok === false && /직원 계정/.test(m3.result?.error ?? ""), m3);
 const m4 = await wash("sendMsg", [JSON.stringify({ to: "01012341234", from: "x", text: "대표 문자", kind: "LMS" })], (await login(P.owner)).key, "BT");
@@ -167,6 +174,9 @@ check("휴대폰으로 통합 로그인해도 켜 둔 PC 로그인은 안 끊김
 const fake = await wash("login", [P.owner, "pw1234"], "", "", { "user-agent": PCUA, "x-cgg-internal": "wrong-key" },
   { __via: "cgg", __ua: MOBILE, __ip: "9.9.9.9" });
 check("열쇠가 틀리면 화면이 보낸 UA·IP 는 무시 (PC 로 기록)", fake.result?.device === "pc", fake);
+const svc = await wash("login", [P.owner, "pw1234"], "", "", { "user-agent": PCUA, "x-cgg-internal": KEY },
+  { __via: "cgg", __ua: MOBILE, __ip: "9.9.9.9" });
+check("sb3: 서비스 열쇠로는 더 이상 넘겨받지 않음 (전용 열쇠만)", svc.result?.device === "pc", svc);
 
 console.log("⑦ 기기 끊기 · 본사 비밀번호");
 check("기기 끊기에 % 같은 와일드카드는 거절", true);   // hqSessionKill 은 본사 로그인이 필요해서 정규식만 확인
