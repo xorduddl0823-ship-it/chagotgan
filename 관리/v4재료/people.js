@@ -1,18 +1,24 @@
 /* ═══════ 계정 › 번호로 계정 찾기 (관리 v4.3 시안) ═══════
    대표님 지시 (결정 기록 2026-10-15): 모든 제품의 계정을 관리 한 곳에서 컨트롤.
-   창구 모양: 서버/설계/14_관리_통합_계정_결제.md (워시 sb12 · 보안 설계 검토 중 — 바뀌면 맞춰요)
-     hqPerson([휴대폰]) → {wash:[…], washOwnerOf:[…], check:[…], drivers:[…], dealer:{…}, cgg:{…}, locks:{…}, sessions:{wash,check,cgg,dealer}}
-     hqPersonAct([휴대폰, 동작, 대상]) — 동작 stop · resume · pwReset · unlock · kick · grant · revoke
-                                          대상 wash · check:<검사소코드> · driver:<id> · dealer · cgg · all
-       · 기사 pwReset 만 임시 비밀번호를 응답으로 한 번 줘요 (tempPw) — 화면에 한 번만 보여 주고 어디에도 남기지 않아요
-     hqAudit([휴대폰]) → 기록 목록
-   줄 안 칸 이름은 설계에 아직 없어 넉넉히 받아요 (name · shopName · role · active · lastLogin …) */
-var PPL = {q:"", busy:false, err:"", r:null, audit:[]};
+   창구 모양: 워시 서버 sb12 (보안 통과) · 서버/설계/14
+     hqPerson([휴대폰 전체]) → {phone, wash:[{shop,name,role,active,last_login}], washOwnerOf:[{shop,name,active}],
+        check:[{office,officeName,name,role,active,pwSet}], drivers:[{id,office,officeName,name,active,lastIn,mustChange}],
+        dealer:{name,active,withdrawn,lastLogin}|null, cgg:{name,products,active,twoStep,locked}|null,
+        locks:{wash,check,cgg}, sessions:{wash,check,cgg,dealer}}   — 찾기만 해도 기록에 남아요
+     hqPersonAct([휴대폰, 동작, 대상, 확인]) — 동작 stop · resume · pwReset · unlock · kick · grant · revoke
+        멈추기 대상 all · wash · check:<검사소> · driver:<id> · dealer · cgg / 끊기 · 잠금 풀기 대상 all · wash · check · driver · cgg · dealer
+        비밀번호 초기화 wash · check:<검사소> · driver:<id> → {note}. 기사 임시 비밀번호는 기사 휴대폰으로 문자로만 가요 (화면에 안 보여요)
+        제품 열기(grant) 가 처음이면 {confirm:true, why} → 한 번 더 묻고 확인=true 로 다시 보내요
+        한 시간에 바꿀 수 있는 횟수가 정해져 있어요 (넘으면 서버가 알려 줘요)
+     hqAudit([휴대폰]) → {list:[{at,who,action,target_phone,product(=대상),result,detail}]}
+     hqCheckPwSms([]) → {on} · ([true|false]) 켜고 끄기 — 체크 비밀번호 초기화는 이것이 켜져 있어야 돼요 */
+var PPL = {q:"", busy:false, err:"", r:null, audit:[], pwSms:null};
+var PACT_LOG = {view:"찾아봄", checkPwSms:"체크 비밀번호 문자 켜기 · 끄기"};
 var PROD_NAME = {wash:"워시", check:"체크", dealer:"딜러", cgg:"통합 로그인", driver:"배달 기사", parking:"파킹", studio:"스튜디오"};
 var PACT = {
   stop:   ["멈추기",        "이 계정으로 로그인할 수 없게 되고, 켜 둔 기기도 끊겨요. 자료는 그대로 남아요.", true],
   resume: ["다시 쓰기",     "멈춘 계정을 다시 쓸 수 있게 해요.", false],
-  pwReset:["비밀번호 초기화","지금 비밀번호를 못 쓰게 하고 로그인을 끊어요. 본인이 문자 확인으로 새 비밀번호를 정해요.", true],
+  pwReset:["비밀번호 초기화","지금 비밀번호를 못 쓰게 하고 로그인을 끊어요. 워시는 본인이 «비밀번호 찾기»로, 체크는 다음 로그인 때 문자 확인으로 새로 정해요. 배달 기사는 임시 비밀번호가 기사 휴대폰으로 문자로 가요.", true],
   unlock: ["잠금 풀기",     "비밀번호 · 인증번호를 여러 번 틀려 잠긴 것을 풀어요.", false],
   kick:   ["접속 끊기",     "지금 켜 둔 기기에서 모두 로그아웃시켜요. 다시 로그인하면 쓸 수 있어요.", true],
   grant:  ["제품 열기",     "통합 로그인에서 이 제품을 쓸 수 있게 열어요.", false],
@@ -22,14 +28,33 @@ function pv(o,ks,d){ for(var i=0;i<ks.length;i++){ if(o && o[ks[i]]!==undefined 
 function tgtTxt(t){ t=String(t||""); var p=t.split(":");
   if(t==="all") return "모든 제품"; if(p[0]==="driver") return "배달 기사 "+(p[1]||""); return (PROD_NAME[p[0]]||p[0])+(p[1]?" · "+p[1]:""); }
 function roleTxt(r){ return ({owner:"대표",staff:"직원",manager:"관리자",admin:"관리자",driver:"기사",dealer:"딜러"})[r]||r||"-"; }
+/* 체크 비밀번호 초기화 준비 스위치 — 체크 서버 v26 이상(첫 비밀번호 문자 확인)이 운영 중일 때만 켜요 */
+function pplSwDraw(){
+  var el=$("pplSw"); if(!el) return; var on=PPL.pwSms;
+  el.innerHTML='<div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+    '<div style="flex:1 1 260px;min-width:0"><b>체크 비밀번호 초기화 준비</b><div class="hint" style="margin:4px 0 0">'+
+      (on==="?"?"서버 새 판(워시 sb12)이 올라가면 여기서 켜고 꺼요.":
+       on===null?"불러오는 중이에요…":
+       "켜 두면 체크 계정의 «비밀번호 초기화»가 돼요. 체크 서버 v26 이상이 운영 중일 때만 켜 주세요.")+'</div></div>'+
+    (on===true||on===false?'<span class="pill '+(on?"run":"off")+'">'+(on?"켜짐":"꺼짐")+'</span>'+
+      '<button type="button" class="btn sm'+(on?"":" primary")+'" id="pplSwBtn">'+(on?"끄기":"켜기")+'</button>':'')+'</div>';
+  var b=$("pplSwBtn"); if(!b) return;
+  b.onclick=function(){ var to=!PPL.pwSms;
+    confirmBox("체크 비밀번호 초기화 준비를 "+(to?"켤까요?":"끌까요?"),
+      to?"체크 서버 v26 이상이 운영 중인지 먼저 확인해 주세요.":"끄면 관리에서 체크 비밀번호 초기화를 할 수 없어요.", to?"켜기":"끄기", !to, function(){
+      api("hqCheckPwSms",[to]).then(function(x){ PPL.pwSms=!!(x&&x.on); toast(PPL.pwSms?"켰어요":"껐어요"); pplSwDraw(); },
+        function(e){ toast(e.message||"하지 못했습니다",true); }); }); };
+}
 function viewPpl(){
   $("main").innerHTML='<div class="dashhead"><h2>번호로 계정 찾기</h2>'+
     '<div class="sub2">휴대폰 번호 하나로 워시 · 체크 · 배달 기사 · 딜러 · 통합 로그인 계정을 한꺼번에 찾아요. 모든 동작은 한 번 더 묻고 아래 기록에 남아요.</div></div>'+
     '<div class="card"><div class="tools" style="margin:0">'+
       '<input type="tel" id="pplQ" inputmode="numeric" placeholder="휴대폰 번호 (예: 010-0000-0000)" value="'+esc(PPL.q)+'" style="max-width:320px">'+
       '<button class="btn primary" id="pplGo">찾기</button></div>'+
-      '<div class="hint" style="margin:8px 0 0">본사 계정과 지금 로그인한 내 번호는 바꿀 수 없어요. 비밀번호는 화면에 보이지 않아요 (배달 기사만 임시 비밀번호를 한 번 보여 줘요).</div></div>'+
-    '<div id="pplBody"></div>';
+      '<div class="hint" style="margin:8px 0 0">본사 계정과 지금 로그인한 내 번호는 바꿀 수 없어요. 비밀번호는 화면에 보이지 않아요 (배달 기사 임시 비밀번호는 기사 휴대폰으로만 가요). 찾기만 해도 기록에 남아요.</div></div>'+
+    '<div id="pplSw"></div><div id="pplBody"></div>';
+  pplSwDraw();
+  if(PPL.pwSms===null) api("hqCheckPwSms",[]).then(function(x){ PPL.pwSms=!!(x&&x.on); }, function(){ PPL.pwSms="?"; }).then(pplSwDraw);
   $("pplGo").onclick=pplFind;
   $("pplQ").onkeydown=function(e){ if(e.key==="Enter") pplFind(); };
   pplDraw();
@@ -67,7 +92,8 @@ function pplDraw(){
   (r.wash||[]).forEach(function(w){
     nm=nm||pv(w,["name"],"");
     var ll=pv(w,["lastLogin","last_login"],"");
-    cards.push(pplCard('워시', esc(pv(w,["shopName","shop_name","shop"],"-")),
+    var wn=(r.washOwnerOf||[]).filter(function(o){ return o.shop===w.shop; })[0];
+    cards.push(pplCard('워시', esc(pv(w,["shopName","shop_name"],wn?wn.name:""))+' <span style="opacity:.7">'+esc(w.shop||"")+'</span>',
       stPill(w.active,L.wash),
       [["역할",esc(roleTxt(w.role))],["마지막 접속",ll?esc(dt(ll,true)):"기록 없음"],["켜 둔 기기",(Number(S.wash)||0)+"대"]],
       [[w.active===false?"resume":"stop","wash","워시 · "+pv(w,["shopName","shop"],"")],["pwReset","wash","워시"]]
@@ -76,7 +102,7 @@ function pplDraw(){
   /* 체크 — 대상 check:<검사소> */
   (r.check||[]).forEach(function(c){
     nm=nm||pv(c,["name"],"");
-    var off=pv(c,["office","officeCode","code"],""), lk=L.check===true||(L.check&&L.check[off]);
+    var off=pv(c,["office","officeCode","code"],""), lk=L.check===true;
     cards.push(pplCard('체크', esc(pv(c,["officeName","office_name"],off)),
       stPill(c.active,lk),
       [["역할",esc(roleTxt(c.role))],["비밀번호",c.pwSet===false||c.pw_set===false?"아직 안 정함":"정해 둠"],["켜 둔 기기",(Number(S.check)||0)+"대"]],
@@ -87,26 +113,28 @@ function pplDraw(){
   (r.drivers||[]).forEach(function(d){
     nm=nm||pv(d,["name"],"");
     var id=pv(d,["id"],"");
+    var li=pv(d,["lastIn","last_in"],"");
     cards.push(pplCard('배달 기사', esc(pv(d,["officeName","office"],""))+(d.name?' · '+esc(d.name):''),
-      stPill(d.active,L.driver===true||(L.driver&&L.driver[id])),
-      [["기사 번호",esc(String(id))]],
-      [[d.active===false?"resume":"stop","driver:"+id,"배달 기사"],["pwReset","driver:"+id,"배달 기사","임시 비밀번호 만들기"],["unlock","driver:"+id,"배달 기사"]]));
+      stPill(d.active,false),
+      [["기사 번호",esc(String(id))],["마지막 접속",li?esc(dt(li,true)):"기록 없음"],["새 비밀번호",d.mustChange?"첫 로그인 때 바꿔야 함":"정해 둠"]],
+      [[d.active===false?"resume":"stop","driver:"+id,"배달 기사"],["pwReset","driver:"+id,"배달 기사","임시 비밀번호 문자 보내기"],["unlock","driver","배달 기사"],["kick","driver","배달 기사"]]));
   });
   /* 딜러 — 대상 dealer */
   if(r.dealer && (r.dealer.name || r.dealer.active!==undefined)){
     nm=nm||pv(r.dealer,["name"],"");
-    cards.push(pplCard('딜러', r.dealer.left?'탈퇴함':'', stPill(r.dealer.active,L.dealer),
-      [["켜 둔 기기",(Number(S.dealer)||0)+"대"]],
-      [[r.dealer.active===false?"resume":"stop","dealer","딜러"]].concat(L.dealer?[["unlock","dealer","딜러"]]:[]).concat([["kick","dealer","딜러"]])));
+    var dl=pv(r.dealer,["lastLogin","last_login"],"");
+    cards.push(pplCard('딜러', r.dealer.withdrawn?'탈퇴함':'', stPill(r.dealer.active,false),
+      [["마지막 접속",dl?esc(dt(dl,true)):"기록 없음"],["켜 둔 기기",(Number(S.dealer)||0)+"대"]],
+      [[r.dealer.active===false?"resume":"stop","dealer","딜러"],["unlock","dealer","딜러"],["kick","dealer","딜러"]]));
   }
   /* 통합 로그인 출입 명단 — 대상 cgg, 제품 열기/닫기는 grant/revoke wash|check */
   if(r.cgg && (r.cgg.products || r.cgg.active!==undefined)){
     var pr=r.cgg.products||[];
-    cards.push(pplCard('통합 로그인', '출입 명단 — 여기서 연 제품만 통합 입구에 보여요', stPill(r.cgg.active,L.cgg),
-      [["열린 제품",pr.length?esc(pr.map(function(p){ return PROD_NAME[p]||p; }).join(" · ")):"없음"],["문자 확인",r.cgg.smsOk||r.cgg.sms_ok?"함":"안 함"],["켜 둔 기기",(Number(S.cgg)||0)+"대"]],
+    cards.push(pplCard('통합 로그인', '출입 명단 — 여기서 연 제품만 통합 입구에 보여요', stPill(r.cgg.active,L.cgg||r.cgg.locked),
+      [["열린 제품",pr.length?esc(pr.map(function(p){ return PROD_NAME[p]||p; }).join(" · ")):"없음"],["문자 확인",r.cgg.twoStep?"함":"안 함"],["켜 둔 기기",(Number(S.cgg)||0)+"대"]],
       [[r.cgg.active===false?"resume":"stop","cgg","통합 로그인"]]
         .concat(["wash","check"].map(function(p){ return pr.indexOf(p)>=0?["revoke",p,PROD_NAME[p],PROD_NAME[p]+" 닫기"]:["grant",p,PROD_NAME[p],PROD_NAME[p]+" 열기"]; }))
-        .concat(L.cgg?[["unlock","cgg","통합 로그인"]]:[]).concat([["kick","cgg","통합 로그인"]])));
+        .concat(L.cgg||r.cgg.locked?[["unlock","cgg","통합 로그인"]]:[]).concat([["kick","cgg","통합 로그인"]])));
   }
   var own=(r.washOwnerOf||[]);
   var h='<div class="card"><h2>'+esc(nm||"이름 없음")+' <span class="rt">'+esc(phoneFmt(r.phone))+' · 계정 '+cards.length+'개</span></h2>'+
@@ -121,7 +149,7 @@ function pplDraw(){
   h+='<div class="card"><h2>기록 <span class="rt">최근 '+lg.length+'건</span></h2>'+
     (lg.length?'<div class="tablebox"><table><thead><tr><th style="width:140px">언제</th><th style="width:110px">대상</th><th>한 일</th><th style="width:90px">결과</th><th style="width:130px">누가</th></tr></thead><tbody>'+
       lg.map(function(x){ var act=pv(x,["act","action"],""), res=pv(x,["result"],"됨");
-        return '<tr><td>'+esc(dt(pv(x,["at","created_at"],""),true))+'</td><td>'+esc(tgtTxt(pv(x,["target","product"],"-")))+'</td><td>'+esc((PACT[act]||[act])[0])+'</td><td>'+esc(res===true?"됨":String(res))+'</td><td>'+esc(pv(x,["who","by"],"-"))+'</td></tr>'; }).join("")+
+        return '<tr><td>'+esc(dt(pv(x,["at","created_at"],""),true))+'</td><td>'+esc(tgtTxt(pv(x,["target","product"],"-")))+'</td><td>'+esc(PACT_LOG[act]||(PACT[act]||[act])[0])+'</td><td>'+esc(res===true||res==="ok"?"됨":String(res).replace(/^error: ?/,"안 됨 — "))+'</td><td>'+esc(pv(x,["who","by"],"-"))+'</td></tr>'; }).join("")+
       '</tbody></table></div>':'<div class="hint">아직 기록이 없어요.</div>')+'</div>';
   host.innerHTML=h;
   Array.prototype.forEach.call(host.querySelectorAll("[data-pa]"),function(b){
@@ -129,13 +157,14 @@ function pplDraw(){
       var a=b.getAttribute("data-pa"), t=b.getAttribute("data-pt"), n=b.getAttribute("data-pn"), A=PACT[a];
       var label=b.textContent;
       confirmBox(label+" — "+n+"?", (nm||"")+" · "+phoneFmt(r.phone)+"\n"+A[1], label, A[2], function(){
+        function done(x){ toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:""))); pplFind(); }
+        function fail(e){ toast(e.message||"하지 못했습니다",true); }
         api("hqPersonAct",[r.phone, a, t]).then(function(x){
-          if(x && x.tempPw){   /* 배달 기사 임시 비밀번호 — 한 번만 */
-            openSheet('<h3 style="margin:0 0 6px">임시 비밀번호</h3><div class="hint" style="margin:0 0 12px">이 창을 닫으면 다시 볼 수 없어요. 기사님께 직접 알려 주고, 첫 로그인 뒤 바꾸게 해 주세요.</div>'+
-              '<div style="font-size:26px;font-weight:900;letter-spacing:3px;text-align:center;padding:14px;border:1px dashed var(--line);border-radius:12px;font-family:ui-monospace,monospace">'+esc(x.tempPw)+'</div>');
-          } else toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:"")));
-          pplFind();
-        }, function(e){ toast(e.message||"하지 못했습니다",true); });
+          /* 제품 열기가 처음이면 서버가 한 번 더 물어요 — 다른 제품이 막힐 수 있어서 */
+          if(x && x.confirm) return confirmBox("한 번 더 확인해 주세요", x.why||"", "그래도 "+label, false, function(){
+            api("hqPersonAct",[r.phone, a, t, true]).then(done, fail); });
+          done(x);
+        }, fail);
       });
     };
   });
