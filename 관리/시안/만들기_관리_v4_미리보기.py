@@ -6,8 +6,10 @@
 """
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "..", "3_차곳간_관리_index_v4.0.html")
-OUT = os.path.join(HERE, "관리_v4.0_미리보기.html")
+import sys
+VER = sys.argv[1] if len(sys.argv) > 1 else "4.0"     # python3 … 4.1 → v4.1 미리보기
+SRC = os.path.join(HERE, "..", "3_차곳간_관리_index_v%s.html" % VER)
+OUT = os.path.join(HERE, "관리_v%s_미리보기.html" % VER)
 s = open(SRC, encoding="utf-8").read()
 
 def rep(old, new):
@@ -18,8 +20,8 @@ def rep(old, new):
 import re
 s, n = re.subn(r'var API = "https://[^"]*";', 'var API = "미리보기 — 서버에 연결하지 않음";', s)
 assert n == 1
-rep('<title>차곳간 관리</title>', '<title>관리 v4.0 미리보기</title>')
-rep('document.title = "차곳간 관리";', 'document.title = "관리 v4.0 미리보기";')
+rep('<title>차곳간 관리</title>', '<title>관리 v%s 미리보기</title>' % VER)
+rep('document.title = "차곳간 관리";', 'document.title = "관리 v%s 미리보기";' % VER)
 
 # 미리보기는 대화 화면 안에 끼워서 보므로 «끼워 넣기 막기»를 뺍니다 (실제 판에는 있음)
 a0 = s.index('<script>/* 다른 사이트 안에 끼워 열리면'); b0 = s.index('</script>', a0) + len('</script>')
@@ -71,6 +73,9 @@ function FAKE(fn,a){
     case "hqTodoAdd": F_NEXT++; F_TODO.push({id:F_NEXT,title:a[0],done:false,due_at:a[1]||null}); return {ok:true};
     case "hqTodoDone": F_TODO.forEach(function(t){ if(t.id===a[0]) t.done=!!a[1]; }); return {ok:true};
     case "hqTodoDel": F_TODO=F_TODO.filter(function(t){ return t.id!==a[0]; }); return {ok:true};
+    case "hqAta": return {ok:true,pfSet:true,tpls:{auth:"KA01TP000000AUTH01",release:"KA01TP000000REL001",bill:"KA01TP000000BILL01",deposit_ok:"KA01TP000000DEP001"},
+      stats:{ym:a[0],ata:{cnt:412,won:412*13},sms:{cnt:96,won:96*18},lms:{cnt:1288,won:1288*45},mms:{cnt:12,won:12*110}}};
+    case "hqAtaSave": return {ok:true};
     case "hqOps": return {usage:{db_bytes:1.9*Math.pow(1024,3),file_bytes:23.4*Math.pow(1024,3),file_cnt:18234},limits:{dbGb:8,fileGb:100,warnPct:80},
       services:[{code:"solapi",balance:8000,minBal:10000,balanceAt:dd(0)+"T09:00:00"}],monthCost:35000,due:[],low:[],at:dd(0)+"T09:00:00"};
   }
