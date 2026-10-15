@@ -519,8 +519,9 @@ async function tossCall(path: string, body: unknown, method = "POST", opt: { ide
 async function payFinish(od: any, paymentKey: string, r: any): Promise<{ applied: boolean; why?: string }> {
   const orderId = String(od.order_id);
   if (!r || r.status !== "DONE") return { applied: false, why: "not done" };
-  if (r.orderId !== undefined && String(r.orderId) !== orderId) return { applied: false, why: "order mismatch" };
-  if (r.totalAmount !== undefined && Math.round(Number(r.totalAmount)) !== Math.round(Number(od.amount)))
+  /* sb10: 주문번호·금액이 토스 응답에 «없어도» 반영하지 않음 (보안 방 참고 · 웹훅 경로) */
+  if (r.orderId === undefined || String(r.orderId) !== orderId) return { applied: false, why: "order mismatch" };
+  if (r.totalAmount === undefined || Math.round(Number(r.totalAmount)) !== Math.round(Number(od.amount)))
     return { applied: false, why: "amount mismatch" };
   const { data: won1, error } = await sb.from("wash_pay_order").update({
     status: "paid", payment_key: paymentKey, paid_at: new Date().toISOString(),

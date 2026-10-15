@@ -32,6 +32,7 @@ Object.assign(store, {
     order("CGG261015BBBBBBBBBB"),                                             // 웹훅: 토스에서 취소됨
     order("CGG261015CCCCCCCCCC", { status: "paid", payment_key: "pk_C" }),    // 환불(월 요금)
     order("CGG261015DDDDDDDDDD", { kind: "cash", amount: 55000, supply: 50000, vat: 5000, status: "paid", payment_key: "pk_D" }),
+    order("CGG261015FFFFFFFFFF"),                                             // 웹훅: 토스 응답에 금액이 없음
     order("CGG261015EEEEEEEEEE", { created_at: new Date(Date.now() - 2 * 3600e3).toISOString() }),   // 정리 예약 대상
   ],
   wash_payments: [], pay_webhook_log: [], pay_billing: [], pay_billing_log: [],
@@ -44,6 +45,7 @@ const tossOrders: Record<string, any> = {
   CGG261015AAAAAAAAAA: { status: "DONE", paymentKey: "pk_A", totalAmount: 33000, method: "카드" },
   CGG261015BBBBBBBBBB: { status: "ABORTED", paymentKey: "pk_B", totalAmount: 33000 },
   CGG261015EEEEEEEEEE: { status: "DONE", paymentKey: "pk_E", totalAmount: 33000, method: "카드" },
+  CGG261015FFFFFFFFFF: { status: "DONE", paymentKey: "pk_F", method: "카드" },
 };
 let billMode: "ok" | "fail" = "ok";
 const deletedKeys: string[] = [];
@@ -102,6 +104,8 @@ check("받은 기록 남김 (주문번호 · 결과)", store.pay_webhook_log.som
   store.pay_webhook_log.some((l: any) => l.result === "already"), store.pay_webhook_log);
 await hookPost(ev("CGG261015BBBBBBBBBB", { status: "DONE" }));
 check("웹훅이 DONE 이라고 해도 토스 조회가 ABORTED 면 반영 안 함 → failed", od("CGG261015BBBBBBBBBB").status === "failed", od("CGG261015BBBBBBBBBB"));
+await hookPost(ev("CGG261015FFFFFFFFFF"));
+check("토스 응답에 금액이 없으면 반영 안 함", od("CGG261015FFFFFFFFFF").status !== "paid", od("CGG261015FFFFFFFFFF"));
 const before = store.wash_payments.length;
 res = await hookPost(ev("CGG261015ZZZZZZZZZZ"));
 check("모르는 주문은 무시 (200 · 반영 없음)", res.status === 200 && store.wash_payments.length === before);
