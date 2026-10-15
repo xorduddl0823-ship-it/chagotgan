@@ -770,7 +770,7 @@ function api(fn,args){
       throw new Error("서버 응답이 이상합니다: "+(m||t.slice(0,120)));}
     return j.result;});
 }
-function forget(){S.key="";S.agreed=false;S.cars=null;ls("cgd_key",null);S.view="login";S.step=1;S.sheet=null;render();}
+function forget(){S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;ls("cgd_key",null);S.view="login";S.step=1;S.sheet=null;render();}
 
 /* ---------- 시연 자료 (시안과 같은 차) ---------- */
 function ago(d,h,m){return new Date(Date.now()-d*864e5-h*36e5-(m||0)*6e4).toISOString();}

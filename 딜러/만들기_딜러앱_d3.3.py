@@ -113,6 +113,9 @@ rep('''  if(a==="filter"){S.filter=v;render();return;}''', '''  if(a==="filter")
 rep('''  if(k==="logout")inner=''', '''  if(k==="copy")inner='<h3>복사하지 못했어요</h3><p style="margin:0;color:var(--sub);font-size:14px">아래 글을 길게 눌러 복사해 주세요.</p><input readonly value="'+esc(S.copyText||"")+'" onfocus="this.select()" style="border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font:inherit"><button class="btn sec2" data-act="close">닫기</button>';
   if(k==="logout")inner=''')
 
+# 5-1) 로그아웃하면 청구서 목록도 비움 (보안/검사기록/2026-10-15_딜러앱_d3.3_배포전.md 낮음 1건)
+rep('function forget(){S.key="";S.agreed=false;S.cars=null;', 'function forget(){S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;')
+
 # 6) 홈 숫자 3번째 — «결제할 청구서 금액» (추천안)
 rep('''         ["이번 주 입고된 차",g.wk,"#0B2545",(d>=0?"+":"−")+Math.abs(d),"전체"],''',
     '''         ["결제할 청구서 금액",S.bills?won(billSum()).replace("원",""):"…","#0B2545","","BILLS","원"],''')
