@@ -372,6 +372,11 @@ body.shell{padding:0;background:var(--bg)}
 .soon svg.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .soon b{color:var(--ink)}
 
+
+/* d3.4 — 자세히 창 안의 차 상세 */
+.cardlg{display:flex;flex-direction:column;gap:10px;margin:4px 0 8px}
+.cardlg .photo{height:170px}
+.cgg-app .sheet-wrap{z-index:calc(var(--z-dialog) + 1)}
 /* ═══════════════════════════════════════════════════════════════════
    차곳간 공통 부품 · J안 4판 · cgg-j4 1.3 (2026-10-15, 디자인 방)
    ① 메뉴 배치 셋 (가로 · 세로 · 아이콘)  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)
@@ -1149,6 +1154,11 @@ function carsView(){
   if(!all.length)return h+'<div class="card lempty">아직 내 번호로 맡겨진 차가 없어요.<br>업체에 차를 맡길 때 <b>'+esc(telFmt(S.phone))+'</b> 번호를 알려 주세요.</div>';
   return h+'<div id="carTbl"></div>'+CGG.help('업체가 입고 · 출고를 찍으면 여기에 바로 보여요. 지금 위치를 누르면 사진과 지나온 기록(최근이 위)이 나와요. 내 상사에 도착한 차는 골라서 «선택한 차 상품화 완료»를 눌러 주세요. 금액이 «—»이면 업체가 아직 금액을 넣지 않은 거예요.');
 }
+function openCar(wait){
+  var c=S.detail&&S.detail.car;
+  var d=CGG.dialog({size:"detail",title:c?c.plate+" · 차 상세":"차 상세",desc:c?"상품화 진행 과정":"",body:'<div class="cardlg">'+(wait?'<div class="card" style="color:var(--sub);text-align:center">'+esc(wait)+'</div>':carView())+'</div>'});
+  var dim=d&&d.parentNode;if(dim&&!dim._dl){dim._dl=1;new MutationObserver(function(){if(dim.hidden)S.dlg=false;}).observe(dim,{attributes:true,attributeFilter:["hidden"]});}
+}
 function wireCars(ph){
   var el=ph.querySelector("#carTbl");if(!el)return;
   var L=latest();S.sel={};
@@ -1402,6 +1412,7 @@ function markSeen(){var E=events();if(E.length){S.seen=E[0].at;if(!DEMO)ls("cgd_
 
 function act(a,el){
   var v=el&&el.getAttribute("data-v");
+  if(S.dlg&&(a==="tab"||a==="logout"||a==="go")){S.dlg=false;CGG.closeDialog();}
   if(a==="otp"||a==="resend"){
     var p=dg(S.phone);if(!/^01\d{8,9}$/.test(p)){S.err="휴대폰 번호를 다시 확인해 주세요";render();return;}
     S.sending=true;S.err="";render();
@@ -1443,13 +1454,14 @@ function act(a,el){
     L2.reduce(function(p,c){return p.then(function(){return api("finish",[c.shop,c.id]).then(function(){S.done[c.key]=1;});});},Promise.resolve())
       .then(function(){S.sel={};render();toast(L2.length+"대를 «상품화 완료»로 표시했어요");},function(e){render();toast(e.message);});return;}
   if(a==="nf"){S.nf=v;render();return;}
-  if(a==="car"){var sh=el.getAttribute("data-s");S.detail=null;S.view="car";render();history.pushState({d:1},"");
-    api("car",[sh,v]).then(function(r){S.detail=r;render();},function(e){S.view="main";render();toast(e.message);});return;}
+  if(a==="car"){var sh=el.getAttribute("data-s");S.detail=null;S.dlg=true;openCar("불러오는 중…");
+    api("car",[sh,v]).then(function(r){S.detail=r;if(S.dlg)openCar();},function(e){S.dlg=false;CGG.closeDialog();toast(e.message);});return;}
   if(a==="back"){history.back();return;}
   if(a==="big"){S.sheet="photos";render();return;}
   if(a==="finish"||a==="unfinish"){var c2=S.detail&&S.detail.car;if(!c2)return;
     api(a,[c2.shop,c2.id]).then(function(){if(a==="finish")S.done[c2.key]=1;else delete S.done[c2.key];
-      if(a==="finish"){history.back();toast("상품화 완료! «완료»로 표시했어요.");}else{render();toast("완료를 취소했어요");}},function(e){toast(e.message);});return;}
+      if(a==="finish"){if(S.dlg){S.dlg=false;CGG.closeDialog();render();}else history.back();toast("상품화 완료! «완료»로 표시했어요.");}
+      else{render();if(S.dlg)openCar();toast("완료를 취소했어요");}},function(e){toast(e.message);});return;}
   if(a==="soon"){toast("곧 열려요");return;}
   if(a==="logout"){S.sheet="logout";render();return;}
   if(a==="leaveAsk"){S.sheet="leave";render();return;}

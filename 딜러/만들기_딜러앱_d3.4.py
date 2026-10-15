@@ -8,6 +8,7 @@
   3. 청구서 [한 번에 결제] — 버튼 없음 그대로, 대신 «곧 열려요» 한 줄을 보이게
   + 사람 단추 ▾ 는 빼요 (03_딜러 «딜러는 «내 정보» 메뉴가 그 자리»). 화면 설정은 내 정보 안
   + 시연(?demo)은 CGG.trial.init("preview") 띠 (00_공통 «미리 써 보기» 자리)
+  + 차 상세는 화면 넘김 대신 «자세히 창 520» (03_딜러 «이름 누르면 자세히 창 520»)
 안 바꾸는 것: 서버 창구 · 로그인 · 동의 · 차 상세 · 청구서 자료 · 홈 숫자 · 할 일"""
 import os, shutil, subprocess
 ROOT = "/home/user/chagotgan"
@@ -93,6 +94,33 @@ CSS = r'''
 '''
 k = s.index("/* ═══════════════════════════════════════════════════════════════════\n   차곳간 공통 부품 · J안 4판 · cgg-j4 1.3")
 s = s[:k] + CSS + "\n" + s[k:]
+
+# 6-1) 차 상세 → «자세히 창 520» (CGG.dialog size:"detail" · 폰은 아래에서). 내용은 예전 차 상세(carView) 그대로
+rep("""  if(a==="car"){var sh=el.getAttribute("data-s");S.detail=null;S.view="car";render();history.pushState({d:1},"");
+    api("car",[sh,v]).then(function(r){S.detail=r;render();},function(e){S.view="main";render();toast(e.message);});return;}""",
+"""  if(a==="car"){var sh=el.getAttribute("data-s");S.detail=null;S.dlg=true;openCar("불러오는 중…");
+    api("car",[sh,v]).then(function(r){S.detail=r;if(S.dlg)openCar();},function(e){S.dlg=false;CGG.closeDialog();toast(e.message);});return;}""")
+rep("""function act(a,el){
+  var v=el&&el.getAttribute("data-v");""", """function act(a,el){
+  var v=el&&el.getAttribute("data-v");
+  if(S.dlg&&(a==="tab"||a==="logout"||a==="go")){S.dlg=false;CGG.closeDialog();}""")
+rep("""      if(a==="finish"){history.back();toast("상품화 완료! «완료»로 표시했어요.");}else{render();toast("완료를 취소했어요");}},function(e){toast(e.message);});return;}""",
+"""      if(a==="finish"){if(S.dlg){S.dlg=false;CGG.closeDialog();render();}else history.back();toast("상품화 완료! «완료»로 표시했어요.");}
+      else{render();if(S.dlg)openCar();toast("완료를 취소했어요");}},function(e){toast(e.message);});return;}""")
+rep("function wireCars(ph){", """function openCar(wait){
+  var c=S.detail&&S.detail.car;
+  var d=CGG.dialog({size:"detail",title:c?c.plate+" · 차 상세":"차 상세",desc:c?"상품화 진행 과정":"",body:'<div class="cardlg">'+(wait?'<div class="card" style="color:var(--sub);text-align:center">'+esc(wait)+'</div>':carView())+'</div>'});
+  var dim=d&&d.parentNode;if(dim&&!dim._dl){dim._dl=1;new MutationObserver(function(){if(dim.hidden)S.dlg=false;}).observe(dim,{attributes:true,attributeFilter:["hidden"]});}
+}
+function wireCars(ph){""")
+CSS2 = """
+/* d3.4 — 자세히 창 안의 차 상세 */
+.cardlg{display:flex;flex-direction:column;gap:10px;margin:4px 0 8px}
+.cardlg .photo{height:170px}
+.cgg-app .sheet-wrap{z-index:calc(var(--z-dialog) + 1)}
+"""
+k2 = s.index("/* ═══════════════════════════════════════════════════════════════════\n   차곳간 공통 부품 · J안 4판 · cgg-j4 1.3")
+s = s[:k2] + CSS2 + s[k2:]
 
 # 7) 쓰기
 if os.path.isdir(OUTDIR):
