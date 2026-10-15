@@ -131,5 +131,5 @@ deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시
 deno run -A --no-lock --import-map=서버/시험/import_map_dealer.json 서버/시험/딜러_청구서목록_시험.ts
 ```
 
-- 53개 (sb9 면 실패가 나옴) · 9개 (d5 면 5개 실패) — 2026-10-15 전부 통과
+- 58개 (sb9 면 실패가 나옴) · 9개 (d5 면 5개 실패) — 2026-10-15 전부 통과
 - 가짜에 더함: 워시 `knobs.cash`(잔액 흉내 · 마이너스 안 됨) · 딜러 `contains`·`gt`

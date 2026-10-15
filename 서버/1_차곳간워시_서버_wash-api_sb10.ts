@@ -676,12 +676,22 @@ async function billRun(out: string[]) {
         await billLog(b.shop, orderId, 0, tryNo, "ok", "캐시");
         out.push("bill " + b.shop + " 캐시로"); continue;
       }
-      let r: any = null, err = "", errCode = "";
+      let r: any = null, err = "", errCode = "", sent = false;
       try {
         const bk = await openBK(b.shop, String(b.billing_key_enc));
+        sent = true;                                         // 여기부터는 토스에 요청이 갔을 수 있음
         r = await tossCall("/v1/billing/" + encodeURIComponent(bk),
           { customerKey: b.customer_key, amount: v.total, orderId, orderName }, "POST", { idem: orderId, billing: true });
-      } catch (e) { err = e instanceof Error ? e.message : String(e); errCode = String((e as any)?.tossCode || ""); }
+      } catch (e) {
+        err = e instanceof Error ? e.message : String(e); errCode = String((e as any)?.tossCode || "");
+        if (sent && !errCode && !/^카드사 응답/.test(err)) {
+          /* sb10(보안 조건 1): 시간 초과·끊김 = 실제로는 승인됐을 수 있음 → 주문을 ready 로 두고 실패로 세지 않음.
+             다음 예약 실행의 payReconcile 이 토스에 물어 정리 (같은 날은 (업체+결제일) 줄이 있어 다시 청구 안 함) */
+          await billLog(b.shop, orderId, v.total, tryNo, "unknown", "응답 없음");
+          out.push("bill " + b.shop + " 확인 대기");
+          continue;
+        }
+      }
       if (r && r.status === "DONE") {
         await payFinish(od, String(r.paymentKey || ""), r);    // 캐시는 여기(payDone)서 성공한 뒤에만 깎임
         await sb.from("pay_billing").update({ fail_count: 0, first_fail_at: null, last_fail_msg: null }).eq("shop", b.shop);
@@ -2513,7 +2523,10 @@ const OPEN: Record<string, (a: any[], ctx?: any) => Promise<unknown>> = {
   payCheck: async (a, ctx) => {
     const orderId = String(a[0] || "").trim().toUpperCase();
     if (!ORDER_RE.test(orderId)) return { ok: false };
-    if (!await rateOk("paychk:" + String((ctx && ctx.ip) || "0"), 3000)) return { ok: false, slow: true };
+    /* sb10(보안 조건 2): pay-hook 이 전용 열쇠(x-cgg-internal)로 부르면 따로 셈 — 바깥에서 막 불러도 진짜 웹훅 반영이 밀리지 않게 */
+    const internal = !!(ctx && ctx.internal);
+    if (!await rateOk(internal ? "paychk:hook" : "paychk:" + String((ctx && ctx.ip) || "0"), internal ? 50000 : 3000))
+      return { ok: false, slow: true };
     return { ok: true, result: await payCheckOne(orderId) };
   },
   /* sb10: 결제 예약 실행 — [cron_key] · 하루 몇 번: ready 주문 정리 + (스위치 켜졌으면) 자동 결제 */
@@ -5179,8 +5192,8 @@ Deno.serve(async (req) => {
       /* sb2: 경비실이 서버끼리 부르면 손님 기기의 UA·IP 를 씁니다 (모두 같은 IP·PC 로 보이지 않게) */
       const via = internalOk(req) && body.__via === "cgg";
       const ctx = via
-        ? { ua: String(body.__ua || "").slice(0, 300), ip: String(body.__ip || "0").slice(0, 64), via: "cgg" }
-        : { ua: req.headers.get("user-agent") || "", ip: ipOf(req) };
+        ? { ua: String(body.__ua || "").slice(0, 300), ip: String(body.__ip || "0").slice(0, 64), via: "cgg", internal: true }
+        : { ua: req.headers.get("user-agent") || "", ip: ipOf(req), internal: internalOk(req) };   // sb10: pay-hook 이 서버끼리 부르면 internal
       return out({ result: await OPEN[fn](args, ctx) });
     }
 

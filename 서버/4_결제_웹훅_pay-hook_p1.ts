@@ -6,7 +6,9 @@
 //   · 이미 반영된 주문은 다시 반영하지 않아요(wash-api payFinish 가 한 번만).
 //   · 받은 기록: pay_webhook_log (받은 시각 · 이벤트 · 주문번호 · 처리 결과) — 카드 정보는 안 남겨요.
 //   · 처리 결과를 알면 200, 서버 오류면 500 (토스가 나중에 다시 보내 줌)
-// 비밀값: 새로 필요 없음 (SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY 는 수파베이스가 넣어 줌)
+// 비밀값: CGG_INTERNAL_KEY (워시·경비실과 같은 값 · 이름만) — 워시 payCheck 를 «서버끼리» 부를 때 붙여서, 바깥 요청과 횟수를 따로 셈
+//   (SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY 는 수파베이스가 넣어 줌)
+// 보내는 IP 마다 하루 2000번까지 (wash_rate_bump · 넘으면 429 → 토스가 나중에 다시 보냄)
 // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (토스는 로그인 열쇠 없이 보냄). 먼저 서버/sql/06 실행.
 // 토스 개발자센터 → 웹훅 주소: https://(프로젝트).supabase.co/functions/v1/pay-hook  · 이벤트: PAYMENT_STATUS_CHANGED
 // =========================================================
@@ -21,8 +23,23 @@ async function logIt(event: string, orderId: string, result: string) {
   catch (_) { /* 기록이 안 돼도 처리는 계속 */ }
 }
 
+function ipOf(req: Request) {
+  const cf = String(req.headers.get("cf-connecting-ip") || "").trim();
+  if (cf) return cf;
+  const xs = String(req.headers.get("x-forwarded-for") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  return xs[xs.length - 1] || "0";
+}
+async function ipOk(ip: string) {
+  try {
+    const { data, error } = await db.rpc("wash_rate_bump", { p_key: "hook:" + ip.slice(0, 64), p_max: 2000 });
+    if (error) { console.error("hook rate", error.message); return true; }   // 세는 곳이 고장 나도 진짜 웹훅은 받음 (반영은 토스 조회로만)
+    return data !== false;
+  } catch (_) { return true; }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok", { status: 200 });
+  if (!await ipOk(ipOf(req))) return new Response("slow", { status: 429 });
   const raw = await req.text();
   if (raw.length > 20000) return new Response("too big", { status: 413 });
   let j: any = {};
@@ -35,7 +52,7 @@ Deno.serve(async (req) => {
   }
   try {
     const r = await fetch(SUPA_URL + "/functions/v1/wash-api", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", "x-cgg-internal": Deno.env.get("CGG_INTERNAL_KEY") ?? "" },
       body: JSON.stringify({ shop: "", token: "", fn: "payCheck", args: [orderId] }),
       signal: AbortSignal.timeout(8000),
     });
