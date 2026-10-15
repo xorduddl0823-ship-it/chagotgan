@@ -27,6 +27,7 @@ body{margin:0;background:var(--bg);font-family:"Noto Sans KR",-apple-system,"App
   <main class="cgg-main">
     <div class="demo-pick">이 예시는 체크 메뉴로 그렸어요. 메뉴 배치는 머리말 «홍길순 ▾» › «화면 설정»에서 바꿔요 (넓은 화면에서만 바뀌고, 폰은 늘 아래 탭바예요).</div>
     <div class="hello"><small id="crumb">홈 · 10월 15일 수요일</small><h1>보험료가 안 맞는 건 <em>4건</em>, 재검사 안내 보낼 차 <em>6대</em>가 있어요</h1><p>오늘 할 일과 이번 달 검사를 한눈에 봐요.</p></div>
+    <div id="trialBand"></div>
     <div class="cgg-acts" id="acts"></div>
     <div class="card" id="layBox" hidden><h3>화면 설정 › 메뉴 배치</h3><div id="layIn"></div></div>
     <div class="card"><h3>여기부터는 제품 화면</h3><p style="margin:0;color:var(--muted)">공통 부품은 머리말 · 메뉴 · 할 일 카드 · 아래 탭바만 맡아요. 표 · 숫자 칸 · 창은 각 제품 원래 코드를 그대로 써요.</p></div>
@@ -57,6 +58,8 @@ CGG.menu(me, {name:"홍길순", role:"대표"}, function(){ return [
   {key:"me",icon:"user",label:"마이페이지"},{key:"plan",icon:"wallet",label:"요금제"},{key:"trash",icon:"trash",label:"휴지통",count:3},"-",
   {key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()},"-",{key:"out",icon:"out",label:"로그아웃"}]; },
   function(k){ if(k==="lay"){ var b=document.getElementById("layBox"); b.hidden=false; CGG.layout.chooser(document.getElementById("layIn"), function(){}); b.scrollIntoView({block:"nearest"}); } });
+CGG.trial.init("preview","cgg_demo_try");
+document.getElementById("trialBand").innerHTML=CGG.trial.band({seen:5,total:20})+CGG.trial.card([["매출 엑셀 다운로드","lock","매출 표를 엑셀 파일로 받아요."],["입고 등록","try","차가 들어오면 상사 · 작업 · 금액을 적어요."],["매출 둘러보기","see"]]);
 draw();
 </script>
 </body></html>
