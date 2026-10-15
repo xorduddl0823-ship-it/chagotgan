@@ -2086,7 +2086,8 @@ async function bizTaken(corp: string, selfShop: string): Promise<string> {
     if (e2) return "check";
     if ((ws || []).some((r: any) => digits(r.biz_no) === n)) return "wash";
     const { data: co, error: e3 } = await sb.from("check_office").select("biz_no,popbill_corp").limit(1000);
-    if (!e3 && (co || []).some((r: any) => digits(r.biz_no) === n || digits(r.popbill_corp) === n)) return "check";
+    if (e3) return "check";
+    if ((co || []).some((r: any) => digits(r.biz_no) === n || digits(r.popbill_corp) === n)) return "check";
   } catch (_) { return "check"; }
   return "";
 }
@@ -2097,9 +2098,10 @@ async function bizApproved(shop: string): Promise<boolean> {
   if (shop === "ADMIN") return true;
   try {
     const { data, error } = await sb.from("wash_shops").select("biz_ok_at").eq("shop", shop).maybeSingle();
-    if (error || !data || !("biz_ok_at" in data)) return true;
+    if (error) return String((error as any).code || "") === "42703";   // 칸이 없을 때(SQL 11 전)만 허락 · 다른 읽기 오류는 막음
+    if (!data || !("biz_ok_at" in data)) return true;
     return data.biz_ok_at !== null;
-  } catch (_) { return true; }
+  } catch (_) { return false; }
 }
 const BIZ_TAKEN_MSG = "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다. 우리 사업자번호가 맞다면 차곳간(010-9559-3663)으로 알려 주세요.";
 async function pbIssue(shop: string, json: string) {

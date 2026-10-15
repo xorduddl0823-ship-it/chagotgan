@@ -1589,9 +1589,11 @@ async function bizTaken(corp: string, selfOfficeId: string) {
     const { data: co, error: e1 } = await db.from("check_office").select("id,biz_no,popbill_corp");
     if (e1) return true;
     if ((co ?? []).some((r: any) => S(r.id) !== S(selfOfficeId) && (onlyDigits(r.biz_no) === n || onlyDigits(r.popbill_corp) === n))) return true;
-    const { data: hq } = await db.from("wash_hq").select("biz_no").eq("id", 1).maybeSingle();
+    const { data: hq, error: e2 } = await db.from("wash_hq").select("biz_no").eq("id", 1).maybeSingle();
+    if (e2) return true;                                     // 읽기 오류면 막는 쪽
     if (onlyDigits(hq?.biz_no) === n) return true;
-    const { data: ws } = await db.from("wash_shops").select("biz_no").ilike("biz_no", "%" + n.slice(-5) + "%").limit(200);
+    const { data: ws, error: e3 } = await db.from("wash_shops").select("biz_no").ilike("biz_no", "%" + n.slice(-5) + "%").limit(200);
+    if (e3) return true;
     if ((ws ?? []).some((r: any) => onlyDigits(r.biz_no) === n)) return true;
   } catch (_) { return true; }
   return false;
