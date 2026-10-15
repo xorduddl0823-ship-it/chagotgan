@@ -54,3 +54,11 @@ deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/�
 ```
 
 - `체크v25_직원_시험.ts` — 시험 25개 (2026-10-15 전부 통과 · v24 로 돌리면 12개 실패)
+
+체크 서버 v26 시험 (사무실 로그인 잠금 · 첫 비밀번호 문자 확인):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/시험/체크v26_로그인_시험.ts
+```
+
+- `체크v26_로그인_시험.ts` — 시험 18개 (2026-10-15 전부 통과 · v25 로 돌리면 13개 실패)
