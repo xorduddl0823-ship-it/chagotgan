@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1668C4">
+<meta name="robots" content="noindex">
+<title>차곳간 — 회원가입</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1668C4; --blue-deep:#0E4E9B; --navy:#0B2545; --sky:#8FC9F2;
+  --bg:#F3F6FA; --surface:#fff; --line:#DDE3EC; --text:#14202E; --muted:#667389;
+  --ok:#1A7F4B; --warn:#B45309; --danger:#C0392B; --r:14px;
+  --f:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1520; --surface:#141E2C; --line:#26364A; --text:#E8EEF6; --muted:#93A3B8;
+    --blue:#5AA6F0; --blue-deep:#8AC2F8;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1520; --surface:#141E2C; --line:#26364A; --text:#E8EEF6; --muted:#93A3B8;
+  --blue:#5AA6F0; --blue-deep:#8AC2F8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--f);font-size:15px;line-height:1.6;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding:28px 16px 64px}
+.top{text-align:center;margin-bottom:22px}
+.top a{text-decoration:none;color:inherit}
+.logo{font-size:28px;font-weight:800;letter-spacing:-1px}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:22px 20px;box-shadow:0 2px 10px rgba(16,32,52,.07)}
+h2{margin:0 0 6px;font-size:20px}
+.lead{font-size:14px;color:var(--muted);margin:0 0 18px}
+.steps{display:flex;gap:6px;margin:0 0 20px}
+.steps i{flex:1;height:5px;border-radius:99px;background:var(--line);font-style:normal}
+.steps i.on{background:var(--blue)}
+label.f{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:14px 0 6px}
+input[type=text],input[type=tel],input[type=password],select{
+  width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:11px;
+  background:var(--surface);color:var(--text);font-size:16px;font-family:inherit}
+input:focus,select:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)}
+.btn{display:block;width:100%;padding:15px;border-radius:12px;border:1px solid var(--line);
+  background:var(--surface);color:var(--text);font-size:16px;font-weight:700;font-family:inherit;
+  cursor:pointer;margin-top:14px}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:var(--blue-deep);border-color:var(--blue-deep)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn.ghost{font-weight:500;font-size:14px;padding:12px}
+.msg{font-size:14px;margin-top:12px;min-height:20px;color:var(--muted)}
+.msg.bad{color:var(--danger);font-weight:700}
+.msg.ok{color:var(--ok);font-weight:700}
+/* 약관 */
+.agall{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--bg);cursor:pointer;font-weight:700}
+.agrow{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer}
+.agrow .t{flex:1;font-size:14px}
+.agrow .t b{font-weight:700}
+.agrow .req{color:var(--blue);font-weight:700;font-size:12.5px;margin-right:4px}
+.agrow .opt{color:var(--muted);font-weight:700;font-size:12.5px;margin-right:4px}
+.agrow a{font-size:13px;color:var(--muted);text-decoration:underline;white-space:nowrap}
+input[type=checkbox]{width:22px;height:22px;flex:0 0 auto;accent-color:var(--blue);margin:0}
+.hr{height:1px;background:var(--line);margin:10px 0}
+/* 요금제 */
+.plan{display:block;border:2px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:10px;cursor:pointer}
+.plan.sel{border-color:var(--blue);background:rgba(22,104,196,.06)}
+.plan .n{font-weight:800;font-size:16px}
+.plan .p{font-size:14px;color:var(--muted);margin-top:2px}
+.plan ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+.note{background:rgba(180,83,9,.08);border:1px solid rgba(180,83,9,.3);color:var(--warn);
+  border-radius:11px;padding:13px 14px;font-size:13.5px;font-weight:600;margin-top:16px}
+.done{text-align:center;padding:16px 0}
+.done .big{font-size:22px;font-weight:800;margin-bottom:6px}
+.foot{text-align:center;font-size:12.5px;color:var(--muted);margin-top:18px;line-height:1.8}
+.foot a{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="cggBeta" style="word-break:keep-all;background:#0B2545;color:#E8F0FB;font-size:13px;text-align:center;padding:8px 16px;line-height:1.5"><b style="background:#E8F0FB;color:#0B2545;border-radius:6px;padding:0 7px;font-size:11.5px;letter-spacing:.04em;margin-right:6px">OPEN BETA</b>차곳간은 지금 <b>오픈 베타</b>예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</div>
+<div class="wrap">
+  <div class="top">
+    <a href="/"><div class="logo">차곳간</div>
+    <div class="sub">광택·세차 · 휠복원 · 판금도색 관리</div></a>
+  </div>
+
+  <div class="card">
+    <div class="steps" id="steps"><i></i><i></i><i></i><i></i><i></i></div>
+    <div id="view"></div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="foot">
+    이미 가입하셨나요? <a id="goLogin" href="#">로그인</a>
+  </div>
+<!--CGG-BIZ-START-->
+<footer class="cgg-biz" style="font-size:11.5px;line-height:1.75;color:var(--muted,#667389);text-align:center;margin:18px auto 0;max-width:640px;word-break:keep-all"><div><a href="https://cgg.co.kr/terms.html" target="_blank" rel="noopener" style="color:inherit;">이용약관</a> · <a href="https://cgg.co.kr/privacy.html" target="_blank" rel="noopener" style="color:inherit;font-weight:700;">개인정보처리방침</a> · <a href="https://cgg.co.kr/refund.html" target="_blank" rel="noopener" style="color:inherit;">환불 규정</a></div><div style="margin-top:4px"><span style="white-space:nowrap">통신판매업 신고번호 신고 진행 중</span></div></footer>
+<!--CGG-BIZ-END-->
+</div>
+
+<script>
+(function(){
+"use strict";
+var API="https://ybfpxmmjofyvfprtvmhj.supabase.co/functions/v1/wash-api?forceFunctionRegion=ap-northeast-2";
+
+function appUrl(extra){
+  var h=String(location.hostname||"");
+  if(/^(chagotgan|cgg)\.co\.kr$/.test(h))return "https://app."+h+"/"+(extra||"");
+  if(/^www\.(chagotgan|cgg)\.co\.kr$/.test(h))return "https://app."+h.slice(4)+"/"+(extra||"");
+  if(/^app\./.test(h))return "https://"+h+"/"+(extra||"");
+  return "https://app.cgg.co.kr/"+(extra||"");
+}
+document.getElementById("goLogin").href=appUrl();
+
+function call(fn,args){
+  return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({shop:"",token:"",fn:fn,args:args||[]})})
+    .then(function(r){return r.text();},function(){throw new Error("서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요.");})
+    .then(function(t){
+      var j;try{j=JSON.parse(t);}catch(e){throw new Error("일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");}
+      if(j&&j.__err)throw new Error(j.__err);
+      return j?j.result:null;
+    });
+}
+function $(id){return document.getElementById(id);}
+function esc(v){return String(v==null?"":v).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function digits(v){return String(v||"").replace(/[^0-9]/g,"");}
+function phoneFmt(v){var d=digits(v);
+  if(d.length===11)return d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7);
+  if(d.length===10)return d.slice(0,3)+"-"+d.slice(3,6)+"-"+d.slice(6);
+  return String(v||"");}
+function say(t,kind){var m=$("msg");if(kind==="bad"&&t&&!/[가-힣]/.test(t))t="일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";m.textContent=t||"";m.className="msg"+(kind?" "+kind:"");}
+
+/* 상호를 보고 업종을 짐작합니다 */
+function guessKind(name){
+  var s=String(name||"").replace(/[\s·\-_.]/g,"");
+  if(!s)return "";
+  if(/휠|wheel|알루미늄|림복원/i.test(s))return "wheel";
+  if(/공업사|모터스|정비|카센타|카센터|판금|도색|덴트|리페어|repair|바디|오토큐|보수/i.test(s))return "repair";
+  if(/광택|세차|디테일|워시|wash|코팅|스팀/i.test(s))return "wash";
+  return "";
+}
+var KIND={wash:"차곳간 워시 (광택·세차)",wheel:"차곳간 휠 (휠복원)",repair:"차곳간 리페어 (판금·도색·정비)"};
+
+var st={step:1,mode:null,plans:[],
+  agree:{terms:false,privacy:false,refund:false,marketing:false},
+  phone:"",sent:false,bizName:"",owner:"",kind:"wash",kindTouched:false,
+  plan:"",orderId:"",busy:false};
+
+function steps(){
+  var el=$("steps").children;
+  for(var i=0;i<el.length;i++)el[i].className=(i<st.step)?"on":"";
+}
+
+/* ---------------- 1단계 · 약관 동의 ---------------- */
+function viewAgree(){
+  var a=st.agree;
+  $("view").innerHTML=
+    '<h2>차곳간 시작하기</h2>'+
+    '<p class="lead">먼저 약관을 확인해 주세요. 필요한 것만 담았습니다.</p>'+
+    '<label class="agall"><input type="checkbox" id="agAll">전체 동의합니다</label>'+
+    '<div class="hr"></div>'+
+    row("agT","terms","필수","이용약관","/terms.html")+
+    row("agP","privacy","필수","개인정보 수집·이용 동의","/privacy.html")+
+    row("agR","refund","필수","결제·환불 정책","/refund.html")+
+    row("agM","marketing","선택","새 기능·혜택 안내 문자 받기","")+
+    '<button class="btn primary" id="go" disabled>동의하고 계속</button>';
+  function row(id,key,tag,text,link){
+    return '<label class="agrow"><input type="checkbox" id="'+id+'" data-k="'+key+'">'+
+      '<span class="t"><span class="'+(tag==="필수"?"req":"opt")+'">['+tag+']</span>'+esc(text)+'</span>'+
+      (link?'<a href="'+link+'" target="_blank" rel="noopener">보기</a>':'')+'</label>';
+  }
+  ["agT","agP","agR","agM"].forEach(function(id){
+    var el=$(id); el.checked=a[el.getAttribute("data-k")];
+    el.onchange=function(){a[el.getAttribute("data-k")]=el.checked;sync();};
+  });
+  $("agAll").onchange=function(){
+    var v=$("agAll").checked;
+    a.terms=a.privacy=a.refund=a.marketing=v;
+    ["agT","agP","agR","agM"].forEach(function(id){$(id).checked=v;});
+    sync();
+  };
+  function sync(){
+    var must=a.terms&&a.privacy&&a.refund;
+    $("agAll").checked=must&&a.marketing;
+    $("go").disabled=!must;
+  }
+  sync();
+  $("go").onclick=function(){st.step=2;draw();};
+}
+
+/* ---------------- 2단계 · 휴대폰 인증 ---------------- */
+function viewPhone(){
+  $("view").innerHTML=
+    '<h2>휴대폰 인증</h2>'+
+    '<p class="lead">대표자 휴대폰 번호를 입력해 주세요. 이 번호가 로그인 아이디가 됩니다.</p>'+
+    '<label class="f" for="p">휴대폰 번호</label>'+
+    '<input type="tel" id="p" placeholder="010-0000-0000" value="'+esc(phoneFmt(st.phone))+'"'+(st.sent?" disabled":"")+'>'+
+    (st.sent?'<label class="f" for="c">인증번호 6자리</label>'+
+      '<input type="tel" id="c" maxlength="6" placeholder="······">':"")+
+    '<button class="btn primary" id="go">'+(st.sent?"확인":"인증번호 받기")+'</button>'+
+    (st.sent?'<button class="btn ghost" id="again">인증번호 다시 받기</button>':"")+
+    '<button class="btn ghost" id="back">이전</button>';
+  $("back").onclick=function(){st.step=1;draw();};
+  if($("again"))$("again").onclick=function(){st.sent=false;draw();};
+  if($("c"))$("c").onkeydown=function(e){if(e.key==="Enter")$("go").click();};
+  if($("p"))$("p").onkeydown=function(e){if(e.key==="Enter")$("go").click();};
+  $("go").onclick=function(){
+    if(st.busy)return;
+    if(!st.sent){
+      st.phone=digits($("p").value);
+      if(st.phone.length<10)return say("휴대폰 번호를 정확히 입력해 주세요.","bad");
+      st.busy=true;say("인증번호를 발송하는 중입니다…");
+      call("sendCode",[st.phone,"signup"]).then(function(){
+        st.busy=false;st.sent=true;draw();say("인증번호를 발송했습니다. 5분 안에 입력해 주세요.","ok");
+      },function(e){st.busy=false;say(e.message,"bad");});
+      return;
+    }
+    var c=digits($("c").value);
+    if(c.length<6)return say("인증번호 6자리를 입력해 주세요.","bad");
+    st.busy=true;say("확인 중…");
+    call("verifyCode",[st.phone,c]).then(function(r){
+      if(r&&r.joined){st.busy=false;return say("이미 가입된 휴대폰 번호입니다. 로그인해 주세요.","bad");}
+      return call("agree",[st.phone,
+        {terms:st.mode.termsVer,privacy:st.mode.privacyVer,refund:st.mode.refundVer},
+        st.agree.marketing, navigator.userAgent]).then(function(){
+        st.busy=false;st.step=3;draw();say("인증이 완료되었습니다.","ok");
+      });
+    },function(e){st.busy=false;say(e.message,"bad");});
+  };
+}
+
+/* ---------------- 3단계 · 업체 정보 ---------------- */
+function viewBiz(){
+  $("view").innerHTML=
+    '<h2>사업장 정보</h2>'+
+    '<p class="lead">상호를 입력하면 업종이 자동으로 선택됩니다. 다르면 바꿔 주세요.</p>'+
+    '<label class="f" for="n">상호 (사업장 이름)</label>'+
+    '<input type="text" id="n" placeholder="예) 대박모터스" value="'+esc(st.bizName)+'">'+
+    '<label class="f" for="o">대표자 이름</label>'+
+    '<input type="text" id="o" placeholder="예) 홍길동" value="'+esc(st.owner)+'">'+
+    '<label class="f" for="k">업종</label>'+
+    '<select id="k">'+
+      '<option value="wash">'+KIND.wash+'</option>'+
+      '<option value="wheel">'+KIND.wheel+'</option>'+
+      '<option value="repair">'+KIND.repair+'</option>'+
+    '</select>'+
+    '<div class="msg" id="kh" style="min-height:0"></div>'+
+    '<button class="btn primary" id="go">다음</button>'+
+    '<button class="btn ghost" id="back">이전</button>';
+  $("k").value=st.kind;
+  $("back").onclick=function(){st.step=2;draw();};
+  $("k").onchange=function(){st.kindTouched=true;st.kind=$("k").value;$("kh").textContent="";};
+  $("n").oninput=function(){
+    st.bizName=$("n").value;
+    if(st.kindTouched)return;
+    var g=guessKind(st.bizName);
+    if(g){st.kind=g;$("k").value=g;$("kh").textContent="상호를 보고 «"+KIND[g]+"»(으)로 선택했습니다. 다르면 바꿔 주세요.";}
+    else $("kh").textContent="";
+  };
+  $("go").onclick=function(){
+    st.bizName=$("n").value.trim();st.owner=$("o").value.trim();st.kind=$("k").value;
+    if(!st.bizName)return say("상호를 입력해 주세요.","bad");
+    if(!st.owner)return say("대표자 이름을 입력해 주세요.","bad");
+    st.step=4;draw();say("");
+  };
+}
+
+/* ---------------- 4단계 · 요금제와 결제 ---------------- */
+function viewPay(){
+  var canSkip=(st.joinWhy==="invite"||st.joinWhy==="open"||st.joinWhy==="paid");
+  var html='<h2>요금제</h2><p class="lead">사업장 규모에 맞게 고르세요. 나중에 바꾸실 수 있습니다.</p>';
+  if(!st.plans.length)html+='<div class="note">요금제를 불러오는 중입니다…</div>';
+  st.plans.forEach(function(pl){
+    var f=(pl.features||[]).map(function(x){return "<li>"+esc(x)+"</li>";}).join("");
+    html+='<label class="plan'+(st.plan===pl.code?" sel":"")+'" data-c="'+esc(pl.code)+'">'+
+      '<div class="n">'+esc(pl.name)+'</div>'+
+      '<div class="p">'+(pl.price?(Number(pl.price).toLocaleString()+"원 / 월 (부가세 별도)"):"금액 준비 중")+
+        (pl.seats?(" · 최대 "+pl.seats+"명"):" · 인원 제한 없음")+'</div>'+
+      (f?"<ul>"+f+"</ul>":"")+'</label>';
+  });
+  if(st.mode&&st.mode.pay){
+    html+='<button class="btn primary" id="go">결제하고 가입하기</button>';
+  }else{
+    html+='<div class="note">카드 결제는 준비 중이에요. 지금은 계좌로 입금해 주세요.'+
+      (canSkip?' 지금은 차곳간에서 받으신 <b>가입 코드</b>로 바로 진행하실 수 있습니다.'
+              :' 차곳간에 연락 주시면 가입 코드를 안내해 드립니다.')+'</div>';
+    html+='<button class="btn primary" id="go"'+(canSkip?"":" disabled")+'>'+
+      (canSkip?"다음":"가입 코드가 필요합니다")+'</button>';
+    if(!canSkip)html+='<button class="btn ghost" id="ask">가입 코드 요청하기</button>';
+  }
+  html+='<button class="btn ghost" id="back">이전</button>';
+  $("view").innerHTML=html;
+  $("back").onclick=function(){st.step=3;draw();};
+  if($("ask"))$("ask").onclick=function(){
+    call("contact",[st.bizName,st.owner,st.phone,"회원가입 페이지에서 가입 코드 요청",st.kind])
+      .then(function(){say("요청을 보냈습니다. 차곳간에서 연락드리겠습니다.","ok");},
+            function(e){say(e.message,"bad");});
+  };
+  Array.prototype.forEach.call($("view").querySelectorAll(".plan"),function(el){
+    el.onclick=function(){st.plan=el.getAttribute("data-c");draw();};
+  });
+  $("go").onclick=function(){
+    if(!st.plan)return say("요금제를 선택해 주세요.","bad");
+    if(!(st.mode&&st.mode.pay)){st.step=5;draw();say("");return;}
+    st.busy=true;say("결제창을 준비하는 중…");
+    call("payStart",[st.phone,st.bizName,st.plan]).then(function(r){
+      st.busy=false;st.orderId=r.orderId;
+      if(!r.ready)return say(r.message||"카드 결제는 준비 중이에요. 지금은 계좌로 입금해 주세요.","bad");
+      /* === 결제사(PG)를 붙이면 이 자리에서 결제창을 엽니다 ===
+         결제가 끝나면 payStatus 로 확인한 뒤 5단계로 넘어갑니다. */
+      say("결제창을 여는 중…");
+      startPay(r);
+    },function(e){st.busy=false;say(e.message,"bad");});
+  };
+}
+/* 결제사 연동 자리 — 승인 나면 이 함수만 채우면 됩니다 */
+function startPay(order){
+  say("결제 연동이 아직 켜지지 않았습니다. 차곳간에 문의해 주세요.","bad");
+}
+
+/* ---------------- 5단계 · 비밀번호 정하고 가입 ---------------- */
+function viewPw(){
+  $("view").innerHTML=
+    '<h2>비밀번호 정하기</h2>'+
+    '<p class="lead">'+esc(phoneFmt(st.phone))+' 번호로 로그인하실 비밀번호입니다.</p>'+
+    '<label class="f" for="w">비밀번호 (6자 이상)</label>'+
+    '<input type="password" id="w" placeholder="비밀번호">'+
+    '<label class="f" for="w2">비밀번호 확인</label>'+
+    '<input type="password" id="w2" placeholder="비밀번호 확인">'+
+    '<button class="btn primary" id="go">가입하고 시작하기</button>'+
+    '<button class="btn ghost" id="back">이전</button>';
+  $("back").onclick=function(){st.step=4;draw();};
+  $("w2").onkeydown=function(e){if(e.key==="Enter")$("go").click();};
+  $("go").onclick=function(){
+    if(st.busy)return;
+    var w=$("w").value, w2=$("w2").value;
+    if(w.length<6)return say("비밀번호는 6자 이상 입력해 주세요.","bad");
+    if(w!==w2)return say("비밀번호가 일치하지 않습니다.","bad");
+    st.busy=true;say("가입 처리 중입니다…");
+    call("signup",[st.phone,st.bizName,st.kind,w,st.owner]).then(function(r){
+      st.busy=false;st.shop=r.shop;st.step=6;draw();
+    },function(e){st.busy=false;say(e.message,"bad");});
+  };
+}
+
+/* ---------------- 다 됐습니다 ---------------- */
+function viewDone(){
+  $("view").innerHTML=
+    '<div class="done"><div class="big">회원가입이 완료되었습니다</div>'+
+    '<p class="lead">'+esc((KIND[st.kind]||"차곳간").replace(/ \(.*\)$/,""))+'에 오신 것을 환영합니다.<br><b>'+esc(st.bizName)+'</b></p></div>'+
+    '<div class="note" style="background:rgba(22,104,196,.07);border-color:rgba(22,104,196,.3);color:var(--text)">'+
+      '아이디 <b>'+esc(phoneFmt(st.phone))+'</b><br>'+
+      '로그인할 때 가입하신 휴대폰 번호와 비밀번호를 입력해 주세요.<br>'+
+      '<span style="color:var(--muted);font-weight:500">비밀번호를 잊으셨다면 로그인 화면의 «비밀번호 찾기»를 이용해 주세요.</span></div>'+
+    '<button class="btn primary" id="go">로그인하러 가기</button>';
+  /* ?logout=1 — 이 기기에 남아 있는 다른 계정 기록을 지우고 로그인 화면부터 엽니다 */
+  $("go").onclick=function(){location.href=appUrl("?logout=1");};
+  say("");
+}
+
+function draw(){
+  steps();
+  if(st.step===1)return viewAgree();
+  if(st.step===2)return viewPhone();
+  if(st.step===3)return viewBiz();
+  if(st.step===4){
+    viewPay();
+    if(!st.plans.length){
+      call("planList",[]).then(function(r){st.plans=(r&&r.plans)||[];
+        if(!st.plan&&st.plans.length)st.plan=st.plans[0].code;
+        if(st.step===4)viewPay();},function(){});
+    }
+    if(st.phone&&!st.joinWhy){
+      call("joinCheck",[st.phone]).then(function(r){st.joinWhy=(r&&r.why)||"none";
+        if(st.step===4)viewPay();},function(){});
+    }
+    return;
+  }
+  if(st.step===5)return viewPw();
+  return viewDone();
+}
+
+/* 시작 */
+$("view").innerHTML='<p class="lead">준비하는 중입니다…</p>';
+call("joinMode",[]).then(function(r){
+  st.mode=r||{termsVer:"",privacyVer:"",refundVer:"",pay:false,open:false};
+  draw();
+},function(e){
+  st.mode={termsVer:"",privacyVer:"",refundVer:"",pay:false,open:false};
+  draw();say("서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.","bad");
+});
+})();
+</script>
+</body>
+</html>

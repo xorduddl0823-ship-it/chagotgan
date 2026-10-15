@@ -244,7 +244,7 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
 
 <section class="blk gut" id="price"><div class="wrap">
   <h2 class="h2">요금제</h2>
-  <p class="sub">한 달 단위로 결제해요. 고른 요금제로 가입하면 바로 결제 화면으로 이어지고, 결제가 끝나면 앱이 열려요.</p>
+  <p class="sub">30일 단위로 결제해요. 고른 요금제로 가입하면 바로 결제 화면으로 이어지고, 결제가 끝나면 앱이 열려요.</p>
   <div class="ptabs" role="tablist" aria-label="요금제 제품">
     <button type="button" role="tab" aria-selected="true" data-q="wash">워시</button>
     <button type="button" role="tab" aria-selected="false" data-q="check">체크</button>
@@ -252,7 +252,7 @@ footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:
   </div>
   <div class="plans" id="plans"></div>
   <ol class="steps3"><li><b>가입 · 로그인</b>휴대폰 인증으로 가입해요. 회원이면 로그인해요.</li><li><b>결제</b>토스페이먼츠 결제 창에서 카드로 결제해요.</li><li><b>바로 사용</b>결제가 끝나면 고른 제품이 바로 열려요.</li></ol>
-  <p class="note"><strong>가격 예시</strong>예요. 확정되면 바뀔 수 있어요. 표시 금액은 <strong>부가세 별도</strong>, 한 달 기준이에요. 환불은 <a href="@@REFUND@@" target="_blank" rel="noopener">환불 규정</a>을 따라요. 이미 쓰고 계신 분은 <a href="@@APP@@">로그인</a>한 뒤 같은 요금제 화면에서 결제해요.</p>
+  <p class="note"><strong>가격 예시</strong>예요. 확정되면 바뀔 수 있어요. 표시 금액은 <strong>부가세 별도</strong>, 30일 기준이에요. 환불은 <a href="@@REFUND@@" target="_blank" rel="noopener">환불 규정</a>을 따라요. 이미 쓰고 계신 분은 <a href="@@APP@@">로그인</a>한 뒤 같은 요금제 화면에서 결제해요.</p>
 </div></section>
 
 <section class="blk alt gut" id="flow"><div class="wrap">
@@ -413,7 +413,7 @@ function drawPlans(q){
   $("plans").innerHTML=PLANS[q].map(function(p,i){
     var price = p.price===null ? '<div class="price">가격 미정</div><div class="pmeta">가격이 정해지면 열려요</div>'
               : p.price===0 ? '<div class="price">상담</div><div class="pmeta">지점 수에 맞춰 안내해 드려요</div>'
-              : '<div class="price">'+won(p.price)+'원 <small>/ 월</small></div><div class="pmeta">부가세 별도 · 매달 결제</div><span class="ex">가격 예시</span>';
+              : '<div class="price">'+won(p.price)+'원 <small>/ 월</small></div><div class="pmeta">부가세 별도 · 결제일부터 30일</div><span class="ex">가격 예시</span>';
     var btn = p.price ? '<button type="button" class="btn '+(p.best?'p':'g')+'" data-start="'+q+':'+i+'">이 요금제로 시작하기</button><a class="member" href="'+APP+'?buy='+q+'-'+p.code+'">이미 회원이면 로그인하고 결제</a>'
             : p.price===0 ? '<a class="btn g" href="#ask">상담 요청</a>'
             : '<button class="btn g" type="button" disabled>가격이 정해지면 열려요</button>';
@@ -465,12 +465,12 @@ function flowGo(s){
     +'<label class="f" for="fPw2">비밀번호 확인</label><input type="password" id="fPw2" placeholder="비밀번호 확인">'
     +'<button class="btn p full" id="fNext">가입하고 결제로</button><span class="mono">서버: signup([휴대폰, 상호, 업종, 비밀번호, 대표이름, "'+esc(P.code)+'"]) → {key, shop, payWait:true, joinPlan}</span>');
   if(s==="how") panel('<h3>결제 방법</h3><p class="lead">회원가입이 완료되었습니다. 결제 방법을 선택해 주세요.</p>'
-    +'<div class="choice"><label><input type="radio" name="how" value="once"'+(F.auto?'':' checked')+'> <span><b>이번 한 달 결제</b><small>30일 쓰고, 다음 달은 다시 결제해요</small></span></label>'
-    +'<label><input type="radio" name="how" value="auto"'+(F.auto?' checked':'')+'> <span><b>매달 자동 결제</b><small>카드를 등록하면 매달 같은 날 결제돼요</small></span></label></div>'
-    +'<div class="consent" id="consent"'+(F.auto?'':' hidden')+'><b>자동 결제 안내</b><br>매달 <b>'+new Date().getDate()+'일</b>에 <b>'+total()+'(부가세 포함)</b>이 등록한 카드로 결제됩니다. 해지는 앱의 <b>마이페이지 › 요금제</b>에서 언제든지 할 수 있으며, 해지하셔도 이번 이용 기간이 끝날 때까지 사용할 수 있습니다.'
-    +'<label class="chk" style="margin-top:8px"><input type="checkbox" id="fAutoOk"> 위 내용을 확인했으며 자동 결제에 동의합니다</label></div>'
+    +'<div class="choice"><label><input type="radio" name="how" value="once"'+(F.auto?'':' checked')+'> <span><b>이번 30일 결제</b><small>30일 쓰고, 다음에는 다시 결제해요</small></span></label>'
+    +'<label><input type="radio" name="how" value="auto"'+(F.auto?' checked':'')+'> <span><b>자동 결제</b><small>카드를 등록하면 30일마다 자동으로 결제돼요</small></span></label></div>'
+    +'<div class="consent" id="consent"'+(F.auto?'':' hidden')+'><b>자동 결제 안내</b><br>· 이용기간이 끝나는 날(30일마다) 등록한 카드로 <b>'+total()+'(부가세 포함)</b>이 결제돼요.<br>· 결제는 토스페이먼츠가 처리해요. 카드 번호는 차곳간에 저장되지 않아요.<br>· 결제가 안 되면 다음 날, 3일 뒤, 5일 뒤에 다시 시도해요.<br>· 요금제 금액이 바뀌면 결제 전에 미리 알려 드리고 다시 동의를 받아요.<br>· 끄는 법: 내 요금제 › [자동 결제 끄기]. 끈 뒤에도 이번 이용기간 끝까지 쓸 수 있어요.'
+    +'<label class="chk" style="margin-top:8px"><input type="checkbox" id="fAutoOk"> 위 내용을 확인했고 자동 결제에 동의해요</label></div>'
     +'<button class="btn p full" id="fNext">다음</button><span class="mono">서버: payDue() (가입 때 받은 열쇠로)</span>');
-  if(s==="pay") panel('<h3>결제 확인</h3><dl class="kv"><dt>요금제</dt><dd>차곳간 '+NAME[F.prod]+' '+esc(P.n)+(F.auto?' (매달 자동 결제)':'')+'</dd><dt>기간</dt><dd>'+periodTx()+'</dd><dt>합계</dt><dd>'+total()+' (부가세 포함)</dd></dl>'
+  if(s==="pay") panel('<h3>결제 확인</h3><dl class="kv"><dt>요금제</dt><dd>차곳간 '+NAME[F.prod]+' '+esc(P.n)+(F.auto?' (자동 결제)':'')+'</dd><dt>기간</dt><dd>'+periodTx()+'</dd><dt>합계</dt><dd>'+total()+' (부가세 포함)<br><small style="font-weight:500;color:var(--muted)">요금 '+won(P.price)+'원 + 부가세 '+won(Math.round(P.price*1.1)-P.price)+'원</small></dd></dl>'
     +'<button class="btn p full" id="fToss">'+total()+' 결제하기</button>'
     +'<div class="toss" id="tossBox" hidden><b>토스페이먼츠 결제 창</b><span>실제 화면에서는 이 자리에 토스 결제 창이 떠요. 토스 심사용 테스트 결제 창 캡처를 여기에 넣어요.</span>'
     +'<div class="links" style="justify-content:center;margin-top:8px"><button class="btn p" id="fOk">결제 성공으로 보기</button><button class="btn g" id="fQuit">창 닫기 · 실패로 보기</button></div></div>'
