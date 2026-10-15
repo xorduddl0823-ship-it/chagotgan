@@ -202,7 +202,7 @@ function doLogin(){
   $("lgGo").disabled=true; msg("확인 중…");
   post("cggLogin",[id,pw]).then(function(r){
     $("lgGo").disabled=false;
-    if(r && r.tick){ TICK=r.tick; $("lgTo").innerHTML="<b>"+esc(r.to||"")+"</b>(으)로 인증번호를 발송했습니다."; msg(""); step2(true); return; }
+    if(r && r.tick){ TICK=r.tick; $("lgTo").innerHTML="<b>"+esc(r.to||"")+"</b>(으)로 인증번호를 발송했습니다. 5분 안에 입력해 주세요."; msg(""); step2(true); return; }
     enter(r);
   }).catch(function(e){ $("lgGo").disabled=false; msg(said(e),true); });
 }
