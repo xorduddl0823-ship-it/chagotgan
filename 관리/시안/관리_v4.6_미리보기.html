@@ -6507,7 +6507,7 @@ function ataDraw(){
     var map={}, n=0, pf=$("ataPf").value.trim(); Object.keys(ATA.tpls||{}).forEach(function(k){ if(ATA.tpls[k]) map[k]=ATA.tpls[k]; }); if(pf) map.pfId=pf;
     Array.prototype.forEach.call(host.querySelectorAll("[data-ata]"),function(inp){ var v=inp.value.trim(); map[inp.getAttribute("data-ata")]=v; if(v) n++; });
     var tp={}; Object.keys(map).forEach(function(k){ if(k!=="pfId") tp[k]=map[k]; });
-    confirmBox("코드를 저장할까요?","코드 넣음 "+n+"개 · 비어 있음(문자로 보냄) "+(ATA_LIST.length-n)+"개","저장",false,function(){
+    confirmBox("코드를 저장할까요?","코드 넣음 "+n+"개 · 비어 있음 "+(ATA_LIST.length-n)+"개 (알림톡 대신 문자로 가거나, 새 안내는 안 나가요)","저장",false,function(){
       $("ataSave").disabled=true;
       api("hqAtaSave",[map]).then(function(){ ATA.tpls=tp; if(pf) ATA.pfSet=true; toast("코드를 저장했어요"); ataDraw(); },
         function(e){ $("ataSave").disabled=false; toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true); });
@@ -6517,6 +6517,9 @@ function ataDraw(){
 /* 코드 있음 + 서버 준비됨 → 알림톡 먼저 · 코드 있음 + 서버 아직 → 문자로 보냄(서버 준비 중) · 코드 없음 → 문자로 보냄 */
 function ataWay(code,key){
   var row=ATA_LIST.filter(function(x){ return x[0]===key; })[0];
+  /* 코드가 없으면 서버가 문자로도 안 보내는 새 안내 (워시 서버 noticeAta smsIfNoCode=false) — 알림톡 방 시험표 «코드 없으면 문자로?» */
+  var noSms=["cash_done","pay_done","bill_on","bill_fail"].indexOf(key)>=0, hasCode=!!String(code||"").trim();
+  if(noSms && (!hasCode || (row && row[3]==="등록 전"))) return '<span class="pill off" title="코드를 넣기 전에는 알림톡도 문자도 나가지 않아요">안 보냄'+(row && row[3]==="등록 전"?' · 등록 전':'')+'</span>';
   if(row && row[3]==="등록 전") return '<span class="pill wait" title="솔라피에 등록하고 카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 등록 전</span>';
   if(row && row[3]==="심사 대기") return '<span class="pill wait" title="카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 심사 대기</span>';
   if(!String(code||"").trim()) return '<span class="pill gray">문자로 보냄</span>';

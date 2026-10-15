@@ -115,8 +115,13 @@ rep("""    var tp={}; ATA_LIST.forEach(function(x){ tp[x[0]]=map[x[0]]; });""",
     """    var tp={}; Object.keys(map).forEach(function(k){ if(k!=="pfId") tp[k]=map[k]; });""", False)
 # «등록 전» (솔라피에 아직 안 낸 템플릿) — 표 상태 칩 · 보낼 방법 글
 rep("""(x[3]==="통과"?"완료":(x[3]==="심사 대기"?"심사 대기":"확인 필요"))""", """(x[3]==="통과"?"완료":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))""", False)
-rep("""  if(row && row[3]==="심사 대기") return""", """  if(row && row[3]==="등록 전") return '<span class="pill wait" title="솔라피에 등록하고 카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 등록 전</span>';\n  if(row && row[3]==="심사 대기") return""", False)
+rep("""  if(row && row[3]==="심사 대기") return""", """  /* 코드가 없으면 서버가 문자로도 안 보내는 새 안내 (워시 서버 noticeAta smsIfNoCode=false) — 알림톡 방 시험표 «코드 없으면 문자로?» */
+  var noSms=["cash_done","pay_done","bill_on","bill_fail"].indexOf(key)>=0, hasCode=!!String(code||"").trim();
+  if(noSms && (!hasCode || (row && row[3]==="등록 전"))) return '<span class="pill off" title="코드를 넣기 전에는 알림톡도 문자도 나가지 않아요">안 보냄'+(row && row[3]==="등록 전"?' · 등록 전':'')+'</span>';
+  if(row && row[3]==="등록 전") return '<span class="pill wait" title="솔라피에 등록하고 카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 등록 전</span>';
+  if(row && row[3]==="심사 대기") return""", False)
 rep("«심사 대기»는 새로 심사받는 중이에요.", "«심사 대기»는 새로 심사받는 중이고, «등록 전»은 아직 솔라피에 내지 않은 템플릿이에요.", False)
+rep('"코드 넣음 "+n+"개 · 비어 있음(문자로 보냄) "+(ATA_LIST.length-n)+"개"', '"코드 넣음 "+n+"개 · 비어 있음 "+(ATA_LIST.length-n)+"개 (알림톡 대신 문자로 가거나, 새 안내는 안 나가요)"', False)
 # ⑥ 알림톡 방 워딩 검토 (알림톡/07_워딩_검토/관리_v4.5.md) — v4재료/wording46.py
 import sys; sys.path.insert(0, os.path.join(HERE, "v4재료")); import wording46
 s, k, miss = wording46.apply(s); N["말"] += k
