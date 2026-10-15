@@ -73,7 +73,7 @@ function FAKE(fn,a){
     case "hqTodoAdd": F_NEXT++; F_TODO.push({id:F_NEXT,title:a[0],done:false,due_at:a[1]||null}); return {ok:true};
     case "hqTodoDone": F_TODO.forEach(function(t){ if(t.id===a[0]) t.done=!!a[1]; }); return {ok:true};
     case "hqTodoDel": F_TODO=F_TODO.filter(function(t){ return t.id!==a[0]; }); return {ok:true};
-    case "hqAta": return {ok:true,pfSet:true,tpls:{auth:"KA01TP000000AUTH01",intake:"KA01TP000000IN0001",release:"KA01TP000000REL001",bill:"KA01TP000000BILL01",deposit_ok:"KA01TP000000DEP001"},
+    case "hqAta": return {ok:true,pfSet:true,ready:["intake","release","extra_work","bill","deposit_ok","pay_done","cash_done","auth"],tpls:{auth:"KA01TP000000AUTH01",intake:"KA01TP000000IN0001",release:"KA01TP000000REL001",bill:"KA01TP000000BILL01",deposit_ok:"KA01TP000000DEP001"},
       stats:{ym:a[0],ata:{cnt:412,won:412*13},sms:{cnt:96,won:96*18},lms:{cnt:1288,won:1288*45},mms:{cnt:12,won:12*110}}};
     case "hqAtaSave": return {ok:true};
     case "hqOps": return {usage:{db_bytes:1.9*Math.pow(1024,3),file_bytes:23.4*Math.pow(1024,3),file_cnt:18234},limits:{dbGb:8,fileGb:100,warnPct:80},
