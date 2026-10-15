@@ -28,16 +28,16 @@ rep('var VER="d3.5";', 'var VER="d3.6";')
 
 # 2) 오류 글 — 영어 · 서버 이름 · 원문 숨김 (자세한 것은 console 에만)
 rep('''function(){throw new Error("서버에 연결하지 못했습니다. 인터넷을 확인해 주세요");})''',
-    '''function(){throw new Error("연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");})''')
+    '''function(){throw new Error("연결이 잠시 끊겼어요. 다시 시도해 주세요.");})''')
 rep('''catch(e){throw new Error("서버 응답을 읽지 못했습니다");}''',
-    '''catch(e){try{console.warn("dealer-api 응답",String(t).slice(0,200));}catch(_){}throw new Error("정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");}''')
+    '''catch(e){try{console.warn("dealer-api 응답",String(t).slice(0,200));}catch(_){}throw new Error(inLogin()?"정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.":"정보를 불러오지 못했어요. 다시 시도해 주세요.");}''')
 rep('''forget();throw new Error("다시 로그인해 주세요");''', '''forget();S.err="로그인 시간이 지났습니다. 다시 로그인해 주세요.";render();throw new Error("로그인 시간이 지났습니다. 다시 로그인해 주세요.");''')
 rep('''throw new Error("약관 동의가 필요합니다");''', '''throw new Error("약관 동의가 필요합니다.");''')
 rep('''      if(/authoriz|jwt/i.test(m))throw new Error("서버 설정 확인 필요: dealer-api 의 Verify JWT 를 꺼 주세요 ("+m+")");
       if(/not found|function/i.test(m))throw new Error("서버(dealer-api)를 찾지 못했습니다. 이름이 dealer-api 인지 확인해 주세요 ("+m+")");
       throw new Error("서버 응답이 이상합니다: "+(m||t.slice(0,120)));}''',
     '''      try{console.warn("dealer-api 응답",m||String(t).slice(0,200));}catch(_){}
-      throw new Error("정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");}''')
+      throw new Error(inLogin()?"정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.":"정보를 불러오지 못했어요. 다시 시도해 주세요.");}''')
 
 # 3) 로그인 · 동의 (표준형 «~습니다»)
 rep("""'인증번호 6자리를<br>입력하세요'""", """'인증번호 6자리를<br>입력해 주세요'""")
@@ -116,10 +116,11 @@ rep('''    if(j&&j.__err)throw new Error(j.__err);''',
     '''    if(j&&j.__err)throw new Error(safeMsg(j.__err));''')
 rep('''/* ---------- 서버 ---------- */
 function api(fn,args){''', '''/* ---------- 서버 ---------- */
-var ERR_STD="잠시 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.";
+function inLogin(){return S.view==="login"||S.view==="agree";}
+function errStd(){return inLogin()?"처리하지 못했습니다. 잠시 후 다시 시도해 주세요.":"처리하지 못했어요. 다시 시도해 주세요.";}
 function safeMsg(m){m=String(m==null?"":m).trim();
   if(m&&m.length<=80&&/[가-힣]/.test(m)&&!/[A-Za-z_]{3,}|[{}<>\\n]/.test(m))return m;
-  try{console.warn("dealer-api 오류",m.slice(0,200));}catch(_){}return ERR_STD;}
+  try{console.warn("dealer-api 오류",m.slice(0,200));}catch(_){}return errStd();}
 function errMsg(e){return safeMsg(e&&e.message);}
 function api(fn,args){''')
 rep('''toast(e.message)''', '''toast(errMsg(e))''', 7)
@@ -127,11 +128,7 @@ rep('''S.err=e.message''', '''S.err=errMsg(e)''', 3)
 #  7-2 보안 낮음: 로그아웃 때 기기 · 메모리에 남는 번호 · 이름 · 읽음 · 알림 설정 · 차 상세도 비움
 rep('''function forget(){S.carT=null;S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;ls("cgd_key",null);''',
     '''function forget(){S.carT=null;S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;S.name="";S.phone="";S.detail=null;S.seen=null;ls("cgd_key",null);ls("cgd_phone",null);ls("cgd_seen",null);ls("cgd_pref",null);''')
-#  7-3 «무료» 빼기 · 시연 띠 버튼
-rep('''sub:"실제 자료가 아니에요. 딜러앱은 무료예요 — 휴대폰 번호로 로그인하면 업체에 맡긴 내 차가 보여요."''',
-    '''sub:"실제 자료가 아니에요. 휴대폰 번호로 로그인하면 업체에 맡긴 내 차가 보여요."''')
-rep('''var cta=ph.querySelector("[data-cgg-cta]");if(cta)cta.onclick=''', '''var cta=ph.querySelector("[data-cgg-cta]");if(cta)cta.textContent="로그인하러 가기";if(cta)cta.onclick=''')
-rep('''<span>조회할 때마다 1건씩 빠져요 · 앱은 무료</span>''', '''<span>조회할 때마다 1건씩 빠져요</span>''')
+#  7-3 화면의 «무료»는 그대로 (총괄 결정 ① — 알림톡/07_워딩_검토/00_대조표_우선.md)
 #  7-4 알림 길: 출고 · 도착 알림은 알림톡으로 감
 rep('''via:"문자"''', '''via:"알림톡"''', 2)
 #  7-5 상품화 완료 · 입금 확인 · 낼 금액 (서버 값 «입금 확인됨» 비교는 그대로)
@@ -153,9 +150,9 @@ rep("""<small>내 차 상품화 · '+VER+'</small>""", """<small>내 차 상품�
 rep('''find:"차량번호 · 차종 · 업체 찾기"''', '''find:"차량번호 · 차종 · 업체 검색"''')
 rep('''불러오는 중…''', '''불러오는 중이에요…''', 5)
 rep('''"제3조 (이용 요금)''', '''"제3조 (이용요금)''')
-rep('''<h3>복사하지 못했어요</h3>''', '''<h3>복사하지 못했습니다</h3>''')
+# (복사 창 제목 «복사하지 못했어요»는 해요체 그대로 — 말 대조표 3장)
 rep('''toast(DEMO?"업체가 보낸 청구서 화면이 열려요 (시연이라 열리지 않아요)":"청구서 주소가 없어요. 업체에 문의해 주세요");''',
-    '''toast(DEMO?"시연에서는 청구서 화면이 열리지 않아요.":"청구서를 열지 못했습니다. 업체에 문의해 주세요.");''')
+    '''toast(DEMO?"시연에서는 청구서 화면이 열리지 않아요.":"청구서를 열지 못했어요. 업체에 문의해 주세요.");''')
 
 # 6) 쓰기
 if os.path.isdir(OUTDIR):

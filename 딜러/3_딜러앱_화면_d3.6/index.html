@@ -1024,23 +1024,24 @@ function day(iso){if(!iso)return "";var d=new Date(iso);if(isNaN(d))return "";
 function $(id){return document.getElementById(id);}
 
 /* ---------- 서버 ---------- */
-var ERR_STD="잠시 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.";
+function inLogin(){return S.view==="login"||S.view==="agree";}
+function errStd(){return inLogin()?"처리하지 못했습니다. 잠시 후 다시 시도해 주세요.":"처리하지 못했어요. 다시 시도해 주세요.";}
 function safeMsg(m){m=String(m==null?"":m).trim();
   if(m&&m.length<=80&&/[가-힣]/.test(m)&&!/[A-Za-z_]{3,}|[{}<>\n]/.test(m))return m;
-  try{console.warn("dealer-api 오류",m.slice(0,200));}catch(_){}return ERR_STD;}
+  try{console.warn("dealer-api 오류",m.slice(0,200));}catch(_){}return errStd();}
 function errMsg(e){return safeMsg(e&&e.message);}
 function api(fn,args){
   if(DEMO)return demoApi(fn,args||[]);
   return fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
     body:JSON.stringify({fn:fn,args:args||[],token:S.key})})
-  .then(function(r){return r.text();},function(){throw new Error("연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");})
-  .then(function(t){var j;try{j=JSON.parse(t);}catch(e){try{console.warn("dealer-api 응답",String(t).slice(0,200));}catch(_){}throw new Error("정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");}
+  .then(function(r){return r.text();},function(){throw new Error("연결이 잠시 끊겼어요. 다시 시도해 주세요.");})
+  .then(function(t){var j;try{j=JSON.parse(t);}catch(e){try{console.warn("dealer-api 응답",String(t).slice(0,200));}catch(_){}throw new Error(inLogin()?"정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.":"정보를 불러오지 못했어요. 다시 시도해 주세요.");}
     if(j&&j.__login){forget();S.err="로그인 시간이 지났습니다. 다시 로그인해 주세요.";render();throw new Error("로그인 시간이 지났습니다. 다시 로그인해 주세요.");}
     if(j&&j.__agree){S.agreed=false;S.view="agree";render();throw new Error("약관 동의가 필요합니다.");}
     if(j&&j.__err)throw new Error(safeMsg(j.__err));
     if(!j||!("result" in j)){var m=(j&&(j.msg||j.message||j.error))||"";
       try{console.warn("dealer-api 응답",m||String(t).slice(0,200));}catch(_){}
-      throw new Error("정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");}
+      throw new Error(inLogin()?"정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.":"정보를 불러오지 못했어요. 다시 시도해 주세요.");}
     return j.result;});
 }
 function forget(){S.carT=null;S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;S.name="";S.phone="";S.detail=null;S.seen=null;ls("cgd_key",null);ls("cgd_phone",null);ls("cgd_seen",null);ls("cgd_pref",null);S.view="login";S.step=1;S.sheet=null;render();}
@@ -1314,7 +1315,7 @@ function billsView(){
    '<details class="help"><summary>이 화면 사용법</summary><p>업체가 내 번호로 보낸 청구서가 업체 · 달마다 한 장씩 모여요. 기한이 지난 것이 맨 위에 와요. «내역 보기»를 누르면 업체가 보낸 청구서(차별 작업과 금액)가 열려요. 한 번에 결제하는 기능은 나중에 열려요.</p></details>';
 }
 function histView(){
-  return '<div class="bal"><span>남은 조회</span><b class="num">0건</b><span>조회할 때마다 1건씩 빠져요</span>'+
+  return '<div class="bal"><span>남은 조회</span><b class="num">0건</b><span>조회할 때마다 1건씩 빠져요 · 앱은 무료</span>'+
     '<div class="charge"><button data-act="soon">5건 충전</button><button data-act="soon">10건 충전</button><button data-act="soon">30건 충전</button></div></div>'+
    '<div class="sec">카히스토리 조회 (사고·보험 이력)</div>'+
    '<div class="field"><input id="hp" placeholder="차량번호 예: 123가4567" aria-label="조회할 차량번호"><button class="btn pri" data-act="soon">조회</button></div>'+
@@ -1379,7 +1380,7 @@ function sheetHtml(){
     inner='<h3>상품화 완료로 표시할까요?</h3><div class="split"><span class="h">차</span><span>'+esc(FL.map(function(c){return c.plate;}).slice(0,3).join(", "))+(FL.length>3?' 외 '+(FL.length-3)+'대':'')+'</span>'+
     '<span class="h">대수</span><span>'+FL.length+'대</span><span class="h tot">들어간 금액 합계</span><span class="tot num">'+(fs?won(fs):"—")+'</span></div>'+
     '<div class="two"><button class="btn sec2" data-act="close">취소</button><button class="btn pri" data-act="finishDo">완료로 표시</button></div>';}
-  if(k==="copy")inner='<h3>복사하지 못했습니다</h3><p style="margin:0;color:var(--sub);font-size:14px">아래 글을 길게 눌러 복사해 주세요.</p><input readonly value="'+esc(S.copyText||"")+'" onfocus="this.select()" style="border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font:inherit"><button class="btn sec2" data-act="close">닫기</button>';
+  if(k==="copy")inner='<h3>복사하지 못했어요</h3><p style="margin:0;color:var(--sub);font-size:14px">아래 글을 길게 눌러 복사해 주세요.</p><input readonly value="'+esc(S.copyText||"")+'" onfocus="this.select()" style="border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font:inherit"><button class="btn sec2" data-act="close">닫기</button>';
   if(k==="logout")inner='<h3>로그아웃할까요?</h3><p style="margin:0;color:var(--sub);font-size:14px">다시 로그인할 때 인증번호를 한 번 더 받아요.</p><div class="two"><button class="btn sec2" data-act="close">취소</button><button class="btn pri" data-act="logoutdo">로그아웃</button></div>';
   if(k==="leave")inner='<h3>동의를 철회할까요?</h3><p style="margin:0;color:var(--sub);font-size:14px">모든 기기에서 로그아웃되고, 다시 동의하기 전까지 차가 보이지 않아요. 업체에 맡긴 차 기록은 업체에 그대로 남아요.</p><div class="two"><button class="btn sec2" data-act="close">취소</button><button class="btn pri" style="background:var(--bad)" data-act="leave">철회하기</button></div>';
   if(k==="name")inner='<h3>이름</h3><input id="nm" maxlength="20" placeholder="예) 김민수" value="'+esc(S.name)+'" style="border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font:inherit"><div class="two"><button class="btn sec2" data-act="close">취소</button><button class="btn pri" data-act="nameSave">저장</button></div>';
@@ -1417,11 +1418,11 @@ function shell(body){
     '<div class="cgg-biz"><b>'+(S.name?esc(S.name)+' 딜러':'딜러')+'</b><small>'+esc([co,telFmt(S.phone)].filter(Boolean).join(" · "))+'</small></div>'+
     '<div class="cgg-right"><button class="bell" data-act="tab" data-v="noti">알림'+(u?'<span class="dot">'+(u>99?"99+":u)+'</span>':'')+'</button></div></div>'+
     '<nav class="cgg-nav" aria-label="메뉴">'+NAVS.map(function(n){return '<button data-act="tab" data-v="'+n[0]+'"'+(cur===n[0]?' aria-selected="true"':'')+'>'+CGG.ic(n[2])+'<span class="lbl">'+n[1]+'</span></button>';}).join("")+'</nav></header>'+
-    '<main class="cgg-main" id="bd"><div class="stack">'+(DEMO?CGG.trial.band({title:"예시 자료로 딜러앱을 둘러보고 있어요.",sub:"실제 자료가 아니에요. 휴대폰 번호로 로그인하면 업체에 맡긴 내 차가 보여요."}):'')+body+'</div></main><nav class="cgg-tbar"></nav>';
+    '<main class="cgg-main" id="bd"><div class="stack">'+(DEMO?CGG.trial.band({title:"예시 자료로 딜러앱을 둘러보고 있어요.",sub:"실제 자료가 아니에요. 딜러앱은 무료예요 — 휴대폰 번호로 로그인하면 업체에 맡긴 내 차가 보여요."}):'')+body+'</div></main><nav class="cgg-tbar"></nav>';
 }
 function wireShell(ph){
   CGG.layout.init(ph,"cgg_dealer_layout");
-  if(DEMO){CGG.trial.init("preview");var cta=ph.querySelector("[data-cgg-cta]");if(cta)cta.textContent="로그인하러 가기";if(cta)cta.onclick=function(){try{location.href=location.pathname;}catch(e){}};}
+  if(DEMO){CGG.trial.init("preview");var cta=ph.querySelector("[data-cgg-cta]");if(cta)cta.onclick=function(){try{location.href=location.pathname;}catch(e){}};}
   var cur=S.view==="car"?"cars":S.tab;
   CGG.tabbar(ph.querySelector(".cgg-tbar"),[{key:"home",icon:"home",label:"홈"},{key:"cars",icon:"car",label:"내 차"},{key:"noti",icon:"bell",label:"알림"},{key:"bills",icon:"receipt",label:"청구서"},{key:"more",icon:"more",label:"전체"}],
     (cur==="hist"||cur==="me")?"more":cur,function(k){act("tab",{getAttribute:function(){return k;}});});
@@ -1499,7 +1500,7 @@ function act(a,el){
   if(a==="copy"){var what=el.getAttribute("data-m")||"";
     var done=function(){toast(what+" 복사했어요");},fail=function(){S.sheet="copy";S.copyText=v;render();};
     try{navigator.clipboard.writeText(v).then(done,fail);}catch(e){fail();}return;}
-  if(a==="billView"){if(/^https:\/\/app\.cgg\.co\.kr\//.test(v||"")){try{window.open(v,"_blank","noopener");}catch(e){}}else toast(DEMO?"시연에서는 청구서 화면이 열리지 않아요.":"청구서를 열지 못했습니다. 업체에 문의해 주세요.");return;}
+  if(a==="billView"){if(/^https:\/\/app\.cgg\.co\.kr\//.test(v||"")){try{window.open(v,"_blank","noopener");}catch(e){}}else toast(DEMO?"시연에서는 청구서 화면이 열리지 않아요.":"청구서를 열지 못했어요. 업체에 문의해 주세요.");return;}
   if(a==="go"&&v==="BILLS"){S.tab="bills";S.view="main";render();try{window.scrollTo(0,0);}catch(e){}return;}
   if(a==="go"){S.filter=v||"전체";S.carT=S.carT||{};if(S.carT.q==null){S.carT.q="";S.carT.k=0;S.carT.dir=1;S.carT.size=10;S.carT.sel={};}S.carT.f=(v&&v!=="전체")?v:"";S.carT.page=1;S.q="";S.tab="cars";S.view="main";render();try{window.scrollTo(0,0);}catch(e){}return;}
   if(a==="finishSel"){var ks=Object.keys(S.sel).filter(function(k){return S.sel[k];});
