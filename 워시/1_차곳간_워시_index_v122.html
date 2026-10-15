@@ -5911,7 +5911,8 @@ function jLedgerTable(){
   }
   JLT.o.filters=[monthLabel(L.month)];
   JLT.o.rows.length=0;rows.forEach(function(x){JLT.o.rows.push(x);});
-  if(!JLT.h||!host.firstChild){JLT.h=CGG.table(host,JLT.o);
+  if(!JLT.h||!host.firstChild){if(!sameIds){JLT.st.sel={};L.sel={};}   /* 보안 낮음 1: 새로 만들 때도 고른 줄 비움 */
+    JLT.h=CGG.table(host,JLT.o);
     /* 처음 정렬은 «최신 입고순» (입고일 머리 두 번 = 내림차순) */
     for(var k=0;k<2;k++){var th=host.querySelector('th[data-k="4"]');if(th)th.click();}}
   else{if(!sameIds){JLT.st.sel={};L.sel={};}JLT.h.redraw();}   /* 1.5 보안 규칙 ②: 자료가 바뀌면 고른 줄 비움 */
