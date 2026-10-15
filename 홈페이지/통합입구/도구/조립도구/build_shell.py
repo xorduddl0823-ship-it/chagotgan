@@ -30,6 +30,9 @@ def pkg(code):
         print(code, "서버 주소 바꿈", n)
     return base64.b64encode(t.encode("utf-8")).decode("ascii")
 
+sys.path.insert(0, os.path.join(ROOT, "홈페이지", "공통"))
+import 사업자정보
+BIZ = 사업자정보.render()   # 값은 홈페이지/공통/사업자정보.json 한 곳에서
 VER = opt("--ver", "통합 v2 · UI 1.1 · 2026-10-13")
 API = ("http://127.0.0.1:8898/sb" if TEST else SB) + "/functions/v1/cgg-api?forceFunctionRegion=ap-northeast-2"
 
@@ -109,6 +112,7 @@ body.multi .cggFrame{top:46px;height:calc(100% - 46px)}
       <div id="lgMsg" style="font-size:14px;margin-top:12px;min-height:20px;line-height:1.5"></div>
     </div>
     <div style="text-align:center;font-size:12px;color:var(--muted,#667389);margin-top:16px;line-height:1.8" id="lgVer"></div>
+    @@BIZ@@
   </div>
 </div>
 
@@ -311,7 +315,7 @@ window.CGG_SHELL = { ver:SHELL_VER, me:function(){ return ME; }, cur:function(){
 </html>
 '''
 out = (HTML.replace("@@IN@@", S_IN).replace("@@BTN@@", S_BTN).replace("@@GHOST@@", S_GHOST).replace("@@LAB@@", S_LAB)
-       .replace("@@API@@", API).replace("@@VER@@", VER).replace("@@WASH@@", pkg("wash")).replace("@@CHECK@@", pkg("check")))
+       .replace("@@API@@", API).replace("@@VER@@", VER).replace("@@BIZ@@", BIZ).replace("@@WASH@@", pkg("wash")).replace("@@CHECK@@", pkg("check")))
 sfx = "_" + PAN if PAN else ""
 name = os.path.join("도구", "시험용", "_시험_통합" + sfx + ".html") if TEST else "0_차곳간_통합_index" + sfx + ".html"
 io.open(os.path.join(OUT, name), "w", encoding="utf-8").write(out)

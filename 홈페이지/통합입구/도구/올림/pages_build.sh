@@ -8,6 +8,8 @@ rm -rf out && mkdir out
 SRC="홈페이지/통합입구/0_차곳간_통합_index${1:+_$1}.html"
 echo "올리는 판: $SRC"
 cp "$SRC" out/index.html
+# 사업자 정보 칸을 홈페이지/공통/사업자정보.json 최신 값으로 다시 채웁니다 (파이썬이 없으면 묶을 때 넣은 값 그대로).
+python3 홈페이지/공통/사업자정보.py out/index.html || echo "사업자 정보: 묶을 때 값 그대로 씀"
 # 검색 사이트에 안 뜨게, 다른 사이트가 이 화면을 몰래 품지 못하게 합니다.
 cat > out/_headers <<'H'
 /*
