@@ -89,6 +89,8 @@ function prDraw(){
         if(r.oid && prStK(r.raw)==="paid" && ["wash","check","bill","home"].indexOf(r.tk)>=0)
           return '<button type="button" class="btn sm" data-prf="'+r.i+'">환불</button>';
         if(r.tk==="dealer") return '<span class="hint" style="margin:0">딜러가 확인</span>';
+        var lp=r.tk==="bank" && /입금 전|ready/i.test(r.status) ? (D.pays||[]).filter(function(x){ return String(x.id)===String(r.raw.payId||r.oid); })[0] : null;
+        if(lp) return '<button type="button" class="btn sm" data-prp="'+esc(String(lp.id))+'">입금 확인</button>';
         if(r.raw.payId && /입금 전|ready/i.test(r.status)) return '<button type="button" class="btn sm" data-prp="'+esc(r.raw.payId)+'">입금 확인</button>';
         return ''; }}
     ]});
@@ -96,5 +98,5 @@ function prDraw(){
     b.onclick=function(ev){ ev.stopPropagation(); var r=rows[Number(b.getAttribute("data-prf"))];
       refundSheet(String(r.orderId),{shop:String(r.shopName||r.shop||""), kind:String(r.kind||r.product||"")}); }; });
   Array.prototype.forEach.call(document.querySelectorAll("[data-prp]"),function(b){
-    b.onclick=function(ev){ ev.stopPropagation(); paySheet(b.getAttribute("data-prp")); }; });
+    b.onclick=function(ev){ ev.stopPropagation(); var v=b.getAttribute("data-prp"), p=(D.pays||[]).filter(function(x){ return String(x.id)===v; })[0]; paySheet(p?p.id:v); }; });
 }

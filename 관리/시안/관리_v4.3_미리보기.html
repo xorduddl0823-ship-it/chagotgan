@@ -2855,7 +2855,7 @@ var F_SVCS=[{id:1,code:"supabase",name:"수파베이스",kind:"sub",cost:35000,n
  {id:2,code:"solapi",name:"솔라피 문자",kind:"charge",balance:8000,min_bal:10000,active:true,sort:2,auto:true,auto_note:"자동으로 읽음",what:"문자"},
  {id:3,code:"cloudflare",name:"클라우드플레어",kind:"sub",cost:0,next_due:dd(17),active:true,sort:3,what:"주소"}];
 var F_TODO=[{id:1,title:"QR 스티커 교체",done:false,due_at:dd(0)},{id:2,title:"문자 충전",done:false,due_at:dd(-2)},{id:3,title:"세금계산서 정리",done:false,due_at:dd(6)}], F_NEXT=10;
-var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
+var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_PWDEL={}, F_SG={on:false,cfg:{perIp:5,allDay:200,waitPerIp:3}}, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
 function FAKE(fn,a){
   a=a||[];
   switch(fn){
@@ -2910,6 +2910,13 @@ function FAKE(fn,a){
       return {ok:true};
     case "hqAudit": return {ok:true,list:F_LOG.concat([{at:dd(-5)+"T10:00:00",who:"hq:한본사",action:"pwReset",target_phone:a[0],product:"check:HANBIT2",result:"ok"}])};
     case "hqCheckPwSms": if(a[0]===true||a[0]===false){ F_PWSMS=a[0]; F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:"checkPwSms",product:String(a[0]),result:"ok"}); } return {ok:true,on:F_PWSMS};
+    case "hqPayWait": return {ok:true,list:[
+      {shop:"NEWCAR1",name:"새차모터스",ownerPhone:"01055556666",joinPlan:"pro",createdAt:dd(-2)+"T10:00:00",days:2,old:false,paidOrder:!F_PWDEL.NEWCAR1&&true},
+      {shop:"GOLDWASH",name:"골드세차",ownerPhone:"01077778888",joinPlan:"basic",createdAt:dd(-9)+"T10:00:00",days:9,old:false,paidOrder:false},
+      {shop:"OLDSHOP",name:"옛날광택",ownerPhone:"01099990000",joinPlan:"basic",createdAt:dd(-34)+"T10:00:00",days:34,old:true,paidOrder:false},
+      {shop:"FRESH",name:"프레시카",ownerPhone:"01012121212",joinPlan:"standard",createdAt:dd(-1)+"T10:00:00",days:1,old:false,paidOrder:false}].filter(function(x){ return !F_PWDEL[x.shop]; })};
+    case "hqPayWaitDel": if(a[0]==="NEWCAR1") throw new Error("결제가 진행 중이거나 끝난 주문이 있어 지울 수 없습니다"); F_PWDEL[a[0]]=1; return {ok:true};
+    case "hqSignup": if(a[0]!==undefined){ F_SG={on:!!a[0].on,cfg:{perIp:a[0].perIp,allDay:a[0].allDay,waitPerIp:a[0].waitPerIp}}; } return {ok:true,on:F_SG.on,cfg:F_SG.cfg};
     case "hqPayResults": return {ok:true,from:a[0],to:a[1],sum:55000+33000+77000,refunds:27500,list:[
       {tag:"워시",at:dd(-12)+"T10:20:00",shop:"HANBIT",shopName:"한빛광택",kind:"월 요금",method:"카드",amount:55000,useCash:0,status:"paid",period:"~11/14",orderId:"CGG-PLAN-0001",from:"워시"},
       {tag:"체크 · 새빛 성능검사소",at:dd(-3)+"T15:02:00",shop:"SAEBIT",shopName:"새빛 성능장",office:"새빛 성능검사소",kind:"캐시",method:"카드",amount:33000,status:"paid",period:"",orderId:"CGG-CASH-0002",from:"체크"},
@@ -3159,6 +3166,7 @@ function loadAll(){
     api("hqShops",[]).then(function(r){ D.shops=(r&&r.shops)||[]; }),
     api("hqUsers",[]).then(function(r){ D.users=(r&&r.users)||[]; }),
     api("hqPayments",[]).then(function(r){ D.pays=(r&&r.payments)||[]; }),
+    api("hqPayWait",[]).then(function(r){ PW.list=(r&&r.list)||[]; PW.loaded=true; },function(){ PW.list=null; }),
     api("inviteList",[]).then(function(r){ D.invites=(r&&r.invites)||[]; }),
     api("hqPlans",[]).then(function(r){ D.plans=(r&&r.plans)||[];
       PLAN_NAME={trial:"무료 체험"}; D.plans.forEach(function(p){ PLAN_NAME[p.code]=p.name; }); }),
@@ -3239,7 +3247,9 @@ function viewSummary(){
   if(memoOld.length) memoTodos.push([memoOld.length,"지난 날 메모 · 아직 완료 안 됨",
     String(memoOld[0].due_at).slice(5,10).replace("-","/")+" "+memoOld[0].title+(memoOld.length>1?" 외":""),
     function(){ hqDaySheet(String(memoOld[0].due_at).slice(0,10)); }]);
+  var pwNeed = (PW.list||[]).filter(function(x){ return x.paidOrder || Number(x.days)>=7; });
   var todos = memoTodos.concat([
+    [pwNeed.length,"결제 대기 · 확인할 업체", pwNeed.length?names(pwNeed,function(x){return (x.paidOrder?"돈 냄 · ":"")+(x.name||x.shop);}):"7일 넘게 결제를 안 한 곳", go("wait"), pwNeed.some(function(x){return x.paidOrder;})?"imp":undefined],
     [unpaid.length,"못 받은 금액", unpaid.length?(won(unpaidAmt)+" · "+names(unpaid,function(p){return p.shopName||p.biz_name||"";})):"", go("pays"),"imp"],
     [late.length,"이용 기한 지남", names(late,function(x){return x.name||x.shop;}), go("pays"),"imp"],
     [svcBad.length,"유지비 — 끊기기 직전", names(svcBad,function(x){return x.v.name+" "+x.st.txt;},2), go("svc"),"imp"],
@@ -6338,6 +6348,7 @@ var TABS = [
   ["cwal","체크 지갑 잇기",viewCwal],
   ["sms","기한 안내 문자",viewExp],
   ["lock","잠금 · 차단",viewLock],
+  ["wait","결제 대기",viewPayWait],
   ["noti","공지사항",viewNotice],
   ["ata","알림톡 템플릿",viewAta],
   ["sec","보안 점검",viewSec],
@@ -6350,7 +6361,7 @@ var TAB = "sum";
 var NAV = [   /* J안 4판 차례 = 지금 쓰는 메뉴 차례 그대로 (관리/시안/00_비교와_추천안.md) — 대표님 최종 확인 전 */
   ["sum","홈",["sum","ops"]],
   ["users","계정",["inv","users","ppl"]],
-  ["shops","업체",["shops","lock"]],
+  ["shops","업체",["shops","lock","wait"]],
   ["pays","받는 금액",["plans","pays","packs","pg","cwal"]],
   ["settle","내는 금액",["settle","svc"]],
   ["tax","세금계산서",["tax"]],
@@ -6818,7 +6829,8 @@ function pplDraw(){
       var a=b.getAttribute("data-pa"), t=b.getAttribute("data-pt"), n=b.getAttribute("data-pn"), A=PACT[a];
       var label=b.textContent;
       confirmBox(label+" — "+n+"?", (nm||"")+" · "+phoneFmt(r.phone)+"\n"+A[1], label, A[2], function(){
-        function done(x){ toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:""))); pplFind(); }
+        function done(x){ if(x && x.sent===false){ toast("문자를 보내지 못했어요"+(x.note?" · "+x.note:""),true); pplFind(); return; }
+          toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:""))); pplFind(); }
         function fail(e){ toast(e.message||"하지 못했습니다",true); }
         api("hqPersonAct",[r.phone, a, t]).then(function(x){
           /* 제품 열기가 처음이면 서버가 한 번 더 물어요 — 다른 제품이 막힐 수 있어서 */
@@ -6922,6 +6934,8 @@ function prDraw(){
         if(r.oid && prStK(r.raw)==="paid" && ["wash","check","bill","home"].indexOf(r.tk)>=0)
           return '<button type="button" class="btn sm" data-prf="'+r.i+'">환불</button>';
         if(r.tk==="dealer") return '<span class="hint" style="margin:0">딜러가 확인</span>';
+        var lp=r.tk==="bank" && /입금 전|ready/i.test(r.status) ? (D.pays||[]).filter(function(x){ return String(x.id)===String(r.raw.payId||r.oid); })[0] : null;
+        if(lp) return '<button type="button" class="btn sm" data-prp="'+esc(String(lp.id))+'">입금 확인</button>';
         if(r.raw.payId && /입금 전|ready/i.test(r.status)) return '<button type="button" class="btn sm" data-prp="'+esc(r.raw.payId)+'">입금 확인</button>';
         return ''; }}
     ]});
@@ -6929,7 +6943,94 @@ function prDraw(){
     b.onclick=function(ev){ ev.stopPropagation(); var r=rows[Number(b.getAttribute("data-prf"))];
       refundSheet(String(r.orderId),{shop:String(r.shopName||r.shop||""), kind:String(r.kind||r.product||"")}); }; });
   Array.prototype.forEach.call(document.querySelectorAll("[data-prp]"),function(b){
-    b.onclick=function(ev){ ev.stopPropagation(); paySheet(b.getAttribute("data-prp")); }; });
+    b.onclick=function(ev){ ev.stopPropagation(); var v=b.getAttribute("data-prp"), p=(D.pays||[]).filter(function(x){ return String(x.id)===v; })[0]; paySheet(p?p.id:v); }; });
+}
+
+/* ═══════ 업체 › 결제 대기 + 누구나 가입 스위치 (관리 v4.3 · 워시 서버 sb13) ═══════
+   근거: 서버/설계/15 · 결제/10 관리 A9 · 총괄 전달 2026-10-15 (paidOrder 는 «확인 필요»로 눈에 띄게)
+     hqPayWait() → {list:[{shop, name, ownerPhone, joinPlan, createdAt, days, old(30일 지남), paidOrder(돈은 냈는데 아직 대기)}]}
+     hqPayWaitDel([업체]) — 결제 대기 업체만 지워요. 결제 중 · 끝난 주문이 있으면 서버가 거절. 주문 · 장부는 남아요
+     hqSignup() → {on, cfg:{perIp, allDay, waitPerIp}} · hqSignup([{on, perIp, allDay, waitPerIp}]) — 가입 코드 없이 가입 (처음 꺼짐) */
+var PWROWS = [];
+var PW = {list:null, err:"", loaded:false, busy:false, sg:null};
+function pwLoad(after){
+  if(PW.busy) return; PW.busy=true;
+  api("hqPayWait",[]).then(function(r){ PW.list=(r&&r.list)||[]; PW.err=""; }, function(e){ PW.list=null; PW.err=e.message||"불러오지 못했습니다"; })
+    .then(function(){ PW.busy=false; PW.loaded=true; if(after) after(); });
+}
+function pwKind(x){ return x.paidOrder?"chk":(x.old?"stop":(Number(x.days)>=7?"wait7":"run")); }
+function pwChip(x){ var k=pwKind(x);
+  return k==="chk"?'<span class="cgg-st chk">확인 필요</span>':k==="stop"?'<span class="cgg-st stop">30일 지남</span>':k==="wait7"?'<span class="cgg-st chk">7일 지남</span>':'<span class="cgg-st run">결제 기다림</span>'; }
+function viewPayWait(){
+  $("main").innerHTML='<div class="dashhead"><h2>결제 대기</h2>'+
+    '<div class="sub2">홈페이지에서 가입만 하고 아직 결제를 안 한 업체예요. «확인 필요»는 돈은 냈는데 아직 열리지 않은 곳이라 차곳간이 직접 확인해야 해요.</div></div>'+
+    '<div id="sgBox"></div><div id="pwBody"><div class="hint">불러오는 중이에요…</div></div>';
+  sgDraw(); if(PW.sg===null) api("hqSignup",[]).then(function(r){ PW.sg=r||{}; }, function(){ PW.sg="?"; }).then(sgDraw);
+  pwLoad(pwDraw);
+}
+function pwDraw(){
+  var host=$("pwBody"); if(!host) return;
+  if(PW.list===null){ host.innerHTML='<div class="card"><div class="hint"><b>목록을 불러오지 못했어요.</b><br>'+esc(PW.err)+'<br>서버 새 판(워시 sb13)이 올라가면 보여요.</div></div>'; return; }
+  var L=PW.list, chk=L.filter(function(x){ return x.paidOrder; }).length, d7=L.filter(function(x){ return !x.paidOrder && Number(x.days)>=7 && !x.old; }).length, old=L.filter(function(x){ return x.old && !x.paidOrder; }).length;
+  host.innerHTML='<div id="pwK"></div>'+
+    (chk?'<div class="card" style="border:1px solid var(--chk);display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="cgg-st chk">확인 필요 '+chk+'곳</span>'+
+      '<span style="flex:1 1 240px">돈은 냈는데 업체가 아직 열리지 않았어요. 결제 내역에서 주문을 확인하고, 업체 관리에서 이용 상태를 열어 주세요. 이 업체는 지울 수 없어요.</span>'+
+      '<button type="button" class="btn sm" id="pwToPays">결제 내역 보기</button></div>':'')+
+    '<div id="tPW"></div>';
+  CGG.kpis($("pwK"),[{label:"결제 대기",value:String(L.length),unit:"곳",color:"#1668C4"},{label:"확인 필요 (돈은 냄)",value:String(chk),unit:"곳",color:"#E08A00"},
+    {label:"7일 지남",value:String(d7),unit:"곳",color:"#0B2545"},{label:"30일 지남 · 지울 수 있음",value:String(old),unit:"곳",color:"#D64545"}]);
+  if($("pwToPays")) $("pwToPays").onclick=function(){ TAB="pays"; window.scrollTo(0,0); render(); };
+  /* 처음 차례: 확인 필요(돈 냄) → 오래된 것. 머리를 누르면 다른 차례로 */
+  makeTable({ id:"tPW", sortKey:"", 
+    rows:L.slice().sort(function(a,b){ return (b.paidOrder?1:0)-(a.paidOrder?1:0) || (Number(b.days)||0)-(Number(a.days)||0); }).map(function(x,i){ PWROWS[i]=x; return {i:i, name:String(x.name||""), shop:String(x.shop||""), phone:phoneFmt(x.ownerPhone||""), plan:PLAN_NAME[x.joinPlan]||String(x.joinPlan||"-"),
+      at:String(x.createdAt||"").slice(0,10), days:Number(x.days)||0, k:pwKind(x), raw:x}; }),
+    search:["name","shop","phone"],
+    filters:[{k:"k",label:"상태",opts:[["","상태 전체"],["chk","확인 필요"],["wait7","7일 지남"],["stop","30일 지남"],["run","결제 기다림"]]}],
+    cols:[
+      {k:"name",label:"업체명",w:160,stick:true},
+      {k:"shop",label:"코드",w:110,mono:true},
+      {k:"phone",label:"대표 번호",w:130},
+      {k:"plan",label:"고른 요금제",w:110},
+      {k:"at",label:"가입일",w:100},
+      {k:"days",label:"지난 날",w:80,num:true,html:function(r){ return r.days+"일"; }},
+      {k:"k",label:"상태",w:110,html:function(r){ return pwChip(r.raw); }},
+      {k:"_a",label:"할 일",w:110,nosort:true,html:function(r){
+        return r.raw.paidOrder?'<span class="hint" style="margin:0">지울 수 없음</span>':'<button type="button" class="btn sm danger" data-pwd="'+r.i+'">지우기</button>'; }}
+    ]});
+  Array.prototype.forEach.call(document.querySelectorAll("[data-pwd]"),function(b){
+    b.onclick=function(ev){ ev.stopPropagation(); var x=PWROWS[Number(b.getAttribute("data-pwd"))]; if(!x) return;
+      confirmBox("결제 대기 업체를 지울까요?", "업체: "+(x.name||"-")+"\n코드: "+x.shop+"\n대표 번호: "+phoneFmt(x.ownerPhone||"")+"\n가입: "+(Number(x.days)||0)+"일 전\n남는 것: 주문 · 결제 장부",
+        "지우기", true, function(){
+          api("hqPayWaitDel",[x.shop]).then(function(){ toast("지웠어요 · "+(x.name||x.shop)); pwLoad(pwDraw); },
+            function(e){ toast(e.message||"지우지 못했습니다",true); pwLoad(pwDraw); }); }); }; });
+}
+/* 누구나 가입 — 가입 코드 없이 홈페이지에서 가입 (처음 꺼짐) · 한도 셋 */
+function sgDraw(){
+  var el=$("sgBox"); if(!el) return; var g=PW.sg, ok=g&&g!=="?", on=ok&&!!g.on, c=(ok&&g.cfg)||{};
+  el.innerHTML='<div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+    '<div style="flex:1 1 280px;min-width:0"><b>누구나 가입 (가입 코드 없이)</b><div class="hint" style="margin:4px 0 0">'+
+      (g===null?"불러오는 중이에요…":g==="?"?"서버 새 판(워시 sb13)이 올라가면 여기서 켜고 꺼요.":
+       (on?"켜져 있어요. 홈페이지에서 누구나 가입하고 결제하면 바로 쓸 수 있어요.":"꺼져 있어요. 가입 코드를 받은 번호만 가입할 수 있어요.")+
+       ' 한도: 같은 곳(IP)에서 하루 '+(c.perIp||5)+'번 · 전체 하루 '+(c.allDay||200)+'번 · 결제 대기 업체 같은 곳 하루 '+(c.waitPerIp||3)+'개')+'</div></div>'+
+    (ok?'<span class="cgg-st '+(on?"done":"stop")+'">'+(on?"켜짐":"꺼짐")+'</span><button type="button" class="btn sm" id="sgEdit">바꾸기</button>':'')+'</div>';
+  if($("sgEdit")) $("sgEdit").onclick=sgSheet;
+}
+function sgSheet(){
+  var g=PW.sg||{}, c=g.cfg||{};
+  openSheet('<h3 style="margin:0 0 4px">누구나 가입</h3><div class="hint" style="margin:0 0 14px">켜면 가입 코드 없이도 홈페이지에서 가입할 수 있어요. 결제를 마쳐야 업체가 열려요. 처음 값은 꺼짐이에요.</div>'+
+    '<label class="f"><input type="checkbox" id="sgOn"'+(g.on?" checked":"")+'> 누구나 가입 켜기</label>'+
+    '<div class="row2"><div><label class="f">같은 곳(IP)에서 하루 가입 (1~50)</label><input type="number" id="sgIp" min="1" max="50" value="'+esc(c.perIp||5)+'"></div>'+
+    '<div><label class="f">전체 하루 가입 (1~5000)</label><input type="number" id="sgAll" min="1" max="5000" value="'+esc(c.allDay||200)+'"></div></div>'+
+    '<label class="f">같은 곳에서 하루 결제 대기 업체 (1~20)</label><input type="number" id="sgWait" min="1" max="20" value="'+esc(c.waitPerIp||3)+'">'+
+    '<div class="sheetbtns"><button type="button" class="btn" id="sgNo">취소</button><button type="button" class="btn primary" id="sgSave">저장</button></div>');
+  $("sgNo").onclick=closeSheet;
+  $("sgSave").onclick=function(){
+    var v={on:$("sgOn").checked, perIp:Number($("sgIp").value)||5, allDay:Number($("sgAll").value)||200, waitPerIp:Number($("sgWait").value)||3};
+    confirmBox("누구나 가입을 "+(v.on?"켤까요?":"끈 채로 저장할까요?"),
+      "누구나 가입: "+(v.on?"켜짐":"꺼짐")+"\n같은 곳 하루: "+v.perIp+"번\n전체 하루: "+v.allDay+"번\n결제 대기 같은 곳: "+v.waitPerIp+"개", "저장", false, function(){
+      api("hqSignup",[v]).then(function(r){ PW.sg=r||v; closeSheet(); toast(v.on?"누구나 가입을 켰어요":"저장했어요"); sgDraw(); },
+        function(e){ toast(e.message||"저장하지 못했습니다",true); }); });
+  };
 }
 
 function navOf(t){ return NAV.filter(function(g){ return g[2].indexOf(t)>=0; })[0]||null; }
@@ -7105,7 +7206,7 @@ $("btnHelp").onclick=function(){
 };
 var NAVHELP={ sum:"오늘 할 일 · 이번 달 숫자 · 일정 달력 · 운영 상태를 한눈에 봐요.",
   users:"가입 코드를 보내고, 업체 사람들의 로그인 계정을 관리하고, 번호 하나로 모든 제품 계정을 찾아요.",
-  shops:"업체별 요금제 · 이용 기한 · 상태를 보고, 결제가 밀린 곳을 잠그거나 풀어요.",
+  shops:"업체별 요금제 · 이용 기한 · 상태를 보고, 결제가 밀린 곳을 잠그거나 풀어요. 홈페이지에서 가입만 하고 결제를 안 한 곳(결제 대기)과 누구나 가입 스위치도 여기 있어요.",
   pays:"요금제 · 모든 제품 결제 내역 · 충전 · 카드 결제(환불 · 자동 결제) · 체크 지갑 잇기 — 업체에서 본사로 들어오는 금액이에요.",
   settle:"정산 · 유지비 — 본사가 내보내는 금액이에요.",
   tax:"세금계산서를 발행하고 확인해요.",

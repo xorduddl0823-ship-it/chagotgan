@@ -157,7 +157,8 @@ function pplDraw(){
       var a=b.getAttribute("data-pa"), t=b.getAttribute("data-pt"), n=b.getAttribute("data-pn"), A=PACT[a];
       var label=b.textContent;
       confirmBox(label+" — "+n+"?", (nm||"")+" · "+phoneFmt(r.phone)+"\n"+A[1], label, A[2], function(){
-        function done(x){ toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:""))); pplFind(); }
+        function done(x){ if(x && x.sent===false){ toast("문자를 보내지 못했어요"+(x.note?" · "+x.note:""),true); pplFind(); return; }
+          toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:""))); pplFind(); }
         function fail(e){ toast(e.message||"하지 못했습니다",true); }
         api("hqPersonAct",[r.phone, a, t]).then(function(x){
           /* 제품 열기가 처음이면 서버가 한 번 더 물어요 — 다른 제품이 막힐 수 있어서 */
