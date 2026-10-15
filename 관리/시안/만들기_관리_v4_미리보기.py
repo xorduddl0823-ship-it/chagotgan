@@ -52,6 +52,7 @@ var F_SVCS=[{id:1,code:"supabase",name:"수파베이스",kind:"sub",cost:35000,n
  {id:2,code:"solapi",name:"솔라피 문자",kind:"charge",balance:8000,min_bal:10000,active:true,sort:2,auto:true,auto_note:"자동으로 읽음",what:"문자"},
  {id:3,code:"cloudflare",name:"클라우드플레어",kind:"sub",cost:0,next_due:dd(17),active:true,sort:3,what:"주소"}];
 var F_TODO=[{id:1,title:"QR 스티커 교체",done:false,due_at:dd(0)},{id:2,title:"문자 충전",done:false,due_at:dd(-2)},{id:3,title:"세금계산서 정리",done:false,due_at:dd(6)}], F_NEXT=10;
+var F_RF={}, F_BILL=false;
 function FAKE(fn,a){
   a=a||[];
   switch(fn){
@@ -68,11 +69,20 @@ function FAKE(fn,a){
     case "hqSessions": return {sessions:[]};
     case "hqServices": return {services:F_SVCS};
     case "hqExpenses": return {expenses:[{id:1,day:dd(-4),name:"수파베이스",amount:35000}]};
-    case "hqInfo": return {hq:{biz_name:"차곳간 본사",biz_no:"1234567890",ceo:"한본사",pb_test:true},hasPopbill:true};
+    case "hqInfo": return {hq:{biz_name:"차곳간 본사",biz_no:"1234567890",ceo:"한본사",pb_test:true,billing_on:F_BILL},hasPopbill:true};
     case "hqTodo": return {todo:F_TODO};
     case "hqTodoAdd": F_NEXT++; F_TODO.push({id:F_NEXT,title:a[0],done:false,due_at:a[1]||null}); return {ok:true};
     case "hqTodoDone": F_TODO.forEach(function(t){ if(t.id===a[0]) t.done=!!a[1]; }); return {ok:true};
     case "hqTodoDel": F_TODO=F_TODO.filter(function(t){ return t.id!==a[0]; }); return {ok:true};
+    case "hqPg": return {ok:true,on:true,provider:"toss",clientKey:"test_ck_PREVIEW0000",fee:3.3,note:"",hasSecret:true,
+      names:{HANBIT:"한빛광택",BAREUN:"바른 카모터스",SAEBIT:"새빛 성능장"},
+      orders:[{order_id:"CGG-PLAN-0001",shop:"HANBIT",kind:"plan",order_name:"베이직 1개월",amount:55000,use_cash:0,status:F_RF["CGG-PLAN-0001"]?"canceled":"paid",method:"카드",created_at:dd(-12)+"T10:20:00"},
+              {order_id:"CGG-CASH-0002",shop:"BAREUN",kind:"cash",order_name:"캐시 충전 3만원",amount:33000,use_cash:0,status:F_RF["CGG-CASH-0002"]?"canceled":"paid",method:"카드",created_at:dd(-3)+"T15:02:00"},
+              {order_id:"CGG-PLAN-0003",shop:"SAEBIT",kind:"plan",order_name:"스탠다드 1개월",amount:77000,use_cash:0,status:"failed",method:"카드",created_at:dd(-1)+"T09:40:00"}]};
+    case "hqPgQuote": return a[0]==="CGG-PLAN-0001" ? {ok:true,kind:"plan",amount:55000,max:55000,suggest:33000,leftDays:18}
+                                                   : {ok:true,kind:"cash",amount:33000,max:22000,suggest:22000,unusedCash:20000};
+    case "hqPgCancel": F_RF[a[0]]=1; return {ok:true,amount:a[2],note:a[0]==="CGG-PLAN-0001"?"이용기간 -"+Math.round(30*a[2]/55000)+"일":"캐시 -"+Math.round(a[2]/1.1).toLocaleString("ko-KR")+"원"};
+    case "hqBillingOn": F_BILL=!!a[0]; return {ok:true,on:F_BILL};
     case "hqAta": return {ok:true,pfSet:true,ready:["intake","release","extra_work","bill","deposit_ok","pay_done","cash_done","auth","staff_link"],tpls:{auth:"KA01TP000000AUTH01",intake:"KA01TP000000IN0001",release:"KA01TP000000REL001",bill:"KA01TP000000BILL01",deposit_ok:"KA01TP000000DEP001"},
       stats:{ym:a[0],ata:{cnt:412,won:412*13},sms:{cnt:96,won:96*18},lms:{cnt:1288,won:1288*45},mms:{cnt:12,won:12*110}}};
     case "hqAtaSave": return {ok:true};
