@@ -1,0 +1,89 @@
+"""워시 v112 미리보기 만들기 — 대표님이 눌러 볼 수 있게, 서버 대신 지어낸 자료를 넣은 사본.
+쓰는 법: python3 워시/시안/만들기_워시_v112_미리보기.py
+- 재료: 워시/1_차곳간_워시_index_v112.html (읽기만)
+- 결과: 워시/시안/워시_v112_미리보기.html — 실제 서버(wash-api)에 연결하지 않습니다.
+  서버로 가는 요청을 이 파일 안에서 가로채서 지어낸 자료로 답합니다. 저장을 눌러도 이 창 안에서만 바뀝니다.
+- 예시 자료는 워시 파일 안 «샘플 자료 넣기»(seedDemo)와 같은 지어낸 값입니다 (기준서 6-3).
+"""
+import os, json
+HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.join(HERE, "..", "1_차곳간_워시_index_v112.html")
+OUT = os.path.join(HERE, "워시_v112_미리보기.html")
+SEED = os.path.join(HERE, "워시_v112_미리보기_자료.json")
+s = open(SRC, encoding="utf-8").read()
+seed = "{}"
+if os.path.exists(SEED):
+    d = json.load(open(SEED, encoding="utf-8"))
+    for col in d:
+        for k in d[col]:
+            if isinstance(d[col][k], str):
+                d[col][k] = json.loads(d[col][k])
+    seed = json.dumps(d, ensure_ascii=False)
+
+FAKE = r'''<script>
+/* ═══ 미리보기 전용 — 서버(wash-api)로 가는 요청을 가로채서 지어낸 자료로 답합니다 ═══ */
+(function(){
+  var DB = __SEED__;
+  var REV = 1;
+  var ME = {shop:"PREVIEW", who:"김대표", role:"owner", key:"SID-PREVIEW"};
+  var MEM = {};
+  /* 브라우저 저장이 막힌 곳(미리보기 창)에서도 돌아가게 */
+  try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); }catch(e){
+    try{ Object.defineProperty(window,"localStorage",{value:{getItem:function(k){return k in MEM?MEM[k]:null;},
+      setItem:function(k,v){MEM[k]=String(v);},removeItem:function(k){delete MEM[k];},clear:function(){MEM={};}}}); }catch(e2){}
+  }
+  try{
+    localStorage.setItem("ccw_sid","SID-PREVIEW"); localStorage.setItem("ccw_shop","PREVIEW");
+    localStorage.setItem("ccw_user", JSON.stringify({who:"김대표",role:"owner",phone:"01000000000"}));
+  }catch(e){}
+  function put(col,id,data){ if(typeof data==="string"){ try{ data=JSON.parse(data); }catch(e){} } DB[col]=DB[col]||{}; DB[col][id]=data; REV++; }
+  function answer(fn,a){
+    a=a||[];
+    switch(fn){
+      case "me": case "login": return ME;
+      case "logout": return {ok:true};
+      case "apiLoad": var d=JSON.parse(JSON.stringify(DB)); d.__rev=String(REV); d.__fast=true; return d;
+      case "apiStamp": return {rev:String(REV)};
+      case "apiVer": return {ver:"미리보기"};
+      case "ping": return {ok:true};
+      case "lockInfo": return {state:"ok"};
+      case "apiSet": put(a[0],a[1],a[2]); return "ok";
+      case "apiSetMany": var rows=a[0]; if(typeof rows==="string"){ try{rows=JSON.parse(rows);}catch(e){rows=[];} }
+        (rows||[]).forEach(function(r){ put(r.col,r.id,r.data); }); return "ok";
+      case "apiDel": if(DB[a[0]]) delete DB[a[0]][a[1]]; REV++; return "ok";
+      case "sendMsg": return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G"});
+      case "pbIssue": return JSON.stringify({ok:true,ntsConfirmNum:"미리보기-0001"});
+      case "pbCheck": case "pbReady": return JSON.stringify({ok:true,test:true,point:""});
+      case "webAppUrl": return location.href.split("?")[0];
+      default: return {ok:true};
+    }
+  }
+  window.__PV = {DB:function(){return DB;}};
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function(url, opt){
+    var u = String((url && url.url) || url || "");
+    if(u.indexOf("/functions/v1/") >= 0){
+      var body = {}; try{ body = JSON.parse((opt && opt.body) || "{}"); }catch(e){}
+      var out;
+      try{ out = {result: answer(body.fn, body.args)}; }catch(e){ out = {__err: String(e && e.message || e)}; }
+      return new Promise(function(res){ setTimeout(function(){
+        res(new Response(JSON.stringify(out), {status:200, headers:{"Content-Type":"application/json"}})); }, 60); });
+    }
+    if(/^https?:/i.test(u) && u.indexOf(location.host) < 0) return Promise.reject(new TypeError("미리보기: 바깥 연결 안 함"));
+    return realFetch ? realFetch(url, opt) : Promise.reject(new TypeError("no fetch"));
+  };
+})();
+</script>
+'''.replace("__SEED__", seed)
+
+# 자료 만들기 때만: 같은 범위 안에서 샘플 자료 넣기를 부를 수 있게 (최종 미리보기에는 안 들어감)
+if os.environ.get("SEEDMODE"):
+    s = s.replace("function seedDemo(){", "window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};\nfunction seedDemo(){", 1)
+i = s.index("<script")
+s = s[:i] + FAKE + s[i:]
+s = s.replace("<title>차곳간 워시</title>", "<title>워시 v112 미리보기</title>", 1)
+# 미리보기 띠 — 실제 서버가 아니라는 것을 늘 보이게
+k = s.index('<div class="wrap" id="app" hidden>')
+s = s[:k] + '<div style="position:sticky;top:0;z-index:100000;background:#FFF2DD;color:#7A4A00;font:600 12.5px/1.5 \'Noto Sans KR\',sans-serif;padding:6px 14px;text-align:center">미리보기 — 지어낸 자료예요. 실제 서버에 연결하지 않고, 저장해도 이 창 안에서만 바뀌어요.</div>\n' + s[k:]
+open(OUT, "w", encoding="utf-8").write(s)
+print("OK", OUT, len(s))

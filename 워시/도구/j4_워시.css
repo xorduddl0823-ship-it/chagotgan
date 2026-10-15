@@ -1,0 +1,104 @@
+/* ═══════ J안 4판 덮개 — 워시 v112 · UI 3.0 (2026-10-15) ═══════
+   디자인 서랍 08_차곳간_합친디자인_J.html 값 그대로 (기준서 2-6장). 맨 끝에 있어서 앞의 UI 1.1 값을 덮어씁니다.
+   배치 셋(가로 · 세로 · 아이콘) 모두 남색 틀. 폰(현장 화면)은 원래도 남색이라 색만 맞춥니다. */
+:root{
+  --bg:#F3F5F8;--surface:#FFFFFF;--surface2:#F7F9FC;--line:#EAECF0;--text:#101828;--muted:#667085;
+  --brand:#1668C4;--brand-soft:#E8F1FC;--accent:#0B2545;--sky:#8FC9F2;--navy:#0B2545;
+  --good:#1E9E5A;--good-soft:#E4F5EC;--warn:#B26B00;--warn-soft:#FFF2DD;--danger:#D64545;--danger-soft:#FDE8E8;
+  --shadow:0 1px 2px #1018280d,0 12px 32px -20px #0B254540;--r:18px;--j-ctl:43px;--ln2:#E3E8EE;
+  font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;
+  --brand:#5FA8E8;--brand-soft:#102B47;--good:#4ad48f;--good-soft:#12312a;--warn:#f0a95e;--warn-soft:#332412;
+  --danger:#ff8b82;--danger-soft:#331614;--shadow:0 2px 10px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{
+  --bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;
+  --brand:#5FA8E8;--brand-soft:#102B47;--good:#4ad48f;--good-soft:#12312a;--warn:#f0a95e;--warn-soft:#332412;
+  --danger:#ff8b82;--danger-soft:#331614;--shadow:0 2px 10px rgba(0,0,0,.4)}
+body{background:var(--bg)}
+
+/* ───────── 머리말 — 남색 (가로 메뉴) ───────── */
+.wrap.pc:not(.side) > header{background:var(--navy);color:#fff;border-bottom:0;padding:12px 22px 0}
+.wrap.pc:not(.side) > header .logo{background:var(--sky);color:var(--navy);box-shadow:none}
+.wrap.pc:not(.side) > header .brandrow h1{color:#fff}
+.wrap.pc:not(.side) > header .sub#hSub,.wrap.pc:not(.side) > header #hVer{color:#fff;opacity:.72}
+.wrap.pc:not(.side) > header .bizname{border-left-color:#ffffff30}
+.wrap.pc:not(.side) > header .bizname b{color:#fff}
+.wrap.pc:not(.side) > header .bizname small{color:#ffffffb3}
+.wrap.pc:not(.side) > header .mini{height:34px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font-weight:500;font-size:12.5px;padding:0 11px;display:inline-flex;align-items:center}
+.wrap.pc:not(.side) > header .mini:hover{background:#ffffff22}
+.wrap.pc:not(.side) > header #pollSel{color:#fff;background-color:#ffffff12}
+.wrap.pc:not(.side) > header #pollSel option{color:#101828}
+.wrap.pc:not(.side) > header #dbState{background:#ffffff12;border-color:#ffffff30;color:#9EE6C4}
+.wrap.pc:not(.side) > header #btnMode{background:var(--sky);border-color:var(--sky);color:var(--navy);font-weight:700}
+.wrap.pc:not(.side) > header .who{color:#ffffffb3}
+.wrap.pc:not(.side) > header .who b{color:#fff}
+#hWho{border-radius:999px}
+.wrap.pc:not(.side) > header #hWho{background:#ffffff12;border:1px solid #ffffff30;color:#fff;padding:4px 12px;height:34px;display:inline-flex;align-items:center}
+/* 큰 메뉴 — 남색 위 흰 글자, 고른 칸은 하늘색 밑줄 */
+.wrap.pc:not(.side) > header #tabs{background:transparent;padding:6px 0 0;margin-top:12px;gap:4px;border-radius:0;box-shadow:none}
+.wrap.pc:not(.side) > header #tabs button{flex:none;background:transparent;color:#ffffffb8;border:0;border-radius:10px 10px 0 0;box-shadow:none;font-size:14.5px;font-weight:500;padding:11px 16px}
+.wrap.pc:not(.side) > header #tabs button:hover{color:#fff;background:#ffffff12}
+.wrap.pc:not(.side) > header #tabs button[aria-selected="true"]{color:#fff;font-weight:700;background:#ffffff14;box-shadow:inset 0 -3px 0 var(--sky)}
+/* 작은 탭 — 머리말 아래 바탕색 알약 */
+.wrap.pc:not(.side) > header #setSub{background:var(--bg);margin:0 -22px;padding:12px 22px;gap:6px;border:0;border-radius:0;box-shadow:none}
+.wrap.pc:not(.side) > header #setSub::before{content:none;display:none}
+#setSub button{height:34px;padding:0 14px !important;border-radius:999px !important;border:1px solid var(--ln2) !important;background:var(--surface) !important;color:var(--muted) !important;font-size:13px !important;font-weight:500 !important;box-shadow:none !important;flex:none}
+#setSub button[aria-selected="true"]{background:var(--brand-soft) !important;color:var(--brand) !important;border-color:transparent !important;font-weight:700 !important}
+
+/* ───────── 세로 메뉴 — 남색 띠 (I안 모양) ───────── */
+.wrap.side:not(.iconmenu) > header{background:var(--navy);border-right:0;color:#fff}
+.wrap.side:not(.iconmenu) > header .logo{background:var(--sky);color:var(--navy)}
+.wrap.side:not(.iconmenu) > header .brandrow h1{color:#fff}
+.wrap.side:not(.iconmenu) > header #hVer{color:#8FC9F2;opacity:.85}
+.wrap.side:not(.iconmenu) > header .bizcard{background:#ffffff10;border-color:#ffffff1f}
+.wrap.side:not(.iconmenu) > header .bizcard .bizname b{color:#fff}
+.wrap.side:not(.iconmenu) > header .bizcard .who b{color:#fff}
+.wrap.side:not(.iconmenu) > header .bizcard .who #meRole{color:#B7C6DE}
+.wrap.side:not(.iconmenu) > header .tabs button{color:#B7C6DE}
+.wrap.side:not(.iconmenu) > header .tabs button:hover{background:#ffffff12;color:#fff}
+.wrap.side:not(.iconmenu) > header .tabs button[aria-selected="true"]{background:#ffffff1f;border-color:transparent;color:#fff}
+.wrap.side:not(.iconmenu) > header #setSub{border-left-color:#ffffff33}
+.wrap.side:not(.iconmenu) > header #setSub button{background:transparent !important;border:0 !important;color:#B7C6DE !important;border-radius:8px !important;height:auto;padding:8px 10px !important;text-align:left}
+.wrap.side:not(.iconmenu) > header #setSub button[aria-selected="true"]{color:#fff !important;background:#ffffff14 !important}
+.wrap.side:not(.iconmenu) > header .mini{background:#ffffff12;border-color:#ffffff30;color:#fff}
+.wrap.side:not(.iconmenu) > header #btnHelp{color:#fff}
+.wrap.side:not(.iconmenu) > header #dbState{background:#ffffff12;border-color:#ffffff30;color:#9EE6C4}
+.wrap.side:not(.iconmenu) > header #btnMode{background:var(--sky);border-color:var(--sky);color:var(--navy)}
+/* 세로 · 아이콘 배치의 본문 윗줄은 흰색 그대로 (남색이 두 겹이 되지 않게) */
+.wrap.side #topBar .mini{background:var(--surface);border:1px solid var(--ln2);color:#344054}
+
+/* ───────── 아이콘 메뉴 — 좁은 남색 띠 ───────── */
+.wrap.iconmenu > header .tabs button{color:#8FA5C2}
+.wrap.iconmenu > header .tabs button[aria-selected="true"]{background:#ffffff1f;border-color:transparent;color:#fff}
+.wrap.iconmenu > header .logo{background:var(--sky);color:var(--navy)}
+
+/* ───────── 휴지통 「나」안 — 머리말에서 빼고 사람 단추 안으로 ───────── */
+header #btnTrash,#topBar #btnTrash,.wrap #btnTrash{display:none !important}
+#hWho .mypglb .trbdg{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--danger);color:#fff;font-size:11px;font-weight:800}
+
+/* ───────── 카드 · 버튼 · 표 (J안 2-4 · 2-6) ───────── */
+.card{border:0;border-radius:18px;box-shadow:var(--shadow);background:var(--surface)}
+.btn{min-height:var(--j-ctl);border-radius:12px;border:1px solid var(--ln2);font-weight:700;font-size:14px;color:#344054;background:var(--surface)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 6px 16px -8px #1668C4cc}
+.btn.danger{color:var(--danger)}
+table th{height:40px;font-size:12.5px;font-weight:700;color:var(--muted)}
+table td{height:50px}
+table tbody tr:hover td{background:var(--surface2)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
+.sum{border-radius:18px}
+:root[data-theme="dark"] .btn{color:var(--text)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:var(--text)}}
+
+/* ───────── 폰 (가로 600 이하) — 같은 파일, 따로 만들지 않음 ───────── */
+@media (max-width:600px){
+  .card{border-radius:14px}
+  .btn{min-height:38px;font-size:13px;border-radius:10px}
+}
+
+/* 「매출」 메뉴 그림 — 원래 판에 빠져 있어 세로 메뉴에서 네모로 보이던 것 */
+#tabs button[data-t="sales"]{--ic:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M5%2020V11M12%2020V5M19%2020v-6M3%2020h18%27%2F%3E%3C%2Fsvg%3E")}
+/* 아이콘 메뉴가 잠깐 넓어졌을 때의 작은 탭 — 남색 위 글자 */
+.wrap.iconmenu.setopen > header #setSub button{background:transparent !important;border:0 !important;color:#9DB0C6 !important;border-radius:8px !important;height:auto;padding:8px 10px !important;text-align:left;width:100%}
+.wrap.iconmenu.setopen > header #setSub button[aria-selected="true"]{color:#fff !important;background:#ffffff14 !important}
