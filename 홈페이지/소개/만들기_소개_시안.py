@@ -10,7 +10,7 @@
    - 맨 아래 사업자 정보 · 문의 전화/이메일은 홈페이지/공통/사업자정보.json 한 곳에서
    - 결과: 홈페이지/소개/소개_시안.html (파일 하나로 열림)
 """
-import io, os, re, sys, glob, base64
+import io, os, re, sys, glob, base64, html
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "홈페이지", "공통")); import 사업자정보 as B
@@ -40,6 +40,8 @@ MEMLS = ("<script>window.__DEMO=true;(function(){var M={};var S={getItem:functio
          "try{Object.defineProperty(window,'localStorage',{value:S,configurable:true});}catch(e){}"
          "try{Object.defineProperty(window,'sessionStorage',{value:S,configurable:true});}catch(e){}})();</script>")
 dealer = dealer.replace("<head>", "<head>" + MEMLS, 1)
+# 홈페이지 맨 위에 오픈 베타 띠가 이미 있어요 — 미리 써 보기 안의 딜러 띠는 숨겨 띠를 하나만 보여요
+dealer = dealer.replace("</head>", "<style>#cggBeta,.cgg-beta,.beta[role=note]{display:none!important}</style></head>", 1)
 GUARD_OLD = 'u.indexOf(location.host) < 0) return Promise.reject'
 GUARD_NEW = '(!location.host || u.indexOf(location.host) < 0)) return Promise.reject'
 def guard(s, name):
@@ -55,11 +57,15 @@ rep = {
     "@@TERMS@@": info.get("이용약관", "https://cgg.co.kr/terms.html"),
     "@@PRIVACY@@": info.get("개인정보처리방침", "https://cgg.co.kr/privacy.html"),
     "@@REFUND@@": info.get("환불규정", "https://cgg.co.kr/refund.html"),
-    "@@TEL@@": info["대표전화"] if ok("대표전화") else "{대표 전화} — 사업자정보.json 에서 채워져요",
-    "@@MAIL@@": info["이메일"] if ok("이메일") else "{이메일} — 사업자정보.json 에서 채워져요",
     "@@BIZ@@": B.render(info),
     "@@PKG_WASH@@": pk(guard(rd(WP), "워시")), "@@PKG_CHECK@@": pk(guard(rd(CP), "체크")), "@@PKG_DEALER@@": pk(dealer),
 }
+# 문의 칸: 사업자정보.json 에 값이 있는 줄만 보여요. 둘 다 비면 안내 한 줄 (검토용 {…} 글이 손님에게 보이지 않게)
+row = lambda lab, k: ("<div><b>%s</b><span>%s</span></div>" % (lab, html.escape(info[k]))) if ok(k) else ""
+rows = row("전화", "대표전화") + row("이메일", "이메일")
+t = t.replace('    <div><b>전화</b><span>@@TEL@@</span></div>\n    <div><b>이메일</b><span>@@MAIL@@</span></div>\n',
+              "    " + (rows or "<div><b>문의</b><span>연락처는 곧 이곳에 올려 둘게요.</span></div>") + "\n")
+assert "@@TEL@@" not in t and "@@MAIL@@" not in t, "문의 칸 자리 표시가 남음"
 for k, v in rep.items():
     assert k in t, k
     t = t.replace(k, v)

@@ -61,7 +61,7 @@ rep('noti:"기한 안내 문자 · 공지사항 · 알림톡 템플릿 코드예
 rep('function navOf(t){', open(os.path.join(HERE, "v4재료", "sendlog.js"), encoding="utf-8").read() + '\nfunction navOf(t){', False)
 # ④ 말 대조표 — 디자인 방 디자인/말_대조표.md · 결제 방 결제/12_결제_말_대조표.md (관리 칸)
 # 화면에 서버 · 브라우저 글을 그대로 내보내지 않게: 한글이 없는 오류(영어 · 코드)는 쉬운 말로 바꿔요
-rep("function open_(fn,args){", 'function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }\nfunction open_(fn,args){', False)
+rep("function toast(msg,bad){", '/* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */\nfunction emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }\nfunction toast(msg,bad){', False)
 def cnt(a,b,n=None):
     global s
     k=s.count(a)
@@ -105,5 +105,26 @@ s = s.replace('label:"\u0001"},{key:', 'label:"계산서"},{key:')
 # ⑤ 보안 방 낮음 ① — 유지비 «바로 가기» 링크는 https:// 로 시작할 때만
 rep("""(x.url?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noopener">바로 가기</a>'):'')+""",
     """(/^https:\\/\\//i.test(String(x.url||""))?('<a class="btn sm" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">바로 가기</a>'):'')+""", False)
+# ⑦ 알림톡 방 버그 알림 — 템플릿 표에 자동결제등록 · 자동결제실패 두 줄 + «코드 저장»이 표에 없는 코드를 지우지 않게
+a = s.index('  ["staff_link",'); b = s.index('\n', a)
+s = s[:b] + ',\n  ["bill_on",     "차곳간_자동결제등록",   "자동 결제 카드를 등록했을 때",          "등록 전"],\n  ["bill_fail",   "차곳간_자동결제실패",   "자동 결제가 되지 않았을 때 (다음 시도일 안내)", "등록 전"]' + s[b:]
+rep("""    var map={}, n=0, pf=$("ataPf").value.trim(); if(pf) map.pfId=pf;""",
+    """    /* 표에 없는 코드도 그대로 다시 보내요 — 서버는 보낸 것으로 통째로 바꿔서, 빠진 키는 지워져요 */
+    var map={}, n=0, pf=$("ataPf").value.trim(); Object.keys(ATA.tpls||{}).forEach(function(k){ if(ATA.tpls[k]) map[k]=ATA.tpls[k]; }); if(pf) map.pfId=pf;""", False)
+rep("""    var tp={}; ATA_LIST.forEach(function(x){ tp[x[0]]=map[x[0]]; });""",
+    """    var tp={}; Object.keys(map).forEach(function(k){ if(k!=="pfId") tp[k]=map[k]; });""", False)
+# «등록 전» (솔라피에 아직 안 낸 템플릿) — 표 상태 칩 · 보낼 방법 글
+rep("""(x[3]==="통과"?"완료":(x[3]==="심사 대기"?"심사 대기":"확인 필요"))""", """(x[3]==="통과"?"완료":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))""", False)
+rep("""  if(row && row[3]==="심사 대기") return""", """  /* 코드가 없으면 서버가 문자로도 안 보내는 새 안내 (워시 서버 noticeAta smsIfNoCode=false) — 알림톡 방 시험표 «코드 없으면 문자로?» */
+  var noSms=["cash_done","pay_done","bill_on","bill_fail"].indexOf(key)>=0, hasCode=!!String(code||"").trim();
+  if(noSms && (!hasCode || (row && row[3]==="등록 전"))) return '<span class="pill off" title="코드를 넣기 전에는 알림톡도 문자도 나가지 않아요">안 보냄'+(row && row[3]==="등록 전"?' · 등록 전':'')+'</span>';
+  if(row && row[3]==="등록 전") return '<span class="pill wait" title="솔라피에 등록하고 카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 등록 전</span>';
+  if(row && row[3]==="심사 대기") return""", False)
+rep("«심사 대기»는 새로 심사받는 중이에요.", "«심사 대기»는 새로 심사받는 중이고, «등록 전»은 아직 솔라피에 내지 않은 템플릿이에요.", False)
+rep('"코드 넣음 "+n+"개 · 비어 있음(문자로 보냄) "+(ATA_LIST.length-n)+"개"', '"코드 넣음 "+n+"개 · 비어 있음 "+(ATA_LIST.length-n)+"개 (알림톡 대신 문자로 가거나, 새 안내는 안 나가요)"', False)
+# ⑥ 알림톡 방 워딩 검토 (알림톡/07_워딩_검토/관리_v4.5.md) — v4재료/wording46.py
+import sys; sys.path.insert(0, os.path.join(HERE, "v4재료")); import wording46
+s, k, miss = wording46.apply(s); N["말"] += k
+for m in miss: print("  못 찾음:", m)
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자 · 고친 말", N["말"], "곳")

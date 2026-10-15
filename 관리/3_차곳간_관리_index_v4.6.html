@@ -2546,7 +2546,7 @@ input[type=checkbox]:checked::after{opacity:1}
       <button id="gGo" style="width:100%;padding:16px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:var(--brand,#0b5d8f);color:#fff;cursor:pointer;margin-top:16px">로그인</button>
       <div id="gStep2" hidden>
         <div style="font-size:14px;color:var(--muted,#667389);margin-top:14px;line-height:1.6" id="gTo"></div>
-        <label style="font-size:14px;font-weight:600;color:var(--muted,#667389);margin-top:14px;display:block" for="gcode">문자로 받은 6자리</label>
+        <label style="font-size:14px;font-weight:600;color:var(--muted,#667389);margin-top:14px;display:block" for="gcode">문자로 받은 인증번호 6자리</label>
         <input id="gcode" type="tel" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;box-sizing:border-box;padding:15px 14px;font-size:17px;border-radius:12px;border:1px solid var(--line,#dde3ec);background:var(--surface,#fff);color:var(--text,#14202e);margin-top:7px;letter-spacing:8px;font-size:24px;text-align:center;font-weight:700">
         <button id="gGo2" style="width:100%;padding:16px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:var(--brand,#0b5d8f);color:#fff;cursor:pointer;margin-top:16px">확인</button>
         <button id="gBack" style="width:100%;padding:14px;font-size:16px;border:1px solid var(--line,#dde3ec);border-radius:12px;background:transparent;color:var(--muted,#667389);cursor:pointer;margin-top:10px">처음부터 다시</button>
@@ -2868,12 +2868,11 @@ function post(bodyObj){
       body:JSON.stringify(bodyObj)})
     .then(function(r){return r.text();},function(){throw new Error("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");})
     .then(function(x){
-      var j; try{ j=JSON.parse(x); }catch(e){ throw new Error("서버 응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요."); }
+      var j; try{ j=JSON.parse(x); }catch(e){ throw new Error("응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요."); }
       if(j && j.__err) throw new Error(j.__err);
       return j ? j.result : null;
     });
 }
-function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }
 function open_(fn,args){ return post({shop:"",token:"",fn:fn,args:args||[]}); }
 function api(fn,args){
   var sid = ls(SIDKEY);
@@ -2917,6 +2916,8 @@ function ago(v){
   if(d<365) return Math.floor(d/30)+"달 전";
   return Math.floor(d/365)+"년 전";
 }
+/* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */
+function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }
 function toast(msg,bad){ CGG.toast(msg); var t=document.querySelector(".cgg-toastbox"); if(t) t.classList.toggle("bad",!!bad); }
 function closeSheet(){ $("sheet").classList.remove("show"); $("sheetbg").classList.remove("show"); $("sheet").innerHTML=""; }
 function openSheet(html){
@@ -3201,7 +3202,7 @@ function viewSummary(){
     [svcBad.length,"유지비 — 끊기기 직전", names(svcBad,function(x){return x.v.name+" "+x.st.txt;},2), go("svc"),"imp"],
     [stop.length,"멈춘 업체", stop.length?names(stop,function(x){return x.name||x.shop;}):"이용이 멈춘 곳", go("shops")],
     [Number(s.waitInvite||0),"가입 코드 · 아직 가입 안 함","코드를 받고 가입을 안 한 번호", go("inv")],
-    [noPrice.length,"요금 미정 요금제", noPrice.length?names(noPrice,function(p){return p.name;}):"금액이 0원인 요금제", go("plans")]
+    [noPrice.length,"금액을 안 정한 요금제", noPrice.length?names(noPrice,function(p){return p.name;}):"금액이 0원인 요금제", go("plans")]
   ]);   /* 0건도 빼지 않아요 — 워시와 같이 늘 세 줄이 보여요 */
 
   /* ── 아래 넓은 카드 — 운영 상태 · 유지비 ── */
@@ -3236,7 +3237,7 @@ function viewSummary(){
           '<div class="tools" style="margin:0 0 4px">'+
             '<button class="btn" id="calPrev">‹ 지난달</button>'+
             '<button class="btn" id="calNow">이번 달</button>'+
-            '<button class="btn" id="calNext">다음달 ›</button>'+
+            '<button class="btn" id="calNext">다음 달 ›</button>'+
             '<span class="hint" id="calLabel">'+Y+'년 '+M+'월</span>'+
           '</div>'+
           '<div class="dow"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>'+
@@ -3271,13 +3272,13 @@ function viewSummary(){
     '<div class="card">'+
       '<h2>운영 상태 <span class="rt"><button class="btn sm" id="goOps">자세히 보기 ›</button></span></h2>'+
       '<div class="sums">'+
-        '<div class="sum"><span>자료(DB) 용량</span><b>'+(u?gbTxt(u.db_bytes):"—")+'</b></div>'+
+        '<div class="sum"><span>자료 용량</span><b>'+(u?gbTxt(u.db_bytes):"—")+'</b></div>'+
         '<div class="sum"><span>차량 사진 용량</span><b>'+(u?gbTxt(u.file_bytes):"—")+'</b></div>'+
         '<div class="sum"><span>다달이 나가는 금액</span><b>'+won(OPS.monthCost||0)+'</b></div>'+
         '<div class="sum'+(smsLow?" bad":"")+'"><span>문자 남은 금액</span><b>'+(sms?won(sms.balance):"—")+'</b></div>'+
       '</div>'+
       '<div class="legend" style="margin-top:0">'+
-        '<span>DB 한도 <b>'+L.dbGb+' GB</b></span>'+
+        '<span>자료 한도 <b>'+L.dbGb+' GB</b></span>'+
         '<span>사진 한도 <b>'+L.fileGb+' GB</b>'+(u?(' · '+cnt(u.file_cnt)):'')+'</span>'+
         '<span>문자 '+(sms&&sms.balanceAt?("확인 <b>"+esc(dtTime(sms.balanceAt))+"</b>"):"유지비에서 받아오세요")+'</span>'+
       '</div>'+
@@ -3394,7 +3395,7 @@ function hqDaySheet(k){
   var again=function(){ api("hqTodo",[]).then(function(r){ TODO.list=(r&&r.todo)||[]; })
     .then(function(){ hqDaySheet(k); if(TAB==="sum") viewSummary(); }); };
   $("mmAdd").onclick=function(){
-    var t=$("mmText").value.trim(); if(!t) return toast("메모 내용을 적어주세요",true);
+    var t=$("mmText").value.trim(); if(!t) return toast("메모 내용을 적어 주세요",true);
     api("hqTodoAdd",[t,k]).then(function(){ toast("메모를 적었어요"); again(); }).catch(function(e){ toast(emsg(e),true); });
   };
   $("mmText").onkeydown=function(e){ if(e.key==="Enter"&&!e.isComposing) $("mmAdd").click(); };
@@ -3415,7 +3416,7 @@ function homeOps(){
   var h='<div class="block"><div class="opsHd"><h3>운영 상태</h3><span class="sp"></span>'+
     '<button class="btn sm" id="goOps">자세히 보기 ›</button></div>'+
     '<div class="dRow" style="grid-template-columns:repeat(4,1fr)">'+
-      '<button class="kbox"><span class="t">자료(DB) 용량</span>'+
+      '<button class="kbox"><span class="t">자료 용량</span>'+
         '<span class="v" style="display:block">'+(u?gbTxt(u.db_bytes):"—")+'</span>'+
         '<span class="s" style="display:block">한도 '+L.dbGb+' GB</span></button>'+
       '<button class="kbox"><span class="t">차량 사진 용량</span>'+
@@ -3457,7 +3458,7 @@ function svcState(v){
     if(left<0) lv=2; else if(left<=wd) lv=Math.max(lv,1);
   }
   if(!txt) txt = (v.kind==="sub"?"매달 결제":"확인 필요");
-  if(v.auto && v.auto_err) { lv=Math.max(lv,1); txt = "자동으로 읽지 못했어요 — "+v.auto_err; }
+  if(v.auto && v.auto_err) { lv=Math.max(lv,1); txt = "자동으로 읽지 못했어요. 그 회사 화면에서 보고 직접 적어 주세요."; }
   else if(v.auto_note && v.kind!=="charge" && !v.next_due) txt = v.auto_note;
   return {lv:lv, txt:txt, note:(v.auto?(v.auto_note||""):"")};
 }
@@ -3510,7 +3511,7 @@ function useCell(left,total,extra){
 function viewShops(){
   $("main").innerHTML =
     '<div class="dashhead"><h2>업체 관리</h2>'+
-    '<div class="sub2">줄을 누르면 고칠 수 있어요. 차곳간 본사(ADMIN)는 목록에서 빼 두었어요.</div></div>'+
+    '<div class="sub2">줄을 누르면 고칠 수 있어요. 차곳간 본사 계정은 목록에서 빼 두었어요.</div></div>'+
     '<div id="tShops"></div>';
   var rows = (D.shops||[]).filter(function(s){ return s.shop!=="ADMIN"; });
   makeTable({
@@ -3524,7 +3525,7 @@ function viewShops(){
        opts:[["","상태 전체"],["on","진행 중"],["off","보류"]]},
       {k:"_sms", label:"문자", get:function(r){ var u=usageOf(r);
          return u.smsLeft===0?"out":(u.smsLeft<=u.smsTotal*0.1?"low":"ok"); },
-       opts:[["","문자 전체"],["out","문자 소진"],["low","문자 10% 이하"],["ok","문자 넉넉"]]}
+       opts:[["","문자 전체"],["out","문자 다 씀"],["low","문자 10% 이하"],["ok","문자 넉넉"]]}
     ],
     cols:[
       {k:"name", label:"업체명", w:150, stick:true,
@@ -3556,7 +3557,7 @@ function viewShops(){
         html:function(r){ var u=usageOf(r);
           return useCell(u.taxLeft, u.taxTotal,
             (u.taxPaid?("충전분 "+cnt(u.taxPaid)+" 포함"):"")); }},
-      {k:"_dev", label:"켜둔 기기", w:100, nosort:true, html:function(r){
+      {k:"_dev", label:"켜 둔 기기", w:100, nosort:true, html:function(r){
         var l=(D.sess||[]).filter(function(x){return x.shop===r.shop;});
         var pc=l.filter(function(x){return x.kind!=="mo";}).length;
         return 'PC '+pc+' · 모바일 '+(l.length-pc); }},
@@ -3627,13 +3628,13 @@ function usageBoxHtml(s){
       '<div><label class="f">받은 금액 (원)</label><input type="number" id="sTopAmt" placeholder="18000"></div>'+
       '<div><label class="f">메모</label><input type="text" id="sTopMemo" placeholder="계좌이체"></div>'+
     '</div>'+
-    '<button class="btn" id="sTopGo" style="width:100%;margin-top:10px">충전 넣어주기</button>';
+    '<button class="btn" id="sTopGo" style="width:100%;margin-top:10px">충전 넣어 주기</button>';
 }
 function usageBoxBind(code){
   var b=$("sTopGo"); if(!b) return;
   b.onclick=function(){
     var qty=Number($("sTopQty").value)||0;
-    if(!qty) return toast("건수를 적어주세요",true);
+    if(!qty) return toast("건수를 적어 주세요",true);
     api("hqTopup",[code,{ kind:$("sTopKind").value, qty:qty,
       amount:Number($("sTopAmt").value)||0, memo:$("sTopMemo").value.trim() }])
       .then(function(r){ return loadAll().then(function(){ return r; }); })
@@ -3678,7 +3679,7 @@ function shopSheet(code){
     '<label class="f">이용 상태</label>'+
     '<select id="sOn"><option value="1"'+(s.active!==false?" selected":"")+'>진행 중</option>'+
       '<option value="0"'+(s.active===false?" selected":"")+'>보류 (로그인 막기)</option></select>'+
-    '<div class="hint">멈추면 그 업체 사람들이 로그인할 수 없게 되고, 지금 켜 둔 화면도 다음 요청부터 막혀요. 자료는 그대로 남아요.</div>'+
+    '<div class="hint">보류로 두면 그 업체 사람들이 로그인할 수 없게 되고, 지금 켜 둔 화면도 다음 요청부터 막혀요. 자료는 그대로 남아요.</div>'+
     '<div class="row2">'+
       '<div><label class="f">결제일 (이 날부터 30일)</label><input type="date" id="sPaidAt" value="'+
         (s.paid_at?esc(String(s.paid_at).slice(0,10)):"")+'"></div>'+
@@ -3717,7 +3718,7 @@ function shopSheet(code){
             trialUntil:$("sTrial").value||"",
             bizNo:$("sBiz").value, ceo:$("sCeo").value.trim(), addr:$("sAddr").value.trim(),
             upte:$("sUpte").value.trim(), jongmok:$("sJong").value.trim() };
-    if(!v.name) return toast("업체명을 넣어주세요",true);
+    if(!v.name) return toast("업체명을 넣어 주세요",true);
     api("hqShopSave",[code,v]).then(function(){ return loadAll(); })
       .then(function(){ closeSheet(); toast("저장했어요"); render(); })
       .catch(function(e){ toast(emsg(e),true); });
@@ -3726,7 +3727,7 @@ function shopSheet(code){
     openSheet('<h3>업체 지우기</h3>'+
       '<div class="sub">'+esc(s.name)+' (코드 '+esc(s.shop)+')</div>'+
       '<div class="warnbox">입출고 기록, 거래처, 청구서, 계정이 전부 사라져요. 되돌릴 수 없어요.</div>'+
-      '<label class="f">확인하려면 업체명을 그대로 적어주세요</label>'+
+      '<label class="f">확인하려면 업체명을 그대로 적어 주세요</label>'+
       '<input type="text" id="dName" placeholder="'+esc(s.name)+'">'+
       '<div class="sheetbtns"><button class="btn" id="dNo">취소</button>'+
       '<button class="btn danger" id="dYes" style="flex:2">지우기</button></div>');
@@ -3810,7 +3811,7 @@ function userSheet(phone){
         '</select></div>'+
       '<div><label class="f">상태</label><select id="uOn">'+
         '<option value="1"'+(u.active!==false?" selected":"")+'>진행 중</option>'+
-        '<option value="0"'+(u.active===false?" selected":"")+'>정지</option></select></div>'+
+        '<option value="0"'+(u.active===false?" selected":"")+'>보류</option></select></div>'+
     '</div>'+
     '<div class="sheetbtns"><button class="btn" id="uCancel">취소</button>'+
       '<button class="btn primary" id="uSave" style="flex:2">저장</button></div>'+
@@ -3824,14 +3825,14 @@ function userSheet(phone){
   $("uCancel").onclick=closeSheet;
   $("uSave").onclick=function(){
     var v={ name:$("uName").value.trim(), role:$("uRole").value, active:$("uOn").value==="1" };
-    if(!v.name) return toast("이름을 넣어주세요",true);
+    if(!v.name) return toast("이름을 넣어 주세요",true);
     api("hqUserSave",[phone,v]).then(function(){ return loadAll(); })
       .then(function(){ closeSheet(); toast("저장했어요"); render(); })
       .catch(function(e){ toast(emsg(e),true); });
   };
   $("uPwGo").onclick=function(){
     var pw = $("uPw").value.trim();          // 비우면 서버가 무작위 6자리를 만들어 줘요
-    confirmBox("비밀번호 바꾸기", u.name+" 님의 비밀번호를 «"+pw+"» 로 바꿔요.", "바꾸기", false, function(){
+    confirmBox("비밀번호 바꾸기", u.name+" 님의 비밀번호를 "+(pw?"«"+pw+"» 로":"무작위 6자리로")+" 바꿔요.", "바꾸기", false, function(){
       if(pw && pw.length < 6) return toast("비밀번호는 6자 이상으로 해주세요",true);
       api("hqUserPw",[phone,pw||null]).then(function(r){
         toast("비밀번호를 바꿨어요 — "+((r&&r.pw)||pw)+" (이 화면에서만 보여요)"); })
@@ -3999,12 +4000,12 @@ function viewInvites(){
       '<div><label class="f">업체명 (메모)</label><input type="text" id="iN" placeholder="예) 대박모터스"></div>'+
     '</div><div class="row2">'+
       '<div><label class="f">며칠 안에 가입</label><input type="number" id="iD" value="30"></div>'+
-      '<div style="display:flex;align-items:flex-end"><button class="btn primary" id="iAdd" style="width:100%;padding:12px">권한 주기</button></div>'+
+      '<div style="display:flex;align-items:flex-end"><button class="btn primary" id="iAdd" style="width:100%;padding:12px">가입 코드 주기</button></div>'+
     '</div></div>'+
     '<div id="tInv"></div>';
   $("iAdd").onclick=function(){
     var ph=$("iP").value.trim();
-    if(digits(ph).length<10) return toast("휴대폰 번호를 정확히 넣어주세요",true);
+    if(digits(ph).length<10) return toast("휴대폰 번호를 정확히 넣어 주세요",true);
     api("inviteAdd",[ph,$("iN").value.trim(),"",Number($("iD").value)||30])
       .then(function(){ return loadAll(); })
       .then(function(){ toast(phoneFmt(ph)+" 에 가입 코드를 줬어요"); render(); })
@@ -4090,7 +4091,7 @@ function viewPlans(){
       '<b style="font-size:14.5px">계정 수 · PC 대수 읽는 법</b>'+
       '<div class="hint" style="margin-top:6px">'+
       '<b>계정 수</b> — 그 업체가 만들 수 있는 로그인 계정 수예요. 계정 하나에 휴대폰 1대라서 <b>쓸 수 있는 휴대폰 대수와 같아요.</b> 넘으면 직원 계정을 더 만들 수 없어요.<br>'+
-      '<b>PC 대수</b> — 업체 전체로 동시에 켜둘 수 있는 PC 수예요. 넘으면 가장 오래 켜둔 PC 가 자동으로 로그아웃돼요.<br>'+
+      '<b>PC 대수</b> — 업체 전체로 동시에 켜둘 수 있는 PC 수예요. 넘으면 가장 오래 켜 둔 PC 가 자동으로 로그아웃돼요.<br>'+
       '<b>직원 PC</b> — 끄면 현장 직원은 휴대폰으로만 들어와요(정산은 대표만). 켜면 직원도 PC 로 들어올 수 있어요.<br>'+
       '<b>문자 무료 건수</b> — 결제일마다 새로 채워져요. 다 쓰면 여유분 20건으로 잠시 버티고, 그 뒤에는 충전분으로 나가요.<br>'+
       '<b>세금계산서 무료 건수</b> — <b>0</b> 을 넣으면 그 요금제는 세금계산서를 아예 쓸 수 없어요.<br>'+
@@ -4252,7 +4253,7 @@ function opsDraw(){
   if(u){
     var dpct = u.db_bytes/(L.dbGb*1024*1024*1024)*100;
     var fpct = u.file_bytes/(L.fileGb*1024*1024*1024)*100;
-    if(dpct>=L.warnPct) warns.push({lv:dpct>=95?2:1,nm:"자료(DB) 용량",
+    if(dpct>=L.warnPct) warns.push({lv:dpct>=95?2:1,nm:"자료 용량",
       tx:"한도의 "+dpct.toFixed(0)+"% 를 썼어요.",how:"수파베이스 요금제를 올리거나 오래된 기록을 정리해 주세요."});
     if(fpct>=L.warnPct) warns.push({lv:fpct>=95?2:1,nm:"차량 사진 용량",
       tx:"한도의 "+fpct.toFixed(0)+"% 를 썼어요.",how:"오래된 사진을 내려받아 보관하고 지우거나, 요금제를 올려 주세요."});
@@ -4284,7 +4285,7 @@ function opsDraw(){
   /* 큰 숫자 4칸 */
   var sms = (OPS.services||[]).filter(function(v){return v.code==="solapi";})[0];
   h += '<div class="opsTop">'+
-    '<div class="kbox"><span class="t">자료(DB) 용량</span>'+
+    '<div class="kbox"><span class="t">자료 용량</span>'+
       '<span class="v" style="display:block">'+(u?gbTxt(u.db_bytes):"—")+'</span>'+
       '<span class="s" style="display:block">한도 '+L.dbGb+' GB</span></div>'+
     '<div class="kbox"><span class="t">차량 사진 용량</span>'+
@@ -4292,7 +4293,7 @@ function opsDraw(){
       '<span class="s" style="display:block">'+(u?cnt(u.file_cnt):"—")+' · 한도 '+L.fileGb+' GB</span></div>'+
     '<div class="kbox"><span class="t">다달이 나가는 금액</span>'+
       '<span class="v" style="display:block">'+won(OPS.monthCost)+'</span>'+
-      '<span class="s" style="display:block">유지비 화면에 적어두신 금액의 합</span></div>'+
+      '<span class="s" style="display:block">유지비 화면에 적어 두신 금액의 합</span></div>'+
     '<div class="kbox'+((sms&&sms.minBal>0&&sms.balance<sms.minBal)?' warn':'')+'">'+
       '<span class="t">문자 남은 금액</span>'+
       '<span class="v" style="display:block">'+(sms?won(sms.balance):"—")+'</span>'+
@@ -4300,8 +4301,8 @@ function opsDraw(){
     '</div>';
 
   if(OPS.usageErr){
-    h += '<div class="hint"><b>용량을 아직 못 읽어요.</b><br>'+esc(OPS.usageErr)+'<br>'+
-      '「1_수파베이스_SQL_사용량.sql」 을 한 번 돌려 주시면 이 칸이 채워져요.</div>';
+    h += '<div class="hint"><b>용량을 아직 읽지 못했어요.</b> 서버 방에 «사용량 준비»를 요청해 주세요.<br>'+
+      '준비가 끝나면 이 칸이 채워져요.</div>';
   }
 
   if(u){
@@ -4363,7 +4364,7 @@ function opsDraw(){
       return { code:v.code, name:v.name, what:v.what||"", kind:v.kind,
                cost:Number(v.cost||0), balance:Number(v.balance||0),
                nextDue:v.nextDue||"", auto:v.auto?"자동":"직접",
-               note:v.autoErr?("주의 — "+v.autoErr):(v.autoNote||"") };
+               note:v.autoErr?"자동으로 읽지 못했어요. 그 회사 화면에서 보고 직접 적어 주세요.":(v.autoNote||"") };
     }),
     search:["name","what","code"],
     cols:[
@@ -4417,8 +4418,7 @@ var PRICE_ROWS=[["sms","단문 문자",18],["lms","장문 문자",45],["mms","�
 
 function cashDraw(){
   var host=$("cashBody"); if(!host) return;
-  if(CASH.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(CASH.err)+
-    '<br>캐시 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
+  if(CASH.err){ host.innerHTML='<div class="hint"><b>캐시 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
   var p=CASH.price||{};
   var h='';
 
@@ -4548,7 +4548,7 @@ function cashDraw(){
     box.innerHTML='<div class="ph">이만큼 쓸 수 있어요</div><div class="msg">'+
       esc('사진문자 '+Math.floor(v/Math.max(1,p.mms||240))+'장 · 단문 '+Math.floor(v/Math.max(1,p.sms||40))+'통 · '+
       '알림톡 '+Math.floor(v/Math.max(1,p.ata||30))+'통 · 세금계산서 '+Math.floor(v/Math.max(1,p.tax||300))+'건\n'+
-      '유효기간 : '+dt(t)+' 까지')+'</div>';
+      '유효기간: '+dt(t)+' 까지')+'</div>';
   }
   amt.oninput=draw; $("cgDays").oninput=draw;
   Array.prototype.forEach.call(document.querySelectorAll(".chip[data-c]"),function(b){
@@ -4626,7 +4626,7 @@ function expDraw(){
 
   var h='';
   if(!EXP.cron) h+='<div class="hint" style="background:var(--warn-soft);border-color:#F0D9A8">'+
-    '<b>자동 시계가 아직 준비되지 않았어요.</b><br>캐시 SQL 을 먼저 돌려 주세요. 그때까지는 자동 발송이 안 돼요.</div>';
+    '<b>자동 시계가 아직 준비되지 않았어요.</b><br>서버 준비가 아직이에요. 서버 방에 확인해 주세요. 그때까지는 자동 발송이 안 돼요.</div>';
 
   h+='<div class="card">'+
     '<div class="chips">'+
@@ -4648,7 +4648,7 @@ function expDraw(){
     '<div class="hint" style="margin-top:14px">받는 사람은 <b>업체 대표님</b>이에요. '+
     '이 문자는 <b>본사 문자 남은 금액</b>에서 나가고 업체 캐시는 쓰지 않아요. '+
     '같은 날짜·같은 단계는 <b>한 번만</b> 나가고, 지난 날짜로 거슬러 보내지 않아요. '+
-    '서버가 10분마다 확인하므로 적어두신 시각에서 <b>최대 10분 안</b>에 나가요.</div>'+
+    '서버가 10분마다 확인하므로 적어 두신 시각에서 <b>최대 10분 안</b>에 나가요.</div>'+
     '<div class="saveRow"><button class="btn primary sm" id="exSave">설정 저장</button></div></div>';
 
   /* 문구 */
@@ -4659,7 +4659,8 @@ function expDraw(){
     '<input type="text" id="tplName" value="'+esc(t.name||"")+'">'+
     '<label class="f" for="tplText">문자 내용</label>'+
     '<textarea id="tplText" style="min-height:110px">'+esc(t.text||"")+'</textarea>'+
-    '<div class="keys"><span class="cnt">바꿔 넣을 수 있는 말 :</span>'+
+    '<div class="hint" style="margin:6px 0">알림톡으로 나가는 글이라 결제 · 충전 · 연장을 권하는 말(예: «결제하시면 바로 다시 열립니다», «충전하기 ▶»)과 «무료»는 넣지 마세요.</div>'+
+    '<div class="keys"><span class="cnt">바꿔 넣을 수 있는 말:</span>'+
       '<code>{업체}</code><code>{무엇}</code><code>{날짜}</code><code>{남은일}</code><code>{요금제}</code><code>{캐시}</code></div>'+
     '<div class="prev"><div class="ph">실제로 이렇게 나가요 — 보기</div>'+
       '<div class="msg" id="tplPrev"></div><div class="cnt" id="tplLen" style="margin-top:7px"></div></div>'+
@@ -4758,12 +4759,12 @@ function expDraw(){
   });
   function pv(){
     var s2=String($("tplText").value||"")
-      .split("{업체}").join("브라더광택").split("{무엇}").join("무료 체험")
+      .split("{업체}").join("브라더광택").split("{무엇}").join("체험 기간")
       .split("{날짜}").join("11월 24일").split("{남은일}").join("3")
       .split("{요금제}").join("스탠다드").split("{캐시}").join("12,000원");
     $("tplPrev").textContent=s2;
     var n=s2.length;
-    $("tplLen").textContent="글자 "+n+"자 — "+(n<=45?"단문(SMS)":"장문(LMS)")+" 요금으로 나가요.";
+    $("tplLen").textContent="글자 "+n+"자 — "+(n<=45?"짧은 문자(SMS)":"긴 문자(LMS)")+" 요금으로 나가요.";
   }
   $("tplText").oninput=pv; pv();
   $("tplSave").onclick=function(){
@@ -4824,7 +4825,7 @@ function calHtml(){
     '<span style="display:inline-flex;gap:6px">'+
       '<button class="btn sm" id="calPrev">‹ 지난달</button>'+
       '<button class="btn sm" id="calNow">이번 달</button>'+
-      '<button class="btn sm" id="calNext">다음달 ›</button></span>'+
+      '<button class="btn sm" id="calNext">다음 달 ›</button></span>'+
     '<span class="sp"></span><span class="cnt">결제일 · 이용기한 · 체험 끝나는 날</span></div>'+
     '<div class="calGrid">'+["일","월","화","수","목","금","토"].map(function(d){
       return '<div class="dow">'+d+'</div>'; }).join("");
@@ -4934,8 +4935,7 @@ function pgLoad(){
 }
 function pgDraw(){
   var host=$("pgBody"); if(!host) return;
-  if(PG.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(PG.err)+
-    '<br>카드 결제 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
+  if(PG.err){ host.innerHTML='<div class="hint"><b>카드 결제 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
 
   var h='';
   /* 준비 상태 */
@@ -4957,7 +4957,7 @@ function pgDraw(){
 
   /* 스위치 */
   h+='<div class="card"><div class="tools" style="margin:0">'+
-    '<h2>카드 결제'+(pgTestMode()?' <span class="pill wait">테스트 모드</span>':'')+'</h2>'+
+    '<h2>카드 결제'+(pgTestMode()?' <span class="pill wait">시험 모드</span>':'')+'</h2>'+
     '<span class="pill '+(PG.on?"ok":"wait")+'">'+(PG.on?"켜짐":"꺼짐 — 계좌이체만")+'</span>'+
     '<span class="sp"></span>'+
     '<button class="btn '+(PG.on?"danger ":"primary ")+'sm" id="pgSw">'+(PG.on?"끄기":"켜기")+'</button></div>'+
@@ -5098,7 +5098,7 @@ function secDraw(){
 
   if(!c){
     h += '<div class="hint">아직 확인 전이에요. 위의 「지금 다시 확인」을 눌러 주세요.<br>'+
-         '「보안 점검 기록」 같은 말이 나오면 보안점검 SQL 을 아직 안 돌리신 거예요.</div>';
+         '«보안 점검 기록» 같은 말이 나오면 서버 준비가 아직이에요. 서버 방에 확인해 주세요.</div>';
   }else{
     var bad=c.filter(function(x){return x.lv===2;}).length;
     var warn=c.filter(function(x){return x.lv===1;}).length;
@@ -5193,8 +5193,8 @@ function viewMe(){
     '</div>';
   $("mGo").onclick=function(){
     var nid=$("mId").value.trim(), npw=$("mPw").value, cur=$("mCur").value;
-    if(!cur) return toast("지금 비밀번호를 넣어주세요",true);
-    if(!nid && !npw) return toast("바꿀 내용을 넣어주세요",true);
+    if(!cur) return toast("지금 비밀번호를 넣어 주세요",true);
+    if(!nid && !npw) return toast("바꿀 내용을 넣어 주세요",true);
     api("hqMe",[nid,npw,cur]).then(function(r){
       if(r && r.relogin){
         lsDel(SIDKEY);
@@ -5216,7 +5216,7 @@ function viewSvc(){
     '<div class="tools">'+
       '<button class="btn primary" id="svAdd">＋ 서비스 넣기</button>'+
       '<button class="btn" id="svRef">연결된 곳 상태 새로 받기</button>'+
-      '<span class="cnt">「자동」이 켜진 곳은 서버가 직접 물어봐요. 「직접」은 보고 적어주세요.</span>'+
+      '<span class="cnt">「자동」이 켜진 곳은 서버가 직접 물어봐요. 「직접」은 보고 적어 주세요.</span>'+
     '</div><div id="tSvc"></div>';
   $("main").innerHTML = h;
   makeTable({
@@ -5234,7 +5234,7 @@ function viewSvc(){
       {k:"_st", label:"상태", w:150, nosort:true, html:function(r){
         var st=svcState(r); return svcPill(st.lv)+' <span style="font-size:13px">'+esc(st.txt)+'</span>'; }},
       {k:"auto", label:"읽는 법", w:90, html:function(r){
-        return r.auto ? (r.auto_err?'<span class="pill off">자동 못 읽음</span>':'<span class="pill ok">자동</span>')
+        return r.auto ? (r.auto_err?'<span class="pill off" title="'+esc(r.auto_err)+'">자동으로 못 읽음</span>':'<span class="pill ok">자동</span>')
                       : '<span class="pill gray">직접</span>'; }},
       {k:"auto_note", label:"읽어온 내용", w:230, html:function(r){
         return esc(r.auto_err || r.auto_note || "-"); }},
@@ -5282,7 +5282,7 @@ function svcSheet(code){
     '<label class="f">충전·결제하러 가는 주소</label><input type="text" id="vUrl" value="'+esc(v.url||"")+'" placeholder="https://...">'+
     '<div class="row2">'+
       '<div><label class="f">결제 방식</label><select id="vKind">'+
-        kOpt("charge","충전식 — 미리 넣어두고 써요")+kOpt("sub","매달 결제 — 카드에서 빠져요")+
+        kOpt("charge","충전식 — 미리 넣어 두고 써요")+kOpt("sub","매달 결제 — 카드에서 빠져요")+
         kOpt("renew","연장 — 기한이 오면 다시 내요")+'</select></div>'+
       '<div><label class="f">다음 결제일 · 만료일</label><input type="date" id="vDue" value="'+
         esc(v.next_due||"")+'"></div>'+
@@ -5302,8 +5302,8 @@ function svcSheet(code){
       '<div><label class="f">읽은 값 (도메인일 때만)</label><input type="text" id="vRef" value="'+esc(v.ref||"")+'" placeholder="cgg.co.kr"></div>'+
     '</div>'+
     (v.auto_note?('<div class="hint">마지막으로 읽은 것 — '+esc(v.auto_note)+' ('+esc(ago(v.auto_at))+')</div>'):'')+
-    (v.auto_err?('<div class="hint" style="color:var(--warn)">못 읽음 — '+esc(v.auto_err)+'</div>'):'')+
-    '<div class="hint">자동이 안 되는 곳은 그 회사 화면에서 보고 「남은 금액」·「다음 결제일」을 적어주세요.</div>'+
+    (v.auto_err?('<div class="hint" style="color:var(--warn)" title="'+esc(v.auto_err)+'">자동으로 읽지 못했어요. 그 회사 화면에서 보고 직접 적어 주세요.</div>'):'')+
+    '<div class="hint">자동이 안 되는 곳은 그 회사 화면에서 보고 「남은 금액」·「다음 결제일」을 적어 주세요.</div>'+
     '<label class="f">사용</label><select id="vOn">'+
       '<option value="1"'+(v.active!==false?" selected":"")+'>써요</option>'+
       '<option value="0"'+(v.active===false?" selected":"")+'>안 써요 (화면에서 숨김)</option></select>'+
@@ -5319,7 +5319,7 @@ function svcSheet(code){
       cost:Number($("vCost").value)||0, minBal:Number($("vMin").value)||0,
       warnDays:Number($("vWarn").value)||0, memo:$("vMemo").value.trim(),
       ref:$("vRef").value.trim(), auto:$("vAuto").value==="1", active:$("vOn").value==="1" };
-    if(!o.name) return toast("이름을 넣어주세요",true);
+    if(!o.name) return toast("이름을 넣어 주세요",true);
     var p;
     if(isNew){ o.code=$("vCode").value.trim(); p=api("hqSvcAdd",[o]); }
     else p=api("hqSvcSave",[code,o]);
@@ -5353,7 +5353,7 @@ function viewSettle(){
     '<div class="sub2">달마다 업체에서 받은 금액과 유지비로 나간 금액을 견줘요.</div></div>'+
       '<div class="tools"><select id="stYear" style="max-width:130px">'+yOpt+'</select>'+
         '<button class="btn primary" id="exAdd">＋ 지출 적기</button>'+
-        '<span class="cnt">솔라피 충전·가비아 연장처럼 나간 금액을 여기에 적어두면 아래 표에 바로 반영돼요</span></div>'+
+        '<span class="cnt">솔라피 충전·가비아 연장처럼 나간 금액을 여기에 적어 두면 아래 표에 바로 반영돼요</span></div>'+
       '<div class="dash"><div class="dRow money">'+
         '<button class="kbox hl" data-none><span class="t">'+SETTLE_YEAR+'년 들어온 금액</span>'+
           '<span class="v" style="display:block">'+esc(won(inc))+'</span>'+
@@ -5363,7 +5363,7 @@ function viewSettle(){
           '<span class="s" style="display:block">유지비로 나간 금액</span></button>'+
         '<button class="kbox '+(prof<0?"warn":"")+'" data-none><span class="t">'+SETTLE_YEAR+'년 남은 것</span>'+
           '<span class="v" style="display:block">'+esc(won(prof))+'</span>'+
-          '<span class="s" style="display:block">'+(prof<0?"적자예요":"들어온 금액 − 나간 금액")+'</span></button>'+
+          '<span class="s" style="display:block">'+(prof<0?"나간 금액이 더 많아요":"들어온 금액 − 나간 금액")+'</span></button>'+
       '</div></div>';
 
     h += '<div class="card"><h2>달마다 보기</h2>';
@@ -5456,8 +5456,8 @@ function expSheet(){
     var o = { svc:$("eSvc").value, name:$("eName").value.trim(), amount:Number($("eAmt").value)||0,
       paidAt:$("eDate").value, period:$("ePer").value.trim(), memo:$("eMemo").value.trim(),
       addBalance:$("eAdd").value==="1" };
-    if(!o.name) return toast("무엇에 나간 금액인지 적어주세요",true);
-    if(!o.amount) return toast("금액을 적어주세요",true);
+    if(!o.name) return toast("무엇에 나간 금액인지 적어 주세요",true);
+    if(!o.amount) return toast("금액을 적어 주세요",true);
     api("hqExpenseAdd",[o]).then(function(r){
       return loadAll().then(function(){ return r; });
     }).then(function(r){
@@ -5480,7 +5480,7 @@ function taxLogLoad(force){
   TAXLOG.busy=true;
   api("hqTaxLog",[]).then(function(r){
     TAXLOG.rows=(r&&r.logs)||[];
-    if(r&&r.warn) toast("기록을 읽다가 막혔습니다: "+r.warn,true);
+    if(r&&r.warn) toast("세금계산서 기록을 다 불러오지 못했어요. 다시 시도해 주세요.",true);
   }).catch(function(e){
     TAXLOG.rows=[];
     var b=document.getElementById("tLog");
@@ -5621,7 +5621,7 @@ function viewTax(){
   $("hCheck").onclick = function(){
     toast("팝빌에 물어보는 중…");
     api("hqTaxCheck",[]).then(function(r){
-      toast("팝빌 연결 정상"+(r&&r.point!==""?" · 남은 포인트 "+r.point:"")+(r&&r.test?" (시험)":""));
+      toast("팝빌 연결이 정상이에요"+(r&&r.point!=null&&r.point!==""&&!isNaN(Number(r.point))?" · 남은 포인트 "+Number(r.point).toLocaleString("ko-KR"):"")+(r&&r.test?" (시험 발행)":""));
     }).catch(function(e){ toast(emsg(e),true); });
   };
 }
@@ -5639,7 +5639,7 @@ function taxSend(sh,code,v,force){
       if(r && r.dup && !force){ closeSheet(); taxDupSheet(sh,code,v,r); return; }
       closeSheet(); taxLogLoad(true); taxDoneSheet(sh,r,"");
     })
-    .catch(function(e){ closeSheet(); taxLogLoad(true); taxDoneSheet(sh,null,emsg(e,"알 수 없는 오류")); });
+    .catch(function(e){ closeSheet(); taxLogLoad(true); taxDoneSheet(sh,null,emsg(e,"세금계산서를 보내지 못했어요. 다시 시도해 주세요.")); });
 }
 function taxDupSheet(sh,code,v,r){
   var pv=(r&&r.prev)||{};
@@ -5674,7 +5674,7 @@ function taxDoneSheet(sh,r,err){
   var test = ok ? !!(r&&r.test) : (D.hq&&D.hq.pb_test!==false);
   var nts = (r&&r.ntsConfirmNum)||"";
   openSheet(
-    '<h3>'+(ok?'세금계산서를 보냈어요':'세금계산서를 보내지 못했어요. 아래 이유를 확인하고 다시 보내 주세요.')+'</h3>'+
+    '<h3>'+(ok?'세금계산서를 보냈어요':'세금계산서를 보내지 못했어요. 아래 이유를 고치고 다시 보내 주세요.')+'</h3>'+
     '<div class="sub">'+esc(sh.name)+' · '+(test?'시험 발행':'실제 발행')+'</div>'+
     '<div class="card" style="margin:0 0 16px;padding:14px 16px">'+
      (ok
@@ -5755,7 +5755,7 @@ function taxSheet(code){
   };
   $("tGo").onclick = function(){
     var amt=Number($("tAmt").value)||0;
-    if(!amt) return toast("공급가액을 적어주세요",true);
+    if(!amt) return toast("공급가액을 적어 주세요",true);
     /* 물어보는 창이 뜨면 이 칸들은 사라져요 — 먼저 값을 챙겨 둬요 */
     var per=$("tPer").value.trim(), item=$("tItem").value.trim(), memo=$("tMemo").value.trim();
     var real = D.hq && D.hq.pb_test===false;
@@ -5814,7 +5814,7 @@ function viewPacks(){
     '<div class="card"><h2>문자 묶음</h2>'+rows(sms,"sms")+'</div>'+
     '<div class="card"><h2>세금계산서 묶음</h2>'+rows(tax,"tax")+'</div>'+
     '<div class="card"><h2>넣어준 기록</h2>'+
-      '<p class="lead" style="margin:2px 0 10px">업체 화면에서 «충전 넣어주기»로 넣은 건수가 쌓여요.</p>'+
+      '<p class="lead" style="margin:2px 0 10px">업체 화면에서 «충전 넣어 주기»로 넣은 건수가 쌓여요.</p>'+
       '<div id="tTop"></div></div>';
 
   makeTable({
@@ -5891,14 +5891,13 @@ function lkLoad(){
     lkDraw(); });
 }
 function lkPill(st){
-  return st==="blocked" ? '<span class="pill off">보류 · 로그인 막힘</span>'
+  return st==="blocked" ? '<span class="pill off">보류 · 로그인 안 됨</span>'
        : st==="lock"    ? '<span class="pill wait">잠김 (보기만)</span>'
                         : '<span class="pill run">진행 중</span>';
 }
 function lkDraw(){
   var host=$("lkBody"); if(!host) return;
-  if(LOCK.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(LOCK.err)+
-    '<br><br>잠금 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
+  if(LOCK.err){ host.innerHTML='<div class="hint"><b>잠금 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
   var c=LOCK.cfg||{};
   var ld=(c.lockDays===undefined?7:Number(c.lockDays));
   var dd=(c.delDays===undefined?90:Number(c.delDays));
@@ -6138,8 +6137,7 @@ function ntState(n){
 }
 function ntDraw(){
   var host=$("ntBody"); if(!host) return;
-  if(NOTI.err){ host.innerHTML='<div class="hint"><b>불러오지 못했어요.</b><br>'+esc(NOTI.err)+
-    '<br><br>공지사항 SQL 을 아직 안 돌리셨다면 먼저 돌려 주세요.</div>'; return; }
+  if(NOTI.err){ host.innerHTML='<div class="hint"><b>공지사항 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'; return; }
   var list=NOTI.list||[];
   var live=list.filter(ntLive).length, pop=list.filter(function(n){return ntLive(n)&&n.pop;}).length;
 
@@ -6150,7 +6148,7 @@ function ntDraw(){
       '<div><span>앱에서 창으로 뜨는 것</span><b>'+pop+'건</b></div>'+
     '</div>'+
     '<div class="hint" style="margin:10px 0 0">창은 <b>업체 앱에서만</b> 떠요. 홈페이지에는 창이 뜨지 않아요.<br>'+
-    '창으로 뜨는 공지가 너무 많으면 업체가 피곤해해요. 한 번에 <b>한두 개</b>만 켜두시길 권해요.</div></div>'+
+    '창으로 뜨는 공지가 너무 많으면 업체가 피곤해해요. 한 번에 <b>한두 개</b>만 켜 두시길 권해요.</div></div>'+
     '<div id="ntTable"></div>';
 
   makeTable({ id:"ntTable", sortKey:"at", sortDir:"desc",
@@ -6270,7 +6268,7 @@ function ntEdit(n){
             title:$("ntTitle").value.trim(), body:$("ntBodyIn").value,
             fromAt:$("ntFrom").value, toAt:$("ntTo").value,
             pop:$("ntPop").checked, pin:$("ntPin").checked, active:$("ntOn").checked };
-    if(!v.title) return toast("제목을 넣어주세요",true);
+    if(!v.title) return toast("제목을 넣어 주세요",true);
     api("hqNoticeSave",[v]).then(function(){
       closeSheet(); toast("저장했어요"); NOTI.loaded=false; ntLoad();
     }).catch(function(e){ toast(emsg(e),true); });
@@ -6323,21 +6321,23 @@ var NAV_LAST = {}, NAV_PREV = "sum";
      hqAta([ym])        → {ok, pfSet, tpls:{키:코드}, ready:[서버가 지금 알림톡으로 보낼 수 있는 키], stats:{ym, ata:{cnt,won}, sms:{cnt,won}, lms:{cnt,won}, mms:{cnt,won}, error?}}
      hqAtaSave([{키:코드, pfId?}]) → {ok}    (워시 서버 sb7 · wash_hq.ata_cfg 에 저장, 빈 칸은 지움) */
 var ATA_LIST = [   /* [키, 템플릿 이름, 언제 나가는지, 검수 상태] — 차례 · 이름 · 때는 알림톡/00_확정본_13개_원문.md 그대로. 키는 서버와 같은 이름 */
-  ["intake",      "입고안내",       "차가 입고되어 접수가 끝났을 때",        "통과"],
-  ["release",     "출고안내",       "작업이 끝나 차가 나갈 때",              "통과"],
-  ["extra_work",  "추가작업",       "맡긴 것 말고 손봐야 할 것이 나왔을 때",  "통과"],
-  ["bill",        "청구서",         "한 달치 청구서를 보낼 때",              "통과"],
-  ["deposit_ok",  "입금확인",       "입금이 확인되었을 때",                  "통과"],
-  ["expire_soon", "기간종료예정",   "끝나기 3일 전 · 당일",                  "재검수"],
-  ["use_limit",   "이용제한시작",   "기간이 끝난 다음 날",                   "재검수"],
-  ["login_block", "로그인제한예정", "로그인이 막히기 하루 전",               "재검수"],
-  ["data_keep",   "자료보관기한",   "자료를 정리하기 7일 전",                "재검수"],
-  ["pay_done",    "결제완료",       "카드 결제 또는 입금 확인이 끝났을 때",   "통과"],
-  ["cash_done",   "충전완료",       "캐시가 충전되었을 때",                  "통과"],
-  ["balance",     "잔액안내",       "남은 금액이 정해둔 선 아래로 내려갔을 때", "재검수"],
-  ["auth",        "인증번호",       "인증번호를 보낼 때",                    "통과"],
-  ["check_arrive","차량도착 (체크)", "체크 — 차가 목적지에 도착했을 때 (본사 채널, 비면 검사소 템플릿 → 문자)", "심사 대기"],
-  ["staff_link",  "접속주소안내",   "직원에게 접속 주소를 보낼 때 (직원용 주소만, 로그인 열쇠 없음)", "심사 대기"]
+  ["intake",      "차곳간_입고안내",       "차가 입고되어 접수가 끝났을 때",        "통과"],
+  ["release",     "차곳간_출고안내",       "작업이 끝나 차가 나갈 때",              "통과"],
+  ["extra_work",  "차곳간_추가작업",       "맡긴 것 말고 손봐야 할 것이 나왔을 때",  "통과"],
+  ["bill",        "차곳간_청구서",         "한 달치 청구서를 보낼 때",              "통과"],
+  ["deposit_ok",  "차곳간_입금확인",       "입금이 확인되었을 때",                  "통과"],
+  ["expire_soon", "차곳간_기간종료예정",   "끝나기 3일 전 · 당일",                  "재검수"],
+  ["use_limit",   "차곳간_이용제한시작",   "기간이 끝난 다음 날",                   "재검수"],
+  ["login_block", "차곳간_로그인제한예정", "로그인이 막히기 하루 전",               "재검수"],
+  ["data_keep",   "차곳간_자료보관기한",   "자료를 정리하기 7일 전",                "재검수"],
+  ["pay_done",    "차곳간_결제완료",       "카드 결제 또는 입금 확인이 끝났을 때",   "통과"],
+  ["cash_done",   "차곳간_충전완료",       "캐시가 충전되었을 때",                  "통과"],
+  ["balance",     "차곳간_잔액안내",       "남은 금액이 정해 둔 선 아래로 내려갔을 때", "재검수"],
+  ["auth",        "차곳간_인증번호",       "인증번호를 보낼 때",                    "통과"],
+  ["check_arrive","차곳간체크_차량도착", "체크 — 차가 목적지에 도착했을 때 (본사 채널, 비면 검사소 템플릿 → 문자)", "심사 대기"],
+  ["staff_link",  "차곳간_접속주소안내",   "직원에게 접속 주소를 보낼 때 (직원용 주소만, 로그인 열쇠 없음)", "심사 대기"],
+  ["bill_on",     "차곳간_자동결제등록",   "자동 결제 카드를 등록했을 때",          "등록 전"],
+  ["bill_fail",   "차곳간_자동결제실패",   "자동 결제가 되지 않았을 때 (다음 시도일 안내)", "등록 전"]
 ];
 var ATA = {loaded:false, busy:false, err:"", tpls:{}, ready:[], stats:null, pfSet:false, at:""};
 function ataYm(){ var d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
@@ -6358,8 +6358,7 @@ function ataLoad(){
 }
 function ataDraw(){
   var host=$("ataBody"); if(!host) return;
-  if(ATA.err){ host.innerHTML='<div class="card"><div class="hint"><b>불러오지 못했어요.</b><br>'+esc(ATA.err)+
-    '<br>서버 새 판(알림톡 템플릿 칸)이 아직 안 올라갔으면 이렇게 보여요. 그동안 안내는 모두 문자로 나가요.</div>'+
+  if(ATA.err){ host.innerHTML='<div class="card"><div class="hint"><b>알림톡 템플릿 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'+
     '<div class="tools" style="margin:12px 0 0"><button class="btn" id="ataRe">새로고침</button></div></div>';
     $("ataRe").onclick=function(){ ATA.loaded=false; ataLoad(); }; return; }
   var have=ATA_LIST.filter(function(x){ return String(ATA.tpls[x[0]]||"").trim(); }).length;
@@ -6388,25 +6387,26 @@ function ataDraw(){
       ATA_LIST.map(function(x){
         var code=String(ATA.tpls[x[0]]||"");
         return '<tr><td class="c-name">'+esc(x[1])+'</td><td>'+esc(x[2])+'</td>'+
-          '<td class="mid"><span class="pill '+(x[3]==="통과"?"ok":"wait")+'">'+(x[3]==="통과"?"완료":(x[3]==="심사 대기"?"심사 대기":"확인 필요"))+'</span></td>'+
+          '<td class="mid"><span class="pill '+(x[3]==="통과"?"ok":"wait")+'">'+(x[3]==="통과"?"완료":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))+'</span></td>'+
           '<td><input type="text" data-ata="'+x[0]+'" value="'+esc(code)+'" placeholder="비어 있음" style="height:36px;font-size:13.5px;font-family:ui-monospace,monospace"></td>'+
           '<td class="mid" data-ataway="'+x[0]+'">'+ataWay(code,x[0])+'</td></tr>'; }).join("")+
       '</tbody></table></div>'+
-      '<div class="hint" style="margin:10px 0 0">«검수 확인 필요» 템플릿은 카카오 재검수 중이고, «심사 대기»는 새로 심사받는 중이에요. 통과 전에 코드를 넣으면 알림톡이 실패하고 문자로 대신 나가요 — 안내가 끊기지는 않아요.</div>'+
+      '<div class="hint" style="margin:10px 0 0">«확인 필요» 템플릿은 카카오 재검수 중이고, «심사 대기»는 새로 심사받는 중이고, «등록 전»은 아직 솔라피에 내지 않은 템플릿이에요. 통과 전에 코드를 넣으면 알림톡이 실패하고 문자로 대신 나가요 — 안내가 끊기지는 않아요.</div>'+
       '<div class="tools" style="margin:14px 0 0"><button class="btn primary" id="ataSave">코드 저장</button>'+
         '<button class="btn" id="ataRe">새로고침</button></div>'+
     '</div>'+
     '<details class="j-help"><summary>이 화면 사용법</summary><p>코드를 넣고 «코드 저장»을 누르면 그 안내부터 알림톡으로 나가요. 코드를 지우고 저장하면 다시 문자로만 나가요. '+
-      '알림톡은 정보만 알릴 수 있어서 결제·충전·연장을 권하는 문구와 버튼은 넣지 않아요 (규칙 5-6).</p></details>';
+      '알림톡은 정보만 알릴 수 있어서 결제·충전·연장을 권하는 문구와 버튼은 넣지 않아요.</p></details>';
   host.innerHTML=h;
   Array.prototype.forEach.call(host.querySelectorAll("[data-ata]"),function(inp){
     inp.oninput=function(){ var w=host.querySelector('[data-ataway="'+inp.getAttribute("data-ata")+'"]'); if(w) w.innerHTML=ataWay(inp.value,inp.getAttribute("data-ata")); }; });
   $("ataRe").onclick=function(){ ATA.loaded=false; ataLoad(); };
   $("ataSave").onclick=function(){
-    var map={}, n=0, pf=$("ataPf").value.trim(); if(pf) map.pfId=pf;
+    /* 표에 없는 코드도 그대로 다시 보내요 — 서버는 보낸 것으로 통째로 바꿔서, 빠진 키는 지워져요 */
+    var map={}, n=0, pf=$("ataPf").value.trim(); Object.keys(ATA.tpls||{}).forEach(function(k){ if(ATA.tpls[k]) map[k]=ATA.tpls[k]; }); if(pf) map.pfId=pf;
     Array.prototype.forEach.call(host.querySelectorAll("[data-ata]"),function(inp){ var v=inp.value.trim(); map[inp.getAttribute("data-ata")]=v; if(v) n++; });
-    var tp={}; ATA_LIST.forEach(function(x){ tp[x[0]]=map[x[0]]; });
-    confirmBox("코드를 저장할까요?","코드 넣음 "+n+"개 · 비어 있음(문자로 보냄) "+(ATA_LIST.length-n)+"개","저장",false,function(){
+    var tp={}; Object.keys(map).forEach(function(k){ if(k!=="pfId") tp[k]=map[k]; });
+    confirmBox("코드를 저장할까요?","코드 넣음 "+n+"개 · 비어 있음 "+(ATA_LIST.length-n)+"개 (알림톡 대신 문자로 가거나, 새 안내는 안 나가요)","저장",false,function(){
       $("ataSave").disabled=true;
       api("hqAtaSave",[map]).then(function(){ ATA.tpls=tp; if(pf) ATA.pfSet=true; toast("코드를 저장했어요"); ataDraw(); },
         function(e){ $("ataSave").disabled=false; toast(emsg(e,"저장하지 못했어요. 다시 시도해 주세요."),true); });
@@ -6416,6 +6416,10 @@ function ataDraw(){
 /* 코드 있음 + 서버 준비됨 → 알림톡 먼저 · 코드 있음 + 서버 아직 → 문자로 보냄(서버 준비 중) · 코드 없음 → 문자로 보냄 */
 function ataWay(code,key){
   var row=ATA_LIST.filter(function(x){ return x[0]===key; })[0];
+  /* 코드가 없으면 서버가 문자로도 안 보내는 새 안내 (워시 서버 noticeAta smsIfNoCode=false) — 알림톡 방 시험표 «코드 없으면 문자로?» */
+  var noSms=["cash_done","pay_done","bill_on","bill_fail"].indexOf(key)>=0, hasCode=!!String(code||"").trim();
+  if(noSms && (!hasCode || (row && row[3]==="등록 전"))) return '<span class="pill off" title="코드를 넣기 전에는 알림톡도 문자도 나가지 않아요">안 보냄'+(row && row[3]==="등록 전"?' · 등록 전':'')+'</span>';
+  if(row && row[3]==="등록 전") return '<span class="pill wait" title="솔라피에 등록하고 카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 등록 전</span>';
   if(row && row[3]==="심사 대기") return '<span class="pill wait" title="카카오 심사가 끝나면 알림톡으로 나가요">문자로 보냄 · 심사 대기</span>';
   if(!String(code||"").trim()) return '<span class="pill gray">문자로 보냄</span>';
   if(ATA.ready.length && ATA.ready.indexOf(key)<0) return '<span class="pill wait" title="서버가 이 안내를 아직 알림톡으로 보내지 않아요">문자로 보냄 · 서버 준비 중</span>';
@@ -6438,7 +6442,7 @@ function refundSheet(oid, row){
       ? ('남은 이용 기간 <b>'+(Number(q.leftDays)||0)+'일</b> / '+RF_CYCLE+'일 → 권장 <b>'+won(sg)+'</b>')
       : ('안 쓴 캐시 <b>'+won(Number(q.unusedCash)||0)+'</b> (부가세 포함 '+won(mx)+') — 쓴 캐시는 환불하지 않아요');
     $("sheet").innerHTML=
-      '<h3 style="margin:0 0 4px">환불'+(pgTestMode()?' <span class="pill wait">테스트 모드</span>':'')+'</h3>'+
+      '<h3 style="margin:0 0 4px">환불'+(pgTestMode()?' <span class="pill wait">시험 모드</span>':'')+'</h3>'+
       '<div class="hint" style="margin:0 0 12px">본사만 할 수 있어요. 금액은 서버가 셈한 한도 안에서만 돼요.</div>'+
       '<div class="kv"><span>업체</span><b>'+esc(row.shop)+'</b></div>'+
       '<div class="kv"><span>종류</span><b>'+esc(row.kind)+'</b></div>'+
@@ -6476,8 +6480,7 @@ function refundSheet(oid, row){
       });
     };
   }, function(e){
-    $("sheet").innerHTML='<h3 style="margin:0 0 6px">환불</h3><div class="hint"><b>환불 금액을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</b><br>'+esc(emsg(e,""))+
-      '<br>서버 새 판(워시 sb10)이 아직 안 올라갔으면 이렇게 보여요.</div>';
+    $("sheet").innerHTML='<h3 style="margin:0 0 6px">환불</h3><div class="hint"><b>환불 금액을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</b><br>'+esc(emsg(e,"서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요."))+'</div>';
     openSheet();
   });
 }
@@ -6486,17 +6489,17 @@ function billCard(){
   var on = !!(D.hq && D.hq.billing_on);
   return '<div class="card"><div class="tools" style="margin:0"><h2>자동 결제</h2>'+
     '<span class="pill '+(on?"run":"gray")+'">'+(on?"켜짐 — 업체가 카드를 등록할 수 있어요":"꺼짐")+'</span>'+
-    (pgTestMode()?'<span class="pill wait">테스트 모드</span>':'')+
+    (pgTestMode()?'<span class="pill wait">시험 모드</span>':'')+
     '<span class="sp"></span><button class="btn '+(on?"danger ":"")+'sm" id="billSw">'+(on?"끄기":"켜기")+'</button></div>'+
     '<div class="hint" style="margin-top:10px">켜면 업체 앱에 «자동 결제 켜기»가 보여요. '+
-    '<b>토스 자동결제 계약과 열쇠(PAY_ENC_KEY)를 넣은 뒤에만 켜세요.</b> 끄면 새 등록과 자동 결제가 멈추고, 등록한 카드는 그대로 남아요.</div></div>';
+    '<b>토스 자동 결제 계약과 열쇠(PAY_ENC_KEY)를 넣은 뒤에만 켜세요.</b> 끄면 새 등록과 자동 결제가 멈추고, 등록한 카드는 그대로 남아요.</div></div>';
 }
 function billBind(){
   var b=$("billSw"); if(!b) return;
   b.onclick=function(){
     var on=!(D.hq && D.hq.billing_on);
     confirmBox(on?"자동 결제를 켤까요?":"자동 결제를 끌까요?",
-      on?"토스 자동결제 계약과 열쇠(PAY_ENC_KEY)를 넣은 뒤에만 켜세요.":"새 등록과 자동 결제가 멈춰요.",
+      on?"토스 자동 결제 계약과 열쇠(PAY_ENC_KEY)를 넣은 뒤에만 켜세요.":"새 등록과 자동 결제가 멈춰요.",
       on?"켜기":"끄기", !on, function(){
         api("hqBillingOn",[on]).then(function(r){ D.hq=D.hq||{}; D.hq.billing_on=!!(r&&r.on!==undefined?r.on:on); toast(on?"켰어요":"껐어요"); pgDraw(); },
           function(e){ toast(emsg(e,"바꾸지 못했어요. 다시 시도해 주세요."),true); });
@@ -6529,8 +6532,7 @@ function cwLoad(){
 }
 function cwDraw(){
   var host=$("cwBody"); if(!host) return;
-  if(CW.err){ host.innerHTML='<div class="card"><div class="hint"><b>불러오지 못했어요.</b><br>'+esc(CW.err)+
-    '<br>서버 새 판(워시 sb11)과 SQL 07 이 아직이면 이렇게 보여요. 그동안 체크 화면에는 «아직 준비 중»이 떠요.</div>'+
+  if(CW.err){ host.innerHTML='<div class="card"><div class="hint"><b>체크 지갑 정보를 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div>'+
     '<div class="tools" style="margin:12px 0 0"><button class="btn" id="cwRe">새로고침</button></div></div>';
     $("cwRe").onclick=function(){ CW.loaded=false; cwLoad(); }; return; }
   var linked=CW.list.filter(function(o){ return o.wallet; }).length;
@@ -6652,17 +6654,17 @@ function pplSwDraw(){
   var el=$("pplSw"); if(!el) return; var on=PPL.pwSms;
   el.innerHTML='<div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
     '<div style="flex:1 1 260px;min-width:0"><b>체크 비밀번호 초기화 준비</b><div class="hint" style="margin:4px 0 0">'+
-      (on==="?"?"서버 새 판(워시 sb12)이 올라가면 여기서 켜고 꺼요.":
+      (on==="?"?"서버 준비가 끝나면 여기서 켜고 꺼요.":
        on===null?"불러오는 중이에요…":
-       "켜 두면 체크 계정의 «비밀번호 초기화»가 돼요. 체크 서버 v26 이상이 운영 중일 때만 켜 주세요.")+'</div></div>'+
+       "켜 두면 체크 계정의 «비밀번호 초기화»가 돼요. 체크 서버 준비가 끝났는지 서버 방에 확인한 뒤 켜 주세요.")+'</div></div>'+
     (on===true||on===false?'<span class="pill '+(on?"run":"off")+'">'+(on?"켜짐":"꺼짐")+'</span>'+
       '<button type="button" class="btn sm'+(on?"":" primary")+'" id="pplSwBtn">'+(on?"끄기":"켜기")+'</button>':'')+'</div>';
   var b=$("pplSwBtn"); if(!b) return;
   b.onclick=function(){ var to=!PPL.pwSms;
     confirmBox("체크 비밀번호 초기화 준비를 "+(to?"켤까요?":"끌까요?"),
-      to?"체크 서버 v26 이상이 운영 중인지 먼저 확인해 주세요.":"끄면 관리에서 체크 비밀번호 초기화를 할 수 없어요.", to?"켜기":"끄기", !to, function(){
+      to?"체크 서버 준비가 끝났는지 서버 방에 먼저 확인해 주세요.":"끄면 관리에서 체크 비밀번호 초기화를 할 수 없어요.", to?"켜기":"끄기", !to, function(){
       api("hqCheckPwSms",[to]).then(function(x){ PPL.pwSms=!!(x&&x.on); toast(PPL.pwSms?"켰어요":"껐어요"); pplSwDraw(); },
-        function(e){ toast(emsg(e,"하지 못했어요. 다시 시도해 주세요."),true); }); }); };
+        function(e){ toast(emsg(e,"처리하지 못했어요. 다시 시도해 주세요."),true); }); }); };
 }
 function viewPpl(){
   $("main").innerHTML='<div class="dashhead"><h2>번호로 계정 찾기</h2>'+
@@ -6703,8 +6705,7 @@ function stPill(active, locked){
 function pplDraw(){
   var host=$("pplBody"); if(!host) return;
   if(PPL.busy){ host.innerHTML='<div class="hint">찾는 중이에요…</div>'; return; }
-  if(PPL.err){ host.innerHTML='<div class="card"><div class="hint"><b>찾지 못했어요.</b><br>'+esc(PPL.err)+
-    '<br>서버 새 판(워시 sb12, 설계 14)이 아직 안 올라갔으면 이렇게 보여요.</div></div>'; return; }
+  if(PPL.err){ host.innerHTML='<div class="card"><div class="hint"><b>계정 정보를 불러오지 못했어요.</b> '+(/[가-힣]/.test(PPL.err)&&!/sb\d|SQL|설계/.test(PPL.err)?esc(PPL.err)+' ':'')+'서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div></div>'; return; }
   var r=PPL.r; if(!r){ host.innerHTML=''; return; }
   var L=r.locks||{}, S=r.sessions||{}, cards=[], nm="";
   /* 워시 — 대상 wash (여러 업체에 있어도 한 계정) */
@@ -6768,7 +6769,7 @@ function pplDraw(){
   h+='<div class="card"><h2>기록 <span class="rt">최근 '+lg.length+'건</span></h2>'+
     (lg.length?'<div class="tablebox"><table><thead><tr><th style="width:140px">언제</th><th style="width:110px">대상</th><th>한 일</th><th style="width:90px">결과</th><th style="width:130px">누가</th></tr></thead><tbody>'+
       lg.map(function(x){ var act=pv(x,["act","action"],""), res=pv(x,["result"],"됨");
-        return '<tr><td>'+esc(dt(pv(x,["at","created_at"],""),true))+'</td><td>'+esc(tgtTxt(pv(x,["target","product"],"-")))+'</td><td>'+esc(PACT_LOG[act]||(PACT[act]||[act])[0])+'</td><td>'+esc(res===true||res==="ok"?"됨":String(res).replace(/^error: ?/,"안 됨 — "))+'</td><td>'+esc(pv(x,["who","by"],"-"))+'</td></tr>'; }).join("")+
+        return '<tr><td>'+esc(dt(pv(x,["at","created_at"],""),true))+'</td><td>'+esc(tgtTxt(pv(x,["target","product"],"-")))+'</td><td>'+esc(PACT_LOG[act]||(PACT[act]||[act])[0])+'</td><td>'+(res===true||res==="ok"?"됨":'<span title="'+esc(String(res))+'">안 됨</span>')+'</td><td>'+esc(pv(x,["who","by"],"-"))+'</td></tr>'; }).join("")+
       '</tbody></table></div>':'<div class="hint">아직 기록이 없어요.</div>')+'</div>';
   host.innerHTML=h;
   Array.prototype.forEach.call(host.querySelectorAll("[data-pa]"),function(b){
@@ -6776,9 +6777,10 @@ function pplDraw(){
       var a=b.getAttribute("data-pa"), t=b.getAttribute("data-pt"), n=b.getAttribute("data-pn"), A=PACT[a];
       var label=b.textContent;
       confirmBox(label+" — "+n+"?", (nm||"")+" · "+phoneFmt(r.phone)+"\n"+A[1], label, A[2], function(){
-        function done(x){ if(x && x.sent===false){ toast("문자를 보내지 못했어요"+(x.note?" · "+x.note:""),true); pplFind(); return; }
-          toast(label+" 했어요"+((x&&x.warn)?" · "+x.warn:((x&&x.note)?" · "+x.note:""))); pplFind(); }
-        function fail(e){ toast(emsg(e,"하지 못했어요. 다시 시도해 주세요."),true); }
+        function done(x){ if(x && x.sent===false){ toast("문자를 보내지 못했어요. 다시 시도해 주세요.",true); pplFind(); return; }
+          var DONE={stop:"멈췄어요",resume:"다시 쓸 수 있게 했어요",pwReset:"비밀번호를 초기화했어요",unlock:"잠금을 풀었어요",kick:"접속을 끊었어요",grant:"제품을 열었어요",revoke:"제품을 닫았어요"};
+          var nt=(x&&(x.warn||x.note))||""; toast((DONE[a]||"처리했어요")+(/[가-힣]/.test(nt)?" · "+nt:"")); pplFind(); }
+        function fail(e){ toast(emsg(e,"처리하지 못했어요. 다시 시도해 주세요."),true); }
         api("hqPersonAct",[r.phone, a, t]).then(function(x){
           /* 제품 열기가 처음이면 서버가 한 번 더 물어요 — 다른 제품이 막힐 수 있어서 */
           if(x && x.confirm) return confirmBox("한 번 더 확인해 주세요", x.why||"", "그래도 "+label, false, function(){
@@ -6811,7 +6813,7 @@ function prTagPill(t){ var k=prTagKind(t), c={wash:"run",check:"ok",bill:"run",r
   return '<span class="pill '+c+'">'+esc(t||"워시")+'</span>'; }
 function prStPill(s){ s=String(s||"");
   var c=/결제됨|입금 확인|paid|done/i.test(s)?"ok":(/실패|fail|기한 지남/i.test(s)?"off":(/환불|cancel/i.test(s)?"gray":"wait"));
-  var t=({paid:"결제됨",ready:"입금 전",failed:"실패",canceled:"환불됨",pending:"결제 중"})[s]||s;
+  var t=({paid:"결제됨",ready:"입금 전",failed:"실패",canceled:"환불됨",pending:"결제 중"})[s]||(/[가-힣]/.test(s)?s:"확인 필요");
   return '<span class="pill '+c+'">'+esc(t)+'</span>'; }
 function viewPays(){
   var d=new Date(); if(!PR2.from){ PR2.from=d.toISOString().slice(0,8)+"01"; PR2.to=d.toISOString().slice(0,10); }
@@ -6904,7 +6906,7 @@ function pwLoad(after){
 }
 function pwKind(x){ return x.paidOrder?"chk":(x.old?"stop":(Number(x.days)>=7?"wait7":"run")); }
 function pwChip(x){ var k=pwKind(x);
-  return k==="chk"?'<span class="cgg-st chk">확인 필요</span>':k==="stop"?'<span class="cgg-st stop">30일 지남</span>':k==="wait7"?'<span class="cgg-st chk">7일 지남</span>':'<span class="cgg-st run">결제 기다림</span>'; }
+  return k==="chk"?'<span class="cgg-st chk">확인 필요</span>':k==="stop"?'<span class="cgg-st stop">30일 지남</span>':k==="wait7"?'<span class="cgg-st chk">7일 지남</span>':'<span class="cgg-st run">결제 대기</span>'; }
 function viewPayWait(){
   $("main").innerHTML='<div class="dashhead"><h2>결제 대기</h2>'+
     '<div class="sub2">홈페이지에서 가입만 하고 아직 결제를 안 한 업체예요. «확인 필요»는 결제는 됐는데 아직 열리지 않은 곳이라 차곳간이 직접 확인해야 해요.</div></div>'+
@@ -6914,7 +6916,7 @@ function viewPayWait(){
 }
 function pwDraw(){
   var host=$("pwBody"); if(!host) return;
-  if(PW.list===null){ host.innerHTML='<div class="card"><div class="hint"><b>목록을 불러오지 못했어요.</b><br>'+esc(PW.err)+'<br>서버 새 판(워시 sb13)이 올라가면 보여요.</div></div>'; return; }
+  if(PW.list===null){ host.innerHTML='<div class="card"><div class="hint"><b>목록을 불러오지 못했어요.</b> 서버 준비가 아직이면 이렇게 보여요 — 서버 방에 확인해 주세요.</div></div>'; return; }
   var L=PW.list, chk=L.filter(function(x){ return x.paidOrder; }).length, d7=L.filter(function(x){ return !x.paidOrder && Number(x.days)>=7 && !x.old; }).length, old=L.filter(function(x){ return x.old && !x.paidOrder; }).length;
   host.innerHTML='<div id="pwK"></div>'+
     (chk?'<div class="card" style="border:1px solid var(--chk);display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="cgg-st chk">확인 필요 '+chk+'곳</span>'+
@@ -6925,7 +6927,7 @@ function pwDraw(){
     {label:"7일 지남",value:String(d7),unit:"곳",color:"#0B2545"},{label:"30일 지남 · 지울 수 있음",value:String(old),unit:"곳",color:"#D64545"}]);
   if($("pwToPays")) $("pwToPays").onclick=function(){ TAB="pays"; window.scrollTo(0,0); render(); };
   /* 처음 차례: 확인 필요(돈 냄) → 오래된 것. 머리를 누르면 다른 차례로 */
-  makeTable({ id:"tPW", sortKey:"", tabs:[["","전체"],["chk","확인 필요"],["wait7","7일 지남"],["stop","30일 지남"],["run","결제 기다림"]], tabOf:function(r){ return r.k; },
+  makeTable({ id:"tPW", sortKey:"", tabs:[["","전체"],["chk","확인 필요"],["wait7","7일 지남"],["stop","30일 지남"],["run","결제 대기"]], tabOf:function(r){ return r.k; },
     rows:L.slice().sort(function(a,b){ return (b.paidOrder?1:0)-(a.paidOrder?1:0) || (Number(b.days)||0)-(Number(a.days)||0); }).map(function(x,i){ PWROWS[i]=x; return {i:i, name:String(x.name||""), shop:String(x.shop||""), phone:phoneFmt(x.ownerPhone||""), plan:PLAN_NAME[x.joinPlan]||String(x.joinPlan||"-"),
       at:String(x.createdAt||"").slice(0,10), days:Number(x.days)||0, k:pwKind(x), raw:x}; }),
     search:["name","shop","phone"],
@@ -6952,7 +6954,7 @@ function sgDraw(){
   var el=$("sgBox"); if(!el) return; var g=PW.sg, ok=g&&g!=="?", on=ok&&!!g.on, c=(ok&&g.cfg)||{};
   el.innerHTML='<div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
     '<div style="flex:1 1 280px;min-width:0"><b>누구나 가입 (가입 코드 없이)</b><div class="hint" style="margin:4px 0 0">'+
-      (g===null?"불러오는 중이에요…":g==="?"?"서버 새 판(워시 sb13)이 올라가면 여기서 켜고 꺼요.":
+      (g===null?"불러오는 중이에요…":g==="?"?"서버 준비가 끝나면 여기서 켜고 꺼요.":
        (on?"켜져 있어요. 홈페이지에서 누구나 가입하고 결제하면 바로 쓸 수 있어요.":"꺼져 있어요. 가입 코드를 받은 번호만 가입할 수 있어요.")+
        ' 한도: 같은 곳(IP)에서 하루 '+(c.perIp||5)+'번 · 전체 하루 '+(c.allDay||200)+'번 · 결제 대기 업체 같은 곳 하루 '+(c.waitPerIp||3)+'개')+'</div></div>'+
     (ok?'<span class="cgg-st '+(on?"done":"stop")+'">'+(on?"켜짐":"꺼짐")+'</span><button type="button" class="btn sm" id="sgEdit">바꾸기</button>':'')+'</div>';
@@ -7162,18 +7164,18 @@ function step2(on){
 }
 function doLogin(){
   var id=$("gid").value.trim(), pw=$("gpw").value;
-  if(!id||!pw) return gmsg("아이디와 비밀번호를 넣어주세요",true);
+  if(!id||!pw) return gmsg("아이디와 비밀번호를 모두 입력해 주세요.",true);
   $("gGo").disabled=true; gmsg("확인 중…");
   open_("hqLogin",[id,pw]).then(function(r){
     $("gGo").disabled=false;
     TICK=(r&&r.tick)||"";
-    $("gTo").innerHTML="<b>"+esc((r&&r.to)||"")+"</b> 로 6자리를 보냈습니다.<br>5분 안에 넣어 주세요.";
+    $("gTo").innerHTML="<b>"+esc((r&&r.to)||"")+"</b> 로 인증번호 6자리를 보냈습니다.<br>5분 안에 입력해 주세요.";
     gmsg(""); step2(true);
   }).catch(function(e){ $("gGo").disabled=false; gmsg(emsg(e,"로그인하지 못했습니다. 잠시 후 다시 시도해 주세요."),true); });
 }
 function doCode(){
   var c=$("gcode").value.replace(/[^0-9]/g,"");
-  if(c.length!==6) return gmsg("6자리를 넣어주세요",true);
+  if(c.length!==6) return gmsg("인증번호 6자리를 입력해 주세요.",true);
   $("gGo2").disabled=true; gmsg("확인 중…");
   open_("hqLogin2",[TICK,c]).then(function(r){
     ls(SIDKEY, r.key);
@@ -7236,7 +7238,7 @@ $("btnLink").onclick=function(){
   var u=location.href.split("#")[0];
   function done(){ toast("링크를 복사했어요"); }
   try{ navigator.clipboard.writeText(u).then(done,function(){ prompt0(u); }); }catch(e){ prompt0(u); }
-  function prompt0(x){ openSheet('<h3 style="margin:0 0 8px">링크 복사</h3><div class="hint" style="margin:0 0 10px">아래 주소를 길게 눌러 복사해 주세요.</div><input type="text" readonly value="'+esc(x)+'" onfocus="this.select()">'); }
+  function prompt0(x){ openSheet('<h3 style="margin:0 0 8px">링크 복사</h3><div class="hint" style="margin:0 0 10px">아래 주소를 골라 복사해 주세요.</div><input type="text" readonly value="'+esc(x)+'" onfocus="this.select()">'); }
 };
 $("btnHelp").onclick=function(){
   openSheet('<h3 style="margin:0 0 4px">도움말</h3><div class="hint" style="margin:0 0 12px">메뉴마다 하는 일이에요. 누르면 그 화면으로 가요.</div>'+

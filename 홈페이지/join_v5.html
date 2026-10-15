@@ -81,10 +81,20 @@ input[type=checkbox]{width:22px;height:22px;flex:0 0 auto;accent-color:var(--blu
 .done .big{font-size:22px;font-weight:800;margin-bottom:6px}
 .foot{text-align:center;font-size:12.5px;color:var(--muted);margin-top:18px;line-height:1.8}
 .foot a{color:var(--muted)}
+/* 오픈 베타 띠 (디자인 방 2026-10-15) */
+:root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
+:root[data-theme="dark"]{--beta-bg:#1d3a5f}
+.cgg-beta{background:var(--beta-bg);color:var(--beta-ink);font-size:13.5px;line-height:1.5;word-break:keep-all}
+.cgg-beta .in{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;
+  padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
+.cgg-beta[hidden]{display:none}
+@media (max-width:600px){.cgg-beta{font-size:12.5px}.cgg-beta .in{display:block;padding-block:6px}.cgg-beta b{margin-right:6px}}
 </style>
 </head>
 <body>
-<div class="cggBeta" style="word-break:keep-all;background:#0B2545;color:#E8F0FB;font-size:13px;text-align:center;padding:8px 16px;line-height:1.5"><b style="background:#E8F0FB;color:#0B2545;border-radius:6px;padding:0 7px;font-size:11.5px;letter-spacing:.04em;margin-right:6px">OPEN BETA</b>차곳간은 지금 <b>오픈 베타</b>예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</div>
+<div class="cgg-beta" id="cggBeta" role="note"><div class="in"><b>오픈 베타</b><span>차곳간은 지금 오픈 베타예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span></div></div>
 <div class="wrap">
   <div class="top">
     <a href="/"><div class="logo">차곳간</div>
@@ -124,7 +134,7 @@ function call(fn,args){
       body:JSON.stringify({shop:"",token:"",fn:fn,args:args||[]})})
     .then(function(r){return r.text();},function(){throw new Error("서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요.");})
     .then(function(t){
-      var j;try{j=JSON.parse(t);}catch(e){throw new Error("일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");}
+      var j;try{j=JSON.parse(t);}catch(e){throw new Error("가입을 진행하지 못했습니다. 잠시 후 다시 시도해 주세요.");}
       if(j&&j.__err)throw new Error(j.__err);
       return j?j.result:null;
     });
@@ -137,7 +147,7 @@ function phoneFmt(v){var d=digits(v);
   if(d.length===11)return d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7);
   if(d.length===10)return d.slice(0,3)+"-"+d.slice(3,6)+"-"+d.slice(6);
   return String(v||"");}
-function say(t,kind){var m=$("msg");if(kind==="bad"&&t&&!/[가-힣]/.test(t))t="일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";m.textContent=t||"";m.className="msg"+(kind?" "+kind:"");}
+function say(t,kind){var m=$("msg");if(kind==="bad"&&t&&!/[가-힣]/.test(t))t="가입을 진행하지 못했습니다. 잠시 후 다시 시도해 주세요.";m.textContent=t||"";m.className="msg"+(kind?" "+kind:"");}
 
 /* 상호를 보고 업종을 짐작합니다 */
 function guessKind(name){
