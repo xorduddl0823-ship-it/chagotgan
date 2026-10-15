@@ -2873,7 +2873,6 @@ function post(bodyObj){
       return j ? j.result : null;
     });
 }
-function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }
 function open_(fn,args){ return post({shop:"",token:"",fn:fn,args:args||[]}); }
 function api(fn,args){
   var sid = ls(SIDKEY);
@@ -2917,6 +2916,8 @@ function ago(v){
   if(d<365) return Math.floor(d/30)+"달 전";
   return Math.floor(d/365)+"년 전";
 }
+/* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */
+function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }
 function toast(msg,bad){ CGG.toast(msg); var t=document.querySelector(".cgg-toastbox"); if(t) t.classList.toggle("bad",!!bad); }
 function closeSheet(){ $("sheet").classList.remove("show"); $("sheetbg").classList.remove("show"); $("sheet").innerHTML=""; }
 function openSheet(html){

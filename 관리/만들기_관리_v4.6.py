@@ -61,7 +61,7 @@ rep('noti:"기한 안내 문자 · 공지사항 · 알림톡 템플릿 코드예
 rep('function navOf(t){', open(os.path.join(HERE, "v4재료", "sendlog.js"), encoding="utf-8").read() + '\nfunction navOf(t){', False)
 # ④ 말 대조표 — 디자인 방 디자인/말_대조표.md · 결제 방 결제/12_결제_말_대조표.md (관리 칸)
 # 화면에 서버 · 브라우저 글을 그대로 내보내지 않게: 한글이 없는 오류(영어 · 코드)는 쉬운 말로 바꿔요
-rep("function open_(fn,args){", 'function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }\nfunction open_(fn,args){', False)
+rep("function toast(msg,bad){", '/* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */\nfunction emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }\nfunction toast(msg,bad){', False)
 def cnt(a,b,n=None):
     global s
     k=s.count(a)
