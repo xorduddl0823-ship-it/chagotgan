@@ -1624,6 +1624,11 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
         var mb={}; try{ mb=JSON.parse(a[0]||"{}"); }catch(e){}
         SENT.push({kind:mb.kind,ataKey:mb.ataKey||"",vars:mb.variables||null,text:mb.text||"",to:mb.to||""});
         SENT[SENT.length-1].rec=mb.rec||"";
+        /* ?srv=15 : 서버 sb15 처럼 — 코드 없으면 서버가 문자로 바꾸고 via 로 알려 줌 */
+        if(/srv=15/.test(OLDQ)){
+          var v15=(mb.kind==="ATA"&&mb.ataKey&&/ata=on/.test(OLDQ))?"ata":"sms";
+          return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G",via:v15});
+        }
         if(mb.kind==="ATA"&&mb.ataKey){
           /* sb7 처럼: 키는 intake · release · extra_work · bill · deposit_ok (옛 이름은 모르는 키 → 코드 없음과 같음) */
           var K7={intake:1,release:1,extra_work:1,bill:1,deposit_ok:1,staff_link:1};   /* sb14: staff_link 도 */
@@ -1634,6 +1639,8 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
         return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G"});
       case "viewLink": return {url:"https://app.cgg.co.kr/v.html?c=CAR"+String(a[0]||"").slice(-4)};
       case "viewBill": return {url:"https://app.cgg.co.kr/v.html?c=BILL01"};
+      case "shopBiz": if(/biz=lock/.test(OLDQ)) throw new Error("사업자번호는 한 번 넣으면 바꿀 수 없습니다. 바꾸시려면 차곳간으로 연락해 주세요.");
+        return /srv=15/.test(OLDQ)?{ok:true,bizWait:true}:{ok:true};
       case "pbIssue": return JSON.stringify({ok:true,ntsConfirmNum:"미리보기-0001"});
       case "pbCheck": case "pbReady": return JSON.stringify({ok:true,test:true,point:""});
       case "webAppUrl": return location.href.split("?")[0];
@@ -9720,10 +9727,16 @@ function renderBiz(){
     saveCfg().then(function(){
       /* 세금계산서·팝빌은 서버에 적힌 사업자 정보를 쓰기 때문에 서버에도 같이 넣어요 */
       return gsCall("shopBiz",[{bizNo:o.bizNo,ceo:o.ceo,addr:o.addr,upte:o.upte,jongmok:o.jongmok,email:o.email}])
-             .catch(function(){ /* 예전 서버면 조용히 넘어가요 */ });
-    }).then(function(){
+             .then(function(t){try{return typeof t==="string"?JSON.parse(t):t;}catch(e){return null;}},
+               function(e){ /* 예전 서버(모르는 요청)면 조용히 · 그 밖(예: 사업자번호는 바꿀 수 없음)은 알려요 */
+                 var m=String((e&&e.message)||"");if(/모르는|unknown/i.test(m))return null;
+                 toast(kmsg(e,"사업자 정보를 서버에 저장하지 못했어요. 다시 시도해 주세요."),true);return {bizErr:true};});
+    }).then(function(r){
       PBR.st=null; PBR.at=0;                 /* 팝빌 준비 상태를 다시 읽게 해요 */
-      toast("우리 사업장 정보를 저장했어요");renderAll();
+      if(r&&r.bizErr){renderAll();return;}
+      if(r&&r.bizWait)warnBox("<b>사업자번호를 저장했어요.</b><br>차곳간이 사업자번호를 확인하는 동안(보통 하루 안) 세금계산서 <b>실제 발행</b>은 잠시 멈춰 있어요. 시험 발행은 지금도 돼요.<br>사업자번호는 한 번 넣으면 바꿀 수 없어요. 잘못 넣었으면 차곳간에 문의해 주세요.",[{t:"확인",kind:"primary",wide:true}]);
+      else toast("우리 사업장 정보를 저장했어요");
+      renderAll();
     }).catch(function(e){toast(errMsg(e),true);});
   };
   $("spLic").onclick=function(){
@@ -11192,7 +11205,7 @@ function ataPlan(o){
     var v=o.ata.vars[k];vars["#{"+k+"}"]=(v==null||v==="")?"-":String(v);});
   return {tpl:t.tpl,pfId:a.pfId,text:ataFill(t.text,o.ata.vars),vars:vars,fallback:a.fallback};
 }
-var KIND_NAME={AUTO:"자동",SMS:"단문",LMS:"장문",MMS:"사진 문자",ATA:"알림톡"};
+var KIND_NAME={AUTO:"문자",SMS:"짧은 문자",LMS:"긴 문자",MMS:"사진 문자",ATA:"알림톡"};
 /* ===== 본사 알림톡 먼저 (v116 · 규칙 5-6 · 서버 sb5 ataKey) =====
    업체가 자기 알림톡을 켜 두지 않았을 때 본사 채널 템플릿(출고안내 · 청구서 · 추가작업)으로 보내요.
    본사 코드가 아직 없거나 옛 서버면 «템플릿 ID가 없어요» → 그 자리에서 예전처럼 문자로 다시 보내요. */
@@ -11257,7 +11270,8 @@ function sendNow(o){
     });
   }).then(function(res){
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
-      o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";}
+      o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";
+      if(o.via==="sms"&&o.sentKind==="ATA")o.sentKind="AUTO"; else if(o.via==="ata")o.sentKind="ATA";}
     else{o.status="실패";o.err=kmsg(res&&(res.error||res.message),"보내지 못했어요. 발송함에서 다시 보내 주세요.");}
     return saveJob(o).then(function(){return o;});
   }).catch(function(e){
@@ -15823,6 +15837,7 @@ function boot(){
       var r = rs[0];
       CW.busy = false;
       CW.due = rs[1];
+      if(r && r.ownerOnly){ offNotice("캐시는 대표님만 볼 수 있어요."); return; }
       if(!r || r.on === false){ offNotice(r && r.note); return; }
       CW.data = r;
       BAL.on = !!r.on; BAL.bal = Number(r.balance||0); BAL.at = Date.now();
@@ -15857,8 +15872,8 @@ function boot(){
     BAL.busy = true;
     cwRpc("cashInfo",[]).then(function(r){
       BAL.busy=false; BAL.at=Date.now();
-      BAL.on = !!(r && r.on);
-      BAL.bal = Number((r && r.balance) || 0);
+      BAL.on = !!(r && r.on && !r.ownerOnly);
+      BAL.bal = Number((r && !r.ownerOnly && r.balance) || 0);
       if(r && r.price) CW.price = r.price;
       paintChip(true);
     }, function(){ BAL.busy=false; BAL.at=Date.now(); BAL.on=false; paintChip(true); });

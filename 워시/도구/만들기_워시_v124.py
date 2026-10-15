@@ -437,6 +437,40 @@ rep('''    if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예�
     '''    if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
       o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));''', word=False)
 
+
+# ═════ 4-2) 서버 sb15 맞춤 (서버 방 · 알림톡 방 알림) ═════
+# 서버가 알림톡 코드가 없으면 스스로 문자로 바꾸고 via:"sms" 를 줘요 → 화면 말 · 발송함 «방식» 칸을 via 로
+rep("""o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";}""",
+    """o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";
+      if(o.via==="sms"&&o.sentKind==="ATA")o.sentKind="AUTO"; else if(o.via==="ata")o.sentKind="ATA";}""", word=False)
+rep('var KIND_NAME={AUTO:"자동",SMS:"단문",LMS:"장문",MMS:"사진 문자",ATA:"알림톡"};',
+    'var KIND_NAME={AUTO:"문자",SMS:"짧은 문자",LMS:"긴 문자",MMS:"사진 문자",ATA:"알림톡"};')
+# 사업자번호: 한 번 넣으면 못 바꿈(서버 오류 글 보여 줌) · 처음 넣으면 본사 확인 전까지 실제 발행 «확인하는 중»
+rep("""      return gsCall("shopBiz",[{bizNo:o.bizNo,ceo:o.ceo,addr:o.addr,upte:o.upte,jongmok:o.jongmok,email:o.email}])
+             .catch(function(){ /* 예전 서버면 조용히 넘어가요 */ });
+    }).then(function(){
+      PBR.st=null; PBR.at=0;                 /* 팝빌 준비 상태를 다시 읽게 해요 */
+      toast("우리 사업장 정보를 저장했어요");renderAll();""",
+    """      return gsCall("shopBiz",[{bizNo:o.bizNo,ceo:o.ceo,addr:o.addr,upte:o.upte,jongmok:o.jongmok,email:o.email}])
+             .then(function(t){try{return typeof t==="string"?JSON.parse(t):t;}catch(e){return null;}},
+               function(e){ /* 예전 서버(모르는 요청)면 조용히 · 그 밖(예: 사업자번호는 바꿀 수 없음)은 알려요 */
+                 var m=String((e&&e.message)||"");if(/모르는|unknown/i.test(m))return null;
+                 toast(kmsg(e,"사업자 정보를 서버에 저장하지 못했어요. 다시 시도해 주세요."),true);return {bizErr:true};});
+    }).then(function(r){
+      PBR.st=null; PBR.at=0;                 /* 팝빌 준비 상태를 다시 읽게 해요 */
+      if(r&&r.bizErr){renderAll();return;}
+      if(r&&r.bizWait)warnBox("<b>사업자번호를 저장했어요.</b><br>차곳간이 사업자번호를 확인하는 동안(보통 하루 안) 세금계산서 <b>실제 발행</b>은 잠시 멈춰 있어요. 시험 발행은 지금도 돼요.<br>사업자번호는 한 번 넣으면 바꿀 수 없어요. 잘못 넣었으면 차곳간에 문의해 주세요.",[{t:"확인",kind:"primary",wide:true}]);
+      else toast("우리 사업장 정보를 저장했어요");
+      renderAll();""", word=False)
+# 캐시 · 결제 내역: 대표가 아니면 서버가 ownerOnly 로 빈 값을 줘요 → 금액 칸 숨김 (화면은 원래 대표만 부름 · 막이 하나 더)
+rep("""      BAL.on = !!(r && r.on);
+      BAL.bal = Number((r && r.balance) || 0);""",
+    """      BAL.on = !!(r && r.on && !r.ownerOnly);
+      BAL.bal = Number((r && !r.ownerOnly && r.balance) || 0);""", word=False)
+rep("""      if(!r || r.on === false){ offNotice(r && r.note); return; }""",
+    """      if(r && r.ownerOnly){ offNotice("캐시는 대표님만 볼 수 있어요."); return; }
+      if(!r || r.on === false){ offNotice(r && r.note); return; }""", word=False)
+
 # ═════ 5) 말 목록 ═════
 MISS = []
 def W(old, new, count=None):

@@ -94,6 +94,11 @@ FAKE = r'''<script>
         var mb={}; try{ mb=JSON.parse(a[0]||"{}"); }catch(e){}
         SENT.push({kind:mb.kind,ataKey:mb.ataKey||"",vars:mb.variables||null,text:mb.text||"",to:mb.to||""});
         SENT[SENT.length-1].rec=mb.rec||"";
+        /* ?srv=15 : 서버 sb15 처럼 — 코드 없으면 서버가 문자로 바꾸고 via 로 알려 줌 */
+        if(/srv=15/.test(OLDQ)){
+          var v15=(mb.kind==="ATA"&&mb.ataKey&&/ata=on/.test(OLDQ))?"ata":"sms";
+          return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G",via:v15});
+        }
         if(mb.kind==="ATA"&&mb.ataKey){
           /* sb7 처럼: 키는 intake · release · extra_work · bill · deposit_ok (옛 이름은 모르는 키 → 코드 없음과 같음) */
           var K7={intake:1,release:1,extra_work:1,bill:1,deposit_ok:1,staff_link:1};   /* sb14: staff_link 도 */
@@ -104,6 +109,8 @@ FAKE = r'''<script>
         return JSON.stringify({ok:true,id:"PREVIEW",groupId:"PREVIEW_G"});
       case "viewLink": return {url:"https://app.cgg.co.kr/v.html?c=CAR"+String(a[0]||"").slice(-4)};
       case "viewBill": return {url:"https://app.cgg.co.kr/v.html?c=BILL01"};
+      case "shopBiz": if(/biz=lock/.test(OLDQ)) throw new Error("사업자번호는 한 번 넣으면 바꿀 수 없습니다. 바꾸시려면 차곳간으로 연락해 주세요.");
+        return /srv=15/.test(OLDQ)?{ok:true,bizWait:true}:{ok:true};
       case "pbIssue": return JSON.stringify({ok:true,ntsConfirmNum:"미리보기-0001"});
       case "pbCheck": case "pbReady": return JSON.stringify({ok:true,test:true,point:""});
       case "webAppUrl": return location.href.split("?")[0];
