@@ -1,0 +1,54 @@
+"""관리 v4.3 시안 만들기 — v4.2 에 ① 받는 금액 제품별 걸러 보기 ② 계정 › 번호로 계정 찾기 를 더합니다.
+쓰는 법: python3 관리/만들기_관리_v4.3.py   (먼저 v4.1 · v4.2 도구)
+- 재료: 관리/3_차곳간_관리_index_v4.2.html (읽기만) · 관리/v4재료/people.js
+- 결과: 관리/3_차곳간_관리_index_v4.3.html
+- 근거: 대표님 지시 (결정 기록 2026-10-15) «결제 결과는 관리로, 관리에서 계정들을 다 컨트롤»
+- 서버 창구 이름 (hqPerson · hqPersonAct · 결제 줄의 product)은 시안용 가칭 — 서버 방 응답에 맞춰 고쳐요
+"""
+import os
+HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.join(HERE, "3_차곳간_관리_index_v4.2.html")
+OUT = os.path.join(HERE, "3_차곳간_관리_index_v4.3.html")
+s = open(SRC, encoding="utf-8").read()
+
+def rep(old, new):
+    global s
+    if s.count(old) != 1: raise SystemExit("찾은 수 %d: %s" % (s.count(old), old[:80]))
+    s = s.replace(old, new)
+
+rep('var ADM_VER="관리 v4.2 · UI 3.0 · 2026-10-15";', 'var ADM_VER="관리 v4.3 · UI 3.0 · 2026-10-15";')
+
+# ① 결제 내역 — 제품 칸 · 제품 걸러 보기 · 제품별 이번 달 합계
+PRODF = '''{k:"product", label:"제품", get:function(r){ return r.product||"wash"; },
+       opts:[["","제품 전체"],["wash","워시"],["check","체크"],["dealer","딜러"]]},
+      '''
+rep('''    filters:[
+      {k:"status", label:"상태", get:function(r){ return r.status; },
+       opts:[["","상태 전체"],["ready","못 받음"],["paid","받음"],["cancel","취소"]]},''',
+    '''    filters:[
+      ''' + PRODF + '''{k:"status", label:"상태", get:function(r){ return r.status; },
+       opts:[["","상태 전체"],["ready","못 받음"],["paid","받음"],["cancel","취소"]]},''')
+rep('''      {k:"period", label:"기간", w:90, html:function(r){ return esc(r.period||"-"); }},''',
+    '''      {k:"product", label:"제품", w:70, html:function(r){ return esc(PROD_NAME[r.product||"wash"]||r.product); }},
+      {k:"period", label:"기간", w:90, html:function(r){ return esc(r.period||"-"); }},''')
+rep('''    '<div class="tools"><button class="btn primary" id="payNew">청구 만들기</button></div>'+''',
+    '''    /* 제품별 이번 달 받은 금액 */
+    '<div class="hint" style="margin:0 0 10px">이번 달 제품별 · '+["wash","check","dealer"].map(function(k){
+      return esc(PROD_NAME[k])+' <b>'+won(paid.filter(function(p){ return (p.product||"wash")===k && String(p.paid_at||"").slice(0,7)===ym; }).reduce(function(a,b){return a+(b.amount||0);},0))+'</b>'; }).join(" · ")+'</div>'+
+    '<div class="tools"><button class="btn primary" id="payNew">청구 만들기</button></div>'+''')
+# 카드 결제 목록도 제품으로 걸러 보기
+rep('''    filters:[{k:"status",label:"상태",opts:[["","전체"],["결제됨","결제됨"],["기다림","기다림"],["실패","실패"],["환불됨","환불됨"]]},''',
+    '''    filters:[{k:"product",label:"제품",opts:[["","제품 전체"],["워시","워시"],["체크","체크"],["딜러","딜러"]]},
+             {k:"status",label:"상태",opts:[["","전체"],["결제됨","결제됨"],["기다림","기다림"],["실패","실패"],["환불됨","환불됨"]]},''')
+rep('''               method:String(o.method||""), oid:String(o.order_id||""), raw:o };''',
+    '''               method:String(o.method||""), oid:String(o.order_id||""), raw:o, product:(PROD_NAME[o.product||"wash"]||o.product) };''')
+a = s.index('raw:o, product:(PROD_NAME'); b = s.index('{k:"shop",label:"업체",w:120},', a) + len('{k:"shop",label:"업체",w:120},')
+s = s[:b] + '\n      {k:"product",label:"제품",w:70},' + s[b:]
+
+# ② 계정 › 번호로 계정 찾기 (묶음 끝에 붙임)
+rep('["users","계정 관리",viewUsers],', '["users","계정 관리",viewUsers],\n  ["ppl","번호로 계정 찾기",viewPpl],')
+rep('["users","계정",["inv","users"]],', '["users","계정",["inv","users","ppl"]],')
+pp = open(os.path.join(HERE, "v4재료", "people.js"), encoding="utf-8").read()
+rep('function navOf(t){', pp + '\nfunction navOf(t){')
+open(OUT, "w", encoding="utf-8").write(s)
+print("만듦:", OUT, len(s), "글자")
