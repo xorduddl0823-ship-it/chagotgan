@@ -1,0 +1,95 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>가입 완료 문구 시안</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+:root{--blue:#1668C4;--navy:#0B2545;--bg:#F3F5F8;--surf:#fff;--ink:#101828;--sub:#667085;--ln:#EAECF0;--stop:#D64545;--done:#1E9E5A;
+  --font:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14.5px;line-height:1.6}
+.pg{max-width:980px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:24px;margin:0 0 6px}
+.lead{color:var(--sub);margin:0 0 22px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:720px){.pair{grid-template-columns:1fr}}
+.lab{font-weight:900;font-size:13px;margin:0 0 8px;display:flex;gap:8px;align-items:center}
+.lab i{font-style:normal;font-size:12px;padding:2px 8px;border-radius:6px}
+.lab .b{background:#FDE8E8;color:var(--stop)} .lab .a{background:#E4F5EC;color:var(--done)}
+.phone{background:var(--surf);border-radius:18px;box-shadow:0 1px 2px #1018280d,0 12px 32px -20px #0B254540;padding:32px 24px;text-align:center;min-height:400px;display:flex;flex-direction:column;justify-content:center}
+.ok{width:56px;height:56px;border-radius:50%;background:#E6F0FB;color:var(--blue);display:grid;place-items:center;margin:0 auto 16px}
+.ok svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.phone h2{font-size:21px;margin:0 0 6px}
+.phone .sub{color:var(--sub);margin:0 0 20px}
+.box{background:var(--bg);border-radius:12px;padding:14px 16px;text-align:left;font-size:14px}
+.box dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 8px}
+.box dt{color:var(--sub)} .box dd{margin:0;font-weight:700}
+.small{font-size:12.5px;color:var(--sub);margin:12px 0 0}
+.btn{margin-top:20px;height:46px;border:0;border-radius:12px;background:var(--blue);color:#fff;font:inherit;font-weight:700;font-size:15px;width:100%}
+.btn.gray{background:var(--navy)}
+.note{background:var(--surf);border-radius:18px;padding:20px 22px;margin-top:24px}
+.note h2{font-size:17px;margin:0 0 10px}
+.note ul{margin:0;padding-left:20px}
+.wt{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--ln);vertical-align:top}
+th{color:var(--sub);font-weight:700;font-size:12.5px}
+td.old{color:#8a5a5a} td.new{color:#1b5e3b;font-weight:500}
+</style>
+<div class="pg">
+  <h1>가입 완료 문구 시안</h1>
+  <p class="lead">대표님 요청대로 <b>일반 사이트에서 흔히 쓰는 표준 안내 문구</b>로 바꿨어요. 실제 반영은 다음 주 시험이 끝난 뒤에 해요.</p>
+
+  <div class="pair">
+    <div>
+      <p class="lab"><i class="b">지금</i>대표님이 캡처한 화면</p>
+      <div class="phone">
+        <div class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <h2>가입이 끝났습니다</h2>
+        <div class="box"><dl><dt>아이디</dt><dd>010-1234-5678</dd></dl>
+          비밀번호는 방금 정하신 것입니다. 안전을 위해 열쇠를 주소에 남기지 않습니다. 로그인 화면에서 한 번만 넣어주세요.</div>
+        <button class="btn gray">(지금 버튼)</button>
+      </div>
+    </div>
+    <div>
+      <p class="lab"><i class="a">시안</i>일반 사이트 표준형</p>
+      <div class="phone">
+        <div class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <h2>회원가입이 완료되었습니다</h2>
+        <p class="sub">차곳간 워시에 오신 것을 환영합니다.</p>
+        <div class="box"><dl><dt>아이디</dt><dd>010-1234-5678</dd></dl>
+          로그인할 때 가입하신 휴대폰 번호와 비밀번호를 입력해 주세요.</div>
+        <p class="small">비밀번호를 잊으셨다면 로그인 화면의 «비밀번호 찾기»를 이용해 주세요.</p>
+        <button class="btn">로그인하러 가기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h2>총괄 방 초안에서 바꾼 곳 1줄</h2>
+    <ul>
+      <li>버튼 «시작하기» → <b>«로그인하러 가기»</b>. 지금 화면은 가입 뒤 로그인을 한 번 더 해야 해서, «시작하기»를 누르면 바로 시작될 거라 기대했다가 로그인 화면이 나와 헷갈릴 수 있어요. 가입하자마자 바로 들어가게 바뀌면 «시작하기»로 돌려요.</li>
+      <li>나머지는 총괄 방 초안 그대로예요. «열쇠를 주소에 남기지 않습니다» 같은 기술 설명은 뺐어요.</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <h2>함께 바꾸면 좋은 로그인·가입 안내 (워시 파일 v111 안, 같은 표준형)</h2>
+    <p style="margin:0 0 10px;color:var(--sub)">체험판 구상 6번 «가입·로그인·오류 안내 문구를 표준형으로»에 해당해요. 실제 반영은 시험 뒤에 해요.</p>
+    <div class="wt"><table><thead><tr><th>어디</th><th>지금</th><th>시안</th></tr></thead><tbody>
+      <tr><td>로그인 버튼</td><td class="old">들어가기</td><td class="new">로그인</td></tr>
+      <tr><td>로그인</td><td class="old">번호와 비밀번호를 넣어주세요</td><td class="new">휴대폰 번호와 비밀번호를 입력해 주세요.</td></tr>
+      <tr><td>가입 1단계</td><td class="old">휴대폰 번호를 넣어주세요</td><td class="new">휴대폰 번호를 입력해 주세요.</td></tr>
+      <tr><td>인증번호</td><td class="old">문자를 보냈습니다. 5분 안에 입력해 주세요</td><td class="new">인증번호를 발송했습니다. 5분 안에 입력해 주세요.</td></tr>
+      <tr><td>인증번호</td><td class="old">인증번호 6자리를 넣어주세요</td><td class="new">인증번호 6자리를 입력해 주세요.</td></tr>
+      <tr><td>인증번호</td><td class="old">확인됐습니다</td><td class="new">인증이 완료되었습니다.</td></tr>
+      <tr><td>가입 오류</td><td class="old">이미 가입된 번호입니다. 로그인해 주세요</td><td class="new">이미 가입된 휴대폰 번호입니다. 로그인해 주세요.</td></tr>
+      <tr><td>사업장 정보</td><td class="old">상호를 넣어주세요</td><td class="new">상호를 입력해 주세요.</td></tr>
+      <tr><td>비밀번호 칸</td><td class="old">6자 이상 · 한 번 더</td><td class="new">비밀번호 (6자 이상) · 비밀번호 확인</td></tr>
+      <tr><td>비밀번호 오류</td><td class="old">비밀번호는 6자 이상으로 해주세요</td><td class="new">비밀번호는 6자 이상 입력해 주세요.</td></tr>
+      <tr><td>비밀번호 오류</td><td class="old">비밀번호가 서로 다릅니다</td><td class="new">비밀번호가 일치하지 않습니다.</td></tr>
+      <tr><td>가입 중</td><td class="old">사업장을 만드는 중…</td><td class="new">가입 처리 중입니다…</td></tr>
+      <tr><td>비밀번호 찾기</td><td class="old">비밀번호를 바꿨습니다. 로그인해 주세요</td><td class="new">비밀번호가 변경되었습니다. 다시 로그인해 주세요.</td></tr>
+    </tbody></table></div>
+  </div>
+</div>
