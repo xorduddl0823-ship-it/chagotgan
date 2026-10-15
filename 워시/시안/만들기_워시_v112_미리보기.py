@@ -9,6 +9,7 @@ import os, json
 import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 VER = sys.argv[1] if len(sys.argv) > 1 else "v112"
+VERN = int("".join(c for c in VER if c.isdigit()) or 0)
 SRC = os.path.join(HERE, "..", "1_차곳간_워시_index_%s.html" % VER)
 OUT = os.path.join(HERE, "워시_%s_미리보기.html" % VER)
 SEED = os.path.join(HERE, "워시_v112_미리보기_자료.json")
@@ -33,7 +34,8 @@ FAKE = r'''<script>
 /* ═══ 미리보기 전용 — 서버(wash-api)로 가는 요청을 가로채서 지어낸 자료로 답합니다 ═══ */
 (function(){
   var DB = __SEED__;
-  var SHOTN = 0, SENT = [];   /* shotLinks 를 몇 번 불렀는지 (시험용) */
+  var SHOTN = 0, SENT = [], PAY = [], TOSS = [], AB = {};
+  var AQ=(location.search.match(/ab=(open|on|fail|off)/)||[])[1]||"__ABDEF__"; if(AQ==="off")AQ="";   /* 미리보기: 처음 주소에서 한 번만 읽음 */   /* shotLinks 를 몇 번 불렀는지 (시험용) */
   function shotPic(id){ var t=id.split("/").pop().replace(/[^0-9A-Za-z가-힣._-]/g,"");
     return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420"><rect width="640" height="420" fill="#1668C4"/><text x="320" y="200" font-size="34" fill="#fff" text-anchor="middle" font-family="sans-serif">서명 주소 사진</text><text x="320" y="250" font-size="22" fill="#cfe3fa" text-anchor="middle" font-family="sans-serif">'+t+'</text></svg>'); }
   var REV = 1;
@@ -97,10 +99,35 @@ FAKE = r'''<script>
       case "pbIssue": return JSON.stringify({ok:true,ntsConfirmNum:"미리보기-0001"});
       case "pbCheck": case "pbReady": return JSON.stringify({ok:true,test:true,point:""});
       case "webAppUrl": return location.href.split("?")[0];
+      /* v120~: 결제 (서버 sb10 처럼) — 주소 끝 ?ab=open|on|fail 이면 자동 결제 칸이 열림 (없으면 관리 스위치 꺼짐과 같음) */
+      case "payDue": return {ok:true,trial:false,pgOn:true,planName:"기본 요금제",price:30000,vat:3000,full:33000,cash:0,
+        period:new Date().toISOString().slice(0,7),paid:/paid=1/.test(location.search),paidUntil:"2026-11-14T15:00:00Z"};
+      case "cashInfo": return {ok:true,on:true,balance:0,free:0,paid:0,usedMonth:0,price:{},lots:[],logs:[]};
+      case "payStart": PAY.push({fn:fn,a:a});
+        return {ok:true,orderId:"PV"+Date.now(),amount:33000,orderName:"차곳간 기본 요금제 이용요금",
+          clientKey:"test_ck_PREVIEW",customerName:"미리보기 세차",customerKey:"ANONYMOUS",sdk:"v2"};
+      case "billInfo": case "billStart": case "billIssue": case "billOff":
+        if(ROLE!=="owner") throw new Error("대표만 할 수 있습니다");
+        PAY.push({fn:fn,a:a});
+        if(fn==="billInfo"){ if(!AQ) return {ok:true,open:false,on:false};
+          if(AB.on===undefined) AB.on=(AQ!=="open");
+          return {ok:true,open:true,on:AB.on,cardCompany:AB.on?"신한":"",last4:AB.on?"1234":"",nextAt:AB.on?"2026-11-15":"",
+            failCount:(AB.on&&AQ==="fail")?1:0,lastFail:(AB.on&&AQ==="fail")?"잔액이 모자라요":"",nextTry:(AB.on&&AQ==="fail")?"2026-11-16":""}; }
+        if(!AQ) return {ok:false,off:true,note:"자동 결제는 아직 준비 중입니다"};
+        if(fn==="billStart") return {ok:true,customerKey:"ck_PREVIEW_RANDOM",clientKey:"test_ck_PREVIEW"};
+        if(fn==="billIssue"){ AB.on=true; return {ok:true,cardCompany:"신한",last4:"1234"}; }
+        AB.on=false; return {ok:true};
       default: return {ok:true};
     }
   }
-  window.__PV = {DB:function(){return DB;}, shotCalls:function(){return SHOTN;}, sent:function(){return SENT;}};
+  /* 미리보기: 토스 창 대신 부른 값만 적어 둠 (바깥으로 안 나감) */
+  window.TossPayments = function(ck){ TOSS.push({init:ck}); return {
+    payment:function(o){ TOSS.push({payment:o}); return {
+      requestPayment:function(x){ TOSS.push({requestPayment:x}); return Promise.resolve(); },
+      requestBillingAuth:function(x){ TOSS.push({requestBillingAuth:x}); return Promise.resolve(); } }; },
+    requestPayment:function(m,x){ TOSS.push({v1:m,x:x}); return Promise.resolve(); } }; };
+  window.TossPayments.ANONYMOUS = "@@ANONYMOUS"; window.TossPayments.__preview = true;
+  window.__PV = {DB:function(){return DB;}, shotCalls:function(){return SHOTN;}, sent:function(){return SENT;}, pay:function(){return PAY;}, toss:function(){return TOSS;}};
   var realFetch = window.fetch ? window.fetch.bind(window) : null;
   window.fetch = function(url, opt){
     var u = String((url && url.url) || url || "");
@@ -116,14 +143,14 @@ FAKE = r'''<script>
   };
 })();
 </script>
-'''.replace("__SEED__", seed)
+'''.replace("__SEED__", seed).replace("__ABDEF__", "open" if VERN >= 120 else "")
 
 # 자료 만들기 때만: 같은 범위 안에서 샘플 자료 넣기를 부를 수 있게 (최종 미리보기에는 안 들어감)
 if os.environ.get("SEEDMODE"):
     s = s.replace("function seedDemo(){", "window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};\nfunction seedDemo(){", 1)
 # 시험할 때만 (TESTHOOK=1): 같은 범위 안 함수를 밖에서 부를 수 있게 — 최종 미리보기에는 안 들어감
 if os.environ.get("TESTHOOK") and "function sendOutMsg(" in s:
-    s = s.replace("function sendOutMsg(", "window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;}};\nfunction sendOutMsg(", 1)
+    s = s.replace("function sendOutMsg(", "window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;},cfg:function(k,v){S.cfg=Object.assign({},S.cfg);S.cfg[k]=v;}};\nfunction sendOutMsg(", 1)
 i = s.index("<script")
 s = s[:i] + FAKE + s[i:]
 s = s.replace("<title>차곳간 워시</title>", "<title>워시 %s 미리보기</title>" % VER, 1)
