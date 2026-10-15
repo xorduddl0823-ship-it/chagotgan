@@ -1807,7 +1807,7 @@ const DRV_PW_MIN = 6;
 function drvPwCheck(p: string) {
   if (S(p).length < DRV_PW_MIN) throw new Error(`비밀번호는 ${DRV_PW_MIN}자 이상으로 적어 주세요.`);
 }
-/** 회사 기사 비밀번호 → 검사소. 검사소 코드(GAON, 대소문자 상관없음) 또는 사업자번호 숫자(8320503054) 둘 다 받습니다 */
+/** 회사 기사 비밀번호 → 검사소. 검사소 코드(GAON, 대소문자 상관없음) 또는 사업자번호 숫자(10자리) 둘 다 받습니다 */
 async function officeByPin(companyPin: string) {
   const raw = S(companyPin);
   const code = raw.toUpperCase();
