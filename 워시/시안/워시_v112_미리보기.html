@@ -1646,7 +1646,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
   <div class="card">
     <div class="logo" data-logo="1">워시</div>
     <h1 data-appname="1">차곳간</h1>
-    <div class="sub" id="authSub">쓰실 분을 고르고 코드를 넣어주세요</div>
+    <div class="sub" id="authSub">사용하실 분을 선택하고 코드를 입력해 주세요.</div>
     <div id="authBody"></div>
   </div>
 </div>
@@ -2870,8 +2870,8 @@ function authLogin(){
       '<span class="r">'+roleName(p.role)+'</span></button>';
   }).join("")+'</div>'+
   '<div class="fld"><label class="f">4자리 코드</label><input type="tel" id="aCode" maxlength="4" class="codein" placeholder="····"></div>'+
-  '<button class="btn primary big" id="aGo">들어가기</button>';
-  showAuth(html,"쓰실 분을 고르고 코드를 넣어주세요");
+  '<button class="btn primary big" id="aGo">로그인</button>';
+  showAuth(html,"사용하실 분을 선택하고 코드를 입력해 주세요.");
   /* 숨은(블라인드) 시연 관리자: 로고를 빠르게 5번 누르면 보임 */
   var lg=document.querySelector("#authView .logo"),taps=[];
   if(lg)lg.onclick=function(){
@@ -13492,25 +13492,25 @@ function ccwAuthUI(){
              '<input id="ccwW" type="password" placeholder="비밀번호" style="'+S_IN+'">'+
              '<div id="ccwAdminLink" style="display:none;font-size:14px;margin-top:12px;text-align:right"></div>';
         go="로그인";
-        under='<button id="ccwToSignup" style="'+S_GHOST+'">새 업체 가입하기</button>'+
+        under='<button id="ccwToSignup" style="'+S_GHOST+'">회원가입</button>'+
               '<button id="ccwToReset" style="'+S_GHOST+'">비밀번호를 잊으셨나요?</button>';
       }
       else if(st.mode==="signup"&&st.step===1){
         head="무료로 시작하기";
-        body='<div style="font-size:14px;color:var(--muted,#667389);line-height:1.6">대표님 휴대폰 번호를 넣어주세요.<br>인증번호를 문자로 보내드립니다.</div>'+
+        body='<div style="font-size:14px;color:var(--muted,#667389);line-height:1.6">대표자 휴대폰 번호를 입력해 주세요.<br>입력하신 번호로 인증번호를 보내 드립니다.</div>'+
              '<label style="'+S_LAB+'">휴대폰 번호</label>'+
              '<input id="ccwP" type="tel" inputmode="numeric" placeholder="010-0000-0000" style="'+S_IN+'" value="'+esc(st.phone)+'">';
         go="인증번호 받기";
-        under='<button id="ccwToLogin" style="'+S_GHOST+'">이미 가입했어요 — 로그인</button>';
+        under='<button id="ccwToLogin" style="'+S_GHOST+'">이미 회원이신가요? 로그인</button>';
       }
       else if(st.mode==="signup"&&st.step===2){
         head="인증번호 입력";
-        body='<div style="font-size:14px;color:var(--muted,#667389)">'+esc(st.phone)+' 으로 보냈습니다</div>'+
+        body='<div style="font-size:14px;color:var(--muted,#667389)">'+esc(st.phone)+' 번호로 인증번호를 보냈습니다.</div>'+
              '<label style="'+S_LAB+'">인증번호 6자리</label>'+
              '<input id="ccwC" type="tel" inputmode="numeric" maxlength="6" placeholder="000000" '+
              'style="'+S_IN+';letter-spacing:8px;font-size:24px;text-align:center;font-weight:700">';
         go="확인";
-        under='<button id="ccwResend" style="'+S_GHOST+'">인증번호 다시 받기</button>'+
+        under='<button id="ccwResend" style="'+S_GHOST+'">인증번호 재발송</button>'+
               '<button id="ccwToLogin" style="'+S_GHOST+'">처음으로</button>';
       }
       else if(st.mode==="signup"&&st.step===3){
@@ -13536,7 +13536,7 @@ function ccwAuthUI(){
       }
       else if(st.mode==="signup"&&st.step===4){
         head="비밀번호 정하기";
-        body='<div style="font-size:14px;color:var(--muted,#667389)">앞으로 로그인할 때 쓸 비밀번호입니다 (6자 이상)</div>'+
+        body='<div style="font-size:14px;color:var(--muted,#667389)">로그인할 때 사용할 비밀번호를 입력해 주세요. (6자 이상)</div>'+
              '<label style="'+S_LAB+'">비밀번호</label>'+
              '<input id="ccwW" type="password" placeholder="6자 이상" style="'+S_IN+'">'+
              '<label style="'+S_LAB+'">비밀번호 확인</label>'+
@@ -13546,7 +13546,7 @@ function ccwAuthUI(){
       }
       else if(st.mode==="reset"&&st.step===1){
         head="비밀번호 찾기";
-        body='<div style="font-size:14px;color:var(--muted,#667389)">가입하신 휴대폰 번호로 인증번호를 보내드립니다.</div>'+
+        body='<div style="font-size:14px;color:var(--muted,#667389)">가입하신 휴대폰 번호로 인증번호를 보내 드립니다.</div>'+
              '<label style="'+S_LAB+'">휴대폰 번호</label>'+
              '<input id="ccwP" type="tel" inputmode="numeric" placeholder="010-0000-0000" style="'+S_IN+'" value="'+esc(st.phone)+'">';
         go="인증번호 받기";
@@ -13566,7 +13566,7 @@ function ccwAuthUI(){
              '<input id="ccwW" type="password" placeholder="6자 이상" style="'+S_IN+'">'+
              '<label style="'+S_LAB+'">비밀번호 확인</label>'+
              '<input id="ccwW2" type="password" placeholder="비밀번호를 한 번 더 입력" style="'+S_IN+'">';
-        go="비밀번호 바꾸기";
+        go="비밀번호 변경";
         under='<button id="ccwToLogin" style="'+S_GHOST+'">처음으로</button>';
       }
 
@@ -13619,7 +13619,7 @@ function ccwAuthUI(){
         if(hint){
           var KS2=(typeof BIZ_KINDS!=="undefined")?BIZ_KINDS:null;
           var lab=KS2&&KS2[st.kind]?KS2[st.kind].label:st.kind;
-          hint.textContent = auto ? ("상호를 보고 «"+lab+"»으로 골랐습니다. 다르면 눌러서 바꿔주세요.") : "";
+          hint.textContent = auto ? ("상호를 보고 «"+lab+"»(으)로 선택했습니다. 다르면 눌러서 변경해 주세요.") : "";
         }
       }
       box.querySelectorAll("[data-kind]").forEach(function(el){
@@ -13680,7 +13680,7 @@ function ccwAuthUI(){
         var w=val("ccwW"),w2=val("ccwW2");
         if(w.length<6)return msg("비밀번호는 6자 이상 입력해 주세요.",true);
         if(w!==w2)return msg("비밀번호가 일치하지 않습니다.",true);
-        msg("가입 처리 중입니다…");busy(true,"만드는 중…");
+        msg("가입 처리 중입니다…");busy(true,"처리 중…");
         ccwOpen("signup",[st.phone,st.name,st.kind,w,st.owner||""]).then(function(r){
           box.remove();done(ccwSaveLogin(r,st.phone));
         }).catch(function(e){busy(false,"가입하고 시작하기");msg(e.message,true);});
@@ -13688,7 +13688,7 @@ function ccwAuthUI(){
       else if(st.mode==="reset"&&st.step===1){
         var p=val("ccwP");if(!p)return msg("휴대폰 번호를 입력해 주세요.",true);
         msg("인증번호를 보내는 중…");busy(true);
-        ccwOpen("sendCode",[p,"reset"]).then(function(){st.phone=p;st.step=2;draw();msg("문자를 보냈습니다");})
+        ccwOpen("sendCode",[p,"reset"]).then(function(){st.phone=p;st.step=2;draw();msg("인증번호를 발송했습니다.");})
           .catch(function(e){busy(false);msg(e.message,true);});
       }
       else if(st.mode==="reset"&&st.step===2){
@@ -13701,7 +13701,7 @@ function ccwAuthUI(){
         var w=val("ccwW"),w2=val("ccwW2");
         if(w.length<6)return msg("비밀번호는 6자 이상 입력해 주세요.",true);
         if(w!==w2)return msg("비밀번호가 일치하지 않습니다.",true);
-        msg("바꾸는 중…");busy(true);
+        msg("변경 중…");busy(true);
         ccwOpen("resetPw",[st.phone,w]).then(function(){
           st.mode="login";st.step=1;draw();msg("비밀번호가 변경되었습니다. 다시 로그인해 주세요.");
         }).catch(function(e){busy(false);msg(e.message,true);});
