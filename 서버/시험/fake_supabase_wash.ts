@@ -14,9 +14,9 @@ const val = (r: Row, k: string) => {
 };
 class Q {
   op = "select"; payload: any = null; filters: ((r: Row) => boolean)[] = [];
-  one = false; lim = 0; cols = "*"; ord: [string, boolean] | null = null; head = false; cnt = false;
+  one = false; lim = 0; cols = "*"; ord: [string, boolean] | null = null; head = false; cnt = false; ret = false;
   constructor(public t: string) {}
-  select(c = "*", o: any = {}) { if (this.op === "select") this.cols = c; this.head = !!o.head; this.cnt = !!o.count; return this; }
+  select(c = "*", o: any = {}) { if (this.op === "select") this.cols = c; else this.ret = true; this.head = !!o.head; this.cnt = !!o.count; return this; }
   insert(p: any) { this.op = "insert"; this.payload = p; return this; }
   upsert(p: any) { this.op = "upsert"; this.payload = p; return this; }
   update(p: any) { this.op = "update"; this.payload = p; return this; }
@@ -48,7 +48,11 @@ class Q {
       for (const p of [].concat(this.payload)) tbl.push({ ...(p as Row) });
       return { data: null, error: null };
     }
-    if (this.op === "update") { hit.forEach((r) => Object.assign(r, this.payload)); return { data: null, error: null }; }
+    if (this.op === "update") {
+      hit.forEach((r) => Object.assign(r, this.payload));
+      /* update().select() 이면 바뀐 줄을 돌려줌 (sb9 조건 걸고 한 번에 바꾸기 시험) */
+      return { data: this.ret ? hit.map((r) => ({ ...r })) : null, error: null };
+    }
     if (this.op === "delete") { store[this.t] = tbl.filter((r) => !hit.includes(r)); return { data: null, error: null }; }
     let out = hit.map((r) => ({ ...r }));
     if (this.ord) { const [k, asc] = this.ord; out.sort((a, b) => (a[k] > b[k] ? 1 : -1) * (asc ? 1 : -1)); }

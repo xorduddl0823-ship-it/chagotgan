@@ -115,3 +115,11 @@ deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시
 ```
 
 - 34개 (2026-10-15 전부 통과 · sb7 이면 7개 실패). sb7 시험(`알림톡_워시_시험.ts`)은 sb7 그대로 둠
+
+워시 sb9 결제 승인 한 번만 시험 (보안 방 결제 설계 검토 [높음] — 동시에 두 번 · 승인 오류 뒤 토스 조회 · 금액 다름):
+
+```
+deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/결제_승인_한번만_시험.ts
+```
+
+- 9개 (2026-10-15 전부 통과 · sb8 이면 5개 실패) · `fake_supabase_wash.ts` 에 `update().select()` 가 바뀐 줄을 돌려주는 것 더함
