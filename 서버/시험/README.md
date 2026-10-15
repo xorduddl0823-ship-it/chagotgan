@@ -28,7 +28,7 @@ deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시
 ```
 
 - `fake_supabase_wash.ts` · `import_map_wash.json` — 워시 서버용 가짜 (없는 표는 빈 표)
-- `워시_시험.ts` — 시험 37개 (2026-10-15 전부 통과 · `WASH_SRC` 로 옛 판을 넣으면 실패가 나옴)
+- `워시_시험.ts` — 시험 38개 (2026-10-15 전부 통과 · `WASH_SRC` 로 옛 판을 넣으면 실패가 나옴)
 
 딜러 서버 d3 시험 (인증번호 횟수 · 횟수 장치 고장 · IP · 솔라피 오류 숨김):
 
