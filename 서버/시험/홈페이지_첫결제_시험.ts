@@ -148,6 +148,13 @@ const j3 = await join(NEW2, "pro");
 const ai3 = await call("aiJson", ["p", "b64"], j3.r.result?.key, j3.r.result?.shop);
 check("지우고 다시 가입해도 그 번호 AI 횟수는 남음 (3번 중 1번 쓴 상태 → 2번 남음)", !ai3.__lock && store.wash_trial_use.find((x: any) => x.key === "ai:phone:" + NEW2)?.n === 2, store.wash_trial_use);
 
+/* 보안 낮음 ①③: 주문에 요금제가 없으면 열지 않고, 목록에 «결제된 주문 있음» */
+const SH3 = j3.r.result?.shop, K3 = j3.r.result?.key;
+const ps3 = await call("payStart", ["plan", 0, 0], K3, SH3);
+const od3 = store.wash_pay_order.find((o: any) => o.order_id === ps3.result.orderId); delete od3.plan_code;
+await call("payConfirm", [ps3.result.orderId, "pk_3", 33000], K3, SH3);
+check("주문에 고정 요금제가 없으면 열지 않음 (결제 대기 그대로)", store.wash_shops.find((x: any) => x.shop === SH3)?.pay_wait === true);
+check("관리 결제 대기 목록에 «결제된 주문 있음»", (await call("hqPayWait", [], ADM, "ADMIN")).result?.list?.find((x: any) => x.shop === SH3)?.paidOrder === true);
 console.log("⑧ 자유 가입 한도 · 스위치");
 let blockedAt = 0;
 for (let i = 1; i <= 7 && !blockedAt; i++) { const x = await call("sendCode", ["0104444000" + i, "signup"], "", "", "9.9.9.9"); if (x.__err) blockedAt = i; }

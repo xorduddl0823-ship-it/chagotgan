@@ -157,4 +157,4 @@ deno run -A --no-lock --import-map=서버/시험/import_map_check.json 서버/�
 deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/홈페이지_첫결제_시험.ts
 ```
 
-- 49개 (2026-10-15 전부 통과 · sb12 면 실패) — 결제 대기 · 체험판 예시 칸 · 3번/AI 3번 · 바꿔치기 막기 · 결제 대기 목록 · 돌아 들어오는 길
+- 51개 (2026-10-15 전부 통과 · sb12 면 실패) — 결제 대기 · 체험판 예시 칸 · 3번/AI 3번 · 바꿔치기 막기 · 결제 대기 목록 · 돌아 들어오는 길

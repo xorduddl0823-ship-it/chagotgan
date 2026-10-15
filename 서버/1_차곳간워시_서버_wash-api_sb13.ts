@@ -269,8 +269,9 @@ async function payWaitOpen(od: any) {
   const shop = String(od.shop);
   const pw = await payWaitOf(shop);
   if (!pw || String(od.kind) !== "plan") return;
-  const plan = String(od.plan_code || pw.joinPlan || "");
-  if (!plan) return;
+  /* 보안 낮음 ①: 주문에 고정한 요금제가 없으면 열지 않고 기록만 (관리 결제 대기 목록에 «결제된 주문 있음» 으로 보임) */
+  const plan = String(od.plan_code || "");
+  if (!plan) { console.error("payWaitOpen no plan_code", String(od.order_id)); return; }
   await sb.from("wash_shops").update({ pay_wait: false, join_plan: null, plan }).eq("shop", shop).eq("pay_wait", true);
   payWaitClear(shop);
   try { await sb.from("wash_docs").delete().eq("shop", shop).eq("demo", true); await write(shop, true, []); } catch (_) { /* */ }
@@ -4592,9 +4593,17 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     const { data, error } = await sb.from("wash_shops").select("shop,name,owner_phone,join_plan,created_at").eq("pay_wait", true);
     if (error) throw new Error("칸이 없습니다 (서버/sql/09 를 먼저 실행해 주세요)");
     const now = Date.now();
+    /* 보안 낮음 ③: 돈은 냈는데 아직 결제 대기인 업체(열기 실패) — «결제된 주문 있음» 표시 */
+    const codes = (data || []).map((x: any) => x.shop);
+    const paid: Record<string, number> = {};
+    if (codes.length) {
+      const { data: po } = await sb.from("wash_pay_order").select("shop").in("shop", codes).eq("status", "paid");
+      (po || []).forEach((o: any) => (paid[o.shop] = 1));
+    }
     return { ok: true, list: (data || []).map((x: any) => {
       const days = x.created_at ? Math.floor((now - Date.parse(String(x.created_at))) / DAY) : 0;
-      return { shop: x.shop, name: x.name, ownerPhone: x.owner_phone, joinPlan: x.join_plan, createdAt: x.created_at, days, old: days >= 30 };
+      return { shop: x.shop, name: x.name, ownerPhone: x.owner_phone, joinPlan: x.join_plan, createdAt: x.created_at, days, old: days >= 30,
+        paidOrder: !!paid[x.shop] };
     }) };
   },
   /* 결제 대기 업체 지우기 — [업체] · ready/paid 주문이 있으면 거절 · 주문·장부는 남김 · 계정은 그 업체 줄만 */
@@ -4606,7 +4615,15 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     const { data: od } = await sb.from("wash_pay_order").select("order_id").eq("shop", code).in("status", ["ready", "paid"]).limit(1);
     if (od && od.length) throw new Error("결제가 진행 중이거나 끝난 주문이 있어 지울 수 없습니다");
     if (!await hqAuditLog(ss, "payWaitDel", digits(sh.owner_phone), code, "try")) throw new Error("기록을 남기지 못해 멈췄습니다");
+    /* 보안 낮음 ②: 먼저 계정을 멈추고 로그인을 끊어 새 주문을 못 만들게 한 뒤, 주문을 다시 확인하고 지움 */
+    await sb.from("wash_users").update({ active: false }).eq("shop", code);
     await sb.from("wash_sessions").delete().eq("shop", code);
+    const { data: od2 } = await sb.from("wash_pay_order").select("order_id").eq("shop", code).in("status", ["ready", "paid"]).limit(1);
+    if (od2 && od2.length) {
+      await sb.from("wash_users").update({ active: true }).eq("shop", code);
+      await hqAuditLog(ss, "payWaitDel", digits(sh.owner_phone), code, "refused: order");
+      throw new Error("결제가 진행 중이거나 끝난 주문이 있어 지울 수 없습니다");
+    }
     await sb.from("wash_users").delete().eq("shop", code);
     await sb.from("wash_docs").delete().eq("shop", code);
     await sb.from("wash_shops").delete().eq("shop", code).eq("pay_wait", true);
