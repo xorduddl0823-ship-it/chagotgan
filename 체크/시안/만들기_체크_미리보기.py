@@ -121,7 +121,7 @@ FAKE = r'''<script>
       return new Promise(function(res){ setTimeout(function(){
         res(new Response(JSON.stringify(out), {status:200, headers:{"Content-Type":"application/json"}})); }, 60); });
     }
-    if(/^https?:/i.test(u) && u.indexOf(location.host) < 0) return Promise.reject(new TypeError("미리보기: 바깥 연결 안 함"));
+    if(/^https?:/i.test(u) && (!location.host || u.indexOf(location.host) < 0)) return Promise.reject(new TypeError("미리보기: 바깥 연결 안 함"));
     return realFetch ? realFetch(url, opt) : Promise.reject(new TypeError("no fetch"));
   };
 })();
