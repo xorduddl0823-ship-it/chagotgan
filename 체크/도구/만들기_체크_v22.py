@@ -132,6 +132,10 @@ rep('''로그인이 풀렸습니다. 다시 들어와 주세요.''', '''로그�
 rep('''뭔가 잘못되었습니다.''', '''오류가 발생했습니다. 잠시 후 다시 시도해 주세요.''', 2)
 rep('''서버에 닿지 못했습니다.''', '''서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.''')
 
+# 자료 올리기 자리가 바뀐 것을 안내 글에도
+rep('''<small>설정 → 자료 올리기</small>''', '''<small>매출 → 자료 올리기</small>''')
+rep('''설정 ▸ 자료 올리기에 ''', '''매출 › 자료 올리기에 ''')
+
 # ── 판 번호 ──
 rep('''  $("hdVer").textContent=(_m?(_m[0]+" · "):"")+"UI 1.1";
   $("hdVer").title=_v||"UI 1.1";''',
@@ -201,6 +205,15 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
   #wrap>header #setSub{margin:0 -12px;padding:10px 12px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
   .card{border-radius:14px}
   .btn{min-height:38px;font-size:13px;border-radius:10px}
+  /* 홈 「일정」 달력이 폰 너비를 넘지 않게 (v21부터 있던 문제) */
+  .dow,.cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+  .cal .d{min-width:0;min-height:58px;padding:4px 3px;overflow:hidden}
+  .cal .amt{font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cal .cars,.cal .memo{font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dow span{font-size:11px}
+  .homegrid{grid-template-columns:minmax(0,1fr) !important}
+  .homegrid>.hgL>.card,.homegrid>.hgR>.card,.homegrid .card>*{min-width:0}
+  .homegrid .tools{flex-wrap:wrap}
 }
 </style>
 '''
