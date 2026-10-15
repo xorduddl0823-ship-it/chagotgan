@@ -203,6 +203,8 @@ r = await call("apiDel", ["intakes", "r_today_in", false], STF);
 check("직원: 오늘 들어온 입고 기록 지우기는 됨", !r.__err, r);
 r = await call("apiSetMany", [[{ col: "intakes", id: "r_new", data: { id: "r_new", createdAt: yest, status: "입고" } }], false], STF);
 check("직원: 지난 날짜로 새 기록 만들기 막힘", !!r.__err, r);
+r = await call("apiSet", ["intakes", "r_old_out", { ...doc("r_old_out"), plate: "99가9999" }, false], STF);
+check("직원: 지난 출고 기록 차량번호 바꾸기도 막힘(낮음 ①)", !!r.__err, r);
 r = await call("apiSet", ["intakes", "r_old_out", { ...doc("r_old_out"), total: 1000 }, false], OWN);
 check("대표: 지난 기록도 고칠 수 있음", !r.__err, r);
 r = await call("apiSet", ["intakes", "d1", { id: "d1", createdAt: yest, status: "수금완료" }, true], STF);

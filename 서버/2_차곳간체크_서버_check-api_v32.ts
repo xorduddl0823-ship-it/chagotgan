@@ -115,7 +115,7 @@ function userMsg(raw: unknown): string {
   const probe = m.replace(MSG_OK_WORDS, "");
   if (!/[A-Za-z]{3,}/.test(probe)) return m;
   /* 보안 낮음 b: 기록에도 휴대폰·계좌 같은 긴 숫자(8자리 이상)는 가운데를 가림 */
-  console.error("userMsg hidden:", m.slice(0, 300).replace(/\d{8,}/g, (d) => d.slice(0, 3) + "*".repeat(d.length - 7) + d.slice(-4)));
+  console.error("userMsg hidden:", m.slice(0, 300).replace(/\d[\d-]{8,}\d/g, (d) => d.slice(0, 3) + "****" + d.slice(-4)));
   const head = m.split(/\s*[:(—]\s*/)[0].trim();
   if (head && /[가-힣]/.test(head) && !/[A-Za-z]{3,}/.test(head.replace(MSG_OK_WORDS, "")))
     return head.replace(/\s*실패$/, "에 실패했습니다").replace(/[.\s]*$/, ".") + " " + MSG_HELP;
@@ -623,6 +623,18 @@ async function depositList(ctx: Ctx, opt: { days?: number } = {}) {
 
 /** 청구서 화면에서 청구처 바꾸기 (그 자리에서 다시 만듭니다) */
 async function invoiceMove(ctx: Ctx, ym: string, dealerIds: string[], billToId: string | null, scope: string) {
+  bossOnly(ctx);                                             // 보안 낮음 ②: 대표 확인을 맨 앞에
+  /* 발급·입금된 청구서에 들어 있는 딜러는 옮기지 않음 */
+  const { data: lk } = await db.from("check_invoice").select("bill_to_id,members,tax_key,paid_amount")
+    .eq("office_id", ctx.office.id).eq("ym", S(ym));
+  const locked = (lk ?? []).filter((x: any) => S(x.tax_key) || N(x.paid_amount) > 0);
+  if (locked.length) {
+    const ids = [...(dealerIds ?? []).map(S), S(billToId)].filter(Boolean);
+    const { data: ds } = ids.length ? await db.from("check_dealer").select("id,name").eq("office_id", ctx.office.id).in("id", ids) : { data: [] };
+    const names = new Set((ds ?? []).map((d: any) => S(d.name)));
+    if (locked.some((x: any) => ids.includes(S(x.bill_to_id)) || (Array.isArray(x.members) && x.members.some((m: any) => names.has(S(m))))))
+      throw new Error("세금계산서를 발급했거나 입금된 청구서의 딜러는 옮길 수 없습니다.");
+  }
   await billGroupSet(ctx, dealerIds, billToId, scope || "month", ym);
   return await invoiceBuild(ctx, ym);
 }
@@ -1990,9 +2002,12 @@ function platesFrom(text: string) {
 async function rateOk(key: string, max: number) {
   try {
     const { data, error } = await db.rpc("check_rate_bump", { p_key: key, p_max: max });
-    if (error) return true;
+    if (error) {                                             // 보안 낮음 ③: 함수가 없을 때(SQL 11 전)만 통과 · 다른 오류는 막음
+      const c = String((error as any).code || "");
+      return c === "PGRST202" || c === "42883" || /does not exist|Could not find the function/i.test(String(error.message || ""));
+    }
     return data !== false;
-  } catch (_) { return true; }
+  } catch (_) { return false; }
 }
 function env(k: string, d = "") { return Deno.env.get(k) ?? d; }
 
@@ -2466,7 +2481,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
           "#{딜러명}": S(row.dealer_name) || "-", "#{차량번호}": S(row.plate) || "-", "#{차명}": S(row.car_name) || "-",
           "#{목적지}": S(row.dest_name) || "-", "#{도착시각}": arrive, "#{보기코드}": viewKey,
           "#{업체전화}": S(office.tel) || "-", "#{업체명}": S(office.name) || "-" } }
-      : (S(conf.ata_tpl) && ha.pf)
+      : (S(conf.ata_tpl) && ha.pf && Object.values(ha.tpl).includes(S(conf.ata_tpl)))   // 보안 낮음 ⑥: 본사 템플릿 목록 안에서만
       ? { pf: ha.pf, tpl: S(conf.ata_tpl), vars: {
           "#{업체명}": S(office.name), "#{딜러}": S(row.dealer_name),
           "#{차량번호}": S(row.plate), "#{차명}": S(row.car_name), "#{목적지}": S(row.dest_name),
@@ -2742,6 +2757,8 @@ async function deliv_saveConf(_c: Ctx, pin: string, patch: any) {
   for (const k of ok) if (patch?.[k] !== undefined) up[k] = patch[k];
   if (up.from_tel !== undefined && S(up.from_tel) && !officeFroms(w.office).includes(onlyDigits(up.from_tel)))
     throw new Error("보내는 번호는 검사소에 등록된 번호(문자 발신번호·대표 전화)만 쓸 수 있습니다.");
+  if (up.ata_tpl !== undefined && S(up.ata_tpl) && !Object.values((await hqAta()).tpl).includes(S(up.ata_tpl)))
+    throw new Error("알림톡 템플릿은 차곳간에 등록된 것만 고를 수 있습니다.");
   if (up.ai_max_day !== undefined) up.ai_max_day = Math.max(0, Math.min(1000, N(up.ai_max_day) || 0));
   const { error } = await db.from("check_deliv_conf").upsert(up, { onConflict: "office_id" });
   if (error) throw new Error(error.message);

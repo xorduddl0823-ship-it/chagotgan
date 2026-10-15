@@ -104,7 +104,8 @@ for (const md of ["failed", "http", "throw"] as const) {
 mode = "ok";
 
 console.log("⑤ 본사 템플릿이 없으면 검사소 템플릿(ata_tpl) — 대신 보내기 늘 켜짐");
-setCfg({});
+/* v32(보안 낮음 ⑥): 검사소 템플릿은 본사 템플릿 목록 안에 있는 것만 — 목록에 넣어 둠 (check_arrive 는 비움) */
+setCfg({ tpl: { office_arrive: "OFFICE_TPL" } });
 store.check_deliv_conf = [{ office_id: "o1", way: "ata", fallback: false, ata_tpl: "OFFICE_TPL", ata_pf: "", photo_on: true }];
 a = await arrive();
 const k2 = sent[0]?.kakaoOptions ?? {};

@@ -32,7 +32,7 @@ begin
   returning n into v;
   return v is not null and v <= p_max;
 end $$;
-revoke all on function wash_trial_bump(text, int) from public;
+revoke all on function wash_trial_bump(text, int) from public, anon, authenticated;   -- 보안 SQL-M1: 공개 열쇠로 못 부르게
 grant execute on function wash_trial_bump(text, int) to service_role;
 
 -- 5) (SQL 08 보탬 · 보안 방) 관리 기록은 한꺼번에 비우기(truncate)도 막음

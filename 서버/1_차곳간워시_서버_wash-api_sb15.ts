@@ -249,7 +249,7 @@ function userMsg(raw: unknown): string {
   const probe = m.replace(MSG_OK_WORDS, "");
   if (!/[A-Za-z]{3,}/.test(probe)) return m;
   /* 보안 낮음 b: 기록에도 휴대폰·계좌 같은 긴 숫자(8자리 이상)는 가운데를 가림 */
-  console.error("userMsg hidden:", m.slice(0, 300).replace(/\d{8,}/g, (d) => d.slice(0, 3) + "*".repeat(d.length - 7) + d.slice(-4)));
+  console.error("userMsg hidden:", m.slice(0, 300).replace(/\d[\d-]{8,}\d/g, (d) => d.slice(0, 3) + "****" + d.slice(-4)));
   const head = m.split(/\s*[:(—]\s*/)[0].trim();
   if (head && /[가-힣]/.test(head) && !/[A-Za-z]{3,}/.test(head.replace(MSG_OK_WORDS, "")))
     return head.replace(/\s*실패$/, "에 실패했습니다").replace(/[.\s]*$/, ".") + " " + MSG_HELP;
@@ -2299,8 +2299,9 @@ const FN: Record<string, Fn> = {
   apiLoad: (s, a, ss) => apiLoad(s, !!a[0], ss),
   apiSet: async (s, a, ss) => {
     guardCols(ss, [String(a[0] || "")]);
-    await guardIntakes(s, ss, !!a[3], [{ col: a[0], id: a[1], data: a[2] }]);
-    return { ok: true, rev: await write(s, !!a[3], [{ col: a[0], id: a[1], data: a[2] }]) };
+    const one = [{ col: a[0], id: a[1], data: a[2] }];
+    await guardIntakes(s, ss, !!a[3], one);                  // (날짜 없는 새 줄은 여기서 날짜가 채워짐)
+    return { ok: true, rev: await write(s, !!a[3], one) };
   },
   apiSetMany: async (s, a, ss) => {
     const rows = typeof a[0] === "string" ? JSON.parse(a[0]) : a[0];
@@ -3818,14 +3819,19 @@ async function guardIntakes(shop: string, ss: any, demo: boolean, rows: any[]) {
       throw new Error("수금 처리는 대표님만 할 수 있습니다.");
     if (!o) {                                                  // 새 기록
       if (n.createdAt && dayOf(n.createdAt) !== today) throw new Error(NO);
+      if (!n.createdAt) {                                      // 보안 낮음 ①: 날짜 없는 새 줄은 서버가 지금 시각을 채움
+        n.createdAt = new Date().toISOString();
+        r.data = n;
+      }
       continue;
     }
     if (stOf(o) === "수금완료") throw new Error(NO);
     if (String(n.createdAt || "") !== String(o.createdAt || "")) throw new Error(NO);
     if (stOf(o) === "출고") {
       if (stOf(n) !== "출고") throw new Error("출고된 기록의 상태는 대표님만 바꿀 수 있습니다.");
+      const same = (k: string) => JSON.stringify(n[k] ?? null) === JSON.stringify(o[k] ?? null);
       if (dayOf(o.createdAt) !== today && (Number(n.total || 0) !== Number(o.total || 0) ||
-          JSON.stringify(n.works || null) !== JSON.stringify(o.works || null)))
+          !same("works") || !same("company") || !same("dealer") || !same("plate")))
         throw new Error(NO);
     }
   }
@@ -4247,13 +4253,13 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     const { data: u } = await sb.from("wash_users").select("phone").eq("phone", phone).maybeSingle();
     if (!u) throw new Error("계정을 찾지 못했습니다");
     await hqOldGuard(ss, phone, "userPw");
+    if (made1) {                                             // 보안 낮음 ⑤: 문자가 먼저 나가야 바꿈
+      try { await noticeSms(phone, "[차곳간] 임시 비밀번호: " + pw + "\n로그인한 뒤 바로 바꿔 주세요. 요청하지 않았다면 010-9559-3663 으로 알려 주세요.", { tpl: "temp_pw" }); }
+      catch (_) { throw new Error("임시 비밀번호 문자를 보내지 못해 바꾸지 않았습니다. 다시 해 주세요."); }
+    }
     const { error } = await sb.from("wash_users").update({ pw_hash: await pwHash(pw) }).eq("phone", phone);
     dbCheck(error, "계정");
     await sb.from("wash_sessions").delete().eq("phone", phone);
-    if (made1) {
-      try { await noticeSms(phone, "[차곳간] 임시 비밀번호: " + pw + "\n로그인한 뒤 바로 바꿔 주세요. 요청하지 않았다면 010-9559-3663 으로 알려 주세요.", { tpl: "temp_pw" }); }
-      catch (_) { throw new Error("임시 비밀번호 문자를 보내지 못했습니다. 다시 해 주세요."); }
-    }
     return { ok: true, sent: made1 };
   },
 

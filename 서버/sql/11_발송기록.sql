@@ -60,7 +60,7 @@ begin
   get diagnostics k = row_count;
   return k;
 end $$;
-revoke all on function cgg_sendlog_purge(int) from public;
+revoke all on function cgg_sendlog_purge(int) from public, anon, authenticated;
 grant execute on function cgg_sendlog_purge(int) to service_role;
 
 -- 4) 체크 서버 하루 한도 (보안 L5 · 체크 v32 의 확인 문자·도착 알림 상한)
@@ -87,9 +87,19 @@ begin
         return v is not null and v <= p_max;
       end $b$;
     $f$;
-    execute 'revoke all on function check_rate_bump(text, int) from public';
+    execute 'revoke all on function check_rate_bump(text, int) from public, anon, authenticated';
     execute 'grant execute on function check_rate_bump(text, int) to service_role';
   end if;
+end $$;
+
+-- 4-2) (보안 SQL-M1) 서버만 부르는 함수는 공개 열쇠(anon·authenticated)로 못 부르게 — 이미 있던 함수도 여기서 다시 막음
+do $$
+begin
+  begin execute 'revoke all on function wash_trial_bump(text, int) from public, anon, authenticated'; exception when others then null; end;
+  begin execute 'revoke all on function check_rate_bump(text, int) from public, anon, authenticated'; exception when others then null; end;
+  begin execute 'revoke all on function cgg_sendlog_purge(int) from public, anon, authenticated'; exception when others then null; end;
+  begin execute 'grant execute on function wash_trial_bump(text, int) to service_role'; exception when others then null; end;
+  begin execute 'grant execute on function check_rate_bump(text, int) to service_role'; exception when others then null; end;
 end $$;
 
 -- 5) 사업자번호 본사 확인 (보안 W-H1 · 체크 H1 남은 위험) — 처음 넣은 번호는 관리에서 확인한 뒤에만 실제 세금계산서·팝빌

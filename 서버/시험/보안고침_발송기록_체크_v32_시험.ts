@@ -104,7 +104,7 @@ check("L3: 대표가 비밀번호를 새로 정하면 예전 로그인(토큰) �
 console.log("■ M2 아무 번호로 보내기 막기");
 r = await call("deliv_saveConf", ["chk_own", { from_tel: "0101231234" }]);
 check("보내는 번호는 검사소 번호만", !!r.__err && /등록된 번호/.test(r.__err), r);
-r = await call("deliv_saveConf", ["chk_own", { from_tel: "031-111-2222", ata_pf: "EVIL", ata_tpl: "MYTPL" }]);
+r = await call("deliv_saveConf", ["chk_own", { from_tel: "031-111-2222", ata_pf: "EVIL" }]);
 check("검사소 번호는 됨 · 채널(ata_pf)은 안 받음", !r.__err && store.check_deliv_conf[0]?.ata_pf === undefined, [r, store.check_deliv_conf]);
 sent.length = 0;
 r = await call("deliv_arrive", ["chk_own", { dest: "목적지1", dealer: "모르는사람", tel: "010-7777-8888", plate: "12가3456", force: true }]);
@@ -119,12 +119,19 @@ r = await call("deliv_arrive", ["chk_own", { dest: "목적지3", dealer: "홍딜
 check("검사소 하루 상한을 넘으면 안 보냄", sent.length === 0 && /다 씀/.test(last().err), [last().err, store.check_rate]);
 store.check_rate.length = 0;
 
+r = await call("deliv_saveConf", ["chk_own", { ata_tpl: "EVIL_TPL" }]);
+check("낮음 ⑥: 본사 목록에 없는 템플릿은 못 고름", !!r.__err && /등록된 것만/.test(r.__err), r);
 console.log("■ M4 청구서 다시 만들기");
 r = await call("invoiceBuild", ["2026-09"], "chk_stf");
 check("직원: 이미 만든 달 다시 만들기 막힘", !!r.__err && /대표님만/.test(r.__err) && store.check_invoice.length === 2, r);
 r = await call("invoiceBuild", ["2026-09"], "chk_own");
 check("대표: 발급된 청구서는 남고, 발급 안 된 것만 지움", !r.__err && store.check_invoice.some((i: any) => i.id === "i1") && !store.check_invoice.some((i: any) => i.id === "i2"), [r, store.check_invoice]);
 
+store.check_invoice.push({ id: "i3", office_id: "o1", ym: "2026-09", bill_to_id: "d7", tax_key: "CK-3", paid_amount: 0, members: ["홍딜러"], view_key: "VK3", total_amount: 1 });
+r = await call("invoiceMove", ["2026-09", ["d1"], null, "month"], "chk_stf");
+check("낮음 ②: 직원은 청구처 옮기기 막힘", !!r.__err && /대표님만/.test(r.__err), r);
+r = await call("invoiceMove", ["2026-09", ["d1"], null, "month"], "chk_own");
+check("낮음 ②: 발급된 청구서의 딜러는 못 옮김", !!r.__err && /옮길 수 없습니다/.test(r.__err), r);
 console.log("■ M1 첫 비밀번호 확인 문자");
 store.cgg_sendlog.length = 0;
 sent.length = 0;
