@@ -180,6 +180,8 @@ a.pick{text-decoration:none}
 .contact span{color:var(--muted);font-size:14.5px;user-select:all}
 
 footer.site{padding-block:26px 40px;border-top:1px solid var(--line);background:var(--surface)}
+/* 사업자 정보(법정 표시)는 폰에서도 보여요 — 디자인 cgg-j4.css 의 머리말용 .cgg-biz 숨김(600px 이하)과 이름이 겹쳐서 되살림 */
+footer.site .cgg-biz{display:block!important}
 /* 오픈 베타 띠 (디자인 방 2026-10-15) */
 :root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
