@@ -9,6 +9,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta http-equiv="Cache-Control" content="no-store">
 <meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://ybfpxmmjofyvfprtvmhj.supabase.co; img-src https://ybfpxmmjofyvfprtvmhj.supabase.co; base-uri 'none'; form-action 'none'">
 <title>차곳간 보기</title>
 <style>
 /* 차곳간 «보기» — 딜러 · 상사가 알림톡 버튼으로 여는 한 장 (로그인 없음) */
@@ -89,7 +90,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
     kv(c,"주소",shop.addr);
   }
   function until(s){ var d=day(s); if(d) app.appendChild(el("p","foot","이 주소는 "+d+"까지 열려요.")); }
-  function safeImg(u){ return /^https:\/\/[a-z0-9.-]+\.supabase\.co\//i.test(String(u||"")); }
+  function safeImg(u){ return /^https:\/\/ybfpxmmjofyvfprtvmhj\.supabase\.co\/storage\//.test(String(u||"")); }
 
   function post(url, fn, args){
     return fetch(url, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, referrerPolicy:"no-referrer", cache:"no-store",
