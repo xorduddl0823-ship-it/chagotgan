@@ -631,7 +631,8 @@ async function invoiceView(c: Ctx, key: string) {
     : Date.parse(S(inv.created_at)) + BILL_VIEW_OLD_DAYS * 86400000;
   const { data: off } = await db.from("check_office")
     .select("name, tel, bank_fee, bank_repair").eq("id", inv.office_id).maybeSingle();
-  if (isFinite(until) && until < Date.now()) return { expired: true, office: { name: S(off?.name), tel: S(off?.tel) } };
+  if (isFinite(until) && until < Date.now())
+    return { expired: true, office: { name: S(off?.name), tel: S(off?.tel) }, msg: "기한이 지난 주소예요. 보낸 곳에 다시 요청해 주세요." };
   const { data: rows } = await db.from("check_invoice_row").select("kind, item, qty, unit, amount").eq("invoice_id", inv.id);
   await db.from("check_invoice").update({
     view_at: new Date().toISOString(), view_n: N(inv.view_n) + 1,          // 열어봄(참고 — 카카오 미리보기도 올림)
@@ -647,9 +648,14 @@ async function invoiceView(c: Ctx, key: string) {
     const g = fee[k] || (fee[k] = { name: S(x.item) || "검사비", unit: N(x.unit), n: 0, amount: 0 });
     g.n += Math.max(1, N(x.qty)); g.amount += amt; feeN += Math.max(1, N(x.qty)); feeAmt += amt;
   }
-  return { ym: S(inv.ym), to: S(inv.bill_to_name), members: Array.isArray(inv.members) ? inv.members.map(S) : [],
-    total: N(inv.total_amount), office: offPub,
-    fee: { n: feeN, amount: feeAmt, lines: Object.values(fee) }, rep: { n: rep.length, amount: repAmt, lines: rep } };
+  /* 두 모양을 함께 — 체크 v43(설계 19: invoice·rows·office)과 약속 3절(ym·to·fee·rep) 어느 쪽 화면도 그대로 읽게 */
+  const members = Array.isArray(inv.members) ? inv.members.map(S) : [];
+  return { ym: S(inv.ym), to: S(inv.bill_to_name), members, total: N(inv.total_amount), office: offPub,
+    fee: { n: feeN, amount: feeAmt, lines: Object.values(fee) }, rep: { n: rep.length, amount: repAmt, lines: rep },
+    invoice: { ym: S(inv.ym), bill_to_name: S(inv.bill_to_name), company_name: S(inv.company_name), members,
+      fee_amount: N(inv.fee_amount), ext_amount: N(inv.ext_amount), repair_amount: N(inv.repair_amount), total_amount: N(inv.total_amount),
+      dom_n: N(inv.dom_n), imp_n: N(inv.imp_n), etc_n: N(inv.etc_n), created_at: S(inv.created_at) },
+    rows: (rows ?? []).map((x: any) => ({ kind: S(x.kind), item: S(x.item), qty: N(x.qty), unit: N(x.unit), amount: N(x.amount) })) };
 }
 
 /** v33: 청구서 주소 새로 만들기 (대표만 · 예전 주소는 더 안 열림) — [청구서 id] */
@@ -848,9 +854,11 @@ const RANGE_DAYS: Record<string, number> = { today: 0, week: 7, "15d": 15, month
 async function remindList(ctx: Ctx, range: any) {
   const rule = await remindRuleOf(S(ctx.office.id));
   const days = N(ctx.office.ins_valid_days) || 120;
-  const r0 = typeof range === "object" && range ? S(range.range) : S(range);
+  const asArray = !!(range && typeof range === "object");      // 설계 19 모양 remindList({range}) → 배열 · 약속 모양 remindList("month") → {days, rows}
+  const r0 = asArray ? S(range.range) : S(range);
   const rangeDays = RANGE_DAYS[r0] ?? Math.min(60, Math.max(0, parseInt(r0, 10) || 30));
-  const list = (await remindCars(S(ctx.office.id), days, rule, rangeDays)).filter((x: any) => !x.off && x.left <= rangeDays);
+  const all = (await remindCars(S(ctx.office.id), days, rule, rangeDays)).filter((x: any) => x.left <= rangeDays);
+  const list = asArray ? all : all.filter((x: any) => !x.off);
   const dIds = [...new Set(list.map((x: any) => x.dealerId))];
   const names: Record<string, string> = {};
   if (dIds.length) {
@@ -858,8 +866,8 @@ async function remindList(ctx: Ctx, range: any) {
     (ds ?? []).forEach((d: any) => (names[S(d.id)] = S(d.name)));
   }
   const rows = list.map((x: any) => ({ carId: x.carId, dealerId: x.dealerId, dealer: names[x.dealerId] || "", plate: x.plate, car: x.car,
-    date: x.date, exp: x.exp, left: x.left, step: x.step, sentAt: x.sentAt || "" })).sort((a: any, b: any) => a.left - b.left);
-  return { days, rows };
+    date: x.date, exp: x.exp, left: x.left, step: x.step, sentAt: x.sentAt || "", off: x.off, sent: x.sent })).sort((a: any, b: any) => a.left - b.left);
+  return asArray ? rows : { days, rows };
 }
 function remindKey() {
   const b = crypto.getRandomValues(new Uint8Array(15));
@@ -903,8 +911,21 @@ async function remindOne(office: any, dealer: any, cars: any[], days: number, te
 /** 체크 v43 약속: remindSend(carIds, {test}) — 고른 차를 딜러별로 묶어 한 통씩 · 대표만 · 최대 300 · 이 검사소 차만 */
 async function remindSend(ctx: Ctx, a0: any, a1?: any) {
   bossOnly(ctx);
+  const test = (a1 && a1.test === true) || (a0 && !Array.isArray(a0) && a0.test === true);
+  /* 설계 19 모양 remindSend({dealerIds, test}) — 그 딜러들의 보낼 차 모두 */
+  if (a0 && !Array.isArray(a0) && Array.isArray(a0.dealerIds)) {
+    const dIds = [...new Set(a0.dealerIds.map(S).filter(Boolean))];
+    if (!dIds.length) throw new Error("보낼 딜러를 골라 주세요.");
+    if (dIds.length > 100) throw new Error("한 번에 100명까지 보낼 수 있습니다.");
+    const { data: dsx } = await db.from("check_dealer").select("id").eq("office_id", ctx.office.id).in("id", dIds);
+    if ((dsx ?? []).length !== dIds.length) throw new Error("이 검사소 딜러가 아닌 것이 섞여 있습니다. 화면을 새로 고쳐 주세요.");
+    const rule0 = await remindRuleOf(S(ctx.office.id));
+    const due = (await remindCars(S(ctx.office.id), N(ctx.office.ins_valid_days) || 120, rule0, Math.max(...rule0.steps)))
+      .filter((x: any) => dIds.includes(x.dealerId) && !x.off && (test || !x.sent));
+    a0 = due.map((x: any) => x.carId);
+    if (!a0.length) return { sent: 0, test, results: dIds.map((d) => ({ dealer: "", dealerId: d, cars: 0, ok: false, how: "", why: "보낼 차가 없음" })) };
+  } else if (a0 && !Array.isArray(a0) && Array.isArray(a0.carIds)) a0 = a0.carIds;
   const carIds = [...new Set((Array.isArray(a0) ? a0 : []).map(S).filter(Boolean))];
-  const test = (a1 && a1.test === true);
   if (!carIds.length) throw new Error("보낼 차를 골라 주세요.");
   if (carIds.length > 300) throw new Error("한 번에 300대까지 보낼 수 있습니다.");
   const o = ctx.office;
