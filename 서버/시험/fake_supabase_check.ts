@@ -8,9 +8,9 @@ export const store: Record<string, Row[]> = g.__DB;
 
 class Q {
   op = "select"; payload: any = null; filters: ((r: Row) => boolean)[] = [];
-  one = false; lim = 0; cols = "*"; conflict = ""; ord = ""; ret = false;
+  one = false; lim = 0; cols = "*"; conflict = ""; ord = ""; ret = false; head = false; cnt = false;
   constructor(public t: string) {}
-  select(c = "*") { if (this.op === "select") this.cols = c; else this.ret = true; return this; }
+  select(c = "*", o: any = {}) { if (this.op === "select") this.cols = c; else this.ret = true; this.head = !!o.head; this.cnt = !!o.count; return this; }
   insert(p: any) { this.op = "insert"; this.payload = p; return this; }
   upsert(p: any, o: { onConflict?: string } = {}) { this.op = "upsert"; this.payload = p; this.conflict = o.onConflict ?? "id"; return this; }
   update(p: any) { this.op = "update"; this.payload = p; return this; }
@@ -29,6 +29,7 @@ class Q {
   neq(k: string, v: any) { this.filters.push((r) => r[k] !== v); return this; }
   order(k: string) { this.ord = k; return this; }
   limit(n: number) { this.lim = n; return this; }
+  not() { return this; }
   maybeSingle() { this.one = true; return this; }
   single() { this.one = true; return this; }
   then(res: any, rej: any) { return Promise.resolve().then(() => this.run()).then(res, rej); }
@@ -36,6 +37,12 @@ class Q {
     const tbl = store[this.t];
     if (!tbl) return { data: null, error: { message: `relation "${this.t}" does not exist` } };
     const hit = tbl.filter((r) => this.filters.every((f) => f(r)));
+    /* v33 시험: 재검사 보낸 기록은 (검사소·차·단계) 겹침 금지 — SQL 12 unique 와 같음 */
+    if (this.op === "insert" && this.t === "check_remind_log") {
+      for (const p of [].concat(this.payload) as Row[])
+        if (tbl.some((r) => r.office_id === p.office_id && r.car_id === p.car_id && r.step === p.step))
+          return { data: null, error: { message: "duplicate key value violates unique constraint" } };
+    }
     if (this.op === "insert") {
       /* insert().select() 이면 번호(id)를 붙여 돌려줌 (알림톡 체크 시험 · 도착 등록) */
       const got: Row[] = [];
@@ -50,13 +57,14 @@ class Q {
       }
       return { data: null, error: null };
     }
-    if (this.op === "update") { hit.forEach((r) => Object.assign(r, this.payload)); return { data: null, error: null }; }
+    if (this.op === "update") { hit.forEach((r) => Object.assign(r, this.payload)); return { data: this.ret ? hit.map((r) => ({ ...r })) : null, error: null }; }
     if (this.op === "delete") { store[this.t] = tbl.filter((r) => !hit.includes(r)); return { data: null, error: null }; }
     let out = hit.map((r) => {
       const o = { ...r };
       if (this.cols.includes("check_office")) o.check_office = (store.check_office ?? []).find((x) => x.id === r.office_id) ?? null;
       return o;
     });
+    if (this.head) return { data: null, error: null, count: out.length };
     if (this.ord) out.sort((a, b) => String(a[this.ord]).localeCompare(String(b[this.ord])));
     if (this.lim) out = out.slice(0, this.lim);
     if (this.one) {
