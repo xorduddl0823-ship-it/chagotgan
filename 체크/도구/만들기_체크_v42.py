@@ -24,6 +24,12 @@ rep('''  function man(n){ return Math.round((Number(n)||0)/10000).toLocaleString
   }''')
 rep('''      (sum?'<div class="amt">'+man(sum)+'</div>':'')+bar+leg+''',
     '''      (sum?'<div class="amt" title="'+won(sum)+'원"><span class="af">'+man(sum)+'</span><span class="as">'+calShort(sum)+'</span></div>':'')+bar+leg+''')
+# v42 (디자인 폰 깨짐 점검 10-16 · 체크-1 · 체크-2): 폰 목록 두 줄 칸
+rep(r'''  var t=document.createElement("template"); t.innerHTML=String(h==null?"":h); return (t.content.textContent||"").replace(/\s+/g," ").trim(); }''',
+    r'''  var t=document.createElement("template"); t.innerHTML=String(h==null?"":h);
+  /* v42: 두 줄 칸(.a/.b)이 한 덩어리로 붙지 않게 — 「하늘모터스 · 000-00-00001」 (빈 .b 는 그대로) */
+  t.content.querySelectorAll(".b").forEach(function(b){ if(b.previousSibling && b.textContent.trim()) b.before(/^\s*\+/.test(b.textContent)?" ":" · "); });
+  return (t.content.textContent||"").replace(/\s+/g," ").trim(); }''')
 CAL = '''<style id="v42-cal">
 /* ── v42 폰 폭 홈 달력 (워시 v125 와 같은 방식) — PC 는 그대로 ── */
 .cal .d .amt .as{display:none}
@@ -42,6 +48,9 @@ CAL = '''<style id="v42-cal">
   .cal .d .memo.done{background:var(--line2,#c9d1dc);text-decoration:none}
 }
 @media (max-width:370px){ .cal .d .amt{font-size:10px} .cal .d .n{font-size:11px} }
+/* v42: 폰 목록 오른쪽 금액 두 줄 — 합계 / 공급가액 · 세액 (디자인 체크-1) */
+.cgg-mrow .r b .a,.cgg-mrow .r b .b{display:block;text-align:right}
+.cgg-mrow .r b .b{font-size:11.5px;font-weight:600;color:var(--muted)}
 </style>'''
 m = re.search(r'<style id="cgg-beta-piece">\n.*?\n</style>', s, re.S)
 s = s[:m.end()] + "\n" + CAL + s[m.end():]
