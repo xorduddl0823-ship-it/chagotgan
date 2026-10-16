@@ -2548,6 +2548,9 @@ input[type=checkbox]:checked::after{opacity:1}
   .cgg-tbar button.on{color:var(--blue);font-weight:700}
 }
 
+
+/* 공통-2: 관리 숫자 카드는 작은 그래프가 없어 이름 오른쪽 빈자리를 없애요 */
+.cgg-kpi small{padding-right:0}
 </style>
 </head>
 <body>
@@ -2939,6 +2942,8 @@ function ago(v){
   if(d<365) return Math.floor(d/30)+"달 전";
   return Math.floor(d/365)+"년 전";
 }
+/* 공통-1: 짧은 폰에서 창이 아래로 내려간 채 열리면 제목 · X 가 가려져요 → 열자마자 맨 위로 */
+(function(open){ CGG.dialog=function(o){ var d=open(o); if(d) d.scrollTop=0; return d; }; })(CGG.dialog);
 /* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */
 function emsg(e,fb){ var m=String((e&&e.message)||""); return /[가-힣]/.test(m)?m:(fb||"처리하지 못했어요. 다시 시도해 주세요."); }
 function toast(msg,bad){ CGG.toast(msg); var t=document.querySelector(".cgg-toastbox"); if(t) t.classList.toggle("bad",!!bad); }

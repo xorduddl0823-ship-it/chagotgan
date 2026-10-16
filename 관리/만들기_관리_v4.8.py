@@ -42,5 +42,12 @@ rep("/* ═══ 공통 부품 (디자인 방 · 글자 그대로) ═══ */
     ".cal .amt{font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cal .amt .aw{display:none}.cal .amt .am{display:inline}"
     ".cal .todaytag{font-size:9.5px;white-space:nowrap}.cgg-mrow .t b span{white-space:nowrap}}\n"
     "/* ═══ 공통 부품 (디자인 방 · 글자 그대로) ═══ */")
+# 디자인 방 공통-1 · 공통-2 (딜러 방이 찾은 것 · 공통 부품 파일은 그대로, 관리 쪽에서)
+rep("/* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */",
+    "/* 공통-1: 짧은 폰에서 창이 아래로 내려간 채 열리면 제목 · X 가 가려져요 → 열자마자 맨 위로 */\n"
+    "(function(open){ CGG.dialog=function(o){ var d=open(o); if(d) d.scrollTop=0; return d; }; })(CGG.dialog);\n"
+    "/* 오류 글 거르기 — 한글이 없는 글(영어 · 코드)은 쉬운 말로 */")
+i = s.rindex("</style>", 0, s.index("<body"))
+s = s[:i] + "\n/* 공통-2: 관리 숫자 카드는 작은 그래프가 없어 이름 오른쪽 빈자리를 없애요 */\n.cgg-kpi small{padding-right:0}\n" + s[i:]
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")
