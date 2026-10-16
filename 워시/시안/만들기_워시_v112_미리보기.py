@@ -141,6 +141,13 @@ FAKE = r'''<script>
         if(fn==="billStart") return {ok:true,customerKey:"ck_PREVIEW_RANDOM",clientKey:"test_ck_PREVIEW"};
         if(fn==="billIssue"){ AB.on=true; return {ok:true,cardCompany:"신한",last4:"1234"}; }
         AB.on=false; return {ok:true};
+      /* ?ai=off|trial|fail|ok : 번호판 읽기 (서버 sb15 글 그대로) */
+      case "aiReady": return !/ai=off/.test(OLDQ);
+      case "aiJson":
+        if(/ai=trial/.test(OLDQ)) throw new Error("체험판 AI 읽기 3번을 모두 쓰셨습니다. 결제하시면 계속 쓰실 수 있어요.");
+        if(/ai=fail/.test(OLDQ)) throw new Error("번호판을 읽지 못했습니다. 번호를 직접 적어 주세요.");
+        if(/ai=ok/.test(OLDQ)) return JSON.stringify({plate:"12가3456",sure:true});
+        return {ok:true};
       default: return {ok:true};
     }
   }
