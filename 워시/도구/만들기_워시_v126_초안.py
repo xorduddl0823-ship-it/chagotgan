@@ -3,7 +3,8 @@
 모아 둔 것:
   1) 번호판 사진 읽기 실패 글 — 서버가 준 쉬운 우리말(예: «체험판 AI 읽기 3번을 모두 쓰셨습니다…» · «오늘 한도를 다 썼습니다…»)을
      그대로 보여 줘요. v124~v125 는 늘 «번호 자동 읽기를 지금 쓸 수 없어요» 한 줄로 바꿔 버려서 체험판 3번 한도 안내가 안 보였음.
-  2) (자리) 디자인 방 «폰에서 깨지는 곳» 목록 — 받으면 여기에 더함
+  2) 디자인 방 폰 깨짐 목록(edb8817 · 920a873): 워시는 고칠 곳 0. «공통-2»만 해당 — 작은 그래프가 없는 숫자 카드(이번 달 청구 금액)의
+     이름이 두 줄로 꺾임 → 그 카드만 오른쪽 여백 0. «공통-1»(CGG.dialog 위로 밀림)은 워시가 CGG.dialog 를 안 써서 해당 없음
 """
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); BASE = os.path.dirname(HERE); ROOT = os.path.dirname(BASE)
@@ -23,5 +24,8 @@ rep('''  if(/429|rate/.test(m))return "번호 자동 읽기가 잠시 바빠요.
     '''  if(/429|rate/.test(m))return "번호 자동 읽기가 잠시 바빠요. 잠시 뒤 다시 시도해 주세요.";
   return kmsg(e,"번호 자동 읽기를 지금 쓸 수 없어요. 번호를 직접 넣어 주세요.");   /* v126: 서버의 쉬운 글(체험 3번 · 하루 한도)은 그대로 */''')
 rep('''    plateMsg("번호를 읽지 못했어요 — "+friendlyAi(e),"warn");''', '''    plateMsg(friendlyAi(e),"warn");''')
+# 2) 숫자 카드: 작은 그래프 없는 카드는 이름 오른쪽 여백 0 (워시 완성 CSS 끝 · 공통 부품 그대로)
+a = s.index('<style id="cgg-j4-wash-done">\n') + len('<style id="cgg-j4-wash-done">\n'); b = s.index('</style>', a)
+s = s[:b] + "\n/* v126 · 디자인 폰 깨짐 공통-2 */\n.cgg-kpi:not(:has(svg)) small{padding-right:0}\n" + s[b:]
 assert CSS in s and JS in s
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
