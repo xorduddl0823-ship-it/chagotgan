@@ -12,6 +12,9 @@ VER = sys.argv[1] if len(sys.argv) > 1 else "v112"
 VERN = int("".join(c for c in VER if c.isdigit()) or 0)
 SRC = os.path.join(HERE, "..", "1_차곳간_워시_index_%s.html" % VER)
 OUT = os.path.join(HERE, "워시_%s_미리보기.html" % VER)
+# 시험 고리(SEEDMODE · TESTHOOK)를 넣은 판은 손님에게 묶이는 시안 폴더가 아니라 PV_OUT(없으면 /tmp)으로만 (보안 f852ceb)
+if os.environ.get("SEEDMODE") or os.environ.get("TESTHOOK"):
+    OUT = os.path.join(os.environ.get("PV_OUT") or "/tmp", "워시_%s_미리보기_시험용.html" % VER)
 SEED = os.path.join(HERE, "워시_v112_미리보기_자료.json")
 s = open(SRC, encoding="utf-8").read()
 seed = "{}"

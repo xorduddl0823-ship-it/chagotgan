@@ -1671,13 +1671,6 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
         if(fn==="billStart") return {ok:true,customerKey:"ck_PREVIEW_RANDOM",clientKey:"test_ck_PREVIEW"};
         if(fn==="billIssue"){ AB.on=true; return {ok:true,cardCompany:"신한",last4:"1234"}; }
         AB.on=false; return {ok:true};
-      /* ?ai=off|trial|fail|ok : 번호판 읽기 (서버 sb15 글 그대로) */
-      case "aiReady": return !/ai=off/.test(OLDQ);
-      case "aiJson":
-        if(/ai=trial/.test(OLDQ)) throw new Error("체험판 AI 읽기 3번을 모두 쓰셨습니다. 결제하시면 계속 쓰실 수 있어요.");
-        if(/ai=fail/.test(OLDQ)) throw new Error("번호판을 읽지 못했습니다. 번호를 직접 적어 주세요.");
-        if(/ai=ok/.test(OLDQ)) return JSON.stringify({plate:"12가3456",sure:true});
-        return {ok:true};
       default: return {ok:true};
     }
   }
@@ -8101,7 +8094,6 @@ function sendInMsg(r,type,openFallback){
   var hq=HQATA.off?null:{key:HQKEY.intake,vars:hqVars(inVars(r))};
   return sendOrOpen({type:type||"입고 알림",to:r.phone,text:inText(r),kind:"AUTO",hq:hq,ref:r.id},openFallback);
 }
-window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;},cfg:function(k,v){S.cfg=Object.assign({},S.cfg);S.cfg[k]=v;}};
 function sendOutMsg(r,type,openFallback){
   var p=outPlan(r);
   var useAta=(fmtOf("out")==="ata");
@@ -13226,7 +13218,6 @@ function dAgo(days,hour){
   var d=new Date();d.setDate(d.getDate()-days);d.setHours(hour||10,Math.floor(Math.random()*59),0,0);
   return d.toISOString();
 }
-window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};
 function seedDemo(){
   if(!GS.demo)return toast("샘플 자료는 시연 관리자 계정(시연 모드)에서만 넣을 수 있어요",true);
   var comps=[
