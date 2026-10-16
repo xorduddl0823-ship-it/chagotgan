@@ -86,7 +86,7 @@ FAKE = r'''<script>
       var exp=new Date(now.getTime()+left*86400000), chk=new Date(exp.getTime()-120*86400000);
       function f(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
       out.push({carId:"car"+i, dealerId:d.id, dealer:d.name, plate:P[i], car:C[i], date:f(chk), exp:f(exp), left:left,
-        step: left<=3?3:left<=7?7:left<=15?15:30, sentAt: (i%4===1||RM_SENT["car"+i]) ? f(now)+"T09:10:00" : ""}); }
+        step: left<=3?3:left<=7?7:left<=15?15:30, off: !!RM_OFF["car"+i], sent: !!(i%4===1||RM_SENT["car"+i])}); }
     return out;
   }
   function answer(fn, a){
@@ -121,18 +121,21 @@ FAKE = r'''<script>
       case "lockInfo": return {state:"ok"};
       case "noticeList": return [];
       case "depositMatch": return {n:0};
-      /* v43 · 서버 v33 창구 (체크/기획/2026-10-16_v43_v33_창구_약속.md) */
-      case "billSend": return {sent:(a[1]||[]).length, results:(a[1]||[]).map(function(id,i){
-        var iv=invoices(a[0]||nowYm()).filter(function(v){return v.id===id;})[0]||{};
-        if(a[2]&&a[2].test) return {id:id, name:"김대표 (내 번호)", ok:true, how:"ata", why:""};
-        return i===2 ? {id:id, name:iv.bill_to_name||"", ok:false, how:"", why:"카카오톡을 쓰지 않는 번호"} : {id:id, name:iv.bill_to_name||"", ok:true, how:i%3===1?"lms":"ata", why:""}; })};
+      /* v43 · 서버 v33 창구 (서버/설계/19 · check-api v33 d43e677 모양) */
+      case "billSend": var o=a[0]||{}; return {sent:(o.ids||[]).length, test:!!o.test, results:(o.test?(o.ids||[]).slice(0,1):(o.ids||[])).map(function(id,i){
+        var iv=invoices(o.ym||nowYm()).filter(function(v){return v.id===id;})[0]||{};
+        if(o.test) return {id:id, name:iv.bill_to_name||"", ok:true, how:"ata", why:""};
+        return i===2 ? {id:id, name:iv.bill_to_name||"", ok:false, how:"", why:"청구처 휴대폰 번호가 없음"} : {id:id, name:iv.bill_to_name||"", ok:true, how:i%3===1?"lms":"ata", why:""}; })};
+      case "invoiceRekey": return {ok:true};
       case "remindRule": return RRULE_PV;
       case "remindRuleSave": RRULE_PV=Object.assign({}, RRULE_PV, a[0]||{}); return {ok:true};
-      case "remindList": return {days:RRULE_PV.days, rows:remindRows().filter(function(r){ return !RM_OFF[r.carId]; })};
-      case "remindSend": var by={}; (a[0]||[]).forEach(function(id){ var r=remindRows().filter(function(x){return x.carId===id;})[0]; if(!r) return;
-          by[r.dealerId]=by[r.dealerId]||{dealer:r.dealer, cars:0}; by[r.dealerId].cars++; if(!(a[1]&&a[1].test)) RM_SENT[id]=1; });
-        return {sent:Object.keys(by).length, results:Object.keys(by).map(function(k){ return {dealer:(a[1]&&a[1].test)?"김대표 (내 번호)":by[k].dealer, cars:by[k].cars, ok:true, how:"lms", why:""}; })};
-      case "remindOff": (a[0]||[]).forEach(function(id){ RM_OFF[id]=1; }); return {n:(a[0]||[]).length};
+      case "remindList": return remindRows();
+      case "remindSend": var q=a[0]||{}, by={}; (q.test?(q.dealerIds||[]).slice(0,1):(q.dealerIds||[])).forEach(function(d){
+          var cs=remindRows().filter(function(x){ return x.dealerId===d && !x.off && !x.sent; });
+          if(!q.test) cs.forEach(function(x){ RM_SENT[x.carId]=1; });
+          by[d]={dealer:(DEALERS.filter(function(z){return z.id===d;})[0]||{}).name||"", dealerId:d, cars:cs.length, ok:cs.length>0, how:cs.length?"lms":"", why:cs.length?"":"보낼 차가 없음"}; });
+        return {sent:Object.keys(by).filter(function(k){return by[k].ok;}).length, test:!!q.test, results:Object.keys(by).map(function(k){ return by[k]; })};
+      case "remindOff": var f=a[0]||{}; (f.carIds||[]).forEach(function(id){ RM_OFF[id]=(f.off!==false); }); return {ok:true, n:(f.carIds||[]).length};
       default: return {ok:true};   /* 저장 · 고치기는 이 창 안에서 «됐어요»로만 */
     }
   }

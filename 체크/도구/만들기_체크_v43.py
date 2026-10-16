@@ -1,6 +1,6 @@
 """체크 v42 → v43 — 시험 뒤 첫 판 (v42 는 읽기만 · 시험판 v42 는 그대로)
 받은 일: 총괄 10-16 «청구서 보내기 · 재검사 알림 화면 + 숫자 카드, 서버 v33 과 짝 맞춰»
-설계: 체크/기획/2026-10-16_청구서보내기_재검사알림_설계.md · 창구 약속: 체크/기획/2026-10-16_v43_v33_창구_약속.md
+설계: 체크/기획/2026-10-16_청구서보내기_재검사알림_설계.md · 창구: 서버/설계/19_체크_청구서보내기_재검사알림_v33.md (서버 v33 d43e677 모양에 맞춤)
 바꾸는 것:
   1) 월별 청구서 › «2. 청구서 보내기» — 승인된 «차곳간_청구서» 그대로(고칠 수 있는 것은 입금 기한 하나),
      내 번호로 시험 · 선택한 곳에 보내기(대표만 · 이름 확인 창) → billSend · 결과 표 · «안 보낸 곳만» 고르기 칸
@@ -61,6 +61,7 @@ cut('''  card("2. 청구서 보내기",''', '''  card('버튼을 누르면 열�
       '<div class="tools" style="justify-content:center">'+
         '<button class="btn" id="bsTest"'+(isOwner()?'':' disabled')+'>내 번호로 시험</button>'+
         '<button class="btn primary" id="bsSend"'+(isOwner()?'':' disabled')+'>선택한 곳에 보내기</button>'+
+        (isOwner()?'<button class="btn" id="bsRekey" title="예전 주소는 더 안 열려요">고른 곳 주소 새로 만들기</button>':'')+
       '</div>'+
     '</div></div>'+
     billSendResult())+
@@ -122,7 +123,7 @@ function whyKo(w){ w=String(w||""); return (!w || !/[가-힣]/.test(w)) ? "보�
 function billSendGo(ids, test){
   var due=String(($("bsDue")||{}).value||"").trim().slice(0,20); BS_DUE=due;
   bar(test?"시험 알림을 보내는 중이에요…":"청구서를 보내는 중이에요… 한 곳에 1초쯤 걸려요.","info"); busy(true);
-  call("billSend",[ST.ym, ids, {due:due, test:!!test}]).then(function(r){
+  call("billSend",[{ym:ST.ym, ids:ids, due:due, test:!!test}]).then(function(r){
     busy(false); r=r||{};
     var list=(r.results||[]).map(function(x){ return {name:String(x.name||""), ok:!!x.ok, how:String(x.how||""), why:String(x.why||"")}; });
     BS_LAST={ym:ST.ym, test:!!test, at:shortTs(new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString()), results:list};
@@ -150,6 +151,22 @@ rep('''AFTER.bill=function(){
       warn:"받는 번호는 <b>지금 로그인한 분 휴대폰</b>이에요. 청구처에는 가지 않고, «보냄» 표시도 바뀌지 않아요.", warnKind:"info", yes:"시험 보내기" },
       function(){ billSendGo([b.id], true); });
   };
+  var rk=$("bsRekey");
+  if(rk) rk.onclick=function(){
+    var ids=picked("bill");
+    if(!ids.length){ tell("고른 곳이 없어요","청구서 목록 왼쪽 네모로 주소를 새로 만들 곳을 먼저 골라 주세요."); return; }
+    var pick=BILLS.filter(function(b){ return ids.indexOf(b.id)>=0; });
+    ask({ title:"고른 "+won(pick.length)+"곳의 청구서 주소를 새로 만들까요?", rowsTitle:"새로 만들 곳",
+      rows: pick.map(function(b){ return [esc(b.name), esc(b.sendState)]; }),
+      warn:"<b>예전에 보낸 «청구 내역 보기» 버튼은 더 이상 열리지 않아요.</b> 주소가 잘못 전달됐을 때만 쓰고, 새로 만든 뒤 다시 보내 주세요.",
+      warnKind:"bad", yes:"새로 만들기" },
+      function(){
+        busy(true); var n=0;
+        pick.reduce(function(p,b){ return p.then(function(){ return call("invoiceRekey",[b.id]).then(function(){ n++; }); }); }, Promise.resolve())
+          .then(function(){ busy(false); clearPick("bill"); bar(won(n)+"곳의 주소를 새로 만들었어요. 다시 보내 주세요.","ok"); refresh(["bill"]); })
+          .catch(fail);
+      });
+  };
   var bs=$("bsSend");
   if(bs) bs.onclick=function(){
     var ids=picked("bill");
@@ -172,28 +189,29 @@ rep('''AFTER.bill=function(){
 # ── 2) 재검사 알림 ───────────────────────────────────────────────
 REMIND_PAGE = r'''/* ═══ v43: 재검사 알림 — 서버 v33 (remindRule · remindList · remindSend · remindOff) ═══
    성능점검 유효기간(검사일 + 검사소 유효일수)이 끝나기 전에, 딜러 한 명에게 그 딜러 차를 모아 한 통으로 보냅니다. */
-var RRULE={}, RM_RANGE="15d", RM_LAST=null;
+var RRULE={}, RM_RANGE="30", RM_LAST=null;
 var RM_STEPS=[[30,"한 달 전"],[15,"보름 전"],[7,"일주일 전"],[3,"3일 전"]];
 function loadRemind(){
-  return Promise.all([ call("remindRule",[]), call("remindList",[RM_RANGE]) ]).then(function(r){
+  return Promise.all([ call("remindRule",[]), call("remindList",[{range:RM_RANGE}]) ]).then(function(r){
     RRULE=r[0]||{};
-    var L=r[1]||{};
-    REMIND=(L.rows||[]).map(function(x){
+    var L=r[1]||[];
+    REMIND=(Array.isArray(L)?L:(L.rows||[])).map(function(x){
       var left=Number(x.left);
       return { id:String(x.carId), dealerId:String(x.dealerId||""), dealer:String(x.dealer||""),
         plate:String(x.plate||""), car:String(x.car||""), date:String(x.date||""), exp:String(x.exp||""),
         leftN:left, left: left<0 ? "지남" : (left===0 ? "오늘" : left+"일"),
-        sent: x.sentAt ? shortTs(x.sentAt) : "", sentSt: x.sentAt ? "보냄" : "아직",
+        off: x.off===true, sent: x.sent===true, sentSt: x.off===true ? "뺌" : (x.sent===true ? "보냄" : "아직"),
         _q:[x.dealer, x.plate, x.car].join(" ") };
     });
   });
 }
 PAGE.remind=function(){
   var days=Number(RRULE.days)||0, steps=RRULE.steps||[], dealers={}, sentN=0;
-  REMIND.forEach(function(r){ dealers[r.dealerId||r.dealer]=1; if(r.sent) sentN++; });
+  REMIND.forEach(function(r){ if(r.off) return; dealers[r.dealerId||r.dealer]=1; if(r.sent) sentN++; });
+  var liveN=REMIND.filter(function(r){ return !r.off; }).length;
   var own=isOwner();
   return head("재검사 알림","성능점검 유효기간(검사일로부터 정해진 날수)이 끝나기 전에 딜러에게 미리 알려 줘요. 정해 둔 때마다 한 번씩, 딜러 한 명에게 그 딜러 차를 모아 한 통으로 보내요. 같은 차 · 같은 때 알림은 두 번 가지 않아요.")+
-  sums([["유효기간",(days?won(days)+"일":"—")],["보낼 대상",won(REMIND.length)+"대"],["딜러",won(Object.keys(dealers).length)+"명"],["보낸 차",won(sentN)+"대"]])+
+  sums([["유효기간",(days?won(days)+"일":"—")],["보낼 대상",won(liveN)+"대"],["딜러",won(Object.keys(dealers).length)+"명"],["보낸 차",won(sentN)+"대"]])+
   (days ? "" : '<div class="msg err"><b>유효기간 날수를 받지 못했어요.</b> 차곳간(010-9559-3663)으로 알려 주세요.</div>')+
   card("알림 규칙", own?"고른 때마다 한 번씩 보내요. 바꾼 뒤 «규칙 저장»을 눌러 주세요.":"규칙은 대표만 바꿀 수 있어요.",
     '<div class="tools" id="rmRule">'+
@@ -214,14 +232,15 @@ PAGE.remind=function(){
       {k:"date",t:"검사일",kind:"date"},
       {k:"exp",t:"만료일",kind:"date"},
       {k:"left",t:"남은 날",fmt:function(v){return v==="지남"?'<span style="color:var(--danger);font-weight:800">지남</span>':esc(v);}},
-      {k:"sentSt",t:"보냄",state:true,fmt:function(v,r){return r.sent
-        ?'<span class="tag" style="background:var(--good-soft);color:var(--good)">보냄</span> <span style="color:var(--muted);font-size:12px">'+esc(r.sent)+'</span>'
+      {k:"sentSt",t:"보냄",state:true,fmt:function(v,r){return r.off
+        ?'<span class="tag" style="background:var(--chip,#eef1f5);color:var(--muted)">뺌</span>'
+        :r.sent?'<span class="tag" style="background:var(--good-soft);color:var(--good)">보냄</span>'
         :'<span class="tag" style="background:var(--warn-soft);color:var(--warn)">아직</span>';}}
     ], REMIND, {pick:true,
-      filters:'<select id="rmRange">'+[["today","오늘"],["week","이번 주"],["15d","최근 15일"],["month","이번 달"],["all","전체"]]
+      filters:'<select id="rmRange">'+[["7","만료 7일 안"],["15","만료 15일 안"],["30","만료 30일 안"],["60","만료 60일 안"]]
         .map(function(o){ return '<option value="'+o[0]+'"'+(RM_RANGE===o[0]?" selected":"")+'>'+o[1]+'</option>'; }).join("")+'</select>',
-      tools:(own?'<button class="btn primary" id="rmSend">고른 차 딜러에게 보내기</button><button class="btn" id="rmTest">내 번호로 시험</button>':'')+
-            '<button class="btn" id="rmOff">고른 차 빼기</button>'}))+
+      tools:(own?'<button class="btn primary" id="rmSend">고른 줄 딜러에게 보내기</button><button class="btn" id="rmTest">내 번호로 시험</button>'+
+            '<button class="btn" id="rmOff">고른 차 빼기</button><button class="btn" id="rmOn">다시 넣기</button>':'')}))+
   remindResult()+
   card("보낼 문구",'카카오 심사용 문구예요(차곳간 채널). 실제 값은 서버가 채워요.',
     '<div class="msg info" style="margin:0 0 10px">보내는 방법 : 알림톡 (안 되면 문자로 자동)'+(RRULE.ataReady?"":" · 지금은 승인 전이라 <b>문자</b>로 가요")+'</div>'+
@@ -250,9 +269,9 @@ function remindResult(){
       {k:"why",t:"까닭",fmt:function(v,r){return r.ok?'<span style="color:var(--muted)">—</span>':esc(whyKo(v));}}
     ], R.results, {}));
 }
-function remindGo(carIds, test){
+function remindGo(dealerIds, test){
   bar(test?"시험 알림을 보내는 중이에요…":"재검사 알림을 보내는 중이에요…","info"); busy(true);
-  call("remindSend",[carIds, {test:!!test}]).then(function(r){
+  call("remindSend",[{dealerIds:dealerIds, test:!!test}]).then(function(r){
     busy(false); r=r||{};
     var list=(r.results||[]).map(function(x){ return {dealer:String(x.dealer||""), cars:Number(x.cars)||0, ok:!!x.ok,
       how:String(x.how||""), st:x.ok?"보냄":"못 보냄", why:String(x.why||"")}; });
@@ -281,10 +300,14 @@ AFTER.remind=function(){
   function byDealer(list){ var m={}, order=[];
     list.forEach(function(r){ var k=r.dealerId||r.dealer; if(!m[k]){ m[k]={name:r.dealer, n:0}; order.push(k); } m[k].n++; });
     return order.map(function(k){ return m[k]; }); }
+  function dealersOf(list){ var seen={}, out=[]; list.forEach(function(r){ if(r.dealerId && !seen[r.dealerId]){ seen[r.dealerId]=1; out.push(r.dealerId); } }); return out; }
   var sd=$("rmSend");
   if(sd) sd.onclick=function(){
-    var cars=pickedCars();
-    if(!cars.length){ tell("고른 차가 없어요","왼쪽 네모로 알릴 차를 먼저 골라 주세요."); return; }
+    var dIds=dealersOf(pickedCars());
+    if(!dIds.length){ tell("고른 줄이 없어요","왼쪽 네모로 알릴 딜러의 차를 먼저 골라 주세요."); return; }
+    /* 서버는 딜러 단위로 보내요 — 그 딜러의 «뺌 · 이미 보냄»이 아닌 차를 모두 한 통으로 */
+    var cars=REMIND.filter(function(r){ return dIds.indexOf(r.dealerId)>=0 && !r.off && !r.sent; });
+    if(!cars.length){ tell("보낼 차가 없어요","고른 딜러의 차는 이미 보냈거나 뺀 차예요."); return; }
     var g=byDealer(cars);
     ask({ title:"딜러 "+won(g.length)+"명에게 차 "+won(cars.length)+"대 재검사 알림을 보낼까요?",
       k1:"딜러", v1:won(g.length)+'<span style="font-size:14px">명</span>',
@@ -292,31 +315,35 @@ AFTER.remind=function(){
       rowsTitle:"받는 딜러",
       rows: g.map(function(x){ return [esc(x.name), won(x.n)+"대"]; }),
       warn:"딜러 한 명에게 한 통으로 모아서 가요. "+(RRULE.ataReady?"알림톡으로 가고, 안 되면 문자로 가요.":"재검사 알림톡이 아직 승인 전이라 <b>문자</b>로 가요.")+
-        "<br>같은 차 · 같은 때 알림은 다시 가지 않아요.", warnKind:"info", yes:"보내기" },
-      function(){ remindGo(cars.map(function(r){ return r.id; }), false); });
+        "<br>고른 딜러의 차 중 <b>아직 안 보낸 차를 모두</b> 한 통에 넣어요. 이미 보낸 차 · 뺀 차는 빠져요.", warnKind:"info", yes:"보내기" },
+      function(){ remindGo(dIds, false); });
   };
   var tt=$("rmTest");
   if(tt) tt.onclick=function(){
-    var cars=pickedCars(); if(!cars.length) cars=REMIND.slice(0,1);
+    var cars=pickedCars(); if(!cars.length) cars=REMIND.filter(function(r){ return !r.off; }).slice(0,1);
     if(!cars.length){ tell("보낼 차가 없어요","목록에 차가 있을 때 시험할 수 있어요."); return; }
-    var d=cars[0].dealerId; cars=cars.filter(function(r){ return r.dealerId===d; });
+    var d=cars[0].dealerId; cars=REMIND.filter(function(r){ return r.dealerId===d && !r.off && !r.sent; });
+    if(!cars.length){ tell("보낼 차가 없어요","그 딜러의 차는 이미 보냈거나 뺀 차예요. 다른 줄을 골라 주세요."); return; }
     ask({ title:"내 번호로 시험 알림을 보낼까요?", sub:esc(cars[0].dealer)+" 님 차 "+won(cars.length)+"대 모양으로 한 통만 가요",
       warn:"받는 번호는 <b>지금 로그인한 분 휴대폰</b>이에요. 딜러에게는 가지 않고 «보냄» 표시도 바뀌지 않아요.", warnKind:"info", yes:"시험 보내기" },
-      function(){ remindGo(cars.map(function(r){ return r.id; }), true); });
+      function(){ remindGo([d], true); });
   };
-  var of=$("rmOff");
-  if(of) of.onclick=function(){
-    var cars=pickedCars();
-    if(!cars.length){ tell("고른 차가 없어요","왼쪽 네모로 뺄 차를 먼저 골라 주세요."); return; }
-    ask({ title:"고른 차 "+won(cars.length)+"대를 알림에서 뺄까요?", rowsTitle:"뺄 차",
+  function offGo(off){
+    var cars=pickedCars().filter(function(r){ return r.off!==off; });
+    if(!cars.length){ tell("고른 차가 없어요", off?"왼쪽 네모로 뺄 차를 먼저 골라 주세요.":"«뺌» 표시가 있는 차를 골라 주세요."); return; }
+    ask({ title: off ? "고른 차 "+won(cars.length)+"대를 알림에서 뺄까요?" : "고른 차 "+won(cars.length)+"대를 알림에 다시 넣을까요?",
+      rowsTitle: off ? "뺄 차" : "다시 넣을 차",
       rows: cars.map(function(r){ return [esc(r.plate||"-"), esc(r.dealer)]; }),
-      warn:"이미 팔렸거나 재검사를 받은 차를 빼 두면 앞으로 알림이 가지 않아요.", warnKind:"info", yes:"빼기" },
+      warn: off ? "이미 팔렸거나 재검사를 받은 차를 빼 두면 앞으로 알림이 가지 않아요." : "다시 넣으면 다음 알림 때부터 같이 가요.",
+      warnKind:"info", yes: off ? "빼기" : "다시 넣기" },
       function(){
         busy(true);
-        call("remindOff",[cars.map(function(r){ return r.id; }), true]).then(function(r){
-          busy(false); clearPick("rmd"); bar(won((r&&r.n)||cars.length)+"대를 뺐어요.","ok"); refresh(["remind"]); }).catch(fail);
+        call("remindOff",[{carIds:cars.map(function(r){ return r.id; }), off:off}]).then(function(r){
+          busy(false); clearPick("rmd"); bar(won((r&&r.n)||cars.length)+(off?"대를 뺐어요.":"대를 다시 넣었어요."),"ok"); refresh(["remind"]); }).catch(fail);
       });
-  };
+  }
+  var of=$("rmOff"); if(of) of.onclick=function(){ offGo(true); };
+  var on=$("rmOn"); if(on) on.onclick=function(){ offGo(false); };
 };
 '''
 cut('''PAGE.remind=function(){''', '''/* ── 세금계산서 ── */

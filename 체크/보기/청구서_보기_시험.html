@@ -13,10 +13,13 @@
 <div class="wrap" id="v"></div>
 <script>
 cggCheckInvoice(document.getElementById("v"), {
-  ym:"2026-09", to:"홍길동", members:["홍길동","김철수 <i>x</i>"], total:1306000,
-  office:{name:"예시 성능검사소", tel:"031-000-0000", bank_fee:"예시은행 000-000-000000", bank_repair:"예시은행 000-000-000001"},
-  fee:{n:40, amount:1240000, lines:[{name:"국산차",unit:30000,n:32,amount:960000},{name:"수입차",unit:40000,n:7,amount:280000},{name:"<img src=x onerror=alert(1)>",unit:0,n:1,amount:0}]},
-  rep:{n:2, amount:66000, lines:[{name:"타이어 교체",amount:44000},{name:"배터리 교체",amount:22000}]}
+  invoice:{ ym:"2026-09", bill_to_name:"홍길동", members:["홍길동","김철수 <i>x</i>"], fee_amount:1240000, ext_amount:0, repair_amount:66000, total_amount:1306000, dom_n:32, imp_n:7, etc_n:1 },
+  rows:[ {kind:"fee", dealer_name:"홍길동", item:"국산차", qty:32, unit:30000, amount:960000},
+         {kind:"fee", dealer_name:"김철수", item:"수입차", qty:7, unit:40000, amount:280000},
+         {kind:"ext", dealer_name:"김철수", item:"<img src=x onerror=alert(1)>", qty:1, unit:0, amount:0},
+         {kind:"repair", dealer_name:"홍길동", item:"타이어 교체", qty:1, unit:44000, amount:44000},
+         {kind:"repair", dealer_name:"홍길동", item:"배터리 교체", qty:1, unit:22000, amount:22000} ],
+  office:{ name:"예시 성능검사소", tel:"031-000-0000", bank_fee:"예시은행 000-000-000000", bank_repair:"예시은행 000-000-000001" }
 });
 </script>
 </body>
