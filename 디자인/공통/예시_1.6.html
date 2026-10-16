@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>공통 부품 1.6 예시</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+body{margin:0;background:var(--bg);font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px}
+.hello small{color:var(--muted);font-size:13px} .hello h1{margin:4px 0 4px;font-size:26px;letter-spacing:-.5px;text-wrap:balance} .hello p{margin:0 0 18px;color:var(--muted)}
+.hello h1 em{font-style:normal;color:var(--blue)}
+.demo-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px;font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px}
+.card h3{margin:0 0 10px;font-size:16px}
+.cgg-right .hb{height:32px;padding:0 11px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:12.5px;cursor:pointer}
+@media (min-width:1000px){ .lay-side .cgg-right .hb,.lay-icon .cgg-right .hb{height:40px;border-color:var(--ln2);background:var(--surface);color:var(--btn-ink)} }
+@media (max-width:600px){ .hello h1{font-size:19px} }
+</style>
+<link rel="stylesheet" href="cgg-j4-1.6.css">
+</head><body>
+<div class="cgg-app" id="app">
+  <header class="cgg-hdr">
+    <div class="cgg-top">
+      <div class="cgg-brand"><span class="cgg-ci">차</span><div><b>차곳간 체크</b><small>성능점검 정산 · 체크 v23 · UI 3.0</small></div></div>
+      <div class="cgg-hdr-biz"><b>예시 검사소</b><small>000-00-00000 · 대표 홍길순</small></div>
+      <div class="cgg-right"><button class="hb cgg-wide">공지사항</button><button class="hb cgg-wide">도움말</button><button class="hb" id="btnRef"></button><button class="hb" id="btnMe">홍길순 ▾</button></div>
+    </div>
+    <nav class="cgg-nav" id="nav" aria-label="메뉴"></nav>
+  </header>
+  <main class="cgg-main">
+    <div class="demo-pick"><b id="ver"></b> 이 예시는 체크 메뉴로 그렸어요. 메뉴 배치는 머리말 «홍길순 ▾» › «화면 설정»에서 바꿔요 (넓은 화면에서만 바뀌고, 폰은 늘 아래 탭바예요).</div>
+    <div id="hd"></div>
+    <div id="trialBand"></div>
+    <div class="cgg-acts" id="acts"></div>
+    <div class="card" id="layBox" hidden><h3>화면 설정 › 메뉴 배치</h3><div id="layIn"></div></div>
+    <div id="kp"></div>
+    <div id="tb"></div>
+    <div id="hp"></div>
+  </main>
+  <footer class="cgg-biz" id="legal" style="padding:12px 22px 80px;font-size:12px;color:var(--muted)">법정 사업자 정보 칸 (옛 이름 .cgg-biz — 1.6에서는 폰에서도 숨지 않아야 해요)</footer>
+  <nav class="cgg-tbar" id="tbar"></nav>
+</div>
+<section id="outside" style="max-width:520px;margin:0 auto;padding:16px"></section>
+<script src="cgg-j4-1.6.js"></script>
+<script>
+var MENU=[["home","home","홈"],["sales","chart","매출"],["work","car","정산 기록"],["bill","file","청구서"],["bank","wallet","입출금"],["tax","receipt","세금계산서"],["noti","bell","알림"],["set","gear","설정"]];
+var cur="home";
+function draw(){
+  document.getElementById("nav").innerHTML=MENU.map(function(m){ return '<button type="button" data-k="'+m[0]+'" aria-selected="'+(m[0]===cur)+'">'+CGG.ic(m[1])+'<span class="lbl">'+m[2]+'</span></button>'; }).join("");
+  Array.prototype.forEach.call(document.querySelectorAll("#nav [data-k]"),function(b){ b.onclick=function(){ go(b.getAttribute("data-k")); }; });
+  CGG.tabbar(document.getElementById("tbar"),[{key:"home",icon:"home",label:"홈"},{key:"work",icon:"car",label:"정산 기록"},{key:"bank",icon:"wallet",label:"입출금"},{key:"tax",icon:"receipt",label:"계산서"},{key:"all",icon:"more",label:"전체"}],
+    ["home","work","bank","tax"].indexOf(cur)>=0?cur:"all", function(k){ go(k==="all"?"set":k); });
+  var name=MENU.filter(function(m){return m[0]===cur;})[0][2];
+  document.getElementById("hd").innerHTML=CGG.head({crumb:name+" · 10월 15일 수요일", title:'보험료가 안 맞는 건 <em>4건</em>, 재검사 안내 보낼 차 <em>6대</em>가 있어요', desc:"오늘 할 일과 이번 달 검사를 한눈에 봐요.",
+    acts:[{label:"엑셀 다운로드",icon:"down"},{label:"선택한 건 청구서 만들기",id:"selBtn",disabled:!SEL.length},{label:"검사 등록",icon:"plus",pri:true,id:"newBtn"}]});
+  document.getElementById("selBtn").onclick=function(){ var rs=ROWS.filter(function(r){return SEL.indexOf(r[1])>=0;});
+    CGG.dialog({title:"청구서를 만들까요?", rows:[["청구처",rs.map(function(r){return r[0];}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(", ")],["건수",rs.length+"건"],["합계 금액",CGG.won(rs.reduce(function(a,r){return a+r[5];},0))+"원"]], ok:"청구서 만들기", onOk:function(){ CGG.toast("청구서를 만들었어요"); }}); };
+  document.getElementById("newBtn").onclick=function(){ CGG.dialog({size:"form", title:"검사 등록", desc:"내용을 입력하고 저장을 눌러 주세요.", body:'<div class="fg"><label>상사<input id="f1" placeholder="예시상사"></label><label>차량번호<input placeholder="12가 3456"></label><label>검사일<input type="date" value="2026-10-15"></label><label>금액<input type="number" placeholder="0"></label></div>', ok:"저장", onOk:function(){ CGG.toast("저장했어요"); }}); };
+}
+function go(k){ cur=k; draw(); }
+CGG.layout.init(document.getElementById("app"),"cgg_demo_layout");
+CGG.todos(document.getElementById("acts"),[
+  {tone:"chk",icon:"receipt",title:"보험료 대조 안 맞음 4건",sub:"솜카 외 2곳 · 이번 달"},
+  {tone:"stop",icon:"bell",title:"재검사 안내 문자 6건",sub:"기한 지난 차 2대 포함"},
+  {tone:"run",icon:"file",title:"10월 청구서 보내기",sub:"예시상사 · 보낼 날 10.20"}], function(i){ go(["bank","noti","bill"][i]); });
+var me=document.getElementById("btnMe");
+CGG.badge(me, 3);
+CGG.menu(me, {name:"홍길순", role:"대표"}, function(){ return [
+  {key:"me",icon:"user",label:"마이페이지"},{key:"plan",icon:"wallet",label:"요금제"},{key:"trash",icon:"trash",label:"휴지통",count:3},"-",
+  {key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()},"-",{key:"out",icon:"out",label:"로그아웃"}]; },
+  function(k){ if(k==="lay"){ var b=document.getElementById("layBox"); b.hidden=false; CGG.layout.chooser(document.getElementById("layIn"), function(){}); b.scrollIntoView({block:"nearest"}); } });
+var SEL=[];
+var ROWS=[["예시상사 <b>굵게</b>","12가 3456","그랜저 IG","성능점검","10.15",33000,"진행 중"],["가람모터스","34나 7788","쏘렌토","성능점검","10.14",33000,"완료"],["누리상사","56다 1122","K5","재검사","10.14",22000,"확인 필요"],["다온카","78라 9090","BMW 520d","성능점검","10.13",44000,"보류"],["예시상사","90마 4545","카니발","성능점검","10.13",33000,"완료"],["라온오토","11바 2323","GV80","성능점검","10.12",44000,"진행 중"]];
+CGG.kpis(document.getElementById("kp"),[{label:"오늘 검사",value:"8",unit:"건",delta:"+2",spark:[3,5,4,6,5,7,8],color:"#1668C4"},{label:"청구 대기",value:"5",unit:"건",delta:"−1",down:true,spark:[6,6,5,7,6,6,5],color:"#4C93E0"},{label:"상품화 기다리는 차",value:"4",unit:"대",color:"#E08A00"},{label:"이번 달 청구 금액",value:"4,820,000",unit:"원",delta:"+12%",spark:[2,2.4,2.9,3.1,3.6,4.2,4.82],color:"#0B2545"}]);
+CGG.table(document.getElementById("tb"),{cols:["상사명","차량번호","차종","검사","검사일","금액","상태"],kinds:["name","id","text","text","date","money","state"],rows:ROWS,
+  filters:["검사일: 최근 7일 ✕","＋ 상사","＋ 금액"], sorts:[[4,-1,"최신순"],[0,1,"상사명순"],[5,-1,"금액 높은순"]], mline:function(x){return x[2]+" · "+x[3]+" · "+x[4];},
+  actions:function(r){ return r[6]==="완료"?[{key:"bill",label:"청구서"},{key:"undo",label:"되돌리기",danger:true}]:[{key:"done",label:"완료"}]; },
+  onAction:function(k,r){ CGG.toast(r[0]+" · "+({bill:"청구서 만들기",undo:"되돌리기",done:"완료로 바꾸기"})[k]); },
+  rowId:function(r){ return r[1]; }, render:function(r,k){ if(k===5) return {html:'<span class="a">'+CGG.won(r[5])+'</span><span class="b">'+CGG.won(Math.round(r[5]/1.1))+' · '+CGG.won(r[5]-Math.round(r[5]/1.1))+'</span>'}; if(k===2) return r[2]; },
+  bulk:[{key:"del",label:"선택한 줄 지우기",needSel:true,danger:true}], onBulk:function(k,l){ CGG.toast(l.join(", ")+" 를 지울까요? (예시)"); },
+  onSelect:function(l){ SEL=l; draw(); }, onName:function(r){ CGG.dialog({size:"detail", title:r[0]+" · "+r[1], rows:[["차종",r[2]],["검사",r[3]],["검사일",r[4]],["금액",CGG.won(r[5])+"원"],["상태",r[6]]]}); }});
+document.getElementById("hp").innerHTML=CGG.help("검사가 끝난 차를 골라 «선택한 건 청구서 만들기»를 누르면 청구처별로 청구서가 만들어져요.");
+CGG.trial.init("preview","cgg_demo_try");
+document.getElementById("ver").textContent=CGG.version+" ·";
+document.getElementById("btnRef").innerHTML=CGG.ic("refresh")+" 새로고침";
+document.getElementById("trialBand").innerHTML=CGG.trial.band({seen:5,total:20})+CGG.trial.card([["매출 엑셀 다운로드","lock","매출 표를 엑셀 파일로 받아요."],["입고 등록","try","차가 들어오면 상사 · 작업 · 금액을 적어요."],["매출 둘러보기","see"]]);
+document.getElementById("outside").innerHTML=CGG.trial.card([["세금계산서 발급","lock","검사 건을 모아 한 번에 발급해요"],["청구서 보내기","try","상사에 한 달치 청구서를 보내요"]]);
+draw();
+</script>
+</body></html>
