@@ -54,7 +54,7 @@ var F_SVCS=[{id:1,code:"supabase",name:"수파베이스",kind:"sub",cost:35000,n
  {id:2,code:"solapi",name:"솔라피 문자",kind:"charge",balance:8000,min_bal:10000,active:true,sort:2,auto:true,auto_note:"자동으로 읽음",what:"문자"},
  {id:3,code:"cloudflare",name:"클라우드플레어",kind:"sub",cost:0,next_due:dd(17),active:true,sort:3,what:"주소"}];
 var F_TODO=[{id:1,title:"QR 스티커 교체",done:false,due_at:dd(0)},{id:2,title:"문자 충전",done:false,due_at:dd(-2)},{id:3,title:"세금계산서 정리",done:false,due_at:dd(6)}], F_NEXT=10;
-var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_BIZ={}, F_PWDEL={}, F_SG={on:false,cfg:{perIp:5,allDay:200,waitPerIp:3}}, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
+var F_PP={}, F_LOG=[], F_CGG=["wash"], F_PWSMS=false, F_BAL=0, F_BIZ={}, F_PWDEL={}, F_SG={on:false,cfg:{perIp:5,allDay:200,waitPerIp:3}}, F_RF={}, F_BILL=false, F_CW={SAEBIT:"SAEBIT"};
 function FAKE(fn,a){
   a=a||[];
   switch(fn){
@@ -118,6 +118,8 @@ function FAKE(fn,a){
       {at:dd(-2)+" 12:00",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"cash_done",to:"010-****-7777",via:"ata",result:"안 보냄",err:"템플릿 코드가 없어 보내지 않았어요"},
       {at:dd(0)+" 11:58",product:"워시",shop:"BAREUN",shopName:"바른 카모터스",tpl:"pay_done",to:"010-****-9999",via:"ata",result:"대기",msgId:"M4V2026101500006"}]};
     case "hqSendSum": return {ok:true,ym:a[0],rows:[],total:{ata:2,sms:1,sent:1,fail:1,wait:1,skip:1,cost:2*13+45+18},price:{ata:13,sms:18,lms:45,mms:110},note:"대략 요금이에요 (부가세 별도)"};
+    case "hqExp": return {ok:true,cron:true,cfg:{on:true,trial:true,cash:true,days:[3,0],time:"12:00",balMin:F_BAL,tpls:[{name:"기본",text:"[차곳간] {업체} 님, {무엇}이 {남은날}일 남았어요."}],tplIdx:0},shops:[],logs:[]};
+    case "hqExpSave": if(a[0]&&a[0].balMin!==undefined) F_BAL=a[0].balMin; return {ok:true};
     case "hqSendCheck": return {ok:true,n:3};
     case "hqBizList": return {ok:true,list:[
       {product:"워시",code:"NEWCAR1",name:"새차모터스",bizNo:"1188129312",ceo:"정새차",owner:"010-****-6666",ok:!!F_BIZ.NEWCAR1,okAt:F_BIZ.NEWCAR1?dd(0):""},
