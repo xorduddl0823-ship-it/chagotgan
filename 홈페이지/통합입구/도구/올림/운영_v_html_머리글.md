@@ -26,7 +26,8 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
 ```
-- 워시 방이 요청한 3줄(no-store · no-referrer · noindex)에, 보안상 흔히 함께 거는 2줄(nosniff · 다른 사이트 안에 끼워 넣기 막기 DENY)을 더했어요. 2줄은 **보안 방이 빼라고 하면 빼요**.
+- 워시 방이 요청한 3줄(no-store · no-referrer · noindex)에 2줄(nosniff · 다른 사이트 안에 끼워 넣기 막기 DENY)을 더했어요 — 보안 방 통과(b502503).
+- ⚠️ 운영 `_headers` 맨 위 `/*` 블록에 **이미 `X-Frame-Options` 줄이 있으면**, 위 두 블록에서 `X-Frame-Options: DENY` 줄만 **빼요**. (두 값이 「SAMEORIGIN, DENY」처럼 붙어 나가면 브라우저가 무시해요)
 - 이 방식은 Cloudflare Pages(폴더 올리기)와 Workers 정적 파일 둘 다 `_headers` 를 읽어요. 실제로 붙었는지는 올린 뒤 PC 크롬 F12 › Network › 첫 줄 › Response Headers 에서 봐요(시험 날 한 장 ②-4 와 같은 방법).
 
 ## 올린 뒤 확인 (대표님 · 2분)
