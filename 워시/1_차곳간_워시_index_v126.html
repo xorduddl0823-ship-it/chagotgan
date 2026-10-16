@@ -11476,8 +11476,9 @@ function jKpis(monthAmt){
 function calShort(n){
   n=Number(n)||0; if(!n)return "";
   function d1(x){var t=Math.round(x*10)/10;return (t%1===0?String(t):t.toFixed(1));}
-  if(n>=100000000)return d1(n/100000000)+"억";
-  if(n>=100000)return Math.round(n/10000)+"만";
+  var m=Math.round(n/10000);
+  if(n>=100000000||m>=10000)return d1(n/100000000)+"억";
+  if(n>=100000)return m+"만";
   return d1(n/10000)+"만";
 }
 function renderHome(){
