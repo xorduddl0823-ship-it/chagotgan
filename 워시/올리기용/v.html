@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- 보안 ⑧: 주소의 보기코드가 다른 사이트로 새지 않게 · 검색에 안 잡히게 · 기기에 남지 않게
+     (no-store 는 올리는 곳(Cloudflare Worker)에서 응답 머리글 Cache-Control: no-store 로도 꼭 넣어 주세요) -->
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Pragma" content="no-cache">
+<title>차곳간 보기</title>
+<style>
+/* 차곳간 «보기» — 딜러 · 상사가 알림톡 버튼으로 여는 한 장 (로그인 없음) */
+:root{--bg:#f4f6f9;--card:#fff;--line:#dde3ec;--ink:#14202e;--muted:#667389;--brand:#1668C4;--navy:#0B2545;
+  --good:#127a4b;--good-soft:#e2f5ec;--warn:#9a4b06;--warn-soft:#fdeede;--bad:#b3261e;--bad-soft:#fdeceb}
+@media (prefers-color-scheme:dark){:root{--bg:#0e141c;--card:#161e28;--line:#2b3644;--ink:#e8edf4;--muted:#95a3b6;
+  --brand:#5FA8E8;--navy:#8FC9F2;--good:#4ad48f;--good-soft:#12312a;--warn:#f0a95e;--warn-soft:#332412;--bad:#ff8b82;--bad-soft:#331614;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
+.wrap{max-width:640px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+.top{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,#1668C4,#0B2545);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px;flex:none}
+.top b{font-size:17px}
+.top small{display:block;color:var(--muted);font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{margin:0 0 10px;font-size:16px}
+.big{font-size:24px;font-weight:900;letter-spacing:-.02em;margin:0}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:800;vertical-align:3px;margin-left:6px}
+.tag.in{background:#E7F2FC;color:#1668C4}.tag.out{background:var(--good-soft);color:var(--good)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.kv:last-child{border-bottom:0}
+.kv span{color:var(--muted);flex:none}
+.kv b{text-align:right;min-width:0}
+.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.shots figure{margin:0}
+.shots img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:var(--line);display:block}
+.shots figcaption{font-size:12px;color:var(--muted);margin-top:3px}
+.add{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.add + .add{margin-top:8px}
+.add .amt{font-weight:900}
+.btns{display:flex;gap:8px}
+.btns button{flex:1;font:inherit;font-weight:800;border-radius:10px;padding:11px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.btns button.yes{background:var(--brand);border-color:var(--brand);color:#fff}
+.btns button:disabled{opacity:.5}
+.state{font-weight:800}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:420px;font-size:13.5px}
+th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{background:var(--bg);color:var(--muted);font-size:12.5px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.sum{display:flex;justify-content:space-between;align-items:baseline;font-weight:900;font-size:18px;padding-top:10px}
+.msg{text-align:center;padding:30px 16px}
+.msg b{display:block;font-size:17px;margin-bottom:6px}
+.msg p{margin:0;color:var(--muted)}
+.foot{color:var(--muted);font-size:12px;text-align:center}
+.tel{font-weight:800;user-select:all}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="top"><div class="logo">차곳간</div><div><b id="shopName">차곳간</b><small id="shopSub">불러오는 중이에요…</small></div></div>
+  <div class="card msg" id="msg"><b>불러오는 중이에요…</b><p>잠시만 기다려 주세요.</p></div>
+</div>
+<script>
+(function(){
+  "use strict";
+  /* 부르는 곳 — 워시(대문자 24자 보기코드) · 체크 청구서(소문자 k + 18자) */
+  var BASE = "https://ybfpxmmjofyvfprtvmhj.supabase.co/functions/v1/";
+  var WASH = BASE + "wash-api?forceFunctionRegion=ap-northeast-2";
+  var CHECK = BASE + "check-api";
+  var app = document.getElementById("app");
+
+  function el(tag, cls, text){ var e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=String(text); return e; }
+  function won(n){ return Math.round(Number(n)||0).toLocaleString("ko-KR")+"원"; }
+  function dt(s){ var d=new Date(s); if(!s||isNaN(d)) return ""; return (d.getMonth()+1)+"월 "+d.getDate()+"일 "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+  function day(s){ var d=new Date(s); if(!s||isNaN(d)) return ""; return d.getFullYear()+"년 "+(d.getMonth()+1)+"월 "+d.getDate()+"일"; }
+  function ym(s){ var m=/^(\d{4})-(\d{2})/.exec(String(s||"")); return m?(Number(m[1])+"년 "+Number(m[2])+"월"):String(s||""); }
+  function telText(s){ var d=String(s||"").replace(/\D/g,""); if(d.length===11) return d.replace(/(\d{3})(\d{4})(\d{4})/,"$1-$2-$3"); if(d.length===10) return d.replace(/(\d{2,3})(\d{3,4})(\d{4})/,"$1-$2-$3"); return d; }
+  function kv(box, k, v){ if(v==null||v==="") return; var r=el("div","kv"); r.appendChild(el("span",null,k)); r.appendChild(el("b",null,v)); box.appendChild(r); }
+  function card(title){ var c=el("section","card"); if(title) c.appendChild(el("h2",null,title)); app.appendChild(c); return c; }
+  function clear(){ while(app.children.length>1) app.removeChild(app.lastChild); }
+  function head(name, sub){ document.getElementById("shopName").textContent=name||"차곳간"; document.getElementById("shopSub").textContent=sub||""; }
+  function stop(title, text){ clear(); var c=card(); c.className="card msg"; c.appendChild(el("b",null,title)); c.appendChild(el("p",null,text)); head("차곳간",""); }
+  function shopFoot(shop){
+    if(!shop) return;
+    var c=card("맡긴 곳"); kv(c,"업체",shop.name); var t=telText(shop.phone);
+    if(t){ var r=el("div","kv"); r.appendChild(el("span",null,"전화")); var b=el("b","tel",t); r.appendChild(b); c.appendChild(r); }
+    kv(c,"주소",shop.addr);
+  }
+  function until(s){ var d=day(s); if(d) app.appendChild(el("p","foot","이 주소는 "+d+"까지 열려요.")); }
+  function safeImg(u){ return /^https:\/\/[a-z0-9.-]+\.supabase\.co\//i.test(String(u||"")); }
+
+  function post(url, fn, args){
+    return fetch(url, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, referrerPolicy:"no-referrer", cache:"no-store",
+      body: JSON.stringify({ shop:"", token:"", fn:fn, args:args }) })
+      .then(function(r){ return r.text(); })
+      .then(function(t){ var j; try{ j=JSON.parse(t); }catch(e){ throw new Error(""); }
+        if(j && j.__err) throw new Error(String(j.__err)); return j ? j.result : null; });
+  }
+  function ko(e, fb){ var m=String((e&&e.message)||""); return (/[가-힣]/.test(m) && !/[A-Za-z]{4,}/.test(m)) ? m : fb; }
+
+  /* ───── 워시: 차 한 대 ───── */
+  function drawCar(j, code){
+    clear(); var car=j.car||{};
+    head(j.shop&&j.shop.name, "차량 보기");
+    var c=card(); var h=el("p","big",car.plate||"차량");
+    var tg=el("span","tag "+(car.status==="출고"?"out":"in"), car.status==="출고"?"출고":"작업 중"); h.appendChild(tg); c.appendChild(h);
+    kv(c,"차종",car.model); kv(c,"상사",car.company); kv(c,"딜러",car.dealer);
+    kv(c,"들어온 때",dt(car.inAt)); kv(c,"나간 때",dt(car.outAt)); kv(c,"보낸 곳",car.dest);
+    kv(c,"작업",(car.works||[]).join(" · ")); kv(c,"메모",car.memo);
+    var shots=(j.shots||[]).filter(function(s){ return s && safeImg(s.url); });
+    if(shots.length){ var p=card("사진"); var g=el("div","shots");
+      shots.forEach(function(s){ var f=el("figure"); var im=el("img"); im.alt=s.tag||"사진"; im.loading="lazy"; im.referrerPolicy="no-referrer"; im.src=s.url;
+        f.appendChild(im); f.appendChild(el("figcaption",null,s.tag||"")); g.appendChild(f); }); p.appendChild(g); }
+    var adds=j.adds||[];
+    if(adds.length){ var a=card("추가 작업");
+      adds.forEach(function(w){
+        var b=el("div","add"); b.appendChild(el("div",null,w.text||"추가 작업"));
+        if(w.amount) b.appendChild(el("div","amt",won(w.amount)));
+        var ws=(w.shots||[]).filter(safeImg);
+        if(ws.length){ var g2=el("div","shots"); ws.forEach(function(u){ var im=el("img"); im.alt="추가 작업 사진"; im.loading="lazy"; im.referrerPolicy="no-referrer"; im.src=u; var f=el("figure"); f.appendChild(im); g2.appendChild(f); }); b.appendChild(g2); }
+        var st=el("div","state"); b.appendChild(st);
+        function paint(s){ st.textContent = s==="진행" ? "진행하기로 답했어요" : (s==="안 함" ? "하지 않기로 답했어요" : "답을 기다리고 있어요"); }
+        paint(w.state);
+        if(String(w.state||"대기")==="대기"){
+          var bs=el("div","btns"); var y=el("button","yes","진행해 주세요"); var n=el("button",null,"하지 않을게요");
+          y.type=n.type="button"; bs.appendChild(y); bs.appendChild(n); b.appendChild(bs);
+          function ans(yes){ y.disabled=n.disabled=true;
+            post(WASH,"viewAnswer",[code,w.id,yes]).then(function(r){
+              if(r&&r.ok){ paint(r.state); bs.remove(); } else { st.textContent=(r&&r.why)||"답을 남기지 못했어요. 맡기신 업체로 전화해 주세요."; y.disabled=n.disabled=false; }
+            },function(e){ st.textContent=ko(e,"답을 남기지 못했어요. 맡기신 업체로 전화해 주세요."); y.disabled=n.disabled=false; }); }
+          y.onclick=function(){ ans(true); }; n.onclick=function(){ ans(false); };
+        }
+        a.appendChild(b);
+      });
+    }
+    shopFoot(j.shop); until(j.until);
+  }
+
+  /* ───── 워시: 한 달 청구서 ───── */
+  function drawWashBill(j){
+    clear(); var b=j.bill||{};
+    head(j.shop&&j.shop.name, "청구 내역");
+    var c=card(); c.appendChild(el("p","big",ym(b.month)+" 청구 내역"));
+    kv(c,"받는 곳",b.name); kv(c,"소속 상사",b.company); kv(c,"대수",(b.cars||0)+"대");
+    if(b.taxOn){ kv(c,"공급가액",won(b.supply)); kv(c,"부가세",won(b.vat)); }
+    if(b.paid) kv(c,"받은 금액",won(b.paid));
+    var s=el("div","sum"); s.appendChild(el("span",null,b.paid?"입금할 금액":"청구 금액")); s.appendChild(el("span",null,won(b.paid?b.due:b.amount))); c.appendChild(s);
+    var p=card("입금 안내"); kv(p,"입금 기한",b.dueDate?day(b.dueDate):"업체에 문의"); kv(p,"계좌",b.bank||"업체에 문의");
+    var rows=b.rows||[];
+    if(rows.length){ var t=card("차량별 내역"); var box=el("div","tbl"); var tb=el("table");
+      var hr=el("tr"); ["날짜","차량번호","딜러","작업","금액"].forEach(function(x,i){ var th=el("th",i===4?"n":null,x); hr.appendChild(th); });
+      var th=el("thead"); th.appendChild(hr); tb.appendChild(th); var bd=el("tbody");
+      rows.forEach(function(r){ var tr=el("tr"); var d=new Date(r.inAt);
+        [isNaN(d)?"":((d.getMonth()+1)+"."+d.getDate()), r.plate, r.dealer, (r.works||[]).join(" · "), won(r.total)].forEach(function(x,i){ tr.appendChild(el("td",i===4?"n":null,x)); });
+        bd.appendChild(tr); });
+      tb.appendChild(bd); box.appendChild(tb); t.appendChild(box); }
+    shopFoot(j.shop); until(j.until);
+  }
+
+  /* ───── 체크: 청구서 (k + 18자) ───── */
+  var KIND={fee:"검사비",ext:"검사비(전산 외)",repair:"정비비"};
+  function drawCheck(j){
+    clear(); var iv=j.invoice||{}, of=j.office||{};
+    head(of.name, "청구 내역");
+    var c=card(); c.appendChild(el("p","big",ym(iv.ym)+" 청구 내역"));
+    kv(c,"받는 곳",iv.bill_to_name); kv(c,"상사",iv.company_name);
+    var n=[]; if(iv.dom_n) n.push("국산 "+iv.dom_n); if(iv.imp_n) n.push("수입 "+iv.imp_n); if(iv.etc_n) n.push("기타 "+iv.etc_n);
+    kv(c,"대수",n.join(" · "));
+    if(iv.fee_amount) kv(c,"검사비",won(iv.fee_amount)); if(iv.ext_amount) kv(c,"검사비(전산 외)",won(iv.ext_amount)); if(iv.repair_amount) kv(c,"정비비",won(iv.repair_amount));
+    var s=el("div","sum"); s.appendChild(el("span",null,"합계")); s.appendChild(el("span",null,won(iv.total_amount))); c.appendChild(s);
+    var p=card("입금 안내"); kv(p,"검사비 계좌",of.bank_fee); if(iv.repair_amount) kv(p,"정비비 계좌",of.bank_repair);
+    var rows=j.rows||[];
+    if(rows.length){ var t=card("내역"); var box=el("div","tbl"); var tb=el("table");
+      var hr=el("tr"); ["구분","딜러","내용","수량","금액"].forEach(function(x,i){ hr.appendChild(el("th",i>=3?"n":null,x)); });
+      var th=el("thead"); th.appendChild(hr); tb.appendChild(th); var bd=el("tbody");
+      rows.forEach(function(r){ var tr=el("tr"); [KIND[r.kind]||r.kind||"", r.dealer_name, r.item, r.qty, won(r.amount)].forEach(function(x,i){ tr.appendChild(el("td",i>=3?"n":null,x)); }); bd.appendChild(tr); });
+      tb.appendChild(bd); box.appendChild(tb); t.appendChild(box); }
+    var f=card("보낸 곳"); kv(f,"검사소",of.name); kv(f,"대표",of.owner_name); var tl=telText(of.tel);
+    if(tl){ var r=el("div","kv"); r.appendChild(el("span",null,"전화")); r.appendChild(el("b","tel",tl)); f.appendChild(r); }
+  }
+
+  /* ───── 시작 ───── */
+  var q=new URLSearchParams(location.search), c=String(q.get("c")||"").trim();
+  try{ history.replaceState(null,"",location.pathname+"?c="+encodeURIComponent(c)); }catch(e){}
+  if(/^k[a-z0-9]{18}$/.test(c)){
+    post(CHECK,"invoiceView",[c]).then(function(r){
+      if(!r) return stop("청구서를 열지 못했어요","잠시 뒤 다시 열어 주세요.");
+      if(r.expired) return stop("기한이 지난 주소예요", r.msg||"보낸 곳에 다시 요청해 주세요.");
+      drawCheck(r);
+    },function(e){ stop("청구서를 열지 못했어요", ko(e,"잠시 뒤 다시 열어 주세요.")); });
+  } else if(/^[A-Fa-f0-9]{24}$/.test(c)){
+    post(WASH,"viewCar",[c]).then(function(r){
+      if(!r||!r.ok) return stop("열 수 없는 주소예요", (r&&r.why)||"주소가 닫혔거나 올바르지 않습니다. 맡기신 업체로 문의해 주세요");
+      if(r.kind==="bill") drawWashBill(r); else drawCar(r, c);
+    },function(e){ stop("열지 못했어요", ko(e,"잠시 뒤 다시 열어 주세요.")); });
+  } else {
+    stop("열 수 없는 주소예요","받으신 알림의 버튼을 다시 눌러 주세요.");
+  }
+})();
+</script>
+</body>
+</html>
