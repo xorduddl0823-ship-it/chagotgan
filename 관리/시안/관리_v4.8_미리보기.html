@@ -2253,6 +2253,9 @@ input[type=checkbox]:checked::after{opacity:1}
 .cgg-fp.jfp{display:inline-flex;align-items:stretch;overflow:hidden}
 .cgg-fp.jfp select{margin:0 -13px;padding:0 13px;height:auto;align-self:stretch}
 @media (max-width:600px){ .cgg-fp.jfp select{margin:0 -10px;padding:0 10px} }
+/* 관리 v4.8 — 폰 달력 (체크와 같은 값) · 폰 목록 날짜 안 쪼개기 */
+.cal .amt .am{display:none}
+@media (max-width:600px){.cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.cal .d{min-width:0;min-height:58px;padding:4px 3px;overflow:hidden}.cal .amt{font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cal .amt .aw{display:none}.cal .amt .am{display:inline}.cal .todaytag{font-size:9.5px;white-space:nowrap}.cgg-mrow .t b span{white-space:nowrap}}
 /* ═══ 공통 부품 (디자인 방 · 글자 그대로) ═══ */
 /* ═══════════════════════════════════════════════════════════════════
    차곳간 공통 부품 · J안 4판 · cgg-j4 1.5 (2026-10-15, 디자인 방)
@@ -3030,6 +3033,7 @@ function phoneFmt(v){
   return s;
 }
 function won(n){ return (Number(n)||0).toLocaleString("ko-KR")+"원"; }
+function manwon(n){ n=Number(n)||0; if(Math.abs(n)<10000) return won(n); var m=Math.round(n/1000)/10; return (m%1?m.toFixed(1):String(m))+"만"; }
 function dt(v,withTime){
   if(!v) return "-";
   var d=new Date(v); if(isNaN(d)) return "-";
@@ -3309,7 +3313,7 @@ function viewSummary(){
     if(v && v.r) parts.push('<span style="color:var(--danger)">체험 '+v.r+'</span>');
     cal += '<div class="d'+(isToday?" today":"")+'" data-k="'+k+'">'+
       '<div class="n'+(dow===0?" sun":"")+'">'+day+(isToday?'<span class="todaytag">오늘</span>':'')+'</div>'+
-      (v && v.amt ? '<div class="amt">'+won(v.amt)+'</div>' : '')+
+      (v && v.amt ? '<div class="amt" title="'+esc(won(v.amt))+'"><span class="aw">'+won(v.amt)+'</span><span class="am">'+manwon(v.amt)+'</span></div>' : '')+
       (parts.length ? '<div class="cars">'+parts.join(" · ")+'</div>' : '')+
       (ms.length ? ('<div class="memo'+(open.length?"":" done")+'" title="'+esc(ms.map(function(m){return m.title;}).join("\n"))+'"><span class="jic">'+CGG.ic("file")+'</span> '+
         esc((open[0]||ms[0]).title)+(ms.length>1?(" 외 "+(ms.length-1)):"")+'</div>') : '')+

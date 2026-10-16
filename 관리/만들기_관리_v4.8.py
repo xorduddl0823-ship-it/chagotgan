@@ -30,5 +30,17 @@ rep("""    return { on:$("exOn").checked, trial:$("exTrial").checked, cash:$("ex
              days:dd, time:twoD(eh.value)+":"+twoD(em.value) };
     if(bal!==undefined) o.balMin=bal;
     return o;""")
+# 디자인 방 폰 깨짐 목록 (디자인/폰_깨짐_목록.md · 관리-1 · 관리-2)
+#  관리-1 홈 달력: 폰에서 칸 너비 고정 + 금액은 «3.5만» (PC 는 정확한 금액 그대로, 달력 아래 합계에 정확한 금액)
+rep("""      (v && v.amt ? '<div class="amt">'+won(v.amt)+'</div>' : '')+""",
+    """      (v && v.amt ? '<div class="amt" title="'+esc(won(v.amt))+'"><span class="aw">'+won(v.amt)+'</span><span class="am">'+manwon(v.amt)+'</span></div>' : '')+""")
+rep('\nfunction won(n){ return (Number(n)||0).toLocaleString("ko-KR")+"원"; }', '\nfunction won(n){ return (Number(n)||0).toLocaleString("ko-KR")+"원"; }\nfunction manwon(n){ n=Number(n)||0; if(Math.abs(n)<10000) return won(n); var m=Math.round(n/1000)/10; return (m%1?m.toFixed(1):String(m))+"만"; }')
+rep("/* ═══ 공통 부품 (디자인 방 · 글자 그대로) ═══ */",
+    "/* 관리 v4.8 — 폰 달력 (체크와 같은 값) · 폰 목록 날짜 안 쪼개기 */\n"
+    ".cal .amt .am{display:none}\n"
+    "@media (max-width:600px){.cal{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.cal .d{min-width:0;min-height:58px;padding:4px 3px;overflow:hidden}"
+    ".cal .amt{font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cal .amt .aw{display:none}.cal .amt .am{display:inline}"
+    ".cal .todaytag{font-size:9.5px;white-space:nowrap}.cgg-mrow .t b span{white-space:nowrap}}\n"
+    "/* ═══ 공통 부품 (디자인 방 · 글자 그대로) ═══ */")
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", OUT, len(s), "글자")
