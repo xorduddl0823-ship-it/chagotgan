@@ -629,19 +629,27 @@ async function invoiceView(c: Ctx, key: string) {
   if (!inv) throw new Error("청구서를 찾지 못했습니다. 주소를 다시 확인해 주세요.");
   const until = inv.view_until ? Date.parse(S(inv.view_until))
     : Date.parse(S(inv.created_at)) + BILL_VIEW_OLD_DAYS * 86400000;
-  if (isFinite(until) && until < Date.now()) return { expired: true, msg: "기한이 지난 주소예요. 보낸 곳에 다시 요청해 주세요." };
-  const { data: rows } = await db.from("check_invoice_row").select("kind, dealer_name, item, qty, unit, amount").eq("invoice_id", inv.id);
   const { data: off } = await db.from("check_office")
-    .select("name, biz_no, owner_name, tel, bank_fee, bank_repair").eq("id", inv.office_id).maybeSingle();
+    .select("name, tel, bank_fee, bank_repair").eq("id", inv.office_id).maybeSingle();
+  if (isFinite(until) && until < Date.now()) return { expired: true, office: { name: S(off?.name), tel: S(off?.tel) } };
+  const { data: rows } = await db.from("check_invoice_row").select("kind, item, qty, unit, amount").eq("invoice_id", inv.id);
   await db.from("check_invoice").update({
     view_at: new Date().toISOString(), view_n: N(inv.view_n) + 1,          // 열어봄(참고 — 카카오 미리보기도 올림)
   }).eq("id", inv.id);
-  /* 정한 칸만 (select 와 별도로 한 번 더 걸러 냄) */
-  const pick = (o: any, ks: string[]) => { const r: any = {}; for (const k of ks) if (o && o[k] !== undefined) r[k] = o[k]; return r; };
-  const pub = pick(inv, ["id", "ym", "bill_to_name", "company_name", "members", "issuer_kind", "issuer_name", "fee_amount",
-    "ext_amount", "repair_amount", "total_amount", "dom_n", "imp_n", "etc_n", "created_at"]);
-  return { invoice: pub, rows: (rows ?? []).map((x: any) => pick(x, ["kind", "dealer_name", "item", "qty", "unit", "amount"])),
-    office: pick(off, ["name", "biz_no", "owner_name", "tel", "bank_fee", "bank_repair"]) };
+  /* 정한 칸만 — 체크 v43 약속 3절 모양 (검사소 id·열쇠·세금계산서 칸·차 id·사업자번호 없음) */
+  const offPub = { name: S(off?.name), tel: S(off?.tel), bank_fee: S(off?.bank_fee), bank_repair: S(off?.bank_repair) };
+  const fee: Record<string, any> = {}, rep: any[] = [];
+  let feeN = 0, feeAmt = 0, repAmt = 0;
+  for (const x of rows ?? []) {
+    const amt = N(x.amount);
+    if (S(x.kind) === "repair") { rep.push({ name: S(x.item) || "정비비", amount: amt }); repAmt += amt; continue; }
+    const k = S(x.item) + "|" + N(x.unit);
+    const g = fee[k] || (fee[k] = { name: S(x.item) || "검사비", unit: N(x.unit), n: 0, amount: 0 });
+    g.n += Math.max(1, N(x.qty)); g.amount += amt; feeN += Math.max(1, N(x.qty)); feeAmt += amt;
+  }
+  return { ym: S(inv.ym), to: S(inv.bill_to_name), members: Array.isArray(inv.members) ? inv.members.map(S) : [],
+    total: N(inv.total_amount), office: offPub,
+    fee: { n: feeN, amount: feeAmt, lines: Object.values(fee) }, rep: { n: rep.length, amount: repAmt, lines: rep } };
 }
 
 /** v33: 청구서 주소 새로 만들기 (대표만 · 예전 주소는 더 안 열림) — [청구서 id] */
@@ -713,8 +721,10 @@ async function ataSend(office: any, to: string, tplKey: string, vars0: Record<st
     return { ok: false, how: "", why: sendErrEasy("", "", e) };
   }
 }
-async function billSend(ctx: Ctx, opt: any) {
+/** 체크 v43 약속: billSend(ym, ids, {due, test}) — 예전 모양 billSend({ym, ids, due, test})도 받음 */
+async function billSend(ctx: Ctx, a0: any, a1?: any, a2?: any) {
   bossOnly(ctx);
+  const opt: any = (a0 && typeof a0 === "object" && !Array.isArray(a0)) ? a0 : Object.assign({}, a2 || {}, { ym: a0, ids: a1 });
   const ym = S(opt?.ym);
   if (!/^\d{4}-\d{2}$/.test(ym)) throw new Error("청구 월을 다시 골라 주세요.");
   const ids = [...new Set((Array.isArray(opt?.ids) ? opt.ids : []).map(S).filter(Boolean))];
@@ -819,30 +829,37 @@ async function remindCars(officeId: string, days: number, rule: { steps: number[
     .eq("office_id", officeId).gte("check_date", from).lte("check_date", to).not("dealer_id", "is", null).limit(5000);
   const ids = (cars ?? []).map((c: any) => S(c.id));
   const sentSet = new Set<string>();
+  const sentAt: Record<string, string> = {};
   if (ids.length) {
-    const { data: lg } = await db.from("check_remind_log").select("car_id,step").eq("office_id", officeId).in("car_id", ids);
-    (lg ?? []).forEach((x: any) => sentSet.add(S(x.car_id) + ":" + N(x.step)));
+    const { data: lg } = await db.from("check_remind_log").select("car_id,step,at").eq("office_id", officeId).in("car_id", ids);
+    (lg ?? []).forEach((x: any) => { sentSet.add(S(x.car_id) + ":" + N(x.step)); sentAt[S(x.car_id) + ":" + N(x.step)] = S(x.at); });
   }
   return (cars ?? []).map((c: any) => {
     const exp = addDays(S(c.check_date), days);
     const left = daysBetween(today, exp);
     const step = stepOf(left, rule.steps, rule.past);
     return { carId: S(c.id), dealerId: S(c.dealer_id), plate: S(c.plate), car: S(c.car_name), date: S(c.check_date).slice(0, 10),
-      exp, left, step, off: c.remind_off === true, sent: step >= 0 && sentSet.has(S(c.id) + ":" + step) };
+      exp, left, step, off: c.remind_off === true, sent: step >= 0 && sentSet.has(S(c.id) + ":" + step),
+      sentAt: step >= 0 ? (sentAt[S(c.id) + ":" + step] || "") : "" };
   }).filter((x: any) => x.step >= 0);
 }
-async function remindList(ctx: Ctx, opt: any) {
+/** 체크 v43 약속: remindList(range) — "today"·"week"·"15d"·"month"·"all" → {days, rows:[…, sentAt]} · 알림 뺀 차 제외 */
+const RANGE_DAYS: Record<string, number> = { today: 0, week: 7, "15d": 15, month: 30, all: 60 };
+async function remindList(ctx: Ctx, range: any) {
   const rule = await remindRuleOf(S(ctx.office.id));
   const days = N(ctx.office.ins_valid_days) || 120;
-  const range = Math.min(60, Math.max(1, parseInt(S(opt?.range || "30"), 10) || 30));
-  const list = await remindCars(S(ctx.office.id), days, rule, range);
+  const r0 = typeof range === "object" && range ? S(range.range) : S(range);
+  const rangeDays = RANGE_DAYS[r0] ?? Math.min(60, Math.max(0, parseInt(r0, 10) || 30));
+  const list = (await remindCars(S(ctx.office.id), days, rule, rangeDays)).filter((x: any) => !x.off && x.left <= rangeDays);
   const dIds = [...new Set(list.map((x: any) => x.dealerId))];
   const names: Record<string, string> = {};
   if (dIds.length) {
     const { data: ds } = await db.from("check_dealer").select("id,name").eq("office_id", ctx.office.id).in("id", dIds);
     (ds ?? []).forEach((d: any) => (names[S(d.id)] = S(d.name)));
   }
-  return list.map((x: any) => Object.assign({}, x, { dealer: names[x.dealerId] || "" })).sort((a: any, b: any) => a.left - b.left);
+  const rows = list.map((x: any) => ({ carId: x.carId, dealerId: x.dealerId, dealer: names[x.dealerId] || "", plate: x.plate, car: x.car,
+    date: x.date, exp: x.exp, left: x.left, step: x.step, sentAt: x.sentAt || "" })).sort((a: any, b: any) => a.left - b.left);
+  return { days, rows };
 }
 function remindKey() {
   const b = crypto.getRandomValues(new Uint8Array(15));
@@ -857,7 +874,7 @@ async function remindOne(office: any, dealer: any, cars: any[], days: number, te
     /* 같은 차·같은 단계는 한 번만 — 기록을 먼저 넣고, 이미 있는 차는 뺌 */
     const fresh: any[] = [];
     for (const c of cars) {
-      const { error } = await db.from("check_remind_log").insert({ office_id: S(office.id), car_id: c.carId, step: c.step, dealer_id: S(dealer.id) });
+      const { error } = await db.from("check_remind_log").insert({ office_id: S(office.id), car_id: c.carId, step: c.step, dealer_id: S(dealer.id), at: new Date().toISOString() });
       if (!error) fresh.push(c);
     }
     cars = fresh;
@@ -883,34 +900,40 @@ async function remindOne(office: any, dealer: any, cars: any[], days: number, te
     await db.from("check_remind_log").delete().eq("office_id", S(office.id)).eq("dealer_id", S(dealer.id)).in("car_id", cars.map((c) => c.carId));
   return r;
 }
-async function remindSend(ctx: Ctx, opt: any) {
+/** 체크 v43 약속: remindSend(carIds, {test}) — 고른 차를 딜러별로 묶어 한 통씩 · 대표만 · 최대 300 · 이 검사소 차만 */
+async function remindSend(ctx: Ctx, a0: any, a1?: any) {
   bossOnly(ctx);
-  const dIds = [...new Set((Array.isArray(opt?.dealerIds) ? opt.dealerIds : []).map(S).filter(Boolean))];
-  if (!dIds.length) throw new Error("보낼 딜러를 골라 주세요.");
-  if (dIds.length > 100) throw new Error("한 번에 100명까지 보낼 수 있습니다.");
-  const test = opt?.test === true;
+  const carIds = [...new Set((Array.isArray(a0) ? a0 : []).map(S).filter(Boolean))];
+  const test = (a1 && a1.test === true);
+  if (!carIds.length) throw new Error("보낼 차를 골라 주세요.");
+  if (carIds.length > 300) throw new Error("한 번에 300대까지 보낼 수 있습니다.");
   const o = ctx.office;
-  const { data: ds } = await db.from("check_dealer").select("id,name,tel").eq("office_id", o.id).in("id", dIds);
-  if ((ds ?? []).length !== dIds.length) throw new Error("이 검사소 딜러가 아닌 것이 섞여 있습니다. 화면을 새로 고쳐 주세요.");
+  const { data: own } = await db.from("check_car").select("id").eq("office_id", o.id).in("id", carIds);
+  if ((own ?? []).length !== carIds.length) throw new Error("이 검사소 차가 아닌 것이 섞여 있습니다. 화면을 새로 고쳐 주세요.");
   const rule = await remindRuleOf(S(o.id));
   const days = N(o.ins_valid_days) || 120;
-  const list = (await remindCars(S(o.id), days, rule, Math.max(...rule.steps))).filter((x: any) => !x.off && !x.sent);
+  const pick = new Set(carIds);
+  const list = (await remindCars(S(o.id), days, rule, 60)).filter((x: any) => pick.has(x.carId) && !x.off && (test || !x.sent));
+  const byDealer = new Map<string, any[]>();
+  list.forEach((x: any) => { const v = byDealer.get(x.dealerId) ?? []; v.push(x); byDealer.set(x.dealerId, v); });
   const results: any[] = [];
-  for (const d of (test ? (ds ?? []).slice(0, 1) : (ds ?? []))) {
-    const cars = list.filter((x: any) => x.dealerId === S(d.id));
-    if (!cars.length) { results.push({ dealer: S(d.name), dealerId: S(d.id), cars: 0, ok: false, why: "보낼 차가 없음" }); continue; }
-    results.push(await remindOne(o, d, cars, days, test, ctx.who));
-  }
-  await log(ctx, test ? "재검사 알림 시험" : "재검사 알림 보내기", { n: dIds.length, sent: results.filter((x) => x.ok).length });
+  if (!byDealer.size) return { sent: 0, test, results: [{ dealer: "", cars: 0, ok: false, how: "", why: "보낼 차가 없음(이미 보냈거나 대상이 아님)" }] };
+  const dIds = [...byDealer.keys()];
+  const { data: ds } = await db.from("check_dealer").select("id,name,tel").eq("office_id", o.id).in("id", test ? dIds.slice(0, 1) : dIds);
+  for (const d of ds ?? []) results.push(await remindOne(o, d, byDealer.get(S(d.id)) ?? [], days, test, ctx.who));
+  await log(ctx, test ? "재검사 알림 시험" : "재검사 알림 보내기", { cars: carIds.length, sent: results.filter((x) => x.ok).length });
   return { sent: results.filter((x) => x.ok).length, test, results };
 }
-async function remindOff(ctx: Ctx, opt: any) {
-  if (!["owner", "manager"].includes(S(ctx.role))) throw new Error("대표님이나 매니저만 할 수 있습니다.");
-  const ids = [...new Set((Array.isArray(opt?.carIds) ? opt.carIds : []).map(S).filter(Boolean))].slice(0, 500);
+/** 체크 v43 약속: remindOff(carIds, off) — 대표·직원 · 이 검사소 차만 → {n} */
+async function remindOff(ctx: Ctx, a0: any, a1?: any) {
+  const carIds = Array.isArray(a0) ? a0 : (a0 && Array.isArray(a0.carIds) ? a0.carIds : []);
+  const off = Array.isArray(a0) ? a1 !== false : (a0?.off !== false);
+  const ids = [...new Set(carIds.map(S).filter(Boolean))].slice(0, 500);
   if (!ids.length) return { ok: true, n: 0 };
-  const { data, error } = await db.from("check_car").update({ remind_off: opt?.off !== false })
+  const { data, error } = await db.from("check_car").update({ remind_off: off })
     .eq("office_id", ctx.office.id).in("id", ids).select("id");
   if (error) throw new Error("서버를 준비하는 중입니다(SQL 12). 차곳간(010-9559-3663)으로 알려 주세요.");
+  await log(ctx, off ? "재검사 알림 빼기" : "재검사 알림 다시 넣기", { n: (data ?? []).length });
   return { ok: true, n: (data ?? []).length };
 }
 /** 로그인 없이 — 재검사 차량 목록 (딜러별 30일 · 그 검사소+딜러 차만 · 차대번호·전화 없음) */
@@ -920,16 +943,17 @@ async function remindView(c: Ctx, key: string) {
   if (k.length < 20) throw new Error("주소가 올바르지 않습니다.");
   const { data: v } = await db.from("check_remind_view").select("office_id,dealer_id,expires_at").eq("view_key", k).maybeSingle();
   if (!v) throw new Error("주소를 찾지 못했습니다. 받은 알림의 버튼을 다시 눌러 주세요.");
-  if (Date.parse(S(v.expires_at)) < Date.now()) return { expired: true, msg: "기한이 지난 주소예요. 검사소에 다시 요청해 주세요." };
   const { data: off } = await db.from("check_office").select("id,name,tel,ins_valid_days").eq("id", v.office_id).maybeSingle();
+  if (Date.parse(S(v.expires_at)) < Date.now()) return { expired: true, office: { name: S(off?.name), tel: S(off?.tel) } };
   const { data: dl } = await db.from("check_dealer").select("name").eq("office_id", v.office_id).eq("id", v.dealer_id).maybeSingle();
-  if (!off || !dl) return { expired: true, msg: "더 볼 수 없는 주소예요." };
+  if (!off || !dl) return { expired: true, office: { name: S(off?.name), tel: S(off?.tel) } };
   const days = N(off.ins_valid_days) || 120;
   const today = ymdK(kstNow());
-  const { data: cars } = await db.from("check_car").select("plate,car_name,check_date")
+  const { data: cars0 } = await db.from("check_car").select("plate,car_name,check_date,remind_off")
     .eq("office_id", v.office_id).eq("dealer_id", v.dealer_id)
     .gte("check_date", addDays(today, -days - 30)).lte("check_date", addDays(today, -days + 60)).limit(500);
-  const list = (cars ?? []).map((x: any) => { const exp = addDays(S(x.check_date), days);
+  const cars = (cars0 ?? []).filter((x: any) => x.remind_off !== true);
+  const list = cars.map((x: any) => { const exp = addDays(S(x.check_date), days);
     return { plate: S(x.plate), car: S(x.car_name), date: S(x.check_date).slice(0, 10), exp, left: daysBetween(today, exp) }; })
     .sort((a: any, b: any) => a.left - b.left);
   return { office: { name: S(off.name), tel: S(off.tel) }, dealer: S(dl.name), days, cars: list };
@@ -3245,12 +3269,12 @@ const FN: Record<string, (ctx: Ctx, ...a: any[]) => Promise<unknown>> = {
   invoiceView: (c, key) => invoiceView(c, key),
   invoiceRekey: (c, id) => invoiceRekey(c, id),
   // v33: 청구서 보내기 · 재검사 알림
-  billSend: (c, opt) => billSend(c, opt),
+  billSend: (c, a0, a1, a2) => billSend(c, a0, a1, a2),
   remindRule: (c) => remindRule(c),
   remindRuleSave: (c, opt) => remindRuleSave(c, opt),
-  remindList: (c, opt) => remindList(c, opt),
-  remindSend: (c, opt) => remindSend(c, opt),
-  remindOff: (c, opt) => remindOff(c, opt),
+  remindList: (c, range) => remindList(c, range),
+  remindSend: (c, a0, a1) => remindSend(c, a0, a1),
+  remindOff: (c, a0, a1) => remindOff(c, a0, a1),
   remindView: (c, key) => remindView(c, key),
   remindCron: (c, key) => remindCron(c, key),
   depositList: (c, opt) => depositList(c, opt),

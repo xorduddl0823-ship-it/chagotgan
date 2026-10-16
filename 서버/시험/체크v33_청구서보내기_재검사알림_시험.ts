@@ -80,9 +80,9 @@ const inv = (id: string) => store.check_invoice.find((x: any) => x.id === id);
 console.log("■ 청구서 보내기");
 let r = await call("billSend", [{ ym: "2026-09", ids: ["i1"] }], "chk_stf");
 check("직원은 못 보냄", !!r.__err && /대표님만/.test(r.__err), r);
-r = await call("billSend", [{ ym: "2026-09", ids: ["i1", "i9"] }], "chk_own");
+r = await call("billSend", ["2026-09", ["i1", "i9"], {}], "chk_own");
 check("다른 검사소 청구서가 섞이면 전체 거절", !!r.__err && /섞여/.test(r.__err) && sent.length === 0, r);
-r = await call("billSend", [{ ym: "2026-09", ids: ["i1"], test: true, due: "10월 25일" }], "chk_own");
+r = await call("billSend", ["2026-09", ["i1"], { test: true, due: "10월 25일" }], "chk_own");
 const t0 = sent[0] || {};
 check("내 번호로 시험: 로그인한 사람 번호로 한 통 · sent_at 안 바뀜", t0.to === "01011110000" && !inv("i1").sent_at, [r, t0.to]);
 check("본사 청구서 템플릿 · 변수는 서버 값 · 보기코드 k+열쇠", t0.kakaoOptions?.templateId === "T_BILL" && t0.kakaoOptions?.pfId === "PF" &&
@@ -90,7 +90,7 @@ check("본사 청구서 템플릿 · 변수는 서버 값 · 보기코드 k+열�
   t0.kakaoOptions.variables["#{기간}"] === "2026년 9월" && t0.kakaoOptions.variables["#{건수}"] === "2" &&
   t0.kakaoOptions.variables["#{입금기한}"] === "10월 25일" && t0.kakaoOptions.variables["#{계좌}"] === "국민 123-45 시험검사소", t0.kakaoOptions);
 sent.length = 0;
-r = await call("billSend", [{ ym: "2026-09", ids: ["i1", "i2"], due: "<script>" }], "chk_own");
+r = await call("billSend", ["2026-09", ["i1", "i2"], { due: "<script>" }], "chk_own");
 check("청구처 2곳: 등록 번호로 · 보냄 기록", r.sent === 2 && sent.map((m) => m.to).join() === "01033334444,01055556666" && !!inv("i1").sent_at && inv("i1").send_how === "ata", [r, sent.map((m) => m.to)]);
 check("입금기한이 이상한 글이면 «확인 후 입금»", sent[0]?.kakaoOptions?.variables["#{입금기한}"] === "확인 후 입금", sent[0]?.kakaoOptions?.variables);
 check("보기 주소 기한(약 90일) 정해짐", Date.parse(inv("i1").view_until) > Date.now() + 80 * 86400000, inv("i1").view_until);
@@ -108,11 +108,12 @@ check("보안 L1: 검사소가 쓴 글의 주소 모양은 지워서 보냄", !/
 
 console.log("■ 청구서 보기 (로그인 없이)");
 r = await call("invoiceView", ["kabcdefghijklmnopqr"]);
-check("k 코드로 열림 · 정한 칸만 (검사소 id·열쇠·세금계산서 칸 없음)", !!r.invoice && r.invoice.office_id === undefined && r.invoice.view_key === undefined &&
-  r.invoice.tax_key === undefined && r.invoice.total_amount === 1234000 && r.rows.length === 2 && r.rows[0].car_id === undefined, r);
+check("k 코드로 열림 · 약속 모양(ym·to·members·total·office·fee·rep) · 내부 칸 없음", r.ym === "2026-09" && r.to === "홍딜러" && r.total === 1234000 &&
+  r.fee?.n === 2 && r.fee?.amount === 2200 && r.fee?.lines?.[0]?.name === "국산" && r.fee.lines[0].n === 2 && r.rep?.n === 0 &&
+  r.office?.bank_fee === "국민 123-45 시험검사소" && !/office_id|view_key|tax_key|c-secret|biz_no/.test(JSON.stringify(r)), r);
 check("열어봄 기록", Number(inv("i1").view_n) >= 1);
 r = await call("invoiceView", ["oldoldoldoldoldold"]);
-check("기한 지난 청구서는 «만료»만", r.expired === true && !r.invoice, r);
+check("기한 지난 청구서는 «만료»와 검사소 이름·전화만", r.expired === true && r.office?.name === "시험검사소" && r.total === undefined, r);
 for (let i = 0; i < 5; i++) await call("invoiceView", ["bbbbbbbbbbbbbbbbbb"], "", "9.9.9.9");
 r = await call("invoiceView", ["bbbbbbbbbbbbbbbbbb"], "", "9.9.9.9");
 check("같은 IP 하루 한도", !!r.__err && /잠시 뒤/.test(r.__err), r);
@@ -127,26 +128,34 @@ r = await call("remindRule", [], "chk_own");
 check("기본 규칙 30·15·7 · 자동 꺼짐 · 템플릿 없음", JSON.stringify(r.steps) === "[30,15,7]" && r.auto === false && r.ataReady === false, r);
 r = await call("remindRuleSave", [{ steps: [30, 15, 7], auto: true }], "chk_own");
 check("템플릿 승인 전에는 매일 자동 못 켬", !!r.__err && /승인/.test(r.__err), r);
-r = await call("remindList", [{ range: "30" }], "chk_own");
-check("목록: 7일·6일 남은 차 (50일 남은 차·남의 차 없음)", Array.isArray(r) && r.length === 2 && r.every((x: any) => x.dealerId === "d1" && x.step === 7 && x.dealer === "홍딜러"), r);
-r = await call("remindSend", [{ dealerIds: ["d1", "d9"] }], "chk_own");
-check("다른 검사소 딜러가 섞이면 거절", !!r.__err, r);
+r = await call("remindList", ["month"], "chk_own");
+check("목록: 7일·6일 남은 차 (50일 남은 차·남의 차 없음) · 약속 모양", r.days === 120 && r.rows?.length === 2 &&
+  r.rows.every((x: any) => x.dealerId === "d1" && x.step === 7 && x.dealer === "홍딜러" && x.sentAt === "") && !JSON.stringify(r).includes("VIN"), r);
+r = await call("remindSend", [["c1", "c9"], {}], "chk_own");
+check("다른 검사소 차가 섞이면 거절", !!r.__err, r);
 sent.length = 0;
-r = await call("remindSend", [{ dealerIds: ["d1"] }], "chk_own");
+r = await call("remindSend", [["c1", "c2"], { test: true }], "chk_own");
+check("시험: 내 번호로 한 통 · 기록 안 남김", sent.length === 1 && sent[0].to === "01011110000" && store.check_remind_log.length === 0, [r, sent]);
+sent.length = 0;
+r = await call("remindSend", [["c1", "c2"], {}], "chk_own");
 const m = sent[0] || {};
 check("딜러 한 명에 한 통 (차 2대 묶음) · 템플릿 없어 문자", r.sent === 1 && sent.length === 1 && m.to === "01033334444" && !m.kakaoOptions && /2대/.test(m.text), [r, m]);
 check("문자에 차대번호·전화 원문 없음", !/VIN|3333-4444/.test(String(m.text)));
 sent.length = 0;
-r = await call("remindSend", [{ dealerIds: ["d1"] }], "chk_own");
+r = await call("remindSend", [["c1", "c2"], {}], "chk_own");
 check("같은 날 다시 눌러도 안 감", sent.length === 0, r);
+r = await call("remindList", ["month"], "chk_own");
+check("목록에 보낸 때(sentAt)", r.rows.every((x: any) => !!x.sentAt), r.rows);
 const vk = store.check_remind_view[0]?.view_key;
 r = await call("remindView", [vk]);
 check("보기 주소: 그 딜러 차만 · 차대번호 없음", r.dealer === "홍딜러" && r.cars.length === 2 && !JSON.stringify(r).includes("VIN") && !JSON.stringify(r).includes("남의차"), r);
 store.check_remind_view[0].expires_at = new Date(Date.now() - 1000).toISOString();
 r = await call("remindView", [vk]);
-check("30일 지나면 «만료»만", r.expired === true && !r.cars, r);
-r = await call("remindOff", [{ carIds: ["c3", "c9"], off: true }], "chk_own");
-check("알림 빼기: 이 검사소 차만", r.n === 1 && store.check_car.find((c: any) => c.id === "c9").remind_off === undefined, r);
+check("30일 지나면 «만료»와 검사소만", r.expired === true && !r.cars && r.office?.name === "시험검사소", r);
+r = await call("remindOff", [["c3", "c9"], true], "chk_stf");
+check("알림 빼기(직원도): 이 검사소 차만", r.n === 1 && store.check_car.find((c: any) => c.id === "c9").remind_off === undefined, r);
+r = await call("remindList", ["all"], "chk_own");
+check("뺀 차는 목록에 없음", !r.rows.some((x: any) => x.carId === "c3"), r.rows);
 r = await call("remindCron", ["wrong"]);
 check("자동: 열쇠가 틀리면 거절", !!r.__err, r);
 r = await call("remindCron", ["CRONKEY-0123456789"]);
