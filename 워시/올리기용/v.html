@@ -66,16 +66,14 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
   <div class="card msg" id="msg"><b>불러오는 중이에요…</b><p>잠시만 기다려 주세요.</p></div>
 </div>
 <script>
-/* ── 체크 방 조각 그대로 (체크/보기/청구서_보기_조각.js v1 · CSP 때문에 바깥 파일 대신 안에 넣음) ── */
+/* ── 체크 방 조각 그대로 (체크/보기/청구서_보기_조각.js · bd7dfb2 · CSP 때문에 바깥 파일 대신 안에 넣음) ── */
 /* 차곳간 체크 · 청구서 한 장 그리기 조각 v1 (2026-10-16 · 체크 방)
    쓰는 곳: app.cgg.co.kr/v.html (워시 방 화면) — 보기코드가 «k» 로 시작하면 check-api v33 invoiceView(코드)를 부르고,
             받은 값을 cggCheckInvoice(넣을 칸, 값) 으로 그립니다. (총괄 결정 ① 1안 · 서버 방이 k 코드 나누기)
-   받는 값 (check-api v33 invoiceView — 정한 칸만, 창구 약속 문서 3절):
-     { ym:"2026-09", to:"홍길동", members:["김철수"], total:1243000,
-       office:{ name, tel, bank_fee, bank_repair },
-       fee:{ n:40, amount:1177000, lines:[{ name:"국산차", unit:30000, n:32, amount:960000 }, …] },
-       rep:{ n:2, amount:66000, lines:[{ name:"타이어 교체", amount:44000 }, …] },
-       expired:false }
+   받는 값 (check-api v33 invoiceView — 서버/설계/19 · 정한 칸만):
+     { invoice:{ ym, bill_to_name, members:[…], fee_amount, ext_amount, repair_amount, total_amount, dom_n, imp_n, etc_n, … },
+       rows:[{ kind:"fee"|"ext"|"repair", dealer_name, item, qty, unit, amount }],
+       office:{ name, tel, bank_fee, bank_repair, … } }   또는   { expired:true, msg }
    글은 모두 esc 해서 넣고, 바깥 주소 · 스크립트를 넣지 않습니다. 비밀 열쇠 없음. */
 (function(){
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -99,10 +97,32 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
       '<div class="ln tot"><span>합계 (부가세 포함)</span><span>'+won(p.amount)+'원</span></div>'+
       (acct?'<div class="acct">입금 계좌 : '+esc(acct)+'</div>':'')+'</div>';
   }
-  window.cggCheckInvoice = function(el, d){
+  /* 서버 줄 → 검사비(품목 · 단가별로 묶음) / 정비비(작업별로 묶음) */
+  function sumUp(rows, isFee){
+    var m={}, order=[];
+    rows.forEach(function(r){
+      var k = isFee ? (r.item||"")+"|"+(Number(r.unit)||0) : (r.item||"");
+      if(!m[k]){ m[k]={name:r.item||(isFee?"검사":"정비"), unit:Number(r.unit)||0, n:0, amount:0}; order.push(k); }
+      m[k].n += Number(r.qty)||1; m[k].amount += Number(r.amount)||0;
+    });
+    return order.map(function(k){ return m[k]; });
+  }
+  window.cggCheckInvoice = function(el, res){
     if(!el) return;
     if(!document.getElementById("cgi-css")){ var st=document.createElement("style"); st.id="cgi-css"; st.textContent=CSS; document.head.appendChild(st); }
-    d = d || {};
+    res = res || {};
+    var inv = res.invoice || {}, rows = Array.isArray(res.rows) ? res.rows : [];
+    var feeRows = rows.filter(function(r){ return r && r.kind!=="repair"; }), repRows = rows.filter(function(r){ return r && r.kind==="repair"; });
+    var feeLines = sumUp(feeRows, true), repLines = sumUp(repRows, false);
+    function cnt(L){ return L.reduce(function(a,x){ return a+x.n; },0); }
+    var d = { expired: res.expired, office: res.office || {}, ym: inv.ym, to: inv.bill_to_name, members: inv.members,
+      total: inv.total_amount,
+      fee: { n: cnt(feeLines) || ((Number(inv.dom_n)||0)+(Number(inv.imp_n)||0)+(Number(inv.etc_n)||0)),
+             amount: (Number(inv.fee_amount)||0)+(Number(inv.ext_amount)||0), lines: feeLines },
+      rep: { n: cnt(repLines), amount: Number(inv.repair_amount)||0, lines: repLines } };
+    draw(el, d);
+  };
+  function draw(el, d){
     var off = d.office || {};
     if(d.expired){ el.innerHTML='<div class="cgi"><div class="msg"><b>기한이 지난 주소예요</b>'+esc(off.name||"검사소")+'에 문의해 주세요.</div></div>'; return; }
     var mem = (Array.isArray(d.members)?d.members:[]).filter(function(x){ return x && x!==d.to; });
@@ -114,7 +134,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
       '<div class="doc"><div class="ln tot"><span>모두 합계</span><span>'+won(d.total)+'원</span></div>'+
         '<div class="acct">문의 '+esc(off.tel||"")+'</div></div>'+
     '</div>';
-  };
+  }
 })();
 </script>
 <script>
@@ -214,39 +234,14 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
     shopFoot(j.shop); until(j.until);
   }
 
-  /* ───── 체크: 청구서 (k + 18자) ───── */
-  var KIND={fee:"검사비",ext:"검사비(전산 외)",repair:"정비비"};
-  function drawCheck(j){
-    clear(); var iv=j.invoice||{}, of=j.office||{};
-    head(of.name, "청구 내역");
-    var c=card(); c.appendChild(el("p","big",ym(iv.ym)+" 청구 내역"));
-    kv(c,"받는 곳",iv.bill_to_name); kv(c,"상사",iv.company_name);
-    var n=[]; if(iv.dom_n) n.push("국산 "+iv.dom_n); if(iv.imp_n) n.push("수입 "+iv.imp_n); if(iv.etc_n) n.push("기타 "+iv.etc_n);
-    kv(c,"대수",n.join(" · "));
-    if(iv.fee_amount) kv(c,"검사비",won(iv.fee_amount)); if(iv.ext_amount) kv(c,"검사비(전산 외)",won(iv.ext_amount)); if(iv.repair_amount) kv(c,"정비비",won(iv.repair_amount));
-    var s=el("div","sum"); s.appendChild(el("span",null,"합계")); s.appendChild(el("span",null,won(iv.total_amount))); c.appendChild(s);
-    var p=card("입금 안내"); kv(p,"검사비 계좌",of.bank_fee); if(iv.repair_amount) kv(p,"정비비 계좌",of.bank_repair);
-    var rows=j.rows||[];
-    if(rows.length){ var t=card("내역"); var box=el("div","tbl"); var tb=el("table");
-      var hr=el("tr"); ["구분","딜러","내용","수량","금액"].forEach(function(x,i){ hr.appendChild(el("th",i>=3?"n":null,x)); });
-      var th=el("thead"); th.appendChild(hr); tb.appendChild(th); var bd=el("tbody");
-      rows.forEach(function(r){ var tr=el("tr"); [KIND[r.kind]||r.kind||"", r.dealer_name, r.item, r.qty, won(r.amount)].forEach(function(x,i){ tr.appendChild(el("td",i>=3?"n":null,x)); }); bd.appendChild(tr); });
-      tb.appendChild(bd); box.appendChild(tb); t.appendChild(box); }
-    var f=card("보낸 곳"); kv(f,"검사소",of.name); kv(f,"대표",of.owner_name); var tl=telText(of.tel);
-    if(tl){ var r=el("div","kv"); r.appendChild(el("span",null,"전화")); r.appendChild(el("b","tel",tl)); f.appendChild(r); }
-  }
-
   /* ───── 시작 ───── */
   var q=new URLSearchParams(location.search), c=String(q.get("c")||"").trim();
   try{ history.replaceState(null,"",location.pathname+"?c="+encodeURIComponent(c)); }catch(e){}
   if(/^k[a-z0-9]{18}$/.test(c)){
     post(CHECK,"invoiceView",[c]).then(function(r){
-      if(!r) return stop("청구서를 열지 못했어요","잠시 뒤 다시 열어 주세요.");
-      /* 약속한 새 모양(체크 방 창구 약속 3절 · to/fee/rep)이면 체크 방 조각으로, 지금 v33 모양(invoice/rows/office)이면 워시 그림으로 */
-      if(!r.invoice && (r.to!=null || r.fee || r.rep || (r.expired && r.office)) && window.cggCheckInvoice){
-        clear(); head(r.office&&r.office.name, "청구 내역"); var box=card(); window.cggCheckInvoice(box, r); return; }
-      if(r.expired) return stop("기한이 지난 주소예요", r.msg||"보낸 곳에 다시 요청해 주세요.");
-      drawCheck(r);
+      if(!r || !(r.invoice || r.expired) || !window.cggCheckInvoice) return stop("청구서를 열지 못했어요","잠시 뒤 다시 열어 주세요.");
+      /* 그리기는 체크 방 조각 하나로 (서버 v33 답을 그대로 넘김 · e8c5587) */
+      clear(); head(r.office&&r.office.name, "청구 내역"); window.cggCheckInvoice(card(), r);
     },function(e){ stop("청구서를 열지 못했어요", ko(e,"잠시 뒤 다시 열어 주세요.")); });
   } else if(/^[A-Fa-f0-9]{24}$/.test(c)){
     post(WASH,"viewCar",[c]).then(function(r){
