@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>체크 청구서 조각 시험</title>
+<!-- 청구서_보기_조각.js 를 지어낸 값으로 그려 보는 시험 화면 (서버 연결 없음) -->
+<style>body{margin:0;background:#F4F6F9}.wrap{max-width:640px;margin:0 auto;padding:20px 16px}</style>
+<script src="청구서_보기_조각.js"></script>
+</head>
+<body>
+<div class="wrap" id="v"></div>
+<script>
+cggCheckInvoice(document.getElementById("v"), {
+  ym:"2026-09", to:"홍길동", members:["홍길동","김철수 <i>x</i>"], total:1306000,
+  office:{name:"예시 성능검사소", tel:"031-000-0000", bank_fee:"예시은행 000-000-000000", bank_repair:"예시은행 000-000-000001"},
+  fee:{n:40, amount:1240000, lines:[{name:"국산차",unit:30000,n:32,amount:960000},{name:"수입차",unit:40000,n:7,amount:280000},{name:"<img src=x onerror=alert(1)>",unit:0,n:1,amount:0}]},
+  rep:{n:2, amount:66000, lines:[{name:"타이어 교체",amount:44000},{name:"배터리 교체",amount:22000}]}
+});
+</script>
+</body>
+</html>
