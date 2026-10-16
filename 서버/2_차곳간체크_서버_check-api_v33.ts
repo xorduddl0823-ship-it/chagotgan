@@ -675,8 +675,25 @@ function dueText(v: unknown) {
   const t = S(v).trim().slice(0, 20);
   return /^[0-9가-힣.\-/ ]+$/.test(t) && /\d/.test(t) ? t : "확인 후 입금";
 }
-/** 본사 템플릿이 있으면 알림톡(안 되면 대체 문구 문자), 없으면 대체 문구 문자 — 돌려줌: how(ata|sms|lms) · ok · why */
-async function ataSend(office: any, to: string, tplKey: string, vars: Record<string, string>, smsText: string, meta: SendMeta) {
+/* v33(보안 L1): 검사소가 쓴 글이 공식 채널 변수로 나갈 때 — 주소 모양(://·www.·도메인) 지우고 길이 자르기 (보기코드·링크는 서버 값이라 그대로) */
+const VAR_KEEP = ["#{보기코드}", "#{링크}"];
+function cleanVar(v: unknown, max = 40) {
+  let t = S(v).replace(/[\r\n\t]+/g, " ");
+  t = t.replace(/[a-z][a-z0-9+.-]*:\/\//gi, "").replace(/www\./gi, "")
+    .replace(/[a-z0-9-]+(\.[a-z0-9-]+)*\.(com|net|org|kr|io|me|ly|xyz|app|site|link|shop|info|biz|co|cc|tk|gl|to|kakao|page)\b(\/\S*)?/gi, "");
+  t = t.replace(/\s{2,}/g, " ").trim().slice(0, max);
+  return t || "-";
+}
+function cleanVars(vars: Record<string, string>, max: Record<string, number> = {}) {
+  const o: Record<string, string> = {};
+  for (const k of Object.keys(vars)) o[k] = VAR_KEEP.includes(k) ? S(vars[k]) : cleanVar(vars[k], max[k] ?? 40);
+  return o;
+}
+/** 본사 템플릿이 있으면 알림톡(안 되면 대체 문구 문자), 없으면 대체 문구 문자 — 돌려줌: how(ata|sms|lms) · ok · why
+ *  변수는 여기서 청소하고, 문자 글도 청소한 변수로 만듦 */
+async function ataSend(office: any, to: string, tplKey: string, vars0: Record<string, string>, smsTpl: string, meta: SendMeta) {
+  const vars = cleanVars(vars0, { "#{계좌}": 60 });
+  const smsText = fillVars(smsTpl, vars);
   const from = onlyDigits(office?.sms_from) || onlyDigits(env("SMS_FROM"));
   if (!from) return { ok: false, how: "", why: "보내는 번호 없음" };
   const ha = await hqAta();
@@ -717,6 +734,13 @@ async function billSend(ctx: Ctx, opt: any) {
     const r: any = { id: inv.id, name: S(inv.bill_to_name), ok: false, how: "", why: "" };
     results.push(r);
     if (!test && inv.sent_at && Date.now() - Date.parse(S(inv.sent_at)) < 10 * 60000) { r.why = "방금 보냄(10분 안)"; continue; }
+    /* v33(보안 L2): 보내기 전에 «지금 보냄»을 조건부로 먼저 잡음 — 동시에 두 번 눌러도 한 번만 */
+    if (!test) {
+      const tenAgo = new Date(Date.now() - 10 * 60000).toISOString();
+      const { data: got } = await db.from("check_invoice").update({ sent_at: new Date().toISOString(), send_how: "sending" })
+        .eq("office_id", o.id).eq("id", inv.id).or("sent_at.is.null,sent_at.lt." + tenAgo).select("id");
+      if (!got?.length) { r.why = "방금 보냄(10분 안)"; continue; }
+    }
     let to = "";
     if (test) to = onlyDigits(ctx.who);
     else {
@@ -729,11 +753,11 @@ async function billSend(ctx: Ctx, opt: any) {
     const vars: Record<string, string> = Object.assign({}, base, { "#{받는곳}": S(inv.bill_to_name) || "-",
       "#{건수}": String(count ?? 0), "#{금액}": Math.round(N(inv.total_amount)).toLocaleString("ko-KR"),
       "#{보기코드}": "k" + S(inv.view_key) });
-    const s2 = await ataSend(o, to, "bill", vars, fillVars(BILL_SMS, vars), { shop: S(o.code), tpl: "check_bill", ref: S(inv.id) });
+    const s2 = await ataSend(o, to, "bill", vars, BILL_SMS, { shop: S(o.code), tpl: "check_bill", ref: S(inv.id) });
     Object.assign(r, s2);
     if (test) continue;
     const until = Math.max(Date.parse(S(inv.view_until)) || 0, Date.now() + BILL_VIEW_DAYS * 86400000);
-    await db.from("check_invoice").update({ sent_at: s2.ok ? new Date().toISOString() : inv.sent_at, send_how: s2.how || null,
+    await db.from("check_invoice").update({ sent_at: s2.ok ? new Date().toISOString() : (inv.sent_at ?? null), send_how: s2.how || null,
       send_err: s2.ok ? null : s2.why, view_until: new Date(until).toISOString() }).eq("id", inv.id);
     if (s2.ok) sent++;
   }
@@ -853,7 +877,7 @@ async function remindOne(office: any, dealer: any, cars: any[], days: number, te
     "#{유효일수}": String(days), "#{대수}": String(cars.length), "#{빠른만료일}": korMD(cars[0].exp),
     "#{대표차량}": (S(cars[0].plate) || "-") + (cars.length > 1 ? " 외 " + (cars.length - 1) + "대" : ""),
     "#{업체전화}": S(office.tel) || "-", "#{보기코드}": key };
-  const s2 = await ataSend(office, to, "check_remind", vars, fillVars(REMIND_SMS, vars), { shop: S(office.code), tpl: "check_remind", ref: S(dealer.id) });
+  const s2 = await ataSend(office, to, "check_remind", vars, REMIND_SMS, { shop: S(office.code), tpl: "check_remind", ref: S(dealer.id) });
   Object.assign(r, s2);
   if (!s2.ok && !test)       // 못 보냈으면 다음에 다시 보낼 수 있게 기록을 지움
     await db.from("check_remind_log").delete().eq("office_id", S(office.id)).eq("dealer_id", S(dealer.id)).in("car_id", cars.map((c) => c.carId));
@@ -881,7 +905,7 @@ async function remindSend(ctx: Ctx, opt: any) {
   return { sent: results.filter((x) => x.ok).length, test, results };
 }
 async function remindOff(ctx: Ctx, opt: any) {
-  if (!["owner", "manager"].includes(S(ctx.role))) throw new Error("대표님만 할 수 있습니다.");
+  if (!["owner", "manager"].includes(S(ctx.role))) throw new Error("대표님이나 매니저만 할 수 있습니다.");
   const ids = [...new Set((Array.isArray(opt?.carIds) ? opt.carIds : []).map(S).filter(Boolean))].slice(0, 500);
   if (!ids.length) return { ok: true, n: 0 };
   const { data, error } = await db.from("check_car").update({ remind_off: opt?.off !== false })
@@ -2817,6 +2841,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
           "#{차량번호}": S(row.plate), "#{차명}": S(row.car_name), "#{목적지}": S(row.dest_name),
           "#{도착시각}": arrive, "#{기사}": S(row.driver_name), "#{연락처}": S(office.tel), "#{링크}": viewKey } }
       : null;
+    if (plan) (plan as any).vars = cleanVars((plan as any).vars);   // v33(보안 L1)
     if (plan) {
       try {
         const r = await solapi("POST", "/messages/v4/send-many/detail", { messages: [{

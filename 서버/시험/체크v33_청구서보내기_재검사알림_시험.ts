@@ -99,6 +99,13 @@ sent.length = 0;
 r = await call("billSend", [{ ym: "2026-09", ids: ["i1"] }], "chk_own");
 check("10분 안 다시 누르면 안 감", sent.length === 0 && /방금/.test(r.results?.[0]?.why || ""), r);
 
+sent.length = 0;
+store.check_invoice.push({ id: "i3", office_id: "o1", ym: "2026-09", bill_to_id: "d2", bill_to_name: "자세히 https://evil.example.com/x 보기", total_amount: 1, view_key: "cccccccccccccccccc", created_at: new Date().toISOString() });
+const both = await Promise.all([call("billSend", [{ ym: "2026-09", ids: ["i3"] }], "chk_own"), call("billSend", [{ ym: "2026-09", ids: ["i3"] }], "chk_own")]);
+check("보안 L2: 동시에 두 번 눌러도 한 통", sent.length === 1, [both, sent.length]);
+check("보안 L1: 검사소가 쓴 글의 주소 모양은 지워서 보냄", !/evil|https?:|\.com/.test(JSON.stringify(sent[0]?.kakaoOptions?.variables || {})) &&
+  !/evil/.test(String(sent[0]?.text || "")), sent[0]?.kakaoOptions?.variables);
+
 console.log("■ 청구서 보기 (로그인 없이)");
 r = await call("invoiceView", ["kabcdefghijklmnopqr"]);
 check("k 코드로 열림 · 정한 칸만 (검사소 id·열쇠·세금계산서 칸 없음)", !!r.invoice && r.invoice.office_id === undefined && r.invoice.view_key === undefined &&

@@ -30,6 +30,13 @@ class Q {
   order(k: string) { this.ord = k; return this; }
   limit(n: number) { this.lim = n; return this; }
   not() { return this; }
+  /* "칸.is.null,칸.lt.값" 같은 간단한 or 만 흉내 */
+  or(expr: string) {
+    const parts = String(expr).split(",").map((x) => { const [k, op, ...v] = x.split("."); return { k, op, v: v.join(".") }; });
+    this.filters.push((r) => parts.some((p) => p.op === "is" ? (r[p.k] ?? null) === null : p.op === "lt" ? r[p.k] < p.v
+      : p.op === "gt" ? r[p.k] > p.v : p.op === "eq" ? String(r[p.k]) === p.v : false));
+    return this;
+  }
   maybeSingle() { this.one = true; return this; }
   single() { this.one = true; return this; }
   then(res: any, rej: any) { return Promise.resolve().then(() => this.run()).then(res, rej); }
