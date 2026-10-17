@@ -2149,11 +2149,18 @@ async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
   if (b.length !== 10) return { ready: true, state: "없음", closedAt: "", match: null as boolean | null, why: "사업자번호는 숫자 10자리예요." };
   if (!key) return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "사업자번호 확인은 아직 준비 중이에요." };
   const base = "https://api.odcloud.kr/api/nts-businessman/v1/";
-  const q = "?serviceKey=" + encodeURIComponent(key) + "&returnType=JSON";
+  const q = "?returnType=JSON";   // 보안(중간): 열쇠는 주소에 넣지 않고 머리글로 (오류 글·기록에 주소가 남아도 열쇠는 안 남게)
   const post = async (path: string, body: unknown) => {
-    const r = await fetch(base + path + q, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(body) });
+    let r: Response;
+    try {
+      r = await fetch(base + path + q, { method: "POST", body: JSON.stringify(body),
+        headers: { "content-type": "application/json", accept: "application/json", Authorization: "Infuser " + key } });
+    } catch (_) { throw new Error("nts:net"); }                        // 연결 오류 글(주소 포함)은 버림
     const j: any = await r.json().catch(() => ({}));
-    if (!r.ok || !Array.isArray(j?.data)) throw new Error("nts " + r.status);
+    if (!r.ok || !Array.isArray(j?.data)) {
+      const code = /SERVICE_KEY|NOT_REGISTERED|인증/i.test(String(j?.msg || j?.message || j?.code || "")) ? "key" : String(r.status);
+      throw new Error("nts:" + code);
+    }
     return j.data[0] || {};
   };
   try {
@@ -2169,8 +2176,16 @@ async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
     }
     return { ready: true, state, closedAt: end.length === 8 ? end.slice(0, 4) + "-" + end.slice(4, 6) + "-" + end.slice(6) : "", match, why: "" };
   } catch (e) {
-    console.error("bizVerify", e instanceof Error ? e.message : String(e));
-    return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "지금은 국세청 확인이 안 돼요. 잠시 뒤 다시 해 주세요." };
+    /* 기록·답에는 정해진 글만 (열쇠·주소·원문 오류는 남기지 않음) */
+    const m = e instanceof Error ? e.message : "";
+    const code = /^nts:(net|key|\d{3})$/.test(m) ? m.slice(4) : "etc";
+    console.error("bizVerify 실패", code);
+    const why = code === "key" || code === "401" || code === "403"
+      ? "국세청 열쇠가 맞지 않아요(열쇠 확인 필요 · " + code + "). 차곳간으로 알려 주세요."
+      : code === "net" ? "국세청에 연결하지 못했어요. 잠시 뒤 다시 해 주세요."
+      : code === "429" ? "국세청 확인이 잠시 몰려 있어요. 잠시 뒤 다시 해 주세요."
+      : "지금은 국세청 확인이 안 돼요(" + code + "). 잠시 뒤 다시 해 주세요.";
+    return { ready: false, state: "", closedAt: "", match: null as boolean | null, why };
   }
 }
 
