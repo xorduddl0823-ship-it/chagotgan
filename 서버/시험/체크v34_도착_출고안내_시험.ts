@@ -86,6 +86,7 @@ console.log("③ 알림톡이 거절되면 지금 문자로");
 mode = "failed";
 row = await arrive();
 check("알림톡 뒤 문자 한 번", sent.length === 2 && !sent[1].kakaoOptions && row.how === "lms", sent.length);
+check("대체 문자의 사진 주소도 v.html?c=d+열쇠 (/d/ 화면 안 씀)", String(sent[1]?.text).includes("https://app.cgg.co.kr/v.html?c=d" + row.view_key) && !String(sent[1]?.text).includes("check.cgg.co.kr/d/"), sent[1]?.text);
 mode = "ok";
 
 console.log("④ 버튼이 여는 보기 — deliv_view 가 d 붙은 열쇠도 받음");

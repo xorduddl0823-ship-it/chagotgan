@@ -20,7 +20,8 @@
 //    딜러 등록 대기(체크 방 설계 · 보안 의견 ①~⑨): delivPendingDealers() · delivApproveDealer({name, tel, dealerId?, companyId?, resend}|[…20줄])
 //    · delivRejectDealer({name, tel}|[…]) — 대표만 · 최근 14일 «등록된 딜러 번호가 아님» 기록에 실제로 있는 이름·번호만 ·
 //    다시 보내기는 그 번호 · 24시간 · 이미 보낸 건 건너뜀 · 하루 상한(notifyOne) · check_log 기록(번호 가림)
-//    deliv_view: «d» 붙은 열쇠도 받음 · 한 아이피 하루 상한(CHECK_VIEW_IP_MAX, 청구서 보기와 같은 값). 대체 문자는 지금 글 그대로. SQL 없음.
+//    대체 문자의 [사진 주소]도 https://app.cgg.co.kr/v.html?c=d+열쇠 (운영 체크 사이트 /d/ 화면에 기대지 않음).
+//    deliv_view: «d» 붙은 열쇠도 받음 · 한 아이피 하루 상한(CHECK_VIEW_IP_MAX, 청구서 보기와 같은 값). 대체 문자 글은 그대로(사진 주소만 바뀜). SQL 없음.
 //  v31 (2026-10-15): 오픈 베타 말 다듬기 (규칙 4-1) — 오류 글은 표준형, 영어·코드·데이터베이스 원문은 숨기고 기록에만(userMsg). 새 창구 없음.
 //  v30 (2026-10-15): 보안 방 관리 통합 검토 ④ — 본사가 기사 비밀번호를 임시 비밀번호로 바꾸면(check_deliv_driver.must_change)
 //    로그인은 되지만 비밀번호를 바꾸기 전까지 다른 기사 기능은 막힘(mustChange: true). 먼저 서버/sql/08 실행(칸 없으면 예전과 같음).
@@ -2873,7 +2874,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
     "차량번호": S(row.plate), "차명": S(row.car_name), "목적지": S(row.dest_name),
     "도착 시각": fmtTs(new Date(new Date(row.arrived_at).getTime() + KST)).slice(5, 16),
     "기사": S(row.driver_name),
-    "사진 주소": "https://check.cgg.co.kr/d/" + viewKey,
+    "사진 주소": "https://app.cgg.co.kr/v.html?c=d" + viewKey,   // v34(운영/06 M): /d/ 화면 대신 v.html d 갈래
     "우리 연락처": S(office.tel),
   });
 
