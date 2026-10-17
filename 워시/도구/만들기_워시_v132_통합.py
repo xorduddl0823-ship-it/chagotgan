@@ -60,17 +60,10 @@ function wFeat(f){
   x.path=p;return x;
 }
 /* 배달 안쪽 작은 탭 */''')
-# 폰 아래 탭 (PC 화면) — 홈 · 일감 · 월별 청구서 · 입·출금 내역 · 전체
-rep('''  var items=M.tabs.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){var x={key:t.key,icon:t.icon,label:t.label};if(t.key==="delivery")x.badge=wDelivBad();return x;});''',
-    '''  var W132_TABS=[{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"bill",icon:"file",label:"월별 청구서"},{key:"money",icon:"wallet",label:"입·출금 내역"},{key:"__all",icon:"more",label:"전체"}];
-  var items=W132_TABS.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){return {key:t.key,icon:t.icon,label:t.label};});''')
-# 메뉴 줄 오른쪽 끝 — 기능 찾기 (대표님 ①)
+# 메뉴 줄 오른쪽 끝 — 기능 찾기 (대표님 ①) · 공통 부품 1.9 opt.find (좁은 화면 · 세로 배치는 머리말 [찾기] 단추가 대신)
 rep('''function wNav(){
   try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}''', '''function wNav(){
-  try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}
-  try{var ob=$("wNavFind");if(ob)ob.remove();
-    if(S.mode==="pc"&&CGG.find){var fb=document.createElement("div");fb.id="wNavFind";fb.className="w-navfind";$("tabs").appendChild(fb);
-      CGG.find(fb,wFeats(),goFeat,{phone:function(){wAllMenu(true);}});}}catch(e){}''')
+  try{CGG.nav($("tabs"),wGroups(),wCur(),goKey,S.mode==="pc"?{find:{feats:wFeats(),onGo:goFeat}}:{});}catch(e){}''')
 
 # ── D. 머리말 — 설명 · 판 · 날짜 / 주소 / 연결됨 / 사람 단추 아래 줄 ──
 rep('''    find:pc?{feats:wFeats(),onGo:goFeat,onPhone:function(){wAllMenu(true);}}:null,''', '''    find:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) */
@@ -144,16 +137,7 @@ rep('''busyAt(end(k));}),color:"#B26B00"},''', '''busyAt(end(k));}),color:"#1668
 
 # ── H. CSS ──
 V132_CSS = """
-/* ── v132 새 규칙 — 메뉴 줄 끝 기능 찾기 · 할 일 띠 자리 · 숫자 칸 가운데 · 도구줄 43/42 ── */
-.w-navfind{margin-left:auto;align-self:center;flex:none;width:260px;position:relative;z-index:var(--z-drop)}
-.cgg-nav:has(.w-navfind){overflow:visible}
-.w-navfind .in{background:var(--surface);border-color:var(--ln2,#D0D5DD);color:var(--muted)}
-.w-navfind input{color:var(--text)}
-.w-navfind input::placeholder{color:var(--muted)}
-.w-navfind .res button{text-align:left;align-items:flex-start}
-@media (max-width:1000px){.w-navfind{display:none}}
-.lay-side .w-navfind{width:auto;margin:10px 12px 0;align-self:stretch}
-.lay-icon .w-navfind{display:none}
+/* ── v132 새 규칙 — 할 일 띠 자리 · 숫자 칸 가운데 · 도구줄 43/42 ── */
 #wBand{margin:0 0 16px}
 .cgg-main section .sums .sum{text-align:center}
 .cgg-main section .sums .sum > span{display:block;text-align:center;justify-content:center}
@@ -190,11 +174,10 @@ rep('''    wireMonthBtn("lMonthBtn",L.month,function(k){var sl=$("lMonth");if(k&
     '''    wireMonthBtn("lMonthBtn",L.month,function(k){''')
 # C. 세로 · 아이콘 배치 — 찾기 칸은 왼쪽 메뉴 안(세로) · 머리말 돋보기 단추(아이콘)
 rep('''    find:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) */''',
-    '''    find:(pc&&wLay()==="icon")?{mode:"button",feats:wFeats(),onGo:goFeat}:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) · 아이콘 배치만 머리말 돋보기 */''')
+    '''    find:pc?{mode:"nav",feats:wFeats(),onGo:goFeat}:null,   /* v132: 기능 찾기 = 메뉴 줄 오른쪽 끝(대표님 결정, 1.9 mode:"nav") */''')
 rep('''  var sig=[o.product,''', '''  var sig=[wLay(),o.product,''')
 rep('''function wSaved(){''', '''function wLay(){var a=$("app");return a&&a.classList.contains("lay-icon")?"icon":(a&&a.classList.contains("lay-side")?"side":"top");}
 function wSaved(){''')
-rep('''    if(S.mode==="pc"&&CGG.find){''', '''    if(S.mode==="pc"&&CGG.find&&wLay()!=="icon"){''')
 # D. 상태 색 — 빨강은 «막힘»에만. 확인 필요 = 주황, 출금 = 기본 글색
 rep('''    '<div class="sum"><span>출금 금액</span><b style="color:var(--danger)">'+won(outSum)+'</b></div>'+''',
     '''    '<div class="sum"><span>출금 금액</span><b>'+won(outSum)+'</b></div>'+''')
