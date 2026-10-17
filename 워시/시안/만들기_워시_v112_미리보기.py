@@ -96,7 +96,9 @@ FAKE = r'''<script>
       case "sendMsg":   /* 서버 sb5 처럼: 본사 알림톡(ataKey)은 주소 끝 ?ata=on 일 때만 «코드 있음» */
         var mb={}; try{ mb=JSON.parse(a[0]||"{}"); }catch(e){}
         SENT.push({kind:mb.kind,ataKey:mb.ataKey||"",vars:mb.variables||null,text:mb.text||"",to:mb.to||""});
-        SENT[SENT.length-1].rec=mb.rec||"";
+        SENT[SENT.length-1].rec=mb.rec||"";SENT[SENT.length-1].from=mb.from||"";
+        /* ?nofrom=1 : 지금 서버처럼 — 발신번호가 비면 거절 (v127 시험) */
+        if(/nofrom=1/.test(OLDQ)&&!mb.from) throw new Error("발신번호가 없습니다");
         /* ?srv=15 : 서버 sb15 처럼 — 코드 없으면 서버가 문자로 바꾸고 via 로 알려 줌 */
         if(/srv=15/.test(OLDQ)){
           var v15=(mb.kind==="ATA"&&mb.ataKey&&/ata=on/.test(OLDQ))?"ata":"sms";
@@ -184,7 +186,7 @@ if os.environ.get("SEEDMODE"):
     s = s.replace("function seedDemo(){", "window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};\nfunction seedDemo(){", 1)
 # 시험할 때만 (TESTHOOK=1): 같은 범위 안 함수를 밖에서 부를 수 있게 — 최종 미리보기에는 안 들어감
 if os.environ.get("TESTHOOK") and "function sendOutMsg(" in s:
-    s = s.replace("function sendOutMsg(", "window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;},cfg:function(k,v){S.cfg=Object.assign({},S.cfg);S.cfg[k]=v;}};\nfunction sendOutMsg(", 1)
+    s = s.replace("function sendOutMsg(", "window.__t={out:function(i,f){return sendOutMsg(S.records[i],'시험',f);},inn:function(i,f){return sendInMsg(S.records[i],'시험',f);},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;},cfg:function(k,v){S.cfg=Object.assign({},S.cfg);S.cfg[k]=v;}};\nfunction sendOutMsg(", 1)
 i = s.index("<script")
 s = s[:i] + FAKE + s[i:]
 s = s.replace("<title>차곳간 워시</title>", "<title>워시 %s 미리보기</title>" % VER, 1)
