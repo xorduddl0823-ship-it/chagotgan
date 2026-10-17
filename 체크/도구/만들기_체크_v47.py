@@ -230,7 +230,18 @@ function depXlsDraw(){
 '''
 rep('''function wireSub(){''', DEP_JS + '''function wireSub(){''')
 
+# ── 4) 거래처 부품 1.0 → 1.1 (대표님 v46 시험 10/18 — 사진으로 연락처 · 이메일 · 국세청 확인 · «번호 모양 맞음») ──
+JS10 = open(BASE + "부품/거래처_부품.js", encoding="utf-8").read()
+JS11 = open(BASE + "부품/거래처_부품_1.1.js", encoding="utf-8").read()
+rep(JS10, JS11)
+rep('''      readBiz:function(b64){ return call("aiBiz",[b64]); } },''',
+    '''      readBiz:function(b64){ return call("aiBiz",[b64]); },
+      /* v47: 국세청 사업자 상태 확인 (서버 bizVerify — 없거나 열쇠가 없으면 {ready:false} → 모양 검사만) */
+      verifyBiz:function(q){ return call("bizVerify",[q]).catch(function(e){
+        if(/지원하지 않는 기능/.test(String(e&&e.message))) return {ready:false}; throw e; }); } },''')
+
 rep('$("hdVer").textContent="체크 v46 · "', '$("hdVer").textContent="체크 v47 · "')
+assert JS11 in s and JS10 not in s
 assert "선택한 줄 입금 처리" not in s
 open(BASE + "2_차곳간_체크_index_v47.html", "w", encoding="utf-8").write(s)
 print("OK v47", len(s))
