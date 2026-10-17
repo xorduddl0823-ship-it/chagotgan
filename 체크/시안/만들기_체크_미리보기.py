@@ -29,12 +29,16 @@ FAKE = r'''<script>
     localStorage.setItem("cgg_shopname", OFFICE.name);
   }catch(e){}
   /* 지어낸 거래처 — 상사 · 딜러 */
-  var COMP = [["하늘모터스","000-00-00001"],["푸른카","000-00-00002"],["바른오토","000-00-00003"],["다온상사","000-00-00004"],
-              ["새날모터스","000-00-00005"],["별빛오토","000-00-00006"]];
+  /* v46: 사업자번호는 검산이 맞는 지어낸 번호(000-00-…) · 바른오토 · 별빛오토는 비어 있음(«정보 필요» 보이기) */
+  var COMP = [["하늘모터스","0000000107","김하늘"],["푸른카","0000000112","이푸름"],["바른오토","",""],["다온상사","0000000126","최다온"],
+              ["새날모터스","0000000131","정새날"],["별빛오토","",""]];
   var DLR = [["김하늘",0],["이푸름",1],["박바름",2],["최다온",3],["정새날",4],["한별빛",5],["오하늘",0],["윤푸름",1]];
   var DEALERS = DLR.map(function(d,i){ var c=COMP[d[1]];
-    return {id:"d"+i, name:d[0], tel:"010-0000-00"+(10+i), company:{id:"c"+d[1], name:c[0], biz_no:c[1]}, billTo:null,
-            issuer_name:c[0], issuer_biz:c[1], issuer_kind:"company", tax_issue:true}; });
+    return {id:"d"+i, name:d[0], tel:"010-0000-00"+(10+i), company:{id:"c"+d[1], name:c[0], biz_no:c[1]}, billTo:null, bill_to_id:null,
+            issuer_name:c[0], issuer_biz:c[1], issuer_kind:"company", tax_issue:true, memo:"", last_date:"2026-10-"+String(17-i).padStart(2,"0")}; });
+  DEALERS[2].issuer_kind="dealer"; DEALERS[2].issuer_name="바름카"; DEALERS[2].issuer_biz="0000000145"; DEALERS[2].issuer_ceo="박바름";
+  DEALERS[7].tax_issue=false; DEALERS[6].bill_to_id="d0"; DEALERS[6].billTo={id:"d0", name:"김하늘"};
+  function compRow(i){ return COMP[i] ? {id:"c"+i, name:COMP[i][0], biz_no:COMP[i][1]} : null; }
   function ymAdd(ym, k){ var y=+ym.slice(0,4), m=+ym.slice(5,7)+k; while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+"-"+(m<10?"0":"")+m; }
   function seedN(str){ var h=7; for(var i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))%9973; return h; }
   function nowYm(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
@@ -130,16 +134,29 @@ FAKE = r'''<script>
         return i===2 ? {id:id, name:iv.bill_to_name||"", ok:false, how:"", why:"카카오톡을 쓰지 않는 번호"} : {id:id, name:iv.bill_to_name||"", ok:true, how:i%3===1?"lms":"ata", why:""}; })};
       case "invoiceRekey": return {ok:true};
       /* v44 · 서버 v34 거래처 창구 (체크/기획/2026-10-17_v44_거래처_창구_약속.md) */
-      case "companies": return COMP.map(function(c,i){ return {id:"c"+i, name:c[0], biz_no:c[1], ceo:"", tel:"",
+      case "companies": return COMP.map(function(c,i){ return {id:"c"+i, name:c[0], biz_no:c[1], ceo:c[2]||"", tel:c[3]||"",
+          addr:c[4]||"", email:c[5]||"", upte:c[6]||"", jongmok:c[7]||"",
           dealerN:DEALERS.filter(function(d){ return d.company && d.company.id==="c"+i; }).length}; });
-      case "companySave": var cs=a[0]||{}; COMP.push([cs.name||"", cs.biz_no||""]); return {id:"c"+(COMP.length-1), name:cs.name};
+      case "companySave": var cs=a[0]||{}, crow=[cs.name||"", String(cs.biz_no||"").replace(/\D/g,""), cs.ceo||"", cs.tel||"", cs.addr||"", cs.email||"", cs.upte||"", cs.jongmok||""];
+        if(cs.id){ var cx=+String(cs.id).slice(1); COMP[cx]=crow; DEALERS.forEach(function(d){ if(d.company&&d.company.id===cs.id){ d.company=compRow(cx); } }); return {id:cs.id, name:cs.name}; }
+        for(var ci2=0;ci2<COMP.length;ci2++) if(COMP[ci2][0]===cs.name) return {id:"c"+ci2, name:cs.name};
+        COMP.push(crow); return {id:"c"+(COMP.length-1), name:cs.name};
+      /* v46 · 서버 v35 약속 (체크/기획/2026-10-18_v46_거래처_한화면_창구_약속.md) — 미리보기는 다 켬 */
+      case "partnerCaps": return {later:true, more:true, last:true};
+      case "aiCard": return JSON.stringify({name:"송민호", phone:"010-0000-0099", company:"광교오토", bizName:"", bizNo:"", email:"", addr:""});
+      case "aiBiz": return JSON.stringify({bizNo:"000-00-00150", bizName:"광교오토", ceo:"송민호", addr:"예시시 예시구 예시로 50", upte:"도소매", jongmok:"중고자동차"});
       case "companyDel": var cd=(a[0]||{}).ids||[], kept=[], n=0;
         cd.forEach(function(id){ var k=+String(id).slice(1); var dn=DEALERS.filter(function(d){ return d.company && d.company.id===id; }).length;
           if(dn) kept.push({id:id, name:(COMP[k]||[])[0], dealerN:dn}); else if(COMP[k]){ COMP[k]=["(지움)",""]; n++; } });
         COMP=COMP.filter(function(c){ return c[0]!=="(지움)"; }); return {n:n, kept:kept};
-      case "dealerSave": var ds=a[0]||{}, cc=null; if(ds.company_id){ var ci=+String(ds.company_id).slice(1); if(COMP[ci]) cc={id:ds.company_id, name:COMP[ci][0], biz_no:COMP[ci][1]}; }
-        var nd={id:"d"+(DEALERS.length+100), name:ds.name, tel:ds.tel, company:cc, billTo:null, issuer_name:cc?cc.name:"", issuer_biz:cc?cc.biz_no:"", issuer_kind:cc?"company":"none", tax_issue:true};
-        DEALERS.push(nd); return nd;
+      case "dealerSave": var ds=a[0]||{}, cc=null; if(ds.company_id){ var ci=+String(ds.company_id).slice(1); cc=compRow(ci); }
+        var bt=ds.bill_to_id?DEALERS.filter(function(x){ return x.id===ds.bill_to_id; })[0]:null;
+        var nd={name:ds.name, tel:ds.tel, company:cc, billTo:bt?{id:bt.id,name:bt.name}:null, bill_to_id:ds.bill_to_id||null,
+          issuer_name:ds.issuer_name||"", issuer_biz:ds.issuer_biz||"", issuer_ceo:ds.issuer_ceo||"", issuer_addr:ds.issuer_addr||"",
+          issuer_email:ds.issuer_email||"", issuer_upte:ds.issuer_upte||"", issuer_jongmok:ds.issuer_jongmok||"",
+          issuer_kind:ds.issuer_kind||"company", tax_issue:ds.tax_issue!==false, memo:ds.memo||""};
+        if(ds.id){ var od=DEALERS.filter(function(x){ return x.id===ds.id; })[0]; if(od){ Object.assign(od, nd); return od; } }
+        nd.id="d"+(DEALERS.length+100); nd.last_date=""; DEALERS.push(nd); return nd;
       /* v44 · 서버 v34 딜러 등록 대기 (서버/설계/22) */
       case "delivPendingDealers": return {ok:true, days:14, list:PENDPV};
       case "delivApproveDealer": var ap=Array.isArray(a[0])?a[0]:[a[0]]; return {ok:true, results:ap.map(function(x){
