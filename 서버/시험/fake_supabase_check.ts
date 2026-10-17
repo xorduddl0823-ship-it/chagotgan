@@ -44,11 +44,27 @@ class Q {
     const tbl = store[this.t];
     if (!tbl) return { data: null, error: { message: `relation "${this.t}" does not exist` } };
     const hit = tbl.filter((r) => this.filters.every((f) => f(r)));
+    if (this.t === "check_deposit" && this.op === "select" && store.__depRule?.blind) return { data: [], error: null };   // v41: 그새 들어온 줄 흉내
     /* v33 시험: 재검사 보낸 기록은 (검사소·차·단계) 겹침 금지 — SQL 12 unique 와 같음 */
     if (this.op === "insert" && this.t === "check_remind_log") {
       for (const p of [].concat(this.payload) as Row[])
         if (tbl.some((r) => r.office_id === p.office_id && r.car_id === p.car_id && r.step === p.step))
           return { data: null, error: { message: "duplicate key value violates unique constraint" } };
+    }
+    /* v41 시험: 입금 표 제한 흉내 — store.__depRule = { notNull: ["bank_id"], uniq: true, check: "src", down: true } */
+    if (this.op === "insert" && this.t === "check_deposit") {
+      const rule = store.__depRule ?? {};
+      const ps = [].concat(this.payload) as Row[];
+      if (rule.down) return { data: null, error: { code: "08006", message: "connection failure" } };
+      for (const p of ps) {
+        const nn = (rule.notNull ?? []).find((c: string) => p[c] == null);
+        if (nn) return { data: null, error: { code: "23502", message: `null value in column "${nn}" of relation "check_deposit" violates not-null constraint`, details: "Failing row contains (01012345678)" } };
+        if (rule.check && p[rule.check] === "엑셀") return { data: null, error: { code: "23514", message: `new row for relation "check_deposit" violates check constraint "check_deposit_${rule.check}_check"` } };
+        if (tbl.some((r) => r.office_id === p.office_id && r.uniq_key === p.uniq_key) || ps.filter((q) => q.uniq_key === p.uniq_key).length > 1)
+          return { data: null, error: { code: "23505", message: "duplicate key value violates unique constraint" } };
+      }
+      for (const p of ps) tbl.push({ id: crypto.randomUUID(), ...p });
+      return { data: null, error: null };
     }
     if (this.op === "insert") {
       /* insert().select() 이면 번호(id)를 붙여 돌려줌 (알림톡 체크 시험 · 도착 등록) */
