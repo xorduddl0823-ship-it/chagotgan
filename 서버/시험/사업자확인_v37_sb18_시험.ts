@@ -24,7 +24,7 @@ if (WHICH === "wash") {
     check_log: [], cgg_access: [], wash_sessions: [], check_rate: [], check_usage: [],
   });
 }
-let answer = "", ntsStatus: any = { b_stt_cd: "01", end_dt: "" }, ntsValid = "01", ntsDown = false, ntsThrow = false, ntsBadKey = false;
+let answer = "", ntsStatus: any = { b_stt_cd: "01", end_dt: "" }, ntsValid = "01", ntsDown = false, ntsThrow = false, ntsBadKey = false, ntsHeaderBad = false;
 const logs: string[] = [];
 const asked: any[] = [];
 globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
@@ -33,6 +33,7 @@ globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
   if (u.includes("odcloud.kr")) {
     asked.push({ u, b: JSON.parse(String(init?.body)), auth: (init?.headers as any)?.Authorization });
     if (ntsThrow) throw new TypeError("error sending request for url (" + u + "&serviceKey=" + (init?.headers as any)?.Authorization + "): dns error");
+    if (ntsHeaderBad && (init?.headers as any)?.Authorization) return new Response(JSON.stringify({ code: -4, msg: "등록되지 않은 인증키 입니다." }), { status: 401 });
     if (ntsBadKey) return new Response(JSON.stringify({ code: -4, msg: "SERVICE_KEY_IS_NOT_REGISTERED_ERROR" }), { status: 401 });
     if (ntsDown) return new Response("{}", { status: 500 });
     if (u.includes("/status")) return Response.json({ status_code: "OK", data: [ntsStatus] });
@@ -43,7 +44,7 @@ globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
 console.error = (...a: unknown[]) => { logs.push(a.map(String).join(" ")); }; console.log = ((orig) => (...a: unknown[]) => { if (String(a[0]).startsWith("bizVerify")) return; orig(...a); })(console.log);
 const H: any[] = [];
 (Deno as any).serve = (h: any) => { H.push(h); return {}; };
-await import(Deno.env.get("SRC") ?? (WHICH === "wash" ? "../1_차곳간워시_서버_wash-api_sb18.ts" : "../2_차곳간체크_서버_check-api_v38.ts"));
+await import(Deno.env.get("SRC") ?? (WHICH === "wash" ? "../1_차곳간워시_서버_wash-api_sb19.ts" : "../2_차곳간체크_서버_check-api_v39.ts"));
 const call = async (fn: string, args: unknown[], token = OWN) =>
   await (await H[0](new Request("http://x", { method: "POST", body: JSON.stringify({ shop: WHICH === "wash" ? "BT" : "", token, fn, args }) }))).json();
 let pass = 0, fail = 0;
@@ -68,6 +69,9 @@ if (WHICH === "check") {
   answer = JSON.stringify({ name: "홍", phone: "010-1111-2222", email: "HONG@Gana.co.kr", company: "", bizName: "", bizNo: "", addr: "" });
   try { v = JSON.parse((await call("aiCard", [JPG])).result); } catch (_) { v = {}; }
   check("명함 이메일 소문자", v.email === "hong@gana.co.kr", v);
+  answer = JSON.stringify({ bizNo: "1238145678", addr: "서울", tel: "", email: "", upte: "전화 02-345-6789 / 팩스 02-345-6790" });
+  try { v = JSON.parse((await call("aiBiz", [JPG])).result); } catch (_) { v = {}; }
+  check("전화 칸이 비면 답 전체 글에서 «전화» 옆 번호(팩스 말고)", v.tel === "02-345-6789", v);
   answer = JSON.stringify({ bizNo: "1", tel: "1588-1234" });
   try { v = JSON.parse((await call("aiBiz", [JPG])).result); } catch (_) { v = {}; }
   check("1588 전화도 받음", v.tel === "1588-1234", v);
@@ -98,9 +102,17 @@ ntsThrow = true;
 r = await call("bizVerify", [{ bizNo: "1238145678" }]);
 check("연결 오류: ready:false · 쉬운 글 · 기록·답에 열쇠가 없음", !r.__err && r.result?.ready === false && /연결하지 못했어요/.test(r.result?.why) &&
   !logs.join("\n").includes("a+b/c==") && !JSON.stringify(r).includes("a+b/c=="), [r, logs]);
-ntsThrow = false; ntsBadKey = true;
+ntsThrow = false; ntsHeaderBad = true; logs.length = 0;
+r = await call("bizVerify", [{ no: "1238145678" }]);
+check("머리글이 거절되면 주소 방식으로 한 번 더 → 됨 · 이중 인코딩 없음 · 기록에 열쇠 없음",
+  r.result?.ready === true && asked.at(-1)?.u.includes("serviceKey=a%2Bb%2Fc%3D%3D") && !asked.at(-1)?.u.includes("%252B") && !logs.join("\n").includes("a+b"), [r, asked.at(-1)?.u]);
+Deno.env.set("NTS_API_KEY", "a%2Bb%2Fc%3D%3D");
+r = await call("bizVerify", [{ no: "1238145678" }]);
+check("Encoding 키(이미 %)를 넣어도 다시 인코딩하지 않음", asked.at(-1)?.u.includes("serviceKey=a%2Bb%2Fc%3D%3D") && !asked.at(-1)?.u.includes("%25"), asked.at(-1)?.u);
+Deno.env.set("NTS_API_KEY", "a+b/c=="); ntsHeaderBad = false;
+ntsBadKey = true;
 r = await call("bizVerify", [{ bizNo: "1238145678" }]);
-check("열쇠가 틀리면 «열쇠 확인 필요» 쉬운 글", r.result?.ready === false && /열쇠가 맞지 않아요/.test(r.result?.why), r);
+check("열쇠가 틀리면(두 방식 다) «아직 등록 중이거나 맞지 않아요» 쉬운 글", r.result?.ready === false && /등록 중이거나 맞지 않아요/.test(r.result?.why), r);
 ntsBadKey = false; ntsDown = true;
 r = await call("bizVerify", [{ bizNo: "1238145678" }]);
 check("국세청이 안 되면 ready:false (오류로 막지 않음)", !r.__err && r.result?.ready === false && /500/.test(r.result?.why), r);
