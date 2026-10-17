@@ -106,7 +106,13 @@ FAKE = r'''<script>
       case "invoiceList": return invoices(a[0]||nowYm());
       case "billState": var iv=invoices(a[0]||nowYm()), cars=iv.reduce(function(x,v){return x+v.dom_n+v.imp_n+v.etc_n;},0);
         return {cars:cars, linked:cars, noDealer:0, built:iv.length, builtAt:(function(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" 09:00";})(new Date()), stale:false};
-      case "invoiceRows": return [];
+      case "invoiceRows": var ivr=String(a[0]||""), ivm=ivr.match(/^inv_(\d{4}-\d{2})_(\d+)$/); if(!ivm) return [];   /* v48: 청구서 한 장의 내역 (지어낸 값) */
+        var iv0=invoices(ivm[1])[+ivm[2]]; if(!iv0) return []; var rr=[];
+        for(var q=0;q<iv0.dom_n;q++) rr.push({kind:"fee", dealer_name:iv0.bill_to_name, item:"국산차", qty:1, unit:30000, amount:33000});
+        for(var q2=0;q2<iv0.imp_n;q2++) rr.push({kind:"fee", dealer_name:iv0.bill_to_name, item:"수입차", qty:1, unit:40000, amount:44000});
+        for(var q3=0;q3<iv0.etc_n;q3++) rr.push({kind:"ext", dealer_name:iv0.bill_to_name, item:"전산외", qty:1, unit:20000, amount:22000});
+        for(var q4=0;q4<iv0.repair_amount/55000;q4++) rr.push({kind:"repair", dealer_name:iv0.bill_to_name, item:["타이어 교체","배터리 교체","<b>와이퍼</b>"][q4%3], qty:1, unit:55000, amount:55000});
+        return rr;
       case "dealers": return DEALERS;
       case "depositList": return deposits();
       case "salesStat": return sales();
@@ -155,6 +161,12 @@ FAKE = r'''<script>
           if(DEPPV.some(function(y){ return (String(y.tx_at).slice(0,16)+"|"+y.amount+"|"+y.sender)===k2; })){ dup++; return; }
           DEPPV.unshift({id:"dx"+Date.now()+i, invoice_id:null, tx_at:x.tx_at, sender:x.sender, amount:x.amount, kind:"미분류", state:"확인 대기", src:"엑셀", memo:""}); got++; });
         return {got:got, dup:dup, bad:[]};
+      /* v48 · 단가 창구 약속 (체크/기획/2026-10-18_v48_단가_창구_약속.md) */
+      case "priceList": if(!window.PV_PRICE) PV_PRICE=[{from_date:"2025-01-01", items:[{code:"A1",name:"국산차",price:27000},{code:"A2",name:"수입차",price:36000}]},
+          {from_date:"2026-06-01", items:[{code:"A1",name:"국산차",price:30000},{code:"A2",name:"수입차",price:40000},{code:"E1",name:"전산외",price:20000}]}];
+        return PV_PRICE;
+      case "priceSave": var ps=a[0]||{}; PV_PRICE=(window.PV_PRICE||[]).filter(function(x){ return x.from_date!==ps.from; }); PV_PRICE.push({from_date:ps.from, items:ps.items||[]}); return {ok:true};
+      case "priceDel": var pd=(a[0]||{}).from||[]; PV_PRICE=(window.PV_PRICE||[]).filter(function(x){ return pd.indexOf(x.from_date)<0; }); return {n:pd.length};
       case "partnerCaps": return {later:true, more:true, last:true};
       case "aiCard": return JSON.stringify({name:"송민호", phone:"010-0000-0099", company:"광교오토", bizName:"", bizNo:"", email:"", addr:""});
       case "aiBiz": return JSON.stringify({bizNo:"000-00-00150", bizName:"광교오토", ceo:"송민호", addr:"예시시 예시구 예시로 50", upte:"도소매", jongmok:"중고자동차", tel:"031-000-0000", email:"office@example.com", openDate:"20200302"});
