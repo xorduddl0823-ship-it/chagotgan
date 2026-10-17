@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>차곳간 배달기사</title>
+<style>
+:root{
+  --ground:#F4F6F8; --surface:#FFFFFF; --surface-2:#EDF1F5; --line:#D6DFE8;
+  --ink:#131B24; --ink-2:#56677A; --ink-3:#8496A8;
+  --navy:#1E3A5F; --navy-soft:#E5EDF6; --on-navy:#FFFFFF;
+  --ochre:#9C660F; --ochre-soft:#F7EEDD; --bad:#A8301E; --bad-soft:#FAE8E4; --good:#256B4E; --good-soft:#E5F0EA;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F151C; --surface:#18202A; --surface-2:#1E2733; --line:#2B3743;
+    --ink:#E4EAF1; --ink-2:#9AAABB; --ink-3:#718294;
+    --navy:#8FB5DC; --navy-soft:#1B2A3A; --on-navy:#0F151C;
+    --ochre:#DBA351; --ochre-soft:#2A2317; --bad:#EE9080; --bad-soft:#34201C; --good:#74C6A0; --good-soft:#17281F;
+  }
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+/* 오픈 베타 띠 (디자인 방 2026-10-15) */
+:root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
+:root[data-theme="dark"]{--beta-bg:#1d3a5f}
+.cgg-beta{background:var(--beta-bg);color:var(--beta-ink);font-size:13.5px;line-height:1.5;word-break:keep-all}
+.cgg-beta .in{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;
+  padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
+.cgg-beta[hidden]{display:none}
+@media (max-width:600px){.cgg-beta{font-size:12.5px}.cgg-beta .in{display:block;padding-block:6px}.cgg-beta b{margin-right:6px}}
+body{margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif; font-size:17px; line-height:1.5}
+.wrap{max-width:560px; margin:0 auto; padding:14px 16px 90px}
+.top{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px}
+.top b{font-size:19px}
+.top .who{font-size:14px; color:var(--ink-2)}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px}
+.lab{font-size:14px; color:var(--ink-2); font-weight:600; margin-bottom:6px; display:flex;
+  justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; min-width:0}
+.lab > span:first-child{flex:1 1 auto; min-width:0}
+.big{display:block; width:100%; min-height:58px; border:0; border-radius:12px; font-size:19px; font-weight:700; cursor:pointer}
+.b-main{background:var(--navy); color:var(--on-navy)}
+.b-main:disabled{opacity:.4}
+.b-sub{background:var(--surface-2); color:var(--ink); border:1px solid var(--line)}
+.btn{border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:10px;
+  padding:10px 14px; font-size:14.5px; font-weight:600; cursor:pointer;
+  white-space:nowrap; flex:0 0 auto; min-height:44px; line-height:1.2}
+input.in,select.in,textarea.in{width:100%; font-size:18px; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); font-family:inherit}
+select.in{min-height:52px}
+input.plate{font-size:28px; font-weight:800; letter-spacing:1px; text-align:center}
+.photo{position:relative; border-radius:12px; overflow:hidden; background:#000}
+.photo img{display:block; width:100%}
+.thumbs{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
+.thumbs .th{position:relative; width:31%; aspect-ratio:4/3; border-radius:10px; overflow:hidden; background:#000}
+.thumbs .th img{width:100%; height:100%; object-fit:cover; display:block}
+.thumbs .th button{position:absolute; top:4px; right:4px; width:34px; height:34px; border-radius:50%; border:0; background:rgba(0,0,0,.65); color:#fff; font-size:18px; cursor:pointer}
+.draft{background:var(--ochre-soft); color:var(--ochre); border-radius:10px; padding:10px 12px; margin-bottom:10px; display:flex; align-items:center; gap:8px; font-size:15px}
+.photo .mark{position:absolute; border:3px solid #FFC83D; border-radius:6px; pointer-events:none}
+.hint{font-size:13px; color:var(--ink-2); margin-top:6px; line-height:1.6; word-break:keep-all}
+.err{color:var(--bad); font-size:12.5px; font-weight:600; line-height:1.5; word-break:keep-all}
+.warn{background:var(--ochre-soft); color:var(--ochre); border-radius:10px; padding:10px 12px; font-size:15px; margin-bottom:10px}
+.bad{background:var(--bad-soft); color:var(--bad); border-radius:10px; padding:10px 12px; font-size:15px}
+.good{background:var(--good-soft); color:var(--good); border-radius:10px; padding:10px 12px; font-size:15px}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.chip{border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:999px; padding:9px 14px; font-size:16px; cursor:pointer}
+.chip.on{background:var(--navy); color:var(--on-navy); border-color:var(--navy)}
+/* v28: 한 줄 입력 아래 추천 칩은 보조 버튼 크기 — 폰에서 한 줄에 2개 (대표님 10-17) */
+#line-fix{gap:6px}
+#line-fix .chip{font-size:13.5px; padding:7px 10px; min-height:36px; line-height:1.25; border-radius:10px;
+  flex:0 1 calc(50% - 3px); max-width:calc(50% - 3px); text-align:left; white-space:normal; word-break:keep-all; overflow-wrap:anywhere}
+#line-fix .chip b{font-weight:800; display:block}
+.grid{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.dest{min-height:58px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:18px; font-weight:700; cursor:pointer; padding:6px}
+.dest.on{background:var(--navy); color:var(--on-navy); border-color:var(--navy)}
+.dest small{display:block; font-size:12px; font-weight:500; opacity:.75}
+.row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; min-width:0}
+.row > .hint{flex:1 1 100%; margin-top:2px}
+.kv{display:grid; grid-template-columns:78px 1fr; gap:4px 10px; font-size:16px}
+.kv span:nth-child(odd){color:var(--ink-2)}
+.list{max-height:280px; overflow:auto; border:1px solid var(--line); border-radius:10px; margin-top:8px}
+.item{padding:11px 12px; border-bottom:1px solid var(--line); cursor:pointer}
+.item:last-child{border-bottom:0}
+.item small{color:var(--ink-2)}
+.hide{display:none!important}
+.mask{position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:flex-end; justify-content:center; z-index:20; overflow-y:auto; overscroll-behavior:contain}
+.sheet{background:var(--surface); width:100%; max-width:560px; border-radius:16px 16px 0 0; padding:18px 16px 28px;
+  max-height:92vh; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.sheet img{max-width:100%; height:auto; display:block; border-radius:10px}
+.sheet h3{margin:0 0 10px}
+.today .t{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line); font-size:15px}
+.today .t:last-child{border-bottom:0}
+.tl{display:flex; align-items:center; gap:10px; padding:8px 2px; font-size:16px; border-bottom:1px solid var(--line)}
+.tl:last-child{border-bottom:0}
+.tl input{width:26px; height:26px; flex:none; accent-color:var(--navy); margin:0}
+.tl small{color:var(--ink-2)}
+.today .rk{width:26px; height:26px; flex:none; accent-color:var(--navy); margin:0}
+.today .rk0{width:26px; flex:none}
+.today .t .tx{flex:1; min-width:0}
+.top .out{font-size:14px; padding:6px 10px; margin-left:6px}
+.pill{font-size:12px; border-radius:999px; padding:2px 8px; white-space:nowrap}
+.p-ok{background:var(--good-soft); color:var(--good)} .p-bad{background:var(--bad-soft); color:var(--bad)} .p-test{background:var(--ochre-soft); color:var(--ochre)}
+.spin{display:inline-block; width:16px; height:16px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:sp .8s linear infinite; vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="cgg-beta" id="cggBeta" role="note"><div class="in"><b>오픈 베타</b><span>차곳간은 지금 오픈 베타예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span></div></div>
+<script>try{ if(window.top!==window.self){ document.getElementById("cggBeta").hidden=true; } }catch(e){ document.getElementById("cggBeta").hidden=true; }</script>
+<div class="wrap">
+  <div class="top"><b>🚚 차곳간 배달알림</b><span class="who"><span id="who"></span><button class="btn out hide" id="top-out">로그아웃</button></span></div>
+
+  <!-- 로그인 · 계정 만들기 (업무폰 · 개인폰 어디서든 같은 계정) -->
+  <div id="v-login" class="card hide">
+    <div class="chips" style="margin:0 0 12px">
+      <button class="chip on" id="lg-t1">로그인</button>
+      <button class="chip" id="lg-t2">처음이에요 · 계정 만들기</button>
+    </div>
+    <div id="lg-a">
+      <div class="lab">내 이름</div>
+      <input class="in" id="lg-name" placeholder="예: 장은경" autocomplete="username">
+      <div class="chips" id="lg-names"></div>
+      <div class="lab" style="margin-top:12px">내 비밀번호</div>
+      <input class="in" id="lg-pw" type="password" autocomplete="current-password">
+      <div class="lab" style="margin-top:12px">회사 코드 (선택)</div>
+      <input class="in" id="lg-code" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="같은 이름의 기사가 다른 회사에도 있을 때만">
+      <label class="hint" style="display:flex; align-items:center; gap:8px; margin-top:10px">
+        <input type="checkbox" id="lg-keep" checked style="width:22px; height:22px"> 이 폰에서 로그인 유지 (남의 폰이면 끄세요)</label>
+      <div style="height:10px"></div>
+      <button class="big b-main" id="lg-go">로그인</button>
+    </div>
+    <div id="lg-b" class="hide">
+      <div class="lab">회사 기사 비밀번호 (사무실에서 알려 준 것)</div>
+      <input class="in" id="su-pin" type="password" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="예: 검사소 코드 또는 사업자번호">
+      <div class="lab" style="margin-top:12px">내 이름</div>
+      <input class="in" id="su-name" placeholder="예: 장은경" autocomplete="off">
+      <div class="lab" style="margin-top:12px">내 비밀번호 (6자리 이상 · 업무폰 · 개인폰 모두 이걸로 로그인)</div>
+      <input class="in" id="su-pw" type="password" autocomplete="new-password">
+      <div class="lab" style="margin-top:12px">내 비밀번호 한 번 더</div>
+      <input class="in" id="su-pw2" type="password" autocomplete="new-password">
+      <div style="height:12px"></div>
+      <button class="big b-main" id="su-go">가입 신청하기</button>
+      <div class="hint" style="margin-top:8px">가입 신청을 하면 사무실에서 승인한 뒤부터 로그인할 수 있습니다. 비밀번호를 잊으면 사무실에서 초기화해 줍니다. 그 뒤 여기서 새로 정하면 됩니다.</div>
+    </div>
+    <div class="hint" id="lg-msg"></div>
+  </div>
+
+  <div id="v-main" class="hide">
+    <div id="test-banner" class="warn hide">지금은 <b>시험 발송</b> 중이에요 — 딜러에게 실제로 나가지 않고 기록만 남아요.</div>
+
+    <div id="draft-note" class="draft hide"><span style="flex:1">📝 쓰던 내용(사진 포함)을 다시 불러왔어요.</span><button class="btn" id="draft-new">새로 쓰기</button></div>
+    <!-- ① 한 줄 입력 -->
+    <div class="card">
+      <div class="lab"><span>① 한 줄 입력 — 딜러 + 목적지</span><button class="btn" id="line-clear">지우기</button></div>
+      <input class="in" id="line" placeholder="예) 홍길동 하늘모터스" autocomplete="off" autocapitalize="off">
+      <div class="hint" id="line-out">카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 돼요.</div>
+      <div class="chips" id="line-fix"></div>
+    </div>
+
+    <!-- ② 사진 -->
+    <div class="card">
+      <div class="lab"><span>② 차 사진 (번호판이 보이게 · 없어도 됨)</span><button class="btn" id="no-photo">사진 없이</button></div>
+      <input type="file" id="cam" accept="image/*" capture="environment" class="hide">
+      <button class="big b-main" id="shoot">📷 사진 찍기</button>
+      <div id="photo-box" class="hide">
+        <div class="photo" id="photo"><img id="ph-img" alt="찍은 사진"><div class="mark hide" id="ph-mark"></div></div>
+        <div class="hint" id="ph-hint">번호판을 못 읽으면 <b>사진 속 번호판을 손가락으로 누르세요</b> — 그 부분만 크게 키우고 밝기를 고쳐 다시 읽어요. 차량번호는 몰라도 보낼 수 있어요.</div>
+        <div class="thumbs" id="ph-more"></div>
+        <input type="file" id="cam2" accept="image/*" capture="environment" class="hide">
+        <div class="row" style="margin-top:8px"><button class="btn" id="reshoot">다시 찍기</button><button class="btn" id="add-photo">＋ 사진 추가 (1/3)</button><span class="hint" id="gps"></span></div>
+        <div class="hint">딜러는 알림톡의 «사진 보기»로 사진을 봐요. (알림톡이 안 되면 문자에 <b>첫 사진</b>이 붙어요)</div>
+      </div>
+    </div>
+
+    <!-- ② 차량번호 -->
+    <div class="card">
+      <div class="lab"><span>③ 차량번호 <small style="font-weight:400">(몰라도 됨)</small></span><span id="ocr-st"></span></div>
+      <input class="in plate" id="plate" placeholder="12가3456" autocomplete="off">
+      <div class="chips" id="plate-cands"></div>
+      <div class="hint" id="car-hint"></div>
+    </div>
+
+    <!-- ③ 딜러 -->
+    <div class="card">
+      <div class="lab"><span>④ 딜러 (알림 받을 사람)</span><button class="btn" id="dl-change">바꾸기</button></div>
+      <div id="dl-show" class="kv"></div>
+      <div id="dl-pick" class="hide">
+        <input class="in" id="dl-q" placeholder="딜러 이름이나 상사 찾기">
+        <div class="list" id="dl-list"></div>
+      </div>
+      <div class="lab" style="margin-top:10px">연락처</div>
+      <input class="in" id="tel" inputmode="tel" placeholder="010-0000-0000">
+      <div id="tel-list"></div>
+    </div>
+
+    <!-- ④ 목적지 -->
+    <div class="card">
+      <div class="lab"><span>⑤ 목적지</span><span><button class="btn" id="dest-edit">고치기</button> <button class="btn" id="dest-add">+ 새 목적지</button></span></div>
+      <input class="in" id="dest-q" placeholder="🔍 목적지 찾기 (이름 일부만)" autocomplete="off"
+             style="font-size:19px; padding:15px 14px; margin-bottom:10px">
+      <div class="grid" id="dests"></div>
+      <div class="hint" id="dest-more" style="margin-top:6px"></div>
+      <div id="dest-map" class="hint" style="margin-top:8px"></div>
+      <div id="dest-new" class="hide" style="margin-top:8px">
+        <div class="row"><input class="in" id="dest-name" placeholder="목적지 이름"><button class="btn" id="dest-ok">넣기</button></div>
+      </div>
+    </div>
+
+    <button class="big b-main" id="send" disabled>도착 알림 보내기</button>
+    <div class="hint" id="send-why" style="text-align:center"></div>
+
+    <div class="card today" style="margin-top:14px">
+      <div class="lab"><span>보낸 것</span><button class="btn" id="reload">새로고침</button></div>
+      <div class="chips" id="who-btns" style="margin:0 0 8px">
+        <button class="chip on" data-w="me">내 것만</button>
+        <button class="chip" data-w="all">전체 (기사 모두)</button>
+      </div>
+      <div class="chips" id="per-btns" style="margin-bottom:8px"></div>
+      <div class="row" style="gap:6px; margin-bottom:8px">
+        <input type="date" class="in" id="p-from" style="flex:1; font-size:15px; padding:9px">
+        <span class="hint">~</span>
+        <input type="date" class="in" id="p-to" style="flex:1; font-size:15px; padding:9px">
+      </div>
+      <input class="in" id="q" placeholder="찾기 — 차량번호 · 딜러 · 목적지" style="font-size:16px; padding:10px; margin-bottom:8px">
+      <div class="row" style="margin-bottom:4px">
+        <label class="hint" style="display:flex; align-items:center; gap:8px; margin:0"><input type="checkbox" id="ck-all" style="width:24px; height:24px"> 내 것 모두 고르기</label>
+        <span style="flex:1"></span>
+        <button class="btn" id="del-sel" disabled style="color:var(--bad)">🗑 고른 것 삭제</button>
+      </div>
+      <div id="today"></div>
+      <button class="big b-sub hide" id="more" style="min-height:46px; margin-top:8px">더 보기</button>
+      <div class="hint" id="list-st"></div>
+    </div>
+    <div class="hint" style="text-align:center"><span id="ver"></span> · <a href="#" id="logout" style="color:var(--ink-3)">로그아웃</a> · <a href="#" id="chpw" style="color:var(--ink-3)">비밀번호 바꾸기</a></div>
+  </div>
+</div>
+
+<button id="top-fab" class="hide"
+        style="position:fixed; right:14px; bottom:16px; z-index:15; border:0; border-radius:999px; padding:14px 18px;
+               background:var(--navy); color:var(--on-navy); font-size:16px; font-weight:700; box-shadow:0 6px 20px rgba(0,0,0,.35)">⬆ 맨 위로</button>
+<div class="mask hide" id="modal"><div class="sheet" id="modal-body"></div></div>
+
+<script>
+var LS='gaon.deliv.driver.v1', RECENT='gaon.deliv.recent.v1', FREQ='gaon.deliv.freq.v1';
+function $(id){ return document.getElementById(id); }
+function ls(k,v){ try{ if(v===undefined){ return JSON.parse(localStorage.getItem(k)||'null'); } localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function normComp(s){ return String(s||'').replace(/\(주\)|㈜|주식회사|\s/g,'').toLowerCase(); }
+function plateNorm(s){ return String(s||'').replace(/[\s\-]/g,''); }
+function telFmt(v){ var n=String(v||'').replace(/\D/g,''); if(n.length===11) return n.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'); if(n.length===10) return n.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3'); return String(v||''); }
+/* ── 차곳간체크 서버로 부릅니다 (예전 구글 스크립트 자리) ──
+   화면 코드는 그대로 두고, 이 다리 하나만 바꿨습니다. */
+var API='https://ybfpxmmjofyvfprtvmhj.supabase.co/functions/v1/check-api';
+function call(fn){ var a=[].slice.call(arguments,1);
+  return fetch(API,{ method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ fn: String(fn).replace(/^api_/,'deliv_'), args: a }) })
+  .then(function(r){ return r.text().then(function(t){
+    var j=null; try{ j=JSON.parse(t); }catch(e){}
+    if(!j){ try{ console.warn('check-api 답이 JSON 이 아님', r.status, String(t).slice(0,300)); }catch(e){}
+      throw new Error('서버에서 답을 받지 못했어요. 잠시 뒤 다시 시도해 주세요.'); }
+    if(j.__need==='pwchange'){   /* v25: 임시 비밀번호 — 바꾸기 전에는 다른 기능이 막힘 (서버 v30) */
+      var pe=new Error(j.__err||'임시 비밀번호입니다. 비밀번호를 먼저 바꿔 주세요.'); pe.need='pwchange';
+      setTimeout(function(){ askNewPw(''); }, 0);
+      throw pe;
+    }
+    if(j.__err) throw new Error(j.__err);
+    if(j.result===undefined){
+      try{ console.warn('check-api 답을 알아듣지 못함', r.status, String(t).slice(0,300)); }catch(e){}
+      if(r.status===401||r.status===404) throw new Error('서버 설정이 맞지 않아 처리하지 못했어요. 사무실에 알려 주세요.');
+      throw new Error('처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+    }
+    return j.result;
+  }); }).catch(function(e){ var er=new Error(niceMsg(e&&e.message)); if(e&&e.need) er.need=e.need; throw er; });   /* v26 */
+}
+/* v27: 화면에는 쉬운 말만 — 화면은 해요체, 로그인 · 비밀번호 칸은 표준형(formal) (말 대조표 3장) */
+function niceMsg(m, formal){
+  m=String(m==null?'':m).trim();
+  var NET = formal ? '연결이 잠시 끊겼습니다. 잠시 후 다시 시도해 주세요.' : '연결이 잠시 끊겼어요. 다시 시도해 주세요.';
+  var GEN = formal ? '처리하지 못했습니다. 잠시 후 다시 시도해 주세요.' : '처리하지 못했어요. 다시 시도해 주세요.';
+  if(!m) return GEN;
+  if(/Failed to fetch|NetworkError|Load failed|network|timed? ?out|aborted|offline|연결이 잠시 끊겼/i.test(m)) return NET;
+  if(!/[가-힣]/.test(m) || /undefined|\bnull\b|NaN|\[object /.test(m)){ try{ console.warn('바꾼 오류 글:', m); }catch(e){} return GEN; }
+  if(/^처리하지 못했/.test(m)) return GEN;
+  if(/^서버에서 답을 받지 못했/.test(m)) return formal ? '서버에서 답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.' : '서버에서 답을 받지 못했어요. 다시 시도해 주세요.';
+  if(/^서버 설정이 맞지 않아/.test(m)) return formal ? '서버 설정이 맞지 않아 처리하지 못했습니다. 사무실에 알려 주세요.' : '서버 설정이 맞지 않아 처리하지 못했어요. 사무실에 알려 주세요.';
+  return m;
+}
+/* 보낸 결과 — 방법 코드(ATA · MMS · LMS · SMS)는 우리말로, 이유가 영어 · 코드면 쉬운 말로 */
+function howKo(h){ h=String(h||'').toUpperCase(); return h==='ATA'?'알림톡':h==='MMS'?'사진 문자':(h==='LMS'||h==='SMS')?'문자':(h||'-'); }
+function whyKo(w){
+  w=String(w||'');
+  /* v28: 서버 까닭(짧은 말)을 기사가 할 일로 — 사무실이 고칠 것은 «사무실에 알려 주세요» */
+  var MAP=[
+    [/보내는 번호 없음/, '사무실 설정에서 보내는 번호를 넣어야 알림이 가요. 사무실에 알려 주세요. (기록은 남았어요)'],
+    [/등록된 딜러 번호가 아님/, '이 번호는 아직 딜러 목록에 없어요. 사무실에서 딜러 연락처를 등록하면 보내져요. (기록은 남았어요)'],
+    [/^연락처 없음/, '딜러 연락처가 없어서 알림을 못 보냈어요. 연락처를 넣고 기록에서 «다시 보내기»를 눌러 주세요.'],
+    [/기사 한 명이 보낼 수 있는 알림을 다 씀/, '오늘 보낼 수 있는 알림 수를 다 썼어요. 내일 다시 보내지거나, 사무실에 알려 주세요.'],
+    [/오늘 보낼 수 있는 알림을 다 씀/, '오늘 검사소가 보낼 수 있는 알림 수를 다 썼어요. 사무실에 알려 주세요.'],
+    [/카카오톡을 쓰지 않는 번호/, '카카오톡을 쓰지 않는 번호라 문자로도 못 보냈어요. 번호를 확인해 주세요.'],
+    [/받는 번호가 (없는|올바르지 않)/, '딜러 번호가 맞지 않아요. 번호를 확인하고 다시 보내 주세요.'],
+    [/잔액이 모자람/, '알림 보낼 돈(충전 잔액)이 모자라요. 사무실에 알려 주세요.']
+  ];
+  for(var i=0;i<MAP.length;i++) if(MAP[i][0].test(w)) return MAP[i][1];
+  return (!w || !/[가-힣]/.test(w)) ? '보내지 못했어요. 연락처를 확인하고 다시 시도해 주세요.' : w;
+}
+
+function ss(k,v){ try{ if(v===undefined){ return JSON.parse(sessionStorage.getItem(k)||'null'); } sessionStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+var NAMES='gaon.deliv.names.v1', WHOK='gaon.deliv.listwho.v1';
+var me=ss(LS)||ls(LS)||{}, B=null, carMap={}, S={};
+var OLDLOGIN=(me.pin && String(me.pin).indexOf('T1.')!==0) ? (me.name||' ') : '';
+if(OLDLOGIN) me={};        /* 예전(공용 비밀번호) 방식 로그인은 새로 로그인 */
+function saveMe(keep){
+  try{ localStorage.removeItem(LS); sessionStorage.removeItem(LS); }catch(e){}
+  if(keep) ls(LS, me); else ss(LS, me);
+  var N=(ls(NAMES)||[]).filter(function(x){ return x!==me.name; }); N.unshift(me.name); ls(NAMES, N.slice(0,5));
+}
+function resetS(){ S={ full:null, plate:'', plateHow:'직접', car:null, dealer:'', comp:'', tel:'', dest:'', destKind:'', gps:null, sendJpg:'', more:[] }; }
+resetS();
+
+/* ---------- 시작 ---------- */
+var BKEY='gaon.deliv.boot.v1', CKEY='gaon.deliv.cars.v1';
+/* 같은 상사 · 같은 딜러가 여러 줄이면 하나로 합치고 번호를 모두 모읍니다 */
+function mergeDealers(L){
+  var by={}, out=[];
+  (L||[]).forEach(function(d){
+    var list=(d[3]&&d[3].length)? d[3].slice() : String(d[2]||'').split(/[,;\/]+/).filter(function(t){ return t.replace(/\D/g,'').length>=9; }).map(function(t){ return [t.trim(),'대표']; });
+    var k=normComp(d[0])+'|'+d[1], a=by[k];
+    if(!a){ a=by[k]=[d[0], d[1], '', []]; out.push(a); }
+    else if(String(d[0]||'').length>String(a[0]||'').length) a[0]=d[0];
+    list.forEach(function(t){
+      var n=String(t[0]).replace(/\D/g,'');
+      var x=a[3].filter(function(y){ return String(y[0]).replace(/\D/g,'')===n; })[0];
+      if(!x) a[3].push([t[0], t[1]||'']); else if((!x[1]||x[1]==='대표') && t[1] && t[1]!=='대표') x[1]=t[1];
+    });
+    a[2]=a[3].map(function(t){ return telFmt(t[0]); }).join(', ');
+  });
+  return out;
+}
+function fillCars(list){
+  carMap={};
+  (list||[]).forEach(function(c){ carMap[plateNorm(c[0])]=c; });
+  if(B) B.cars=list||[];
+}
+function start(){
+  if(!me.pin || !me.name){
+    show('login');
+    if(OLDLOGIN){ $('lg-name').value=OLDLOGIN.trim(); $('su-name').value=OLDLOGIN.trim(); lgTab(2);
+      $('lg-msg').innerHTML='<span class="warn" style="display:block;margin-top:10px">이제 기사마다 <b>내 계정</b>으로 로그인합니다.<br>처음 한 번만 회사 비밀번호 + 내 이름 + <b>내 비밀번호</b>를 정해 주세요. 업무폰 · 개인폰 모두 같은 걸로 로그인됩니다.</span>'; OLDLOGIN=''; }
+    return;
+  }
+  $('who').textContent=me.name+' 기사'; $('top-out').classList.remove('hide');
+  /* 저장해 둔 목록이 있으면 기다리지 않고 바로 화면을 엽니다 */
+  if(!B){
+    var cached=ls(BKEY);
+    if(cached && cached.dests){
+      B=cached; B.dealers=mergeDealers(B.dealers); fillCars(ls(CKEY)||[]);
+      show('main'); drawDests(); drawDealer(); tryRestore(); check();
+      $('ver').textContent='불러오는 중…';
+    }
+  }
+  call('api_boot', me.pin, me.name).then(function(b){
+    var hadCars=(B&&B.cars&&B.cars.length)?B.cars:(ls(CKEY)||[]);
+    B=b; B.cars=hadCars; fillCars(hadCars); B.dealers=mergeDealers(b.dealers);
+    if(b.me && b.me!==me.name){ me.name=b.me; $('who').textContent=me.name+' 기사'; }
+    /* 자주 가는 곳 · 최근 간 곳은 기사 모두의 기록으로 (A · B 폰이 같은 목록) */
+    if(b.shared){ if(b.shared.recent) ls(RECENT, b.shared.recent); if(b.shared.freq) ls(FREQ, b.shared.freq); }
+    try{ var slim={}; Object.keys(b).forEach(function(k){ if(k!=='cars'&&k!=='today') slim[k]=b[k]; }); ls(BKEY, slim); }catch(e){}
+    /* 차량 목록(차명 찾기용)은 화면을 연 뒤 조용히 받아 둡니다 */
+    call('api_cars', me.pin).then(function(r){
+      fillCars(r.cars||[]);
+      try{ ls(CKEY, r.cars||[]); }catch(e){}
+      $('ver').textContent=b.ver+' · 차량 '+(r.cars||[]).length+'대 · 딜러 '+(b.dealers||[]).length+'명';
+    }).catch(function(){});
+    if(b.testTo){ $('test-banner').classList.remove('hide');
+      $('test-banner').innerHTML='지금은 <b>시험</b> 중이에요 — 딜러 대신 <b>'+esc(telFmt(b.testTo))+'</b>로 알림이 가요.'; }
+    else { $('test-banner').classList.toggle('hide', !b.test);
+      $('test-banner').innerHTML='지금은 <b>시험 발송</b> 중이에요 — 딜러에게 실제로 나가지 않고 기록만 남아요.'; }
+    $('ver').textContent=b.ver+' · 딜러 '+(b.dealers||[]).length+'명';
+    show('main'); drawDests(); drawDealer(); tryRestore();
+    if(!$('p-from').value) setPer('today');
+    drawToday(b.today); check();
+  }).catch(function(e){
+    if(e && e.need==='pwchange'){ show('login'); $('lg-msg').textContent=''; return; }   /* v25: 바꾸기 창이 곧 뜸 */
+    if(/로그인|비밀번호|계정/.test(e.message)){ var nm=me.name; forget(); $('lg-name').value=nm||''; }
+    show('login'); $('lg-msg').innerHTML='<span class="bad" style="display:block">'+esc(niceMsg(e.message, true))+'</span>';
+  });
+}
+function show(v){
+  $('v-login').classList.toggle('hide', v!=='login'); $('v-main').classList.toggle('hide', v!=='main');
+  if(v==='login'){ $('who').textContent=''; $('top-out').classList.add('hide'); drawNames(); }
+}
+function forget(){ me={}; B=null; try{ localStorage.removeItem(LS); sessionStorage.removeItem(LS);
+  [BKEY, CKEY, RECENT, FREQ, DRAFT, WHOK, NAMES].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} }); }catch(e){} }   /* v26: 앞사람 업무 자료 지움 */
+function drawNames(){
+  var box=$('lg-names'); box.innerHTML='';
+  (ls(NAMES)||[]).forEach(function(n){
+    var b=document.createElement('button'); b.className='chip'; b.textContent=n;
+    b.onclick=function(){ $('lg-name').value=n; $('lg-pw').focus(); };
+    box.appendChild(b);
+  });
+}
+function lgTab(t){
+  $('lg-t1').classList.toggle('on', t===1); $('lg-t2').classList.toggle('on', t===2);
+  $('lg-a').classList.toggle('hide', t!==1); $('lg-b').classList.toggle('hide', t!==2); $('lg-msg').textContent='';
+}
+/* v24: 서버 답을 알맞은 모양으로 — 가입 신청 완료는 안내(초록), 잠김 · 회사 코드 필요는 주의(주황), 나머지는 오류(빨강) */
+function lgSay(m){
+  m=niceMsg(m, true);   /* v27: 로그인 칸은 표준형 */
+  var cls = /가입 신청이 (됐습니다|접수되었습니다)/.test(m) ? 'good'
+          : /잠겼습니다|회사 기사 비밀번호.*함께|검사소 코드/.test(m) ? 'warn' : 'bad';
+  $('lg-msg').innerHTML='<span class="'+cls+'" style="display:block">'+esc(m)+'</span>';
+  if(/회사 기사 비밀번호.*함께|검사소 코드/.test(m)) { var c=$('lg-code'); if(c) c.focus(); }
+}
+try{ var _c=localStorage.getItem('cgg.deliv.code.v1'); if(_c) $('lg-code').value=_c; }catch(e){}
+$('lg-t1').onclick=function(){ lgTab(1); };
+$('lg-t2').onclick=function(){ lgTab(2); };
+function loggedIn(r, keep, pw){
+  me={pin:r.token, name:r.name}; saveMe(keep);
+  if(r.mustChange){   /* v25: 사무실에서 받은 임시 비밀번호로 들어옴 → 내 비밀번호부터 정함 */
+    $('lg-pw').value=''; $('lg-msg').textContent=''; askNewPw(pw||''); return;
+  }
+  $('lg-pw').value=''; $('su-pw').value=''; $('su-pw2').value=''; $('su-pin').value='';
+  $('lg-msg').innerHTML='<span class="spin"></span> 여는 중…'; B=null; start();
+}
+$('lg-go').onclick=function(){
+  var nm=$('lg-name').value.trim(), pw=$('lg-pw').value.trim();
+  if(!nm||!pw){ $('lg-msg').textContent='이름과 비밀번호를 넣어 주세요.'; return; }
+  $('lg-msg').innerHTML='<span class="spin"></span> 확인 중…';
+  var code=$('lg-code').value.trim().toUpperCase();
+  call('api_login', nm, pw, code).then(function(r){ if(code) try{ localStorage.setItem('cgg.deliv.code.v1', code); }catch(e){} loggedIn(r, $('lg-keep').checked, pw); })
+    .catch(function(e){ lgSay(e.message); });
+};
+$('lg-pw').onkeydown=function(e){ if(e.key==='Enter') $('lg-go').click(); };
+$('su-go').onclick=function(){
+  var cp=$('su-pin').value.trim(), nm=$('su-name').value.trim(), pw=$('su-pw').value.trim(), pw2=$('su-pw2').value.trim();
+  if(!cp||!nm||!pw){ $('lg-msg').textContent='회사 비밀번호 · 이름 · 내 비밀번호를 모두 넣어 주세요.'; return; }
+  if(pw.length<6){ $('lg-msg').textContent='내 비밀번호는 6자리 이상으로 정해 주세요.'; return; }
+  if(pw!==pw2){ $('lg-msg').textContent='비밀번호 두 번이 서로 다릅니다.'; return; }
+  $('lg-msg').innerHTML='<span class="spin"></span> 만드는 중…';
+  call('api_signup', cp, nm, pw).then(function(r){ loggedIn(r, true); })
+    .catch(function(e){
+      var m=String(e.message||'');
+      if(/가입 신청이 됐습니다/.test(m)){
+        /* 서버 v23부터: 가입은 «신청» — 사무실이 [사용]으로 승인해야 로그인됨 */
+        $('su-pw').value=''; $('su-pw2').value=''; $('su-pin').value='';
+        lgTab(1); $('lg-name').value=nm; $('lg-pw').value='';
+        lgSay('가입 신청이 접수되었습니다. 사무실에서 승인하면 이 화면에서 로그인할 수 있습니다. (사무실에서 본인 확인 전화가 갈 수 있습니다)');
+        return;
+      }
+      lgSay(m);
+    });
+};
+function logout(e){
+  if(e) e.preventDefault();
+  modal('<h3>로그아웃할까요?</h3><div class="hint" style="margin-bottom:14px">'+esc(me.name||'')+' 기사 로그인을 이 폰에서 끕니다. 보낸 기록은 그대로 남습니다.</div>'+
+    '<button class="big b-main" id="lo-ok">로그아웃</button><div style="height:8px"></div><button class="big b-sub" id="lo-no">그만두기</button>');
+  $('lo-no').onclick=closeModal;
+  $('lo-ok').onclick=function(){
+    var nm=me.name; closeModal(); forget(); clearForm(); todayRows=[]; SEL={};
+    $('lg-name').value=nm||''; $('lg-pw').value=''; lgTab(1); show('login');
+    $('lg-msg').textContent='로그아웃했습니다.';
+  };
+}
+$('logout').onclick=logout;
+$('top-out').onclick=logout;
+$('chpw').onclick=function(e){ e.preventDefault(); pwBox(false, ''); };
+var PW_ASKING=false;
+function askNewPw(old){
+  if(PW_ASKING) return;
+  if(!me.pin){ show('login'); lgSay('임시 비밀번호입니다. 로그인한 뒤 비밀번호를 새로 정해 주세요.'); return; }
+  PW_ASKING=true; pwBox(true, old);
+}
+function pwBox(must, old){
+  modal('<h3>'+(must?'비밀번호를 새로 정해 주세요':'비밀번호 바꾸기')+'</h3>'+
+    (must?'<div class="hint" style="margin-bottom:10px">지금 쓰신 것은 사무실에서 받은 <b>임시 비밀번호</b>입니다. 내 비밀번호로 바꾸면 바로 쓸 수 있습니다.</div>':'')+
+    '<div class="lab"'+(must&&old?' style="display:none"':'')+'>'+(must?'임시 비밀번호':'지금 비밀번호')+'</div><input class="in" id="cp-old" type="password"'+(must&&old?' style="display:none"':'')+'>'+
+    '<div class="lab" style="margin-top:8px">새 비밀번호 (6자리 이상)</div><input class="in" id="cp-new" type="password">'+
+    '<div class="lab" style="margin-top:8px">새 비밀번호 한 번 더</div><input class="in" id="cp-new2" type="password">'+
+    '<div class="hint" id="cp-msg">바꾸면 다른 폰의 로그인은 풀립니다. 그 폰에서는 새 비밀번호로 다시 로그인하세요.</div><div style="height:10px"></div>'+
+    '<button class="big b-main" id="cp-go">바꾸기</button><div style="height:8px"></div><button class="big b-sub" id="cp-no">'+(must?'로그아웃':'닫기')+'</button>');
+  if(old) $('cp-old').value=old;
+  $('cp-no').onclick=must ? function(){
+      var nm=me.name; PW_ASKING=false; closeModal(); forget(); $('lg-name').value=nm||''; $('lg-pw').value=''; lgTab(1); show('login');
+      $('lg-msg').textContent='로그아웃했습니다. 비밀번호를 바꾸려면 다시 로그인해 주세요.'; }
+    : closeModal;
+  $('cp-go').onclick=function(){
+    var o=$('cp-old').value.trim(), n=$('cp-new').value.trim(), n2=$('cp-new2').value.trim();
+    if(n.length<6){ $('cp-msg').textContent='새 비밀번호는 6자리 이상으로 정해 주세요.'; return; }
+    if(n!==n2){ $('cp-msg').textContent='새 비밀번호 두 번이 서로 다릅니다.'; return; }
+    $('cp-msg').innerHTML='<span class="spin"></span> 바꾸는 중…';
+    call('api_changePw', me.pin, o, n).then(function(r){
+      var keep=!!ls(LS); me={pin:r.token, name:r.name}; saveMe(keep);
+      modal('<h3>바꿨어요</h3><button class="big b-main" id="cp-ok">확인</button>');
+      $('cp-ok').onclick=function(){ closeModal(); if(must){ PW_ASKING=false; B=null; start(); } };   /* v25: 꼭 바꿔야 했으면 이제 화면을 엶 */
+    }).catch(function(e){ $('cp-msg').innerHTML='<span class="bad">'+esc(niceMsg(e.message, true))+'</span>'; });
+  };
+};
+
+/* ---------- 추가 사진 (최대 3장) ---------- */
+var PHOTO_MAX=3;
+function drawMore(){
+  var box=$('ph-more'); if(!box) return;
+  box.innerHTML=(S.more||[]).map(function(d,i){
+    return '<div class="th"><img src="'+d+'" alt="추가 사진 '+(i+2)+'"><button data-rm="'+i+'" aria-label="빼기">✕</button></div>';
+  }).join('');
+  var n=1+(S.more||[]).length;
+  $('add-photo').textContent='＋ 사진 추가 ('+n+'/'+PHOTO_MAX+')';
+  $('add-photo').disabled = n>=PHOTO_MAX;
+}
+$('ph-more').addEventListener('click', function(e){
+  var b=e.target.closest ? e.target.closest('button[data-rm]') : null; if(!b) return;
+  S.more.splice(+b.getAttribute('data-rm'),1); drawMore(); saveDraft();
+});
+$('add-photo').onclick=function(){ if((S.more||[]).length+1>=PHOTO_MAX) return; $('cam2').value=''; $('cam2').click(); };
+$('cam2').onchange=function(){
+  var f=this.files&&this.files[0]; if(!f) return;
+  var url=URL.createObjectURL(f), im=new Image();
+  im.onload=function(){
+    /* 추가 사진은 조금 작게 (폰 저장 · 전송이 빠르게) */
+    var d=jpg(im,0,0,im.naturalWidth,im.naturalHeight,1100,.7);
+    if(d.length*0.75>220*1024) d=jpg(im,0,0,im.naturalWidth,im.naturalHeight,900,.6);
+    S.more=(S.more||[]).concat([d]).slice(0, PHOTO_MAX-1); drawMore(); saveDraft();
+    try{ URL.revokeObjectURL(url); }catch(e){}
+  };
+  im.src=url;
+};
+
+/* ---------- 쓰던 내용 저장 · 되살리기 ----------
+   사진을 찍은 뒤 다른 앱(카톡 등)에 다녀오거나, 폰이 화면을 새로 불러와도 사진과 입력이 남도록 */
+var DRAFT='gaon.deliv.draft.v1', restoring=false;
+function saveDraft(){
+  if(restoring || !draftTried) return;          /* 되살리기 전에는 저장본을 건드리지 않음 */
+  var has=S.sendJpg || (S.more&&S.more.length) || $('line').value || S.dest || S.dealer || S.plate;
+  if(!has){ try{ localStorage.removeItem(DRAFT); }catch(e){} return; }
+  var d={ at:Date.now(), who:me.name||'', line:$('line').value, plate:S.plate||'', plateHow:S.plateHow, dealer:S.dealer, comp:S.comp,
+          tel:S.tel, telList:S.telList||null, dest:S.dest, destKind:S.destKind, jpg:S.sendJpg||'', more:S.more||[] };
+  try{ localStorage.setItem(DRAFT, JSON.stringify(d)); }
+  catch(e){ try{ d.more=[]; localStorage.setItem(DRAFT, JSON.stringify(d)); }catch(e2){} }   /* 저장 칸이 모자라면 추가 사진만 빼고 */
+}
+function clearDraft(){ try{ localStorage.removeItem(DRAFT); }catch(e){} $('draft-note').classList.add('hide'); }
+function restoreDraft(){
+  var d=null; try{ d=JSON.parse(localStorage.getItem(DRAFT)||'null'); }catch(e){}
+  if(!d || !d.at || Date.now()-d.at>6*3600000 || (d.who && d.who!==me.name)){ if(d) clearDraft(); return; }
+  restoring=true;
+  try{
+    if(d.line){ $('line').value=d.line; lineApply(); }
+    if(d.plate){ setPlate(d.plate, d.plateHow||'직접'); }
+    if(d.dealer || d.tel){ S.dealer=d.dealer||''; S.comp=d.comp||''; S.telList=d.telList||null; S.tel=d.tel||''; $('tel').value=S.tel; drawDealer(); }
+    if(d.dest){ S.dest=d.dest; S.destKind=d.destKind||''; drawDests(); }
+    S.more=d.more||[];
+    if(d.jpg){
+      S.sendJpg=d.jpg;
+      var im=new Image(); im.onload=function(){ S.full=im; }; im.src=d.jpg;     /* 번호판 누르기도 되도록 */
+      $('ph-img').src=d.jpg; $('photo-box').classList.remove('hide'); $('shoot').classList.add('hide'); $('ph-mark').classList.add('hide');
+    }
+    drawMore();
+    $('draft-note').classList.remove('hide');
+  } finally { restoring=false; }
+  check();
+}
+$('draft-new').onclick=function(){ clearDraft(); clearForm(); };
+var draftTried=false;
+function tryRestore(){ if(draftTried) return; draftTried=true; restoreDraft(); }
+
+/* ---------- ① 사진 ---------- */
+$('shoot').onclick=function(){ $('cam').click(); };
+$('reshoot').onclick=function(){ $('cam').value=''; $('cam').click(); };
+$('no-photo').onclick=function(){ $('plate').focus(); $('ocr-st').textContent='직접 입력'; };
+$('cam').onchange=function(){
+  var f=this.files&&this.files[0]; if(!f) return;
+  if(B && B.gps) getGps(); else { S.gps=null; $('gps').textContent=''; }
+  var url=URL.createObjectURL(f), im=new Image();
+  im.onload=function(){
+    S.full=im;
+    $('ph-img').src=url; $('photo-box').classList.remove('hide'); $('shoot').classList.add('hide'); $('ph-mark').classList.add('hide');
+    S.sendJpg=smallJpg(im); drawMore(); saveDraft();
+    readPlate([ jpg(im, 0,0,im.naturalWidth,im.naturalHeight, 2000, .85),
+                enhJpg(im, 0,0,im.naturalWidth,im.naturalHeight, 2000) ], '사진 전체');
+  };
+  im.src=url;
+};
+/* 사진 속 번호판을 누르면 그 둘레만 잘라 크게 다시 읽음 */
+$('photo').onclick=function(ev){
+  if(!S.full) return;
+  var r=$('ph-img').getBoundingClientRect(), W=S.full.naturalWidth, H=S.full.naturalHeight;
+  var fx=(ev.clientX-r.left)/r.width, fy=(ev.clientY-r.top)/r.height;
+  var cw=W*0.46, ch=cw*0.42, x=Math.max(0,Math.min(W-cw, fx*W-cw/2)), y=Math.max(0,Math.min(H-ch, fy*H-ch/2));
+  var m=$('ph-mark'); m.classList.remove('hide');
+  m.style.left=(x/W*100)+'%'; m.style.top=(y/H*100)+'%'; m.style.width=(cw/W*100)+'%'; m.style.height=(ch/H*100)+'%';
+  readPlate([ enhJpg(S.full, x,y,cw,ch, 1800), jpg(S.full, x,y,cw,ch, 1800, .95) ], '누른 곳');
+};
+function jpg(im, sx,sy,sw,sh, maxW, q){
+  var sc=maxW/Math.max(sw,sh); if(sc>4) sc=4;          /* 작게 자른 곳은 크게 키웁니다 */
+  var c=document.createElement('canvas'); c.width=Math.round(sw*sc); c.height=Math.round(sh*sc);
+  var g=c.getContext('2d'); g.imageSmoothingQuality='high';
+  g.drawImage(im, sx,sy,sw,sh, 0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg', q||.9);
+}
+/* 어두운 사진·야간 사진에서 번호판 글자가 보이도록 흑백 + 밝기/대비를 펴 줍니다 */
+function enhJpg(im, sx,sy,sw,sh, maxW){
+  var sc=maxW/Math.max(sw,sh); if(sc>4) sc=4;
+  var c=document.createElement('canvas'); c.width=Math.round(sw*sc); c.height=Math.round(sh*sc);
+  var g=c.getContext('2d'); g.imageSmoothingQuality='high';
+  g.drawImage(im, sx,sy,sw,sh, 0,0,c.width,c.height);
+  try{
+    var d=g.getImageData(0,0,c.width,c.height), p=d.data, hist=new Array(256), i;
+    for(i=0;i<256;i++) hist[i]=0;
+    for(i=0;i<p.length;i+=4){
+      var v=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0;
+      p[i]=p[i+1]=p[i+2]=v; hist[v]++;
+    }
+    var total=p.length/4, lo=0, hi=255, acc=0;
+    for(i=0;i<256;i++){ acc+=hist[i]; if(acc>total*0.02){ lo=i; break; } }
+    acc=0;
+    for(i=255;i>=0;i--){ acc+=hist[i]; if(acc>total*0.02){ hi=i; break; } }
+    if(hi-lo<20){ lo=0; hi=255; }
+    var map=new Array(256);
+    for(i=0;i<256;i++){
+      var t=(i-lo)/(hi-lo); t=t<0?0:(t>1?1:t);
+      map[i]=Math.round(Math.pow(t,0.85)*255);      /* 조금 밝게 */
+    }
+    for(i=0;i<p.length;i+=4){ var m=map[p[i]]; p[i]=p[i+1]=p[i+2]=m; }
+    g.putImageData(d,0,0);
+  }catch(e){ /* 보정 실패하면 원본 그대로 씁니다 */ }
+  return c.toDataURL('image/jpeg', .95);
+}
+/* 문자(MMS)용 — 솔라피 한도 200KB 아래로 */
+function smallJpg(im){
+  var sizes=[1280,1100,960,800,640], qs=[.8,.7,.6,.5];
+  for(var i=0;i<sizes.length;i++) for(var j=0;j<qs.length;j++){
+    var d=jpg(im,0,0,im.naturalWidth,im.naturalHeight,sizes[i],qs[j]);
+    if(d.length*0.75 < 190*1024) return d;
+  }
+  return jpg(im,0,0,im.naturalWidth,im.naturalHeight,480,.5);
+}
+var lastOcrText='';
+function readPlate(list, where, n){
+  list=(list instanceof Array)? list : [list];
+  n=n||0;
+  if(n>=list.length){
+    $('ocr-st').innerHTML='<span style="color:var(--ochre)">못 읽음 — 번호판을 손가락으로 누르거나 직접 입력</span>'+
+      (lastOcrText? ' <a href="#" id="ocr-raw" style="color:var(--ink-3)">읽은 글자</a>':'');
+    var a=$('ocr-raw');
+    if(a) a.onclick=function(e){ e.preventDefault();
+      modal('<h3>사진에서 읽은 글자</h3><div class="hint" style="margin-bottom:10px">번호판 글자가 아예 없으면 번호판만 가까이 한 장 더 찍어 보세요.</div>'+
+        '<div style="white-space:pre-wrap; background:var(--surface-2); border-radius:10px; padding:12px; max-height:40vh; overflow:auto">'+esc(lastOcrText||'(읽은 글자 없음)')+'</div>'+
+        '<div style="height:10px"></div><button class="big b-sub" id="or-no">닫기</button>');
+      $('or-no').onclick=closeModal; };
+    return;
+  }
+  $('ocr-st').innerHTML='<span class="spin"></span> 번호판 읽는 중'+(n?' (다시 한 번)':'')+'…';
+  call('api_readPlate', me.pin, list[n]).then(function(r){
+    if(!r.ok){ $('ocr-st').innerHTML='<span style="color:var(--bad)">번호판을 못 읽었어요 — 번호판을 손가락으로 누르거나 직접 넣어 주세요</span>'; return; }
+    var ps=r.plates||[];
+    lastOcrText=r.text||lastOcrText;
+    if(!ps.length){ readPlate(list, where, n+1); return; }
+    /* 차량 목록에 있는 번호를 먼저 */
+    ps.sort(function(a,b){ return (carMap[b]?1:0)-(carMap[a]?1:0); });
+    $('ocr-st').innerHTML='<span style="color:var(--good)">자동 인식 ('+esc(where)+')</span>';
+    setPlate(ps[0], '자동');
+    if(ps.length>1) drawCands(ps.map(function(p){ return carMap[p]||[p]; }), '읽은 번호가 여러 개예요');
+  }).catch(function(e){ $('ocr-st').innerHTML='<span style="color:var(--bad)">'+esc(e.message)+'</span>'; });
+}
+function getGps(){
+  S.gps=null; $('gps').textContent='위치 찾는 중…';
+  if(!navigator.geolocation){ $('gps').textContent='위치 없음'; return; }
+  navigator.geolocation.getCurrentPosition(function(p){
+    S.gps={lat:p.coords.latitude.toFixed(6), lng:p.coords.longitude.toFixed(6), acc:p.coords.accuracy};
+    $('gps').textContent='📍 위치 기록됨 (±'+Math.round(p.coords.accuracy)+'m)';
+  }, function(){ $('gps').textContent='위치 못 받음 (괜찮아요)'; }, {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
+}
+
+/* =========================================================
+   한 줄 입력 — "홍길동 하늘모터스" 처럼 적으면 딜러·목적지·차량번호를 알아서 나눕니다.
+   배달 가는 차는 접수리스트(엑셀)에 없는 경우가 많아서, 이 입력이 기본입니다.
+   ========================================================= */
+function nz(s){ return String(s==null?'':s).replace(/[\s·()\-]/g,'').toLowerCase(); }
+function findDestBy(word){
+  var w=nz(word); if(w.length<1) return null;
+  var list=(B.dests||[]), hit=null;
+  list.forEach(function(d){ if(nz(d.목적지)===w) hit=d; });
+  if(hit) return hit;
+  list.forEach(function(d){ var n=nz(d.목적지);
+    if(!hit && w.length>=2 && (n.indexOf(w)===0 || w.indexOf(n)===0)) hit=d; });
+  return hit;
+}
+function findDealersBy(word){
+  var w=String(word||'').trim(); if(w.length<2) return [];
+  var ex=(B.dealers||[]).filter(function(d){ return String(d[1]).trim()===w; });
+  if(ex.length) return ex;
+  return (B.dealers||[]).filter(function(d){ return String(d[1]).indexOf(w)===0; });
+}
+function parseLine(txt){
+  var t=' '+String(txt||'').replace(/[,\/\|·]+/g,' ').replace(/\s+/g,' ').trim()+' ';
+  var out={plate:'', tel:'', dealer:null, dealerCands:[], dest:null, rest:[]};
+  var pm=t.match(/\d{2,3}\s?[가-힣]\s?\d{4}/);
+  if(pm){ out.plate=pm[0].replace(/\s/g,''); t=t.replace(pm[0],' '); }
+  var tm=t.match(/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/);
+  if(tm){ out.tel=tm[0]; t=t.replace(tm[0],' '); }
+  var w=t.trim().split(' ').filter(Boolean), used={};
+  /* 두 낱말 붙은 이름(모던카 외부)도 찾아봅니다 */
+  for(var i=0;i<w.length-1;i++){
+    if(used[i]||used[i+1]) continue;
+    var two=nz(w[i]+w[i+1]), d2=null;
+    (B.dests||[]).forEach(function(d){ if(nz(d.목적지)===two) d2=d; });
+    if(d2 && !out.dest){ out.dest=d2; used[i]=used[i+1]=1; }
+  }
+  for(var j=0;j<w.length;j++){
+    if(used[j]) continue;
+    var dd=findDestBy(w[j]);
+    if(dd && !out.dest){ out.dest=dd; used[j]=1; continue; }
+    var ds=findDealersBy(w[j]);
+    if(ds.length && !out.dealer){ out.dealer=w[j]; out.dealerCands=ds; used[j]=1; continue; }
+  }
+  for(var k=0;k<w.length;k++) if(!used[k]) out.rest.push(w[k]);
+  return out;
+}
+function lineApply(){
+  if(dqOpen){ closeModal(); dqOpen=false; }      /* 한 줄을 고쳐 쓰면 열려 있던 딜러 고르기 창은 닫습니다 */
+  if(S.destFrom==='line'){ S.dest=''; S.destKind=''; S.destFrom=''; }
+  if(S.dealerFrom==='line'){ S.dealer=''; S.comp=''; S.tel=''; S.telMany=null; S.telList=null; S.dealerFrom=''; $('tel').value=''; drawDealer(); }
+  var p=parseLine($('line').value), msg=[], fix=$('line-fix'); fix.innerHTML='';
+  if(p.plate){ setPlate(p.plate, '직접'); S.plateFrom='line'; msg.push('차량번호 <b>'+esc(p.plate)+'</b>'); }
+  else if(S.plateFrom==='line'){ S.plateFrom=''; $('plate').value=''; lookup('', false); }
+  if(p.dealer){
+    var withTel=p.dealerCands.filter(function(d){ return d[2]; });
+    if(p.dealerCands.length===1 || (withTel.length===1)){
+      var d=(p.dealerCands.length===1?p.dealerCands[0]:withTel[0]);
+      S.telMany=null; S.dealerFrom='line'; pickDealer(d[1], d[0], d[2]||'');
+      msg.push('딜러 <b>'+esc(d[1])+'</b>'+(d[0]?' ('+esc(d[0])+')':'')+(d[2]?' '+esc(telFmt(d[2])):' <span style="color:var(--bad)">번호 없음</span>'));
+    } else {
+      S.dealerFrom='line'; pickDealer(p.dealer, '', '');
+      msg.push('딜러 <b>'+esc(p.dealer)+'</b> — 같은 이름 '+p.dealerCands.length+'명');
+      askDealer(p.dealer, p.dealerCands);
+    }
+  }
+  if(p.tel){ S.tel=p.tel; $('tel').value=telFmt(p.tel); drawDealer(); msg.push('연락처 <b>'+esc(telFmt(p.tel))+'</b>'); }
+  if(p.dest){ S.dest=p.dest.목적지; S.destKind=p.dest.분류||''; S.destFrom='line'; drawDests(); msg.push('목적지 <b>'+esc(p.dest.목적지)+'</b>'); }
+  else drawDests();
+  p.rest.forEach(function(word){
+    if(!p.dest){
+      var b=document.createElement('button'); b.className='chip';
+      b.innerHTML='＋ 새 목적지 <b>'+esc(word)+'</b>';
+      b.onclick=function(){ askKind(word, '', function(k){ addDest(word, k); }); };
+      fix.appendChild(b);
+    }
+    if(!p.dealer){
+      var b2=document.createElement('button'); b2.className='chip';
+      b2.innerHTML='딜러 이름으로 <b>'+esc(word)+'</b>';
+      b2.onclick=function(){ S.dealerFrom='line'; S.telMany=null; pickDealer(word, '', ''); lineOut('딜러 목록에 없는 이름이에요 — 아래 연락처를 넣어 주세요'); };
+      fix.appendChild(b2);
+    }
+  });
+  lineOut(msg.length ? msg.join(' · ') : '알아보지 못했어요. 딜러 이름과 목적지를 띄어 써 주세요. 예) 홍길동 하늘모터스');
+  check();
+}
+function lineOut(h){ $('line-out').innerHTML=h; }
+$('line').addEventListener('input', lineApply);
+$('line-clear').addEventListener('click', function(){ $('line').value=''; $('line-fix').innerHTML='';
+  lineOut('카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 돼요.'); });
+
+/* 같은 이름이 여럿일 때 — 상사 이름과 번호를 보고 고릅니다 */
+var dqOpen=false;
+function askDealer(name, cands){
+  dqOpen=true;
+  var h='<h3>'+esc(name)+' 님이 여러 분이에요</h3><div class="hint" style="margin-bottom:12px">어느 상사의 '+esc(name)+' 님인가요?</div>';
+  cands.slice(0,10).forEach(function(d,i){
+    h+='<button class="big b-sub" id="dq-'+i+'" style="text-align:left; padding:12px 14px; margin-bottom:8px">'+
+       '<b>'+esc(d[0]||'상사 없음')+'</b>  '+esc(d[1])+'<br><small style="font-weight:400">'+esc(d[2]?telFmt(d[2]):'번호 없음')+'</small></button>';
+  });
+  h+='<button class="big b-sub" id="dq-no">나중에 고르기</button>';
+  modal(h);
+  cands.slice(0,10).forEach(function(d,i){
+    $('dq-'+i).onclick=function(){
+      S.telMany=null; S.dealerFrom='line'; pickDealer(d[1], d[0], d[2]||'');
+      dqOpen=false; closeModal(); lineOut('딜러를 <b>'+esc(d[0]||'')+' '+esc(d[1])+'</b> 로 정했어요');
+    };
+  });
+  $('dq-no').onclick=function(){ dqOpen=false; closeModal(); };
+}
+
+/* ---------- ③ 차량번호 ---------- */
+$('plate').oninput=function(){ S.plateHow = (S.plateHow==='자동'||S.plateHow==='고침') ? '고침' : '직접'; lookup(plateNorm(this.value), true); };
+function setPlate(p, how){ $('plate').value=p; S.plateHow=how; lookup(p, false); }
+function lookup(p, typing){
+  S.plate=p; S.car=carMap[p]||null;
+  if(typing) $('plate-cands').innerHTML='';
+  if(S.car){
+    $('car-hint').innerHTML='✔ '+esc(S.car[1]||'')+' · 검사 '+esc(S.car[4]||'');
+    pickDealer(S.car[2], S.car[3]); S.dealerFrom='car';
+  } else {
+    if(S.dealerFrom==='car'){ S.dealerFrom=''; S.telMany=null; pickDealer('','',''); }  /* 다른 번호로 바꾸면 앞 차의 딜러를 지움 */
+    var tail=p.replace(/\D/g,'').slice(-4);
+    var hit=[];
+    if(tail.length===4) Object.keys(carMap).forEach(function(k){ if(k.slice(-4)===tail) hit.push(carMap[k]); });
+    $('car-hint').textContent = p ? (hit.length? '정확히 같은 번호는 없어요. 뒷자리가 같은 차:' : '차량 목록에 없는 번호예요 — 딜러를 직접 골라 주세요.') : '';
+    if(typing || hit.length) drawCands(hit, '');
+  }
+  check();
+}
+function drawCands(list, title){
+  var box=$('plate-cands'); box.innerHTML=title?'<div class="hint" style="width:100%">'+esc(title)+'</div>':'';
+  list.slice(0,8).forEach(function(c){
+    var b=document.createElement('button'); b.className='chip';
+    b.innerHTML='<b>'+esc(c[0])+'</b>'+(c[1]?' · '+esc(c[1]):'')+(c[2]?' · '+esc(c[2]):'');
+    b.onclick=function(){ setPlate(c[0], S.plateHow==='자동'?'고침':S.plateHow); $('plate-cands').innerHTML=''; };
+    box.appendChild(b);
+  });
+}
+
+/* ---------- ③ 딜러 ---------- */
+function dealersOf(name, comp){
+  var n=String(name||'').trim(), c=normComp(comp);
+  var all=(B.dealers||[]).filter(function(d){ return d[1]===n; });
+  var same=all.filter(function(d){ return c && normComp(d[0])===c; });
+  return same.length? same : all;
+}
+function pickDealer(name, comp, tel){
+  S.dealer=name||''; S.comp=comp||'';
+  /* 정산 도구에 번호가 여럿(대표 + 직원 번호 등) 있으면 모두 보여 주고 고를 수 있게 */
+  S.telList=null;
+  /* 같은 딜러(같은 이름 · 같은 상사) 줄을 모두 모아 번호를 합칩니다 */
+  var hits=(B.dealers||[]).filter(function(d){ return d[1]===S.dealer && normComp(d[0])===normComp(S.comp); }), L=[];
+  hits.forEach(function(d){
+    var list=(d[3]&&d[3].length)? d[3] : String(d[2]||'').split(/[,;\/]+/).map(function(t){ return [t.trim(),'대표']; });
+    list.forEach(function(t){ var n=String(t[0]).replace(/\D/g,''); if(n.length>=9 && !L.some(function(x){ return String(x[0]).replace(/\D/g,'')===n; })) L.push(t); });
+  });
+  if(L.length) S.telList=L;
+  if(tel!==undefined){
+    /* 정산 도구에서 받은 번호가 더 있으면 모두 넣어 둡니다 (체크를 빼면 그 번호는 안 보냄) */
+    if(L.length>1 && telsOf(tel).length<=1 && (!tel || L.some(function(x){ return String(x[0]).replace(/\D/g,'')===String(tel).replace(/\D/g,''); })))
+      tel=L.map(function(x){ return telFmt(x[0]); }).join(', ');
+    S.tel=tel;
+  }
+  else { var ds=dealersOf(name, comp).filter(function(d){ return d[2]; }); S.tel = ds.length===1 ? ds[0][2] : (ds.length? '' : ''); S.telMany = ds.length>1 ? ds : null; }
+  $('tel').value=telFmt(S.tel); drawDealer(); check();
+}
+function telsOf(v){ return String(v||'').split(/[,;\/\n]+/).map(function(x){ return x.replace(/\D/g,''); }).filter(function(n){ return n.length>=9; }); }
+function drawTelList(){
+  var box=$('tel-list'); if(!box) return;
+  var L=S.telList||[];
+  if(L.length<2 && !(L.length===1 && L[0][1]!=='대표')){ box.innerHTML=''; return; }
+  var on=telsOf(S.tel);
+  box.innerHTML='<div class="hint" style="margin:6px 0 2px">알림 받을 번호 — 체크한 번호로 모두 보내요</div>'+L.map(function(t,i){
+    var n=String(t[0]).replace(/\D/g,'');
+    return '<label class="tl"><input type="checkbox" data-tl="'+i+'"'+(on.indexOf(n)>=0?' checked':'')+'>'+
+      '<b>'+esc(telFmt(t[0]))+'</b> <small>'+esc(t[1]==='대표'?'대표 (본인)':(t[1]||''))+'</small></label>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('input[data-tl]'), function(c){
+    c.onchange=function(){
+      var pick=[]; Array.prototype.forEach.call(box.querySelectorAll('input[data-tl]'), function(x){ if(x.checked) pick.push(telFmt(L[+x.getAttribute('data-tl')][0])); });
+      S.tel=pick.join(', '); $('tel').value=S.tel; drawDealer(); check();
+    };
+  });
+}
+function drawDealer(){
+  drawTelList();
+  var h='';
+  if(S.dealer){
+    h='<span>딜러</span><b>'+esc(S.dealer)+'</b><span>상사</span><span>'+esc(S.comp||'-')+'</span>';
+    if(S.telMany) h+='<span></span><span class="warn" style="margin:0">같은 이름이 여럿 — [바꾸기]로 골라 주세요</span>';
+    else if(!S.tel) h+='<span></span><span class="warn" style="margin:0">번호 없음 — 아래에 넣으면 이번 건에 써요</span>';
+  } else h='<span></span><span class="hint">차량번호로 찾거나 [바꾸기]로 고르세요</span>';
+  $('dl-show').innerHTML=h;
+}
+$('dl-change').onclick=function(){ var p=$('dl-pick'); p.classList.toggle('hide'); if(!p.classList.contains('hide')){ $('dl-q').value=S.dealer||''; drawDealerList(); $('dl-q').focus(); } };
+$('dl-q').oninput=drawDealerList;
+function drawDealerList(){
+  var q=$('dl-q').value.trim(), box=$('dl-list'); box.innerHTML='';
+  var L=(B.dealers||[]).filter(function(d){ return !q || d[1].indexOf(q)>=0 || String(d[0]).indexOf(q)>=0; }).slice(0,40);
+  if(!L.length){ box.innerHTML='<div class="item">목록에 없어요. <b>'+esc(q)+'</b> 이름으로 그냥 쓰기 ›</div>';
+    box.firstChild.onclick=function(){ pickDealer(q,'',''); $('dl-pick').classList.add('hide'); }; return; }
+  L.forEach(function(d){
+    var it=document.createElement('div'); it.className='item';
+    it.innerHTML='<b>'+esc(d[1])+'</b> <small>'+esc(d[0]||'')+' · '+esc(d[2]||'번호 없음')+(d[3]&&d[3].length>1?' ('+d[3].length+'개)':'')+'</small>';
+    it.onclick=function(){ S.telMany=null; S.dealerFrom='pick'; pickDealer(d[1], d[0], d[2]||''); $('dl-pick').classList.add('hide'); };
+    box.appendChild(it);
+  });
+}
+$('tel').oninput=function(){ S.tel=this.value; S.telMany=null; drawDealer(); check(); };  /* 번호를 직접 고쳐도 체크칸이 따라갑니다 */
+
+/* ---------- 목적지 분류 (AI 추측 → 예/아니오 → 고르기) ---------- */
+var KINDS=["광택","세차","카센터(정비)","판금·도색","용품점(썬팅·블박)","주차장","상사·매장","기타"];
+var KIND_RULES=[
+  [/세차|워시|wash|손세차/i,"세차"],
+  [/광택|디테일|폴리싱|코팅|왁스|광텍/i,"광택"],
+  [/판금|도색|덴트|페인트|외판|板/i,"판금·도색"],
+  [/카센터|정비|리페어|repair|공업사|오토큐|블루핸즈|스피드메이트|미션|엔진|타이어|카서비스/i,"카센터(정비)"],
+  [/용품|썬팅|틴팅|블박|블랙박스|오디오|네비|내비|열선|하이패스/i,"용품점(썬팅·블박)"],
+  [/주차장|주차|야적/i,"주차장"],
+  [/상사|매매|모터스|오토|자동차|카월드|딜러/i,"상사·매장"]
+];
+function guessKind(name){
+  var n=String(name||"");
+  for(var i=0;i<KIND_RULES.length;i++) if(KIND_RULES[i][0].test(n)) return KIND_RULES[i][1];
+  return "";
+}
+/* 이름으로 먼저 추측해서 물어보고, 아니면 목록에서 고르게 합니다 */
+function askKind(name, now, done){
+  var g=guessKind(name);
+  if(g && g!==now){
+    modal('<h3>'+esc(name)+'</h3><div class="hint" style="margin-bottom:12px">어떤 곳인지 정해 두면 나중에 목적지별로 모아 볼 수 있어요.</div>'+
+      '<div class="good" style="margin-bottom:14px; font-size:17px"><b>'+esc(g)+'</b>가 맞나요?</div>'+
+      '<button class="big b-main" id="k-yes">네, 맞아요</button><div style="height:8px"></div>'+
+      '<button class="big b-sub" id="k-no">아니요 — 다른 걸로 고르기</button>');
+    $('k-yes').onclick=function(){ done(g); };
+    $('k-no').onclick=function(){ kindList(name, now, done); };
+  } else kindList(name, now, done);
+}
+function kindList(name, now, done){
+  modal('<h3>'+esc(name)+' — 어떤 곳인가요?</h3><div class="chips" id="k-chips" style="margin-bottom:14px"></div>'+
+    '<button class="big b-sub" id="k-skip">나중에 정하기</button>');
+  var box=$('k-chips');
+  KINDS.forEach(function(k){
+    var b=document.createElement('button'); b.className='chip'+(now===k?' on':''); b.textContent=k;
+    b.style.fontSize='17px'; b.style.padding='12px 16px';
+    b.onclick=function(){ done(k); };
+    box.appendChild(b);
+  });
+  $('k-skip').onclick=function(){ done(now||''); };
+}
+
+/* ---------- ④ 목적지 ---------- */
+function mapUrlOf(q){ return 'https://map.naver.com/p/search/'+encodeURIComponent(q); }
+function drawDestMap(){
+  var box=$('dest-map'); if(!box) return;
+  if(!S.dest){ box.innerHTML=''; return; }
+  var d=null; (B.dests||[]).forEach(function(x){ if(x.목적지===S.dest) d=x; });
+  var addr=(d&&d.주소)||'';
+  box.innerHTML='📍 <b>'+esc(S.dest)+'</b>'+(addr? ' · '+esc(addr):'')+
+    ' <a href="'+mapUrlOf(addr||S.dest)+'" target="_blank" rel="noopener" style="color:var(--navy); font-weight:600">네이버 지도에서 보기 ›</a>'+
+    (d&&d.연락처? ' · <a href="tel:'+esc(String(d.연락처).replace(/[^0-9]/g,''))+'" style="color:var(--navy)">전화 '+esc(d.연락처)+'</a>':'');
+}
+var DEST_TOP=4, DEST_NEW=8, DEST_MAX=DEST_TOP+DEST_NEW;   /* 자주 가는 곳 4 + 최근 간 곳 8 */
+function freqGet(){ return ls(FREQ)||{}; }
+function freqAdd(name){
+  if(!name) return;
+  var f=freqGet(); f[name]=(f[name]||0)+1; ls(FREQ, f);
+}
+function drawDests(){
+  var rec=ls(RECENT)||[], f=freqGet(), L=(B.dests||[]).slice();
+  var recIdx=function(n){ var i=rec.indexOf(n); return i<0?999:i; };
+  L.sort(function(a,b){ return recIdx(a.목적지)-recIdx(b.목적지); });      /* 기본은 최근 간 순 */
+  var q=($('dest-q')?$('dest-q').value:'').trim().toLowerCase();
+  var all=L.length, shown, hidden=0, topSet={};
+  if(q){
+    L=L.filter(function(d){ return String(d.목적지).toLowerCase().indexOf(q)>=0 || String(d.분류||'').toLowerCase().indexOf(q)>=0; });
+    shown=L.slice(0, DEST_MAX);
+    hidden=Math.max(0, L.length-shown.length);
+  } else {
+    /* ① 자주 가는 곳 4곳 (보낸 횟수가 많은 순, 같으면 최근 순) */
+    var top=L.filter(function(d){ return (f[d.목적지]||0)>0; })
+             .sort(function(a,b){
+               var d1=(f[b.목적지]||0)-(f[a.목적지]||0);
+               return d1 ? d1 : recIdx(a.목적지)-recIdx(b.목적지);
+             }).slice(0, DEST_TOP);
+    top.forEach(function(d){ topSet[d.목적지]=1; });
+    /* ② 나머지는 최근 배달 순 8곳 */
+    var recent=L.filter(function(d){ return !topSet[d.목적지]; }).slice(0, DEST_NEW);
+    shown=top.concat(recent);
+    hidden=Math.max(0, all-shown.length);
+  }
+  /* 고른 곳이 뒤에 있으면 앞으로 끌어와 보이게 */
+  if(S.dest && !shown.some(function(d){ return d.목적지===S.dest; })){
+    var pick=(B.dests||[]).filter(function(d){ return d.목적지===S.dest; })[0];
+    if(pick){ shown = [pick].concat(shown.slice(0, DEST_MAX-1)); }
+  }
+  var box=$('dests'); box.innerHTML='';
+  shown.forEach(function(d){
+    var b=document.createElement('button'); b.className='dest'+(S.dest===d.목적지?' on':'');
+    b.innerHTML=(topSet[d.목적지]?'<span style="color:#F0B429">★</span> ':'')+esc(d.목적지)+
+      (d.분류?'<small>'+esc(d.분류)+'</small>':'');
+    b.onclick=function(){ if(destEdit){ openDestEdit(d); return; } S.dest=d.목적지; S.destKind=d.분류||''; S.destFrom='tap'; drawDests(); check(); };
+    box.appendChild(b);
+  });
+  var m=$('dest-more');
+  if(m){
+    if(!shown.length) m.innerHTML='찾는 목적지가 없어요. <b>[+ 새 목적지]</b> 로 넣으세요.';
+    else if(q) m.textContent='찾은 곳 '+L.length+'곳 중 '+shown.length+'곳 보임 (전체 '+all+'곳)';
+    else if(hidden>0) m.innerHTML='<span style="color:#F0B429">★</span> 자주 가는 곳 4 + 최근 간 곳 8 · 나머지 '+hidden+'곳은 위 찾기 칸에서';
+    else m.innerHTML='<span style="color:#F0B429">★</span> 자주 가는 곳 · 나머지는 최근 간 순';
+  }
+  drawDestMap();
+}
+$('dest-q').addEventListener('input', function(){ drawDests(); });
+$('dest-add').onclick=function(){
+  $('dest-new').classList.toggle('hide');
+  var q=$('dest-q').value.trim();
+  if(q && !$('dest-name').value) $('dest-name').value=q;     /* 찾다가 없으면 그 이름으로 바로 넣기 */
+  $('dest-name').focus();
+};
+$('dest-ok').onclick=function(){
+  var n=$('dest-name').value.trim(); if(!n) return;
+  askKind(n, '', function(kind){ addDest(n, kind); });
+};
+function addDest(n, kind){
+  closeModal();
+  var btn=$('dest-ok'); btn.disabled=true; btn.textContent='넣는 중…';
+  call('api_addDest', me.pin, n, kind||'').then(function(r){
+    B.dests=r.dests; S.dest=n; S.destKind=kind||''; S.destFrom='line';
+    $('dest-name').value=''; $('dest-new').classList.add('hide'); drawDests(); check();
+  }).catch(function(e){ alert2('넣지 못했어요', e.message); })
+    .then(function(){ btn.disabled=false; btn.textContent='넣기'; });
+}
+/* 목적지 고치기 — 폰에서도 이름·분류를 고치고, 안 쓰는 곳은 목록에서 뺍니다 (PC 사무실 화면과 같은 목록) */
+var destEdit=false;
+$('dest-edit').onclick=function(){ destEdit=!destEdit; this.textContent=destEdit?'고치기 끝':'고치기'; drawDests(); };
+function openDestEdit(d){
+  modal('<h3>목적지 고치기</h3>'+
+    '<div class="lab">이름</div><input class="in" id="de-name" value="'+esc(d.목적지)+'">'+
+    '<div class="lab" style="margin-top:10px">분류</div>'+
+    '<button class="big b-sub" id="de-kind" style="min-height:50px">'+esc(d.분류||'정하기 ›')+'</button>'+
+    '<div class="lab" style="margin-top:10px">주소</div><input class="in" id="de-addr" value="'+esc(d.주소||'')+'" placeholder="예) 수원시 권선구 평동로 102-13">'+
+    '<div class="hint" style="margin-top:4px"><a href="#" id="de-map" style="color:var(--navy); font-weight:600">네이버 지도에서 찾기 ›</a></div>'+
+    '<div class="lab" style="margin-top:10px">연락처</div><input class="in" id="de-tel" inputmode="tel" value="'+esc(d.연락처||'')+'">'+
+    '<div style="height:14px"></div><button class="big b-main" id="de-save">저장</button>'+
+    '<div style="height:8px"></div><button class="big b-sub" id="de-off">목록에서 빼기</button>'+
+    '<div style="height:8px"></div><button class="big b-sub" id="de-no">닫기</button>'+
+    '<div class="hint">고쳐도 지난 배달 기록은 그대로 남아요.</div>');
+  $('de-no').onclick=closeModal;
+  function send(patch){
+    modal('<h3><span class="spin"></span> 저장 중…</h3>');
+    call('api_editDest', me.pin, d.목적지, patch).then(function(r){
+      B.dests=r.dests;
+      if(S.dest===d.목적지) S.dest = patch.목적지!==undefined ? patch.목적지 : S.dest;
+      if(patch.사용==='N' && S.dest===d.목적지) S.dest='';
+      closeModal(); drawDests(); check();
+    }).catch(function(e){ alert2('저장하지 못했어요', e.message); });
+  }
+  var kindNow=d.분류||'';
+  $('de-kind').onclick=function(){
+    var nm=$('de-name').value.trim()||d.목적지;
+    askKind(nm, kindNow, function(k){ kindNow=k; openDestEdit({목적지:nm, 분류:k}); });
+  };
+  $('de-map').onclick=function(e){ e.preventDefault();
+    window.open(mapUrlOf($('de-addr').value.trim() || $('de-name').value.trim() || d.목적지), '_blank', 'noopener'); };
+  $('de-save').onclick=function(){ send({목적지:$('de-name').value.trim(), 분류:kindNow,
+    주소:$('de-addr').value.trim(), 연락처:$('de-tel').value.trim()}); };
+  $('de-off').onclick=function(){ send({사용:'N'}); };
+}
+function alert2(t,h){ modal('<h3>'+esc(t)+'</h3><div class="bad" style="margin-bottom:14px">'+esc(h)+'</div><button class="big b-sub" id="a2">닫기</button>'); $('a2').onclick=closeModal; }
+
+/* ---------- 보내기 ---------- */
+function check(){
+  saveDraft();
+  var why=[], tel=String(S.tel||'').replace(/\D/g,'');
+  if(!S.dealer && !tel) why.push('딜러');
+  if(!S.dest) why.push('목적지');
+  $('send').disabled=!!why.length;
+  $('send-why').textContent = why.length ? why.join(' · ')+' 를 넣어 주세요' :
+    (!tel ? '딜러 번호가 없어서 기록만 남고 알림은 안 나가요' : (!S.plate ? '차량번호 없이 보내요 (알림에 번호는 안 들어가요)' : ''));
+}
+$('send').onclick=function(){
+  var h='<h3>이대로 보낼까요?</h3><div class="kv" style="margin-bottom:14px">'+
+    '<span>차량</span><b>'+esc(S.plate||'(번호 모름)')+'</b>'+(S.car&&S.car[1]?'<span>차명</span><span>'+esc(S.car[1])+'</span>':'')+
+    '<span>목적지</span><b>'+esc(S.dest)+'</b><span>딜러</span><span>'+esc(S.comp?S.comp+' ':'')+'<b>'+esc(S.dealer||'-')+'</b> '+esc(telFmt(S.tel)||'(번호 없음)')+'</span></div>'+
+    (B.testTo?'<div class="warn">시험 중 — 딜러 대신 '+esc(telFmt(B.testTo))+' 로 가요</div>':(B.test?'<div class="warn">시험 발송 중 — 실제로 나가지 않아요</div>':''))+
+    '<button class="big b-main" id="m-ok">보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">고치기</button>';
+  modal(h); $('m-no').onclick=closeModal; $('m-ok').onclick=function(){ doSend(false); };
+};
+function doSend(force){
+  modal('<h3><span class="spin"></span> 보내는 중…</h3><div class="hint">사진을 올리고 알림을 보내고 있어요.</div>');
+  var rec={ plate:S.plate, car:S.car?S.car[1]:'', no:S.car?S.car[5]:'', vin:S.car?S.car[6]:'', dealer:S.dealer, comp:S.comp, tel:S.tel,
+    dest:S.dest, destKind:S.destKind, driver:me.name, lat:S.gps?S.gps.lat:'', lng:S.gps?S.gps.lng:'', acc:S.gps?S.gps.acc:'',
+    photo:S.sendJpg||'', photos:(S.more||[]).slice(0,2), plateHow:S.plateHow, force:force };
+  call('api_arrive', me.pin, rec).then(function(r){
+    if(r.dup){
+      modal('<h3>방금 보낸 기록이 있어요</h3><div class="warn">'+esc(r.at)+' 에 같은 차·같은 목적지로 보냈어요.</div>'+
+        '<button class="big b-main" id="m-ok">그래도 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">그만두기</button>');
+      $('m-no').onclick=closeModal; $('m-ok').onclick=function(){ doSend(true); }; return;
+    }
+    var row=r.row, ok=row.발송결과!=='실패';
+    clearDraft();                                  /* 보냈으니 저장본은 지웁니다 (다시 열어도 같은 건이 안 나오게) */
+    var rec2=(ls(RECENT)||[]).filter(function(x){ return x!==S.dest; }); rec2.unshift(S.dest); ls(RECENT, rec2.slice(0,30));
+    freqAdd(S.dest);
+    modal('<h3>'+(ok?'보냈어요':'기록은 됐지만 알림을 못 보냈어요')+'</h3>'+
+      '<div class="'+(ok?'good':'bad')+'" style="margin-bottom:14px">'+esc(row.차량번호)+' → '+esc(row.목적지)+'<br>'+
+      (row.발송결과==='시험'
+         ? (String(row.발송사유||'').indexOf('시험 받는번호')>=0 ? esc(row.발송사유) : '시험 발송 (실제로 안 나감)')
+         : ok?esc(row.딜러)+' 님께 '+esc(howKo(row.발송방법))+' 보냄':esc(whyKo(row.발송사유)))+'</div>'+
+      '<button class="big b-main" id="m-next">다음 차량</button>');
+    $('m-next').onclick=function(){ closeModal(); clearForm(); start(); };
+  }).catch(function(e){
+    modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-bottom:14px">'+esc(e.message)+'</div><button class="big b-sub" id="m-no">닫기</button>');
+    $('m-no').onclick=closeModal;
+  });
+}
+function clearForm(){
+  resetS(); $('cam').value=''; $('line').value=''; $('line-fix').innerHTML=''; if($('dest-q')) $('dest-q').value='';
+  lineOut('카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 돼요.');
+  $('photo-box').classList.add('hide'); $('shoot').classList.remove('hide'); $('cam2').value=''; drawMore(); clearDraft();
+  $('plate').value=''; $('plate-cands').innerHTML=''; $('car-hint').textContent=''; $('ocr-st').textContent=''; $('tel').value='';
+  $('dl-pick').classList.add('hide'); window.scrollTo(0,0);
+}
+var todayRows=[], shownN=10, listPer='today';
+function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+var PERS=[['today','오늘'],['yday','어제'],['7','최근 7일'],['month','이번 달'],['all','전체']];
+function drawPerBtns(){
+  var box=$('per-btns'); box.innerHTML='';
+  PERS.forEach(function(p){
+    var b=document.createElement('button'); b.className='chip'+(listPer===p[0]?' on':''); b.textContent=p[1];
+    b.onclick=function(){ setPer(p[0]); loadList(); };
+    box.appendChild(b);
+  });
+}
+function setPer(p){
+  listPer=p;
+  var d=new Date(), f=new Date(d), t=new Date(d);
+  if(p==='yday'){ f.setDate(d.getDate()-1); t=new Date(f); }
+  else if(p==='7'){ f.setDate(d.getDate()-6); }
+  else if(p==='month'){ f=new Date(d.getFullYear(), d.getMonth(), 1); }
+  else if(p==='all'){ f=new Date(2000,0,1); }
+  $('p-from').value=ymd(f); $('p-to').value=ymd(t);
+  drawPerBtns();
+}
+var WHO=ls(WHOK)||'me', SEL={};
+function drawWho(){ Array.prototype.forEach.call(document.querySelectorAll('#who-btns .chip'), function(b){ b.classList.toggle('on', b.getAttribute('data-w')===WHO); }); }
+Array.prototype.forEach.call(document.querySelectorAll('#who-btns .chip'), function(b){
+  b.onclick=function(){ WHO=b.getAttribute('data-w'); ls(WHOK, WHO); drawWho(); shownN=10; paintList(); };
+});
+drawWho();
+/* 기사 모두의 기록을 받아 두고, '내 것만'이면 화면에서 걸러 보여 줍니다 */
+function loadList(quiet){
+  if(!me.pin) return;
+  if(!quiet) $('list-st').textContent='불러오는 중…';
+  call('api_mylist', me.pin, $('p-from').value, $('p-to').value, '').then(function(r){
+    if(!quiet) shownN=10;
+    drawToday(r.rows);
+  }).catch(function(e){ if(!quiet) $('list-st').textContent=e.message; });
+}
+/* 다른 기사가 보낸 것도 보이도록 2분마다 · 화면으로 돌아올 때 새로 받기 */
+setInterval(function(){
+  if(document.visibilityState==='visible' && me.pin && !$('v-main').classList.contains('hide') && $('modal').classList.contains('hide')) loadList(true);
+}, 120000);
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible' && me.pin && !$('v-main').classList.contains('hide')) loadList(true);
+});
+function selBar(){
+  var n=Object.keys(SEL).length;
+  $('del-sel').disabled=!n; $('del-sel').textContent='🗑 고른 것 삭제'+(n?' ('+n+')':'');
+}
+$('ck-all').onchange=function(){
+  var on=$('ck-all').checked;
+  Array.prototype.forEach.call(document.querySelectorAll('#today .rk'), function(c){
+    var id=c.getAttribute('data-ck'); if(on) SEL[id]=1; else delete SEL[id]; c.checked=on;
+  });
+  selBar();
+};
+$('del-sel').onclick=function(){
+  var ids=Object.keys(SEL); if(!ids.length) return;
+  trashAsk(ids);
+};
+function trashAsk(ids){
+  modal('<h3>고른 '+ids.length+'건을 지울까요?</h3><div class="hint" style="margin-bottom:14px">휴지통으로 가요. 잘못 지웠으면 바로 [되돌리기]를 누르거나, 사무실 화면 휴지통에서 되살릴 수 있어요.</div>'+
+    '<button class="big b-main" id="tr-ok" style="background:var(--bad)">🗑 지우기</button><div style="height:8px"></div><button class="big b-sub" id="tr-no">그만두기</button>');
+  $('tr-no').onclick=closeModal;
+  $('tr-ok').onclick=function(){
+    modal('<h3><span class="spin"></span> 지우는 중…</h3>');
+    call('api_trash', me.pin, ids, false, me.name).then(function(r){
+      SEL={}; selBar(); $('ck-all').checked=false;
+      modal('<h3>🗑 '+r.n+'건을 지웠어요</h3>'+(r.skip?'<div class="warn" style="margin-bottom:10px">다른 기사가 보낸 '+r.skip+'건은 지우지 않았어요.</div>':'')+
+        '<button class="big b-sub" id="tr-undo">↩ 되돌리기</button><div style="height:8px"></div><button class="big b-main" id="tr-close">확인</button>');
+      $('tr-close').onclick=closeModal;
+      $('tr-undo').onclick=function(){
+        call('api_trash', me.pin, ids, true, me.name).then(function(){ closeModal(); loadList(); })
+          .catch(function(e){ alert2('되돌리지 못했어요', e.message); });
+      };
+      loadList();
+    }).catch(function(e){ alert2('지우지 못했어요', e.message); });
+  };
+}
+$('reload').onclick=loadList;
+$('p-from').onchange=function(){ listPer=''; drawPerBtns(); loadList(); };
+$('p-to').onchange=function(){ listPer=''; drawPerBtns(); loadList(); };
+$('q').oninput=function(){ shownN=10; paintList(); };
+$('more').onclick=function(){ shownN+=20; paintList(); };
+function drawToday(L){
+  todayRows=(L||[]).slice().sort(function(a,b){ return String(a.도착일시)<String(b.도착일시)?1:-1; });
+  paintList();
+}
+function paintList(){
+  var q=$('q').value.trim().toLowerCase();
+  var base=todayRows.filter(function(r){ return WHO==='all' || r.기사===me.name; });
+  var have={}; base.forEach(function(r){ have[r.배달ID]=1; });
+  Object.keys(SEL).forEach(function(k){ if(!have[k]) delete SEL[k]; });
+  var L=base.filter(function(r){
+    if(!q) return true;
+    return [r.차량번호,r.딜러,r.상사,r.목적지,r.메모,r.도착일시,r.기사].join(' ').toLowerCase().indexOf(q)>=0;
+  });
+  var P=L.slice(0, shownN);
+  $('today').innerHTML = P.length ? P.map(function(r,i){
+    var cls=r.발송결과==='성공'?'p-ok':(r.발송결과==='시험'?'p-test':'p-bad');
+    var day=String(r.도착일시).slice(5,10).replace('-','/');
+    var mine=(r.기사===me.name), id=esc(r.배달ID);
+    return '<div class="t" data-id="'+id+'" style="cursor:pointer">'+
+      (mine?'<input type="checkbox" class="rk" data-ck="'+id+'"'+(SEL[r.배달ID]?' checked':'')+' aria-label="고르기">':'<span class="rk0"></span>')+
+      '<span class="tx">'+esc(day)+' '+esc(String(r.도착일시).slice(11,16))+
+      ' <b>'+esc(r.차량번호||'번호 없음')+'</b> → '+esc(r.목적지)+
+      '<br><small style="color:var(--ink-2)">'+esc((r.상사?r.상사+' ':'')+(r.딜러||'딜러 없음'))+
+      (WHO==='all'?' · <b style="color:var(--ink)">'+esc(r.기사||'')+(mine?'(나)':'')+'</b>':'')+' · 눌러서 자세히</small></span>'+
+      '<span class="pill '+cls+'">'+esc(r.상태==='취소'?'취소':r.발송결과)+'</span></div>';
+  }).join('') : '<div class="hint">'+(base.length?'찾는 것이 없어요.':'아직 보낸 것이 없어요.')+'</div>';
+  selBar();
+  $('more').classList.toggle('hide', L.length<=shownN);
+  $('more').textContent='더 보기 (남은 '+Math.max(0,L.length-shownN)+'건)';
+  $('list-st').textContent=L.length+'건'+(WHO==='all'?' · 기사 모두':' · 내 것');
+}
+$('today').addEventListener('click',function(e){
+  if(e.target.classList && e.target.classList.contains('rk')){
+    var k=e.target.getAttribute('data-ck'); if(e.target.checked) SEL[k]=1; else delete SEL[k]; selBar(); return;
+  }
+  var t=e.target.closest ? e.target.closest('.t[data-id]') : null;
+  if(!t) return;
+  var id=t.getAttribute('data-id');
+  for(var i=0;i<todayRows.length;i++) if(String(todayRows[i].배달ID)===id){ openRec(todayRows[i]); return; }
+});
+/* 보낸 건 자세히 보기 — 사진 · 고치기 · 다시 보내기 (PC 사무실 화면과 같은 내용) */
+function openRec(r){
+  if(!r) return;
+  var ok=r.발송결과!=='실패';
+  modal('<h3>'+esc(r.차량번호)+' → '+esc(r.목적지)+'</h3>'+
+    '<div id="rc-photo" style="background:#000; border-radius:10px; min-height:60px; display:flex; align-items:center; justify-content:center; color:#999; margin-bottom:12px">'+
+      (r.사진ID?'사진 불러오는 중…':'사진 없음')+'</div>'+
+    '<div class="'+(ok?'good':'bad')+'" style="margin-bottom:12px">'+esc(r.도착일시)+' · '+esc(howKo(r.발송방법))+' '+esc(r.발송결과||'')+
+      (r.발송사유?'<br>'+esc(r.발송사유):'')+'</div>'+
+    '<div class="lab">딜러</div><input class="in" id="rc-dealer" value="'+esc(r.딜러||'')+'">'+
+    '<div class="lab" style="margin-top:8px">연락처</div><input class="in" id="rc-tel" inputmode="tel" value="'+esc(r.딜러연락처||'')+'">'+
+    '<div class="lab" style="margin-top:8px">차량번호</div><input class="in" id="rc-plate" value="'+esc(r.차량번호||'')+'">'+
+    '<div class="lab" style="margin-top:8px">목적지 <a href="'+mapUrlOf(r.목적지||'')+'" target="_blank" rel="noopener" style="color:var(--navy)">지도 ›</a></div><select class="in" id="rc-dest">'+
+      (B.dests||[]).map(function(d){ return '<option'+(d.목적지===r.목적지?' selected':'')+'>'+esc(d.목적지)+'</option>'; }).join('')+
+      ((B.dests||[]).some(function(d){ return d.목적지===r.목적지; })?'':'<option selected>'+esc(r.목적지)+'</option>')+'</select>'+
+    '<div class="lab" style="margin-top:8px">메모</div><input class="in" id="rc-memo" value="'+esc(r.메모||'')+'">'+
+    '<div style="height:14px"></div>'+
+    '<button class="big b-main" id="rc-send">저장하고 다시 보내기</button><div style="height:8px"></div>'+
+    '<button class="big b-sub" id="rc-save">저장만</button><div style="height:8px"></div>'+
+    '<button class="big b-sub" id="rc-del">'+(r.상태==='취소'?'취소 풀기':'취소 표시')+'</button><div style="height:8px"></div>'+
+    (r.기사===me.name?'<button class="big b-sub" id="rc-trash" style="color:var(--bad)">🗑 이 기록 삭제 (휴지통)</button><div style="height:8px"></div>':'')+
+    '<button class="big b-sub" id="rc-close">닫기</button>');
+  if(r.사진ID) call('api_photo', me.pin, r.사진ID).then(function(p){
+      if($('rc-photo')) $('rc-photo').innerHTML='<img src="'+p.b64+'" style="width:100%; display:block; border-radius:10px" alt="도착 사진">';
+    }).catch(function(e){ if($('rc-photo')) $('rc-photo').textContent=e.message; });
+  /* 추가 사진 */
+  String(r.추가사진ID||'').split(',').filter(Boolean).forEach(function(fid, k){
+    var box=$('rc-photo'); if(!box) return;
+    var holder=document.createElement('div'); holder.id='rc-more-'+k; holder.style.cssText='margin-bottom:12px; color:#999';
+    holder.textContent='추가 사진 '+(k+2)+' 불러오는 중…'; box.parentNode.insertBefore(holder, box.nextSibling);
+    call('api_photo', me.pin, fid).then(function(p){ var h=$('rc-more-'+k); if(h) h.innerHTML='<img src="'+p.b64+'" style="width:100%; display:block; border-radius:10px" alt="추가 사진">'; })
+      .catch(function(e){ var h=$('rc-more-'+k); if(h) h.textContent=e.message; });
+  });
+  function patch(){
+    var p={}, f={딜러:'rc-dealer', 딜러연락처:'rc-tel', 차량번호:'rc-plate', 목적지:'rc-dest', 메모:'rc-memo'};
+    Object.keys(f).forEach(function(k){ var el=$(f[k]); if(el && el.value!==(r[k]||'')) p[k]=el.value; });
+    return p;
+  }
+  $('rc-close').onclick=closeModal;
+  if($('rc-trash')) $('rc-trash').onclick=function(){ trashAsk([r.배달ID]); };
+  $('rc-del').onclick=function(){
+    var undo=(r.상태==='취소');
+    modal('<h3><span class="spin"></span> '+(undo?'되돌리는 중…':'취소하는 중…')+'</h3>');
+    call('api_cancel', me.pin, [r.배달ID], undo).then(function(){ closeModal(); loadList(); })
+      .catch(function(e){ alert2(undo?'취소를 풀지 못했어요':'취소 표시를 하지 못했어요', e.message); });
+  };
+  $('rc-save').onclick=function(){
+    modal('<h3><span class="spin"></span> 저장 중…</h3>');
+    call('api_update', me.pin, r.배달ID, patch()).then(function(){ closeModal(); loadList(); })
+      .catch(function(e){ alert2('저장하지 못했어요', e.message); });
+  };
+  $('rc-send').onclick=function(){
+    var p=patch();
+    modal('<h3><span class="spin"></span> 보내는 중…</h3><div class="hint">저장한 뒤 다시 보내요.</div>');
+    call('api_update', me.pin, r.배달ID, p)
+      .then(function(){ return call('api_resend', me.pin, [r.배달ID]); })
+      .then(function(x){
+        var y=(x.results&&x.results[0])||{};
+        modal('<h3>'+(y.ok?'✅ 다시 보냄':'⚠️ 보내지 못함')+'</h3><div class="'+(y.ok?'good':'bad')+'" style="margin-bottom:14px">'+esc(y.ok?'보냈어요':whyKo(y.why))+'</div>'+
+          '<button class="big b-main" id="rc-ok">확인</button>');
+        $('rc-ok').onclick=function(){ closeModal(); loadList(); };
+      }).catch(function(e){ alert2('보내지 못했어요', e.message); });
+  };
+}
+$('reload').onclick=start;
+$('top-fab').onclick=function(){ window.scrollTo({top:0, behavior:'smooth'}); };
+window.addEventListener('scroll', function(){
+  $('top-fab').classList.toggle('hide', (window.scrollY||document.documentElement.scrollTop||0) < 350);
+});
+function modal(h){ $('modal-body').innerHTML=h; $('modal').classList.remove('hide'); }
+function closeModal(){ $('modal').classList.add('hide'); }
+
+start();
+</script>
+</body>
+</html>
