@@ -370,3 +370,20 @@ function wAfter(f){return function(){var r=f.apply(this,arguments);try{if(S.mode
 renderBill=wAfter(renderBill);renderLedger=wAfter(renderLedger);renderMoney=wAfter(renderMoney);
 renderTax=wAfter(renderTax);renderOutLog=wAfter(renderOutLog);renderMat=wAfter(renderMat);
 /* ══════════════ v132 — 일 화면 뼈대''')
+# 확인 창 · 예약 창 — 같은 이름 딜러는 처음부터 빼고 수 · 합계를 맞춰요
+rep('''  var targets=list.filter(function(b){return (!ids.length||B.sel[b.name])&&b.amount>0&&b.phone;});
+  if(!targets.length)return toast("보낼 곳이 없어요 (금액 0원이거나 번호 없음)",true);''', '''  var targets=list.filter(function(b){return (!ids.length||B.sel[b.name])&&b.amount>0&&b.phone;});
+  var dupN=targets.filter(function(b){return b.dup&&B.unit!=="company";}).length;   /* v132: 같은 이름 딜러는 빼요(서버 고침 전) */
+  targets=targets.filter(function(b){return !(b.dup&&B.unit!=="company");});
+  if(!targets.length)return toast(dupN?"이름이 같은 딜러만 남아 지금은 보낼 수 없어요 — 인쇄 · 그림으로 보내 주세요":"보낼 곳이 없어요 (금액 0원이거나 번호 없음)",true);''', 2)
+rep('''+(tt.all?"전체 ":"고른 ")+targets.length+(B.unit==="company"?"곳":"명")+" · 합계 "+wonExact(tt.sum)''',
+    '''+(tt.all&&!dupN?"전체 ":"고른 ")+targets.length+(B.unit==="company"?"곳":"명")+" · 합계 "+wonExact(targets.reduce(function(s2,b){return s2+(b.amount||0);},0))''')
+rep('''      (targets.some(function(b){return b.dup;})?("\\n이름이 같은 딜러 "+targets.filter(function(b){return b.dup;}).length+"명은 보내지 않아요(이름을 바꾸면 보낼 수 있어요)."):"")+''',
+    '''      (dupN?("\\n이름이 같은 딜러 "+dupN+"명은 빠져요 — 이름을 바꾸거나 인쇄로 보내 주세요."):"")+''')
+rep('''  resvSheet(targets);''', '''  if(dupN)toast("이름이 같은 딜러 "+dupN+"명은 예약에서 빠져요 — 인쇄로 보내 주세요");
+  resvSheet(targets);''')
+rep('''toast(b.name+" — 다른 상사에 같은 이름 딜러가 있어 지금은 보낼 수 없어요. 딜러 이름을 «박딜러B»처럼 바꾸거나 인쇄 · 그림으로 보내 주세요",true);''',
+    '''toast(b.name+" — 같은 이름 딜러가 있어 지금은 못 보내요. 이름을 바꾸거나 인쇄로 보내 주세요",true);''')
+# 홈 — 이름 겹침을 청구서 화면과 같은 범위(그 달 차 전체)로
+rep('''  var cntH={};Object.keys(billComps).forEach(function(k){var d=billComps[k].d;cntH[d]=(cntH[d]||0)+1;});''',
+    '''  var cntH={},pairH={};S.records.forEach(function(r){if((r.month||mKey(r.createdAt))!==billM)return;var dn=String(r.dealer||"").trim()||"(딜러 없음)",pk=dn+"\\u0001"+(r.company||"");if(!pairH[pk]){pairH[pk]=1;cntH[dn]=(cntH[dn]||0)+1;}});''')
