@@ -36,7 +36,7 @@ var CHANGED=[
 /* ── 메뉴 (규칙 3 차례) ── */
 function recLabel(){ return PICK.rec==="done"?"끝난 차 기록":PICK.rec==="both"?"매출 · 보낸 알림":"매출 기록"; }
 function groups(){
-  var rec={key:"record",label:"기록",icon:"chart"};
+  var rec={key:"record",label:"매출",icon:"chart"};  /* 대표님 c0f996e: 세 번째 탭 = «매출» */
   if(PICK.rec==="both") rec.subs=[{key:"sales",label:"매출"},{key:"sent",label:"보낸 알림"}];
   if(PICK.rec==="done") rec.subs=[{key:"done",label:"끝난 차"},{key:"sales",label:"매출"}];
   var st=[{key:"biz",label:"우리 사업장"},{key:"parties",label:"거래처"},{key:"staff",label:"직원 계정"},{key:"items",label:"작업 항목 · 단가표"},
@@ -81,7 +81,7 @@ var CARS=[
   ["66카7788","가람모터스","강민재","광택","10-11",100000,"입금 완료"],
   ["77타8899","샘플모터스","오지안","실내세차","10-10",40000,"출고"]
 ];
-var BILLS=[["가온모터스","4대",400000,"안 보냄"],["샘플모터스","3대",110000,"안 보냄"],["누리상사","2대",190000,"보냄"],["다온카","2대",340000,"안 보냄"],["가람모터스","2대",140000,"보냄"]];
+var BILLS=[["김성훈","가온모터스","3대",380000,"안 보냄"],["이민준","샘플모터스","2대",70000,"안 보냄"],["박서연","누리상사","1대",100000,"보냄"],["정하윤","다온카","2대",340000,"안 보냄"],["최지우","가온모터스","1대",50000,"보냄"],["한도윤","누리상사","1대",90000,"안 보냄"],["오지안","샘플모터스","1대",40000,"안 보냄"],["윤서아","가람모터스","1대",40000,"보냄"],["강민재","가람모터스","1대",100000,"안 보냄"]];  /* 청구는 딜러 한 명 = 한 줄 (대표님 b9d1e4e) */
 var ST={"입고":"run","출고":"done","입금 완료":"pay","보냄":"done","안 보냄":"chk","발행 대기":"chk","발행됨":"done","입금":"pay","출금":"out","실패":"stop","보냄 · 알림톡":"done","부족":"stop","넉넉":"done","예약":"run"};
 var MON={y:2026,m:10};
 function monLabel(){ return MON.y+"년 "+MON.m+"월"; }
@@ -165,7 +165,7 @@ function drawHome(){
   var main=document.getElementById("main"), pay=PICK.pay;
   CGG.home(main,{date:"10월 18일 토요일", title:'받을 금액 <em>730,000원</em>이 남아 있어요', desc:"오늘 10월 18일 · 09:12 기준",
     quick:{feats:feats(), key:"wz_quick_preview", defs:CGG_MENU_WASH.quickDefault, onGo:goFeat},
-    todo:{items:[{tone:"stop",icon:"box",title:"자재가 부족해요 2건",sub:"광택약(컴파운드), 휠크리너 — 주문하세요"},{tone:"run",icon:"car",title:"작업 중 · 아직 출고 안 됨 4건",sub:"출고하면 입금 대상이 돼요"},{tone:"chk",icon:"wallet",title:"입금 기한 지난 상사 1곳",sub:"샘플모터스 · 110,000원"}],
+    todo:{items:[{tone:"stop",icon:"box",title:"자재가 부족해요 2건",sub:"광택약(컴파운드), 휠크리너 — 주문하세요"},{tone:"run",icon:"car",title:"작업 중 · 아직 출고 안 됨 4건",sub:"출고하면 입금 대상이 돼요"},{tone:"chk",icon:"wallet",title:"입금 기한 지난 딜러 1명",sub:"이민준(샘플모터스) · 70,000원"}],
       total:9, onPick:function(i){ go(["mat","ledger","money/due"][i]); }, onAll:function(){ CGG.toast("할 일 전체 목록 (시안)"); }},
     kpis:[{label:"오늘 입고차량",value:"7",unit:"대",delta:"+2대",vs:"지난주보다",spark:[3,5,4,6,5,5,7],color:"#1668C4"},
           {label:"작업 중",value:"4",unit:"대",delta:"+1대",vs:"지난주보다",spark:[2,3,3,2,4,3,4],color:"#1668C4"},
@@ -176,7 +176,7 @@ function drawHome(){
             13:{amt:270000,marks:[["in",3],["out",3]]},15:{amt:90000,marks:[["in",1],["pay",1]]},16:{amt:410000,marks:[["in",5],["out",4]]},17:{amt:300000,marks:[["in",4],["out",3],["pay",2]]},18:{amt:150000,marks:[["in",2]]}},
       onMove:function(){ monthPick(); },onDay:function(d){ CGG.toast("10월 "+d+"일 자세히 (시안)"); }},
     money:{title:"이번 달 "+pay, link:{label:"입·출금 내역",onClick:function(){ go("money"); }}, big:840000, bar:{done:840000,total:1570000},
-      legend:[["받은 것",840000,"done"],["받을 것",730000,"chk"]], rows:[["청구한 상사","5곳"],["입금 기한 지난 곳","1곳"]]},
+      legend:[["받은 것",840000,"done"],["받을 것",730000,"chk"]], rows:[["청구한 딜러","9명"],["입금 기한 지난 딜러","1명"]]},
     rank:{title:"이번 달 일감", link:{label:"기록",onClick:function(){ go("record"); }}, sub:"작업 항목별 · 금액 많은 차례",
       items:[{label:"광택",value:"14대",pct:1},{label:"실내세차",value:"9대",pct:.64},{label:"외부세차",value:"7대",pct:.5},{label:"하부세차",value:"3대",pct:.21}]},
     help:"홈은 정산(청구 · "+pay+" · 받을 금액 · 할 일)만 보여요. 배달은 «배달» 메뉴 안에서만 봐요."});
@@ -234,29 +234,30 @@ function drawRecord(){
 }
 function drawBill(){
   var rows=BILLS.map(function(r){ return r.slice(); });
-  var notSent=rows.filter(function(r){ return r[3]==="안 보냄"; });
-  screen({crumb:"월별 청구서", title:"월별 청구서", desc:"상사마다 한 달 치를 모아 청구서를 보내요. 고른 곳의 합계가 확인 창에 나와요.",
-    band:{text:"아직 안 보낸 청구서 "+notSent.length+"곳 · "+won(sum(notSent.map(function(r){ return r[2]; })))+"원", go:function(){ TBL[cur].f="안 보냄"; draw(); }},
-    tools:'<button type="button" class="cgg-btn">계좌 · 기한</button><button type="button" class="cgg-btn">'+CGG.ic("down")+'인쇄 · 그림</button>',
-    kpis:[{label:"청구할 곳",value:String(rows.length),unit:"곳"},{label:"청구 합계",value:won(sum(rows.map(function(r){ return r[2]; }))),unit:"원"},{label:"보낸 곳",value:String(rows.length-notSent.length),unit:"곳"},{label:"안 보낸 곳",value:String(notSent.length),unit:"곳"}],
-    help:"상사 이름을 누르면 청구서 미리보기가 열려요. 계좌 · 입금 기한은 위 «계좌 · 기한»에서 한 번만 넣어요.",
-    table:{cols:["상사","대수","금액","상태"], kinds:["name","id","money","state"], rows:rows, tabs:[["","전체"],["안 보냄","안 보냄"],["보냄","보냄"]], find:"상사",
-      onName:function(x){ CGG.dialog({size:"detail",title:x[0]+" · "+monLabel()+" 청구서",rows:[["대수",x[1]],["금액",won(x[2])+"원"],["상태",x[3]]],body:'<p class="desc">미리보기 그림이 여기 나와요 (시안)</p>'}); },
-      bulk:[{key:"send",label:"선택한 곳에 청구서 보내기",needSel:true}],
-      onBulk:function(k,ids){ var s=ids.map(function(i){ return rows[i]; }); sure({title:"청구서를 보낼까요?",desc:"알림톡으로 가요. 안 되면 문자로 대신 가요.",who:whoOf(s,0),n:s.length+"곳",amt:sum(s.map(function(r){ return r[2]; })),ok:s.length+"곳에 보내기",done:s.length+"곳에 청구서를 보냈어요"}); }}});
+  var notSent=rows.filter(function(r){ return r[4]==="안 보냄"; });
+  screen({crumb:"월별 청구서", title:"월별 청구서", desc:"딜러 한 명에게 한 달 치를 모아 청구서를 보내요. 상사는 옆 칸에서 참고만 해요.",
+    band:{text:"아직 안 보낸 청구서 "+notSent.length+"명 · "+won(sum(notSent.map(function(r){ return r[3]; })))+"원", go:function(){ TBL[cur].f="안 보냄"; draw(); }},
+    tools:'<button type="button" class="cgg-btn">계좌 · 기한</button><button type="button" class="cgg-btn">상사로 묶어 보기</button><button type="button" class="cgg-btn">'+CGG.ic("down")+'인쇄 · 그림</button>',
+    kpis:[{label:"청구할 딜러",value:String(rows.length),unit:"명"},{label:"청구 합계",value:won(sum(rows.map(function(r){ return r[3]; }))),unit:"원"},{label:"보낸 딜러",value:String(rows.length-notSent.length),unit:"명"},{label:"안 보낸 딜러",value:String(notSent.length),unit:"명"}],
+    help:"딜러 이름을 누르면 그 딜러의 청구서 미리보기가 열려요. 알림톡도 딜러 한 명씩 가요.",
+    table:{cols:["딜러","상사","대수","금액","상태"], kinds:["name","text","id","money","state"], rows:rows, tabs:[["","전체"],["안 보냄","안 보냄"],["보냄","보냄"]], find:"딜러 · 상사",
+      mline:function(x){ return x[1]+" · "+x[2]; },
+      onName:function(x){ CGG.dialog({size:"detail",title:x[0]+" · "+monLabel()+" 청구서",rows:[["상사",x[1]],["대수",x[2]],["금액",won(x[3])+"원"],["상태",x[4]]],body:'<p class="desc">미리보기 그림이 여기 나와요 (시안)</p>'}); },
+      bulk:[{key:"send",label:"선택한 딜러에게 청구서 보내기",needSel:true}],
+      onBulk:function(k,ids){ var s2=ids.map(function(i){ return rows[i]; }); sure({title:"청구서를 보낼까요?",desc:"딜러 한 명씩 알림톡으로 가요. 안 되면 문자로 대신 가요.",who:whoOf(s2,0),n:s2.length+"명",amt:sum(s2.map(function(r){ return r[3]; })),ok:s2.length+"명에게 보내기",done:s2.length+"명에게 청구서를 보냈어요"}); }}});
 }
 function drawMoney(){
   var sub=cur.split("/")[1];
   if(sub==="due"){
-    var rows=[["샘플모터스","10-10",110000,"기한 지남"],["가온모터스","10-25",320000,"기다림"],["다온카","10-25",220000,"기다림"],["가람모터스","10-25",40000,"기다림"],["누리상사","10-25",40000,"기다림"]];
-    screen({crumb:"입·출금 내역 › 받을 금액", title:"받을 금액", desc:"출고했지만 아직 입금되지 않은 금액을 상사별로 모았어요.",
-      band:{text:"입금 기한 지난 곳 1곳 · 110,000원", go:function(){ TBL[cur].f="기한 지남"; draw(); }},
-      kpis:[{label:"받을 금액",value:"730,000",unit:"원"},{label:"상사",value:"5",unit:"곳"},{label:"기한 지남",value:"1",unit:"곳"},{label:"이번 주 기한",value:"0",unit:"곳"}],
-      help:"상사 이름을 누르면 그 상사의 차 목록이 열려요.",
-      table:{cols:["상사","입금 기한","금액","상태"], kinds:["name","date","money","state"], rows:rows, tabs:[["","전체"],["기한 지남","기한 지남"],["기다림","기다림"]], stateMap:{"기한 지남":"stop","기다림":"chk"}, find:"상사"}});
+    var rows=[["이민준","샘플모터스","10-10",70000,"기한 지남"],["김성훈","가온모터스","10-25",320000,"기다림"],["정하윤","다온카","10-25",220000,"기다림"],["강민재","가람모터스","10-25",40000,"기다림"],["한도윤","누리상사","10-25",40000,"기다림"],["오지안","샘플모터스","10-25",40000,"기다림"]];
+    screen({crumb:"입·출금 내역 › 받을 금액", title:"받을 금액", desc:"출고했지만 아직 입금되지 않은 금액을 딜러 한 명씩 모았어요. 상사는 옆 칸이에요.",
+      band:{text:"입금 기한 지난 딜러 1명 · 70,000원", go:function(){ TBL[cur].f="기한 지남"; draw(); }},
+      kpis:[{label:"받을 금액",value:"730,000",unit:"원"},{label:"딜러",value:"6",unit:"명"},{label:"기한 지남",value:"1",unit:"명"},{label:"이번 주 기한",value:"0",unit:"명"}],
+      help:"딜러 이름을 누르면 그 딜러의 차 목록이 열려요. 돈이 들어오면 그 줄에서 입금 확인을 해요.",
+      table:{cols:["딜러","상사","입금 기한","금액","상태"], kinds:["name","text","date","money","state"], rows:rows, tabs:[["","전체"],["기한 지남","기한 지남"],["기다림","기다림"]], stateMap:{"기한 지남":"chk","기다림":"run"}, find:"딜러 · 상사", mline:function(x){ return x[1]+" · "+x[2]; }}});
     return;
   }
-  var io=[["가온모터스","10-17","입금",320000,"입금"],["자재 · 광택약","10-16","출금",88000,"출금"],["누리상사","10-16","입금",190000,"입금"],["다온카","10-15","입금",120000,"입금"],["가람모터스","10-11","입금",100000,"입금"]];
+  var io=[["김성훈 · 가온모터스","10-17","입금",320000,"입금"],["자재 · 광택약","10-16","출금",88000,"출금"],["박서연 · 누리상사","10-16","입금",100000,"입금"],["정하윤 · 다온카","10-15","입금",120000,"입금"],["강민재 · 가람모터스","10-11","입금",100000,"입금"]];
   screen({crumb:"입·출금 내역 › 입금 · 출금", title:"입금 · 출금", desc:"통장에 들어오고 나간 돈이에요. 입금 자동 확인을 켜면 저절로 채워져요.",
     band:{text:"누가 보낸 돈인지 모르는 입금 1건이 있어요", go:function(){ CGG.toast("확인할 입금으로 가요 (시안)"); }},
     pri:{label:"입금 · 출금 넣기",on:function(){ CGG.toast("넣기 창 (시안)"); }},

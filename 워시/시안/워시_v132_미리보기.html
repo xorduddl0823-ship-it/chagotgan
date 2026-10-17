@@ -2075,8 +2075,8 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
     <div class="tools" style="margin:0">
       <!-- 달 고르기 (UI 1.0) --><span id="bMonthHost"></span>
       <select id="bUnit">
-        <option value="dealer">딜러별로 청구</option>
-        <option value="company" selected>매매상사별로 청구</option>
+        <option value="dealer" selected>딜러별로 청구 (기본)</option>
+        <option value="company">매매상사로 묶어 보기</option>
       </select>
       <select id="bZero"><option value="hide">금액 없는 청구처 제외하기</option><option value="show">금액 없는 청구처 포함하기</option></select>
       <select id="bScope">
@@ -4633,7 +4633,7 @@ function wBandOf(tab){
       onGo:function(){var b=Array.prototype.filter.call(document.querySelectorAll("#jLT .cgg-tabsH button"),function(x){return /입금 대기|수금 대기/.test(x.textContent);})[0];
         if(b)b.click();var t=$("jLT");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView({block:"start"});}}};}
   if(tab==="bill"){var l=[];try{l=(B.made||buildBills()).filter(function(x){return x.amount>0&&!billState(x.name);});}catch(e){}
-    return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+"곳 · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
+    return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+(B.unit==="company"?"곳":"명")+" · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
       onGo:function(){var c=$("billSendCard");if(c)try{CGG.spot(c);}catch(e){c.scrollIntoView();}}};}
   if(tab==="money"){var d=recs.filter(function(r){return statusOf(r)==="출고";});
     if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 상사를 눌러 입금 완료를 해요"};
@@ -7731,7 +7731,7 @@ function ledgerCards(list){
 }
 
 /* ===== PC: 월별 청구서 ===== */
-var B={q:"",size:20,page:1,key:"amount",dir:"desc",month:"",sel:{},unit:"company",zero:"hide",scope:"out",made:null};
+var B={q:"",size:20,page:1,key:"amount",dir:"desc",month:"",sel:{},unit:"dealer",zero:"hide",scope:"out",made:null};
 var DEF_BILLTXT=
  "[우리 회사] [청구 월] 청구서\n\n"+
  "[받는 분] 님\n"+

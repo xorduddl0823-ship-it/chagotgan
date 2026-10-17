@@ -98,7 +98,7 @@ function wBandOf(tab){
       onGo:function(){var b=Array.prototype.filter.call(document.querySelectorAll("#jLT .cgg-tabsH button"),function(x){return /입금 대기|수금 대기/.test(x.textContent);})[0];
         if(b)b.click();var t=$("jLT");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView({block:"start"});}}};}
   if(tab==="bill"){var l=[];try{l=(B.made||buildBills()).filter(function(x){return x.amount>0&&!billState(x.name);});}catch(e){}
-    return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+"곳 · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
+    return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+(B.unit==="company"?"곳":"명")+" · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
       onGo:function(){var c=$("billSendCard");if(c)try{CGG.spot(c);}catch(e){c.scrollIntoView();}}};}
   if(tab==="money"){var d=recs.filter(function(r){return statusOf(r)==="출고";});
     return {count:MNTAB==="due"?0:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",empty:"지금 처리할 일이 없어요",go:"받을 금액 보기",
@@ -221,3 +221,9 @@ rep('''  vMoney:"입금 · 출금 내역과 받을 금액을 봐요.",''', '''  
 # 다음 판에서 하려던 것 — 배치를 바꾸면 머리말 · 메뉴를 바로 다시 그려요(아이콘 배치 돋보기)
 rep('''function applyLayout(){''', '''function applyLayout(){
   setTimeout(function(){try{if(S.mode==="pc"&&typeof wHdr==="function"){WM.sig="";wHdr();wNav();}}catch(e){}},0);''')
+
+# ══ 대표님 지적(b9d1e4e): 청구는 딜러 개개인에게 — 월별 청구서 처음 단위 = 딜러 (상사로 묶어 보기는 그대로 고를 수 있어요) ══
+rep('''var B={q:"",size:20,page:1,key:"amount",dir:"desc",month:"",sel:{},unit:"company",''', '''var B={q:"",size:20,page:1,key:"amount",dir:"desc",month:"",sel:{},unit:"dealer",''')
+rep('''        <option value="dealer">딜러별로 청구</option>
+        <option value="company" selected>매매상사별로 청구</option>''', '''        <option value="dealer" selected>딜러별로 청구 (기본)</option>
+        <option value="company">매매상사로 묶어 보기</option>''')
