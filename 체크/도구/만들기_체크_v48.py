@@ -1,4 +1,4 @@
-"""체크 v47 → v48 — 총괄 순서 ③ «청구서 미리보기 · 인쇄 · 그림 · 엑셀(요약 · 명세)» (v47 은 읽기만 · 보안 최종 987f5dd)
+"""체크 v47.1 → v48 — 총괄 순서 ③ «청구서 미리보기 · 인쇄 · 그림 · 엑셀(요약 · 명세)» (v47 은 읽기만 · 보안 최종 987f5dd)
 월별 청구서 아래 «준비 중»이던 네 버튼을 살려요. 서버 새 창구 없음 — 지금 있는 invoiceRows(id) 만 씀.
   · 고른 줄이 있으면 고른 곳만, 없으면 지금 표에 보이는 곳 모두 (한 번에 100곳까지)
   · 청구서 미리보기 · 인쇄 → 화면 위에 청구서들을 펼치고 «인쇄»(인쇄할 때는 청구서만 · 한 곳에 한 장)
@@ -7,7 +7,7 @@
   · 글은 모두 esc · 파일 이름에서 쓰면 안 되는 글자 뺌
 """
 BASE = "/home/user/chagotgan/체크/"
-s = open(BASE + "2_차곳간_체크_index_v47.html", encoding="utf-8").read()
+s = open(BASE + "2_차곳간_체크_index_v47.1.html", encoding="utf-8").read()   # v47.1(국세청 확인 까닭 보이기) 위에
 
 def rep(old, new, count=1):
     global s
@@ -229,6 +229,6 @@ function priceDelGo(){
   }, "지운 구간 기간의 검사는 바로 앞 구간 단가로 계산돼요. 이미 만든 청구서는 «청구서 만들기»를 다시 눌러야 바뀌어요.");
 }""")
 
-rep('$("hdVer").textContent="체크 v47 · "', '$("hdVer").textContent="체크 v48 · "')
+rep('$("hdVer").textContent="체크 v47.1 · "', '$("hdVer").textContent="체크 v48 · "')
 open(BASE + "2_차곳간_체크_index_v48.html", "w", encoding="utf-8").write(s)
 print("OK v48", len(s))

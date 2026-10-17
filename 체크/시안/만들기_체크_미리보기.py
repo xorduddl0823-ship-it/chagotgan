@@ -173,6 +173,8 @@ FAKE = r'''<script>
       /* v47 · 국세청 확인 (서버 bizVerify 약속) — 지어낸 번호마다 상태를 정해 둠 */
       case "bizVerify": PV_BIZV=(typeof PV_BIZV==="number"?PV_BIZV:0)+1; var bq=a[0]||{}, bv=String(bq.bizNo||"").replace(/\D/g,"");   /* 서버 v37 모양 */
         if(bv.length!==10) return {ready:true, state:"없음", closedAt:"", match:null};
+        if(bv==="0000000145") return {ready:false, state:"", closedAt:"", match:null, why:"국세청에 연결하지 못했어요. 잠시 뒤 다시 해 주세요."};   /* v47.1: 안 될 때 */
+        if(bv==="0000000107" && window.PV_NOKEY) return {ready:false, state:"", closedAt:"", match:null, why:"사업자번호 확인은 아직 준비 중이에요."};
         if(bv==="0000000112") return {ready:true, state:"휴업", closedAt:"2026-08-01", match:null};
         if(bv==="0000000126") return {ready:true, state:"폐업", closedAt:"2025-12-31", match:null};
         if(bv==="0000000131") return {ready:true, state:"계속", since:"", closedAt:"", match:{ceo:false, start:false}, ok:false};   /* 서버 v38 최신 모양 */
