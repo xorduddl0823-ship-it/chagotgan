@@ -381,6 +381,20 @@ AFTER.trash=function(){ wireTable("trs",function(){ draw(); }); };''',
 AFTER.trash=function(){ wireTable("trs",function(){ draw(); });
   var b=$("trDeliv"); if(b) b.onclick=function(){ go("delivtrash"); }; };''')
 
+# ── 7) 화면 안 이름을 용어 사전(디자인 01ade61 메뉴 지도)과 같게 ──
+rep('[["bill","월별 청구서"],["billgrp","청구처 묶음"],["billtpl","알림톡 템플릿"]]', '[["bill","월별 청구서"],["billgrp","받는 곳 합치기"],["billtpl","알림톡 문구"]]')
+rep('[["deposit","입금 내역"],["unpaid","보험료 대조"]]', '[["deposit","입금 내역"],["unpaid","보험료 맞춰 보기"]]')
+rep('["popbill","팝빌 연동"]', '["popbill","팝빌 연결"]')
+rep('head("알림톡 템플릿",', 'head("알림톡 문구",')
+rep('(알림톡 템플릿이 아직 등록되지 않았으면 문자로 나가요)', '(알림톡 문구가 아직 등록되지 않았으면 문자로 나가요)')
+rep('head("청구처 묶음",', 'head("받는 곳 합치기",')
+rep('head("보험료 대조",', 'head("보험료 맞춰 보기",')
+rep('only?"청구 취소 요청":"보험료 대조"', 'only?"청구 취소 요청":"보험료 맞춰 보기"')
+rep('5건 접수 예정 / 보험료 대조"', '5건 접수 예정 / 보험료 맞춰 보기"')
+rep('설정 → <b>팝빌 연동</b>에서', '설정 → <b>팝빌 연결</b>에서')
+rep('설정 → 팝빌 연동");', '설정 → 팝빌 연결");')
+rep('head("팝빌 연동",', 'head("팝빌 연결",')
+
 rep('$("hdVer").textContent="체크 v44 · "', '$("hdVer").textContent="체크 v45 · "', 0) if False else None
 for bad in ["cgg-j4 1.5"]:
     pass

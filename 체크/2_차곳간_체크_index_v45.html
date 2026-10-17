@@ -1744,6 +1744,10 @@ var CGG = (function(){
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
 
+  function syncBeta(){ var b=document.querySelector(".cgg-beta"), h=0;
+    if(b&&!b.hidden&&getComputedStyle(b).display!=="none") h=b.offsetHeight;
+    document.documentElement.style.setProperty("--beta-h", h+"px"); }
+  window.addEventListener("resize", function(){ syncBeta(); });
   /* ① 메뉴 배치 — 문구는 워시 원본 LY_INFO 그대로 */
   var LAYS=[["top","가로 메뉴","메뉴가 화면 위에 가로로 놓여요. 지금까지 쓰던 모습이에요."],
             ["side","세로 메뉴","메뉴가 왼쪽에 세로로 놓여요. 메뉴 이름이 다 보여서 찾기 쉬워요."],
@@ -1752,7 +1756,9 @@ var CGG = (function(){
     init:function(app,key,def){ this.app=app; if(key) this.key=key; if(def==='top'||def==='side'||def==='icon') this.def=def; this.apply(this.get()); },
     get:function(){ var v=store(this.key); return (v==="top"||v==="side"||v==="icon")?v:this.def; },
     set:function(v){ store(this.key,v); this.apply(v); },
-    apply:function(v){ if(!this.app) return; this.app.classList.remove("lay-top","lay-side","lay-icon"); this.app.classList.add("lay-"+v); },
+    apply:function(v){ if(!this.app) return; this.app.classList.remove("lay-top","lay-side","lay-icon"); this.app.classList.add("lay-"+v);
+      /* 1.8: 세로 · 아이콘 배치에서는 머리말이 화면에 붙어 있어서, 오픈 베타 띠(.cgg-beta)도 맨 위에 붙이고 그 높이만큼 머리말을 내려요 (체크 방 알림) */
+      document.documentElement.classList.toggle("cgg-lay-fixed", v!=="top"); syncBeta(); },
     name:function(v){ for(var i=0;i<LAYS.length;i++) if(LAYS[i][0]===(v||this.get())) return LAYS[i][1]; return ""; },
     chooser:function(box,done){ var self=this, cur=this.get();
       box.innerHTML='<div class="cgg-lays" role="group" aria-label="메뉴 배치">'+LAYS.map(function(x){
@@ -2180,12 +2186,12 @@ var CGG_MENU_CHECK = {
     {key:"home",     label:"홈",          icon:"home"},
     {key:"sales",    label:"매출",        icon:"chart",   subs:[{key:"list",label:"매출 내역"},{key:"upload",label:"자료 올리기"}]},
     {key:"history",  label:"정산 기록",   icon:"car"},
-    {key:"bill",     label:"청구서",      icon:"file",    subs:[{key:"month",label:"월별 청구서"},{key:"group",label:"청구처 묶음"},{key:"tpl",label:"알림톡 템플릿"}]},
-    {key:"deposit",  label:"입출금",      icon:"wallet",  subs:[{key:"in",label:"입금 내역"},{key:"ins",label:"보험료 대조"}]},
+    {key:"bill",     label:"청구서",      icon:"file",    subs:[{key:"month",label:"월별 청구서"},{key:"group",label:"받는 곳 합치기"},{key:"tpl",label:"알림톡 문구"}]},
+    {key:"deposit",  label:"입출금",      icon:"wallet",  subs:[{key:"in",label:"입금 내역"},{key:"ins",label:"보험료 맞춰 보기"}]},
     {key:"hometax",  label:"세금계산서",  icon:"receipt"},
     {key:"delivery", label:"배달",        icon:"truck",   isNew:true, subs:[{key:"log",label:"배달 기록"},{key:"bydest",label:"목적지별"},{key:"dest",label:"목적지 관리"},{key:"msg",label:"문구 · 발송 설정"},{key:"driver",label:"기사 계정"}]},
     {key:"remind",   label:"재검사 알림", icon:"bell"},
-    {key:"set",      label:"설정",        icon:"gear",    subs:[{key:"partner",label:"거래처"},{key:"price",label:"단가표"},{key:"fee",label:"검사자 수수료"},{key:"popbill",label:"팝빌 연동"},
+    {key:"set",      label:"설정",        icon:"gear",    subs:[{key:"partner",label:"거래처"},{key:"price",label:"단가표"},{key:"fee",label:"검사자 수수료"},{key:"popbill",label:"팝빌 연결"},
                                                                 {key:"sms",label:"문자 자동수집"},{key:"alarm",label:"알람 소리"},{key:"backup",label:"설정 백업"}]}
   ],
   /* 폰 아래 탭 5칸 — 지금 «홈 · 정산 기록 · 입출금 · 계산서 · 전체»에서 «정산 기록» · «계산서»는 «전체» 안으로 */
@@ -2196,10 +2202,10 @@ var CGG_MENU_CHECK = {
     {id:"history",      label:"정산 기록",              path:"정산 기록",                           go:"history",          words:"정산 기록 월별 기록 홈택스 대조"},
     {id:"bill-make",    label:"청구서 만들기",          path:"청구서 › 월별 청구서",                go:"bill/month",       words:"월별 청구서 정산서 청구 만들기 명세 요금 엑셀"},
     {id:"bill-send",    label:"청구서 보내기",          path:"청구서 › 월별 청구서 › 2. 청구서 보내기", go:"bill/month",   words:"청구서 발송 알림톡 문자 보내기 시험", spot:"#billSendCard"},
-    {id:"bill-group",   label:"청구처 묶음",            path:"청구서 › 청구처 묶음",                go:"bill/group",       words:"묶음 딜러 묶기 한 곳으로 청구처"},
-    {id:"tpl",          label:"알림톡 템플릿",          path:"청구서 › 알림톡 템플릿",              go:"bill/tpl",         words:"알림톡 템플릿 카카오 등록 문구 승인"},
+    {id:"bill-group",   label:"받는 곳 합치기",            path:"청구서 › 받는 곳 합치기",                go:"bill/group",       words:"묶음 딜러 묶기 한 곳으로 청구처"},
+    {id:"tpl",          label:"알림톡 문구",          path:"청구서 › 알림톡 문구",              go:"bill/tpl",         words:"알림톡 템플릿 카카오 등록 문구 승인"},
     {id:"deposit",      label:"입금 확인",  path:"입출금 › 입금 내역",                  go:"deposit/in",       words:"입금 들어온 돈 통장 팝빌 가져오기 입금 처리 미수 미수금 입금 대기 못 받은 돈 받을 금액 수금 계좌 입금 내역 입금 처리 입금 확인 수금"},
-    {id:"insurance",    label:"보험료 대조",            path:"입출금 › 보험료 대조",                go:"deposit/ins",      words:"보험료 보험사 대조 성능보증"},
+    {id:"insurance",    label:"보험료 맞춰 보기",            path:"입출금 › 보험료 맞춰 보기",                go:"deposit/ins",      words:"보험료 보험사 대조 성능보증"},
     {id:"tax",          label:"세금계산서 발급",        path:"세금계산서",                          go:"hometax",          words:"세금계산서 계산서 팝빌 발급 홈택스 수정 국세청 세금 부가세 발행"},
     {id:"remind",       label:"재검사 알림 보내기",     path:"재검사 알림",                         go:"remind",           words:"재검사 알림 유효기간 만료 규칙 보내기"},
     {id:"deliv-log",    label:"배달 기록",              path:"배달 › 배달 기록",                    go:"delivery/log",     words:"배달 기록 출고 차량 이동 배송 탁송 확인 못 보낸 출고차량 오늘 출고 오늘 배달 나간 차"},
@@ -2215,7 +2221,7 @@ var CGG_MENU_CHECK = {
     {id:"sender",       label:"발신번호",               path:"설정 › 거래처 › 맨 위 «문자로 대신 갈 때 보내는 번호»", go:"set/partner", words:"발신번호 보내는 번호 문자 번호", spot:"#ptSupplier"},
     {id:"price",        label:"단가표",                 path:"설정 › 단가표",                       go:"set/price",        words:"단가 가격 검사비 구간 부가세"},
     {id:"fee",          label:"검사자 수수료",          path:"설정 › 검사자 수수료",                go:"set/fee",          words:"수수료 검사자 규칙"},
-    {id:"popbill",      label:"팝빌 연동",              path:"설정 › 팝빌 연동",                    go:"set/popbill",      words:"팝빌 연결 세금계산서 계좌 회원"},
+    {id:"popbill",      label:"팝빌 연결",              path:"설정 › 팝빌 연결",                    go:"set/popbill",      words:"팝빌 연결 세금계산서 계좌 회원 연동"},
     {id:"sms-collect",  label:"문자 자동수집",          path:"설정 › 문자 자동수집",                go:"set/sms",          words:"입금 문자 자동 수집 구글 시트 카카오뱅크"},
     {id:"alarm",        label:"알람 소리",              path:"설정 › 알람 소리",                    go:"set/alarm",        words:"소리 알람 알림음"},
     {id:"staff",        label:"직원 계정 · 권한",       path:"설정 › 설정 백업",                    go:"set/backup",       words:"직원 추가 권한 사람 추가 계정 비밀번호 비번 매니저 대표 관리자 로그인"},
@@ -2581,7 +2587,7 @@ var JOBS=[["home","홈"],["sales","매출"],["history","정산 기록"],["bill",
 /* 설정 안 — 자료 올리기는 «매출» 안으로, 휴지통은 마이페이지 안으로, 도움말은 머리말로 옮겼습니다 (「가」안) */
 /* v25: 묶음으로 정리 — 정산 기준(누구에게 · 얼마) → 연결(팝빌 · 문자) → 이 화면(소리 · 백업) */
 var SETS=[["partner","거래처"],["price","단가표"],["fee","검사자 수수료"],
-  ["popbill","팝빌 연동"],["sms","문자 자동수집"],
+  ["popbill","팝빌 연결"],["sms","문자 자동수집"],
   ["alarm","알람 소리"],["backup","설정 백업"]];
 var SETLBL={partner:"정산 기준",popbill:"연결",alarm:"이 화면"};
 var SALESUB=[["sales","매출 내역"],["files","자료 올리기"]];
@@ -2609,11 +2615,11 @@ function cggAllMenu(){
     b.onclick=function(){ closeSheet(); go(b.getAttribute("data-allgo")); }; });
 }
 /* 보험료 미납 대조는 «입출금» 안쪽 작은 탭으로 들어갑니다 */
-var DEPSUB=[["deposit","입금 내역"],["unpaid","보험료 대조"]];
+var DEPSUB=[["deposit","입금 내역"],["unpaid","보험료 맞춰 보기"]];
 var ALSUB=[["remind","재검사 알림"],
   /* 모듈2 배달알림 — 떼어낼 때 이 한 줄만 지우면 됩니다 */ ["deliv","차량 배달 알림"]];
 /* 월별 청구서 + 청구서 발송은 «청구서» 하나로 묶고 안쪽 탭으로 나눕니다 */
-var BILLSUB=[["bill","월별 청구서"],["billgrp","청구처 묶음"],["billtpl","알림톡 템플릿"]];
+var BILLSUB=[["bill","월별 청구서"],["billgrp","받는 곳 합치기"],["billtpl","알림톡 문구"]];
 function subBar(list, now){
   return '<div id="subTabs">'+list.map(function(s){
     return '<button data-go="'+s[0]+'" aria-selected="'+(now===s[0]?"true":"false")+'">'+s[1]+'</button>';
@@ -3519,7 +3525,7 @@ function chkMemoBoxHtml(k){
     '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
       '<select id="mmTime" style="width:auto;flex:none">'+times.map(function(t){
         return '<option value="'+t+'">'+(t||"시간 없음")+'</option>'; }).join("")+'</select>'+
-      '<input type="text" id="mmText" placeholder="예) ○○검사소 5건 접수 예정 / 보험료 대조" style="flex:1;min-width:200px">'+
+      '<input type="text" id="mmText" placeholder="예) ○○검사소 5건 접수 예정 / 보험료 맞춰 보기" style="flex:1;min-width:200px">'+
       '<button class="btn primary" id="mmAdd">메모 추가</button></div>'+
     '<div class="hint" style="margin-top:7px">메모는 지금 이 기기에만 저장돼요.</div>'+
   '</div>';
@@ -4167,7 +4173,7 @@ function wireSend(){
 
 /* ── 청구서 › 알림톡 템플릿 ── */
 PAGE.billtpl=function(){
-  return head("알림톡 템플릿","차곳간 채널(티와이컴퍼니)에 문구 그대로 등록해요. 승인되면 청구서가 알림톡으로 나가요(안 되면 문자로 자동).")+
+  return head("알림톡 문구","차곳간 채널(티와이컴퍼니)에 문구 그대로 등록해요. 승인되면 청구서가 알림톡으로 나가요(안 되면 문자로 자동).")+
   billTabs("billtpl")+
   card("① 딜러 청구서","검사비만 · 정비비만 · 둘 다를 이 하나로 모두 보내요.",
     '<div class="tmpl">#{업체명} #{청구월} 청구서\n\n#{딜러명} 님, #{청구월} 청구 내역을 안내드립니다.\n\n#{내역}\n· 합계 #{금액}원\n\n#{계좌안내}\n\n청구서는 아래 \'청구서 보기\' 버튼에서 확인하실 수 있습니다.\n문의 : #{연락처}\n\n본 안내는 #{업체명}의 요청으로 차곳간이 보내드립니다.</div>'+
@@ -4203,7 +4209,7 @@ PAGE.billgrp=function(){
              biz:(head.issuer||"")+(head.biz?" "+head.biz:"") || "(미등록)",
              when:"늘", _q:[h,byHead[h].join(" ")].join(" ") };
   });
-  return head("청구처 묶음","«따로 만들고 또 합치기»를 없애는 부분이에요. 한 번 정해 두면 다음 달부터 그대로 한 장으로 나와요.")+
+  return head("받는 곳 합치기","«따로 만들고 또 합치기»를 없애는 부분이에요. 한 번 정해 두면 다음 달부터 그대로 한 장으로 나와요.")+
   billTabs("billgrp")+
   card("지금 걸려 있는 묶음","딜러 화면(설정 → 거래처)에서 딜러를 고르고 «한 곳으로 묶기»를 누르면 여기에 들어와요.",
     (rows.length ? tableBlock("grp",[
@@ -4397,7 +4403,7 @@ PAGE.hometax=function(){
 
   return head("세금계산서","청구서 한 장이 세금계산서 한 장으로 나가요. 묶음 청구는 대표 사업자 한 곳으로 한 장만 나가요.")+
 
-  (pbOk?'':'<div class="msg err">팝빌 회원아이디가 비어 있어요. 설정 → <b>팝빌 연동</b>에서 넣어 주세요.</div>')+
+  (pbOk?'':'<div class="msg err">팝빌 회원아이디가 비어 있어요. 설정 → <b>팝빌 연결</b>에서 넣어 주세요.</div>')+
   (OFFICE.popbill_test?'<div class="msg ok"><b>지금은 시험 모드예요</b> — 국세청으로 가지 않아요. 마음 놓고 시험해 보세요.</div>':'')+
 
   '<div class="ckbar"><div class="l"><b>작성일자는 «청구한 달의 말일»이에요</b>'+
@@ -4496,7 +4502,7 @@ function txSite(togo, msg){
   call("taxSite",[togo]).then(function(r){
     busy(false);
     if(r&&r.url){ popOpen(r.url); if(msg) bar(msg,"info"); }
-    else tell("주소를 받지 못했어요","팝빌 연결을 먼저 확인해 주세요. 설정 → 팝빌 연동");
+    else tell("주소를 받지 못했어요","팝빌 연결을 먼저 확인해 주세요. 설정 → 팝빌 연결");
   }).catch(function(e){ busy(false); tell("열지 못했어요", esc((e&&e.message)||"")); });
 }
 AFTER.hometax=function(){
@@ -4668,7 +4674,7 @@ PAGE.unpaid=function(){
   var byVin=H["차대번호"]||0, byNo=H["성능번호"]||0, byPlate=H["차량번호"]||0;
   var hasData=INS.length>0;
 
-  return head("보험료 대조",
+  return head("보험료 맞춰 보기",
     "보험사가 청구한 건을 카모두 기록에서 찾아 <b>보험료납부</b>를 봐요. "+
     "우리가 실제로 받은 것은 <b>Y</b> 뿐이므로, <b>N(못 받음)</b> · <b>P(면제)</b>인데 청구가 들어온 건은 "+
     "<b>보험사에 청구 취소</b>를 넣어야 해요. "+
@@ -4828,7 +4834,7 @@ AFTER.unpaid=function(){
     if(typeof XLSX==="undefined"){ bar("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.","err"); return; }   /* v39 */
     var wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([h].concat(b)),
-      only?"청구 취소 요청":"보험료 대조");
+      only?"청구 취소 요청":"보험료 맞춰 보기");
     XLSX.writeFile(wb,"차곳간체크_보험료"+(only?"_취소요청":"")+"_"+ST.ym+".xlsx");
   }
   var a=$("insXls"); if(a) a.onclick=function(){ xls(false); };
@@ -5235,7 +5241,7 @@ AFTER.delivplace=function(){
 PAGE.delivmsg=function(){
   return delivHead()+delivTabs("delivmsg")+
   card("보내는 방법","<b>알림톡이 먼저</b> 나가고, 알림톡이 안 되면 <b>문자로 자동으로</b> 대신 보내요. 따로 고를 것은 없어요. "+
-    "(알림톡 템플릿이 아직 등록되지 않았으면 문자로 나가요)",
+    "(알림톡 문구가 아직 등록되지 않았으면 문자로 나가요)",
     '<div class="msg info" style="margin:0 0 10px">보내는 방법 : <b>알림톡 (안 되면 문자)</b></div>'+
     '<div class="tools" style="margin-top:4px">'+
       '<label class="chip"><input type="checkbox" id="dw-photo" '+(DCONF.photo_on!==false?"checked":"")+' style="width:18px;height:18px"> <b>문자로 갈 때 사진 붙이기</b></label>'+
@@ -6163,7 +6169,7 @@ PAGE.popbill=function(){
       ? ['<b>아직 팝빌 회원이 아니에요.</b> 아래 «2번»에서 티와이컴퍼니 밑으로 추가하시면 돼요.',"err"]
       : ['<b>아직 안 붙었어요.</b>'+(POP.why?' — '+esc(POP.why):''),"err"];
 
-  return head("팝빌 연동",
+  return head("팝빌 연결",
     "입금 내역(계좌조회)과 세금계산서를 팝빌로 주고받아요.")+
 
   '<div class="msg '+band[1]+'">'+band[0]+'</div>'+
@@ -8638,6 +8644,18 @@ select.cgg-hb option{color:#101828}
 
 /* 기능 찾기 칸이 몰래 줄어들지 않게 (두 제품이 같은 때 접히도록) */
 .cgg-right .cgg-hfind{flex:none}
+
+/* 1.8 보강 — 세로 · 아이콘 배치에서 오픈 베타 띠가 머리말에 가려지지 않게 (체크 방 알림 10/18)
+   띠를 맨 위에 붙이고(--beta-h = 띠 높이, CGG.layout 이 잼), 붙어 있는 머리말 · 윗줄 · 작은 탭 · 본문을 그만큼 내려요 */
+@media (min-width:1000px){
+  html.cgg-lay-fixed .cgg-beta{position:fixed;top:0;left:0;right:0;z-index:calc(var(--z-hdr) + 2)}
+  .lay-side > .cgg-hdr,.lay-icon > .cgg-hdr{top:var(--beta-h,0px)}
+  .lay-side .cgg-right,.lay-icon .cgg-right{top:var(--beta-h,0px)}
+  .lay-side .cgg-sub,.lay-icon .cgg-sub{top:calc(64px + var(--beta-h,0px))}
+  .lay-side > .cgg-main,.lay-icon > .cgg-main{padding-top:calc(var(--hdr-h) + 22px + var(--beta-h,0px))}
+  .lay-side.hasSub > .cgg-main,.lay-icon.hasSub > .cgg-main{padding-top:calc(132px + var(--beta-h,0px))}
+  .lay-icon .cgg-hdr .cgg-hdr-biz{top:var(--beta-h,0px)}
+}
 
 </style>
 <style id="cgg-beta-piece">
