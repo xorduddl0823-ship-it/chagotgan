@@ -60,17 +60,10 @@ function wFeat(f){
   x.path=p;return x;
 }
 /* 배달 안쪽 작은 탭 */''')
-# 폰 아래 탭 (PC 화면) — 홈 · 일감 · 월별 청구서 · 입·출금 내역 · 전체
-rep('''  var items=M.tabs.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){var x={key:t.key,icon:t.icon,label:t.label};if(t.key==="delivery")x.badge=wDelivBad();return x;});''',
-    '''  var W132_TABS=[{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"bill",icon:"file",label:"월별 청구서"},{key:"money",icon:"wallet",label:"입·출금 내역"},{key:"__all",icon:"more",label:"전체"}];
-  var items=W132_TABS.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){return {key:t.key,icon:t.icon,label:t.label};});''')
-# 메뉴 줄 오른쪽 끝 — 기능 찾기 (대표님 ①)
+# 메뉴 줄 오른쪽 끝 — 기능 찾기 (대표님 ①) · 공통 부품 1.9 opt.find (좁은 화면 · 세로 배치는 머리말 [찾기] 단추가 대신)
 rep('''function wNav(){
   try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}''', '''function wNav(){
-  try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}
-  try{var ob=$("wNavFind");if(ob)ob.remove();
-    if(S.mode==="pc"&&CGG.find){var fb=document.createElement("div");fb.id="wNavFind";fb.className="w-navfind";$("tabs").appendChild(fb);
-      CGG.find(fb,wFeats(),goFeat,{phone:function(){wAllMenu(true);}});}}catch(e){}''')
+  try{CGG.nav($("tabs"),wGroups(),wCur(),goKey,S.mode==="pc"?{find:{feats:wFeats(),onGo:goFeat}}:{});}catch(e){}''')
 
 # ── D. 머리말 — 설명 · 판 · 날짜 / 주소 / 연결됨 / 사람 단추 아래 줄 ──
 rep('''    find:pc?{feats:wFeats(),onGo:goFeat,onPhone:function(){wAllMenu(true);}}:null,''', '''    find:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) */
@@ -116,7 +109,7 @@ function wBandOf(tab){
     return {count:(S.dSub||"outlog")==="outlog"?f:0,tone:"stop",text:"오늘 못 보낸 출고 알림 "+f+"건 — 다시 보내 주세요",
       onGo:function(){var b=$("olResend");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   if(tab==="mat"){var m=parseInt(String(($("mLow")||{}).textContent||"0").replace(/[^0-9]/g,""),10)||0;
-    return {count:m,tone:"stop",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
+    return {count:m,tone:"chk",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   /* 매출은 지금 화면 그대로(대표님 c0f996e) — 할 일 띠 없음 */
   return null;
 }
@@ -144,14 +137,7 @@ rep('''busyAt(end(k));}),color:"#B26B00"},''', '''busyAt(end(k));}),color:"#1668
 
 # ── H. CSS ──
 V132_CSS = """
-/* ── v132 새 규칙 — 메뉴 줄 끝 기능 찾기 · 할 일 띠 자리 · 숫자 칸 가운데 · 도구줄 43/42 ── */
-.w-navfind{margin-left:auto;align-self:center;flex:none;width:260px;position:relative;z-index:var(--z-drop)}
-.cgg-nav:has(.w-navfind){overflow:visible}
-.w-navfind .in{background:var(--surface);border-color:var(--ln2,#D0D5DD);color:var(--muted)}
-.w-navfind input{color:var(--text)}
-.w-navfind input::placeholder{color:var(--muted)}
-.w-navfind .res button{text-align:left;align-items:flex-start}
-@media (max-width:1000px){.w-navfind{display:none}}
+/* ── v132 새 규칙 — 할 일 띠 자리 · 숫자 칸 가운데 · 도구줄 43/42 ── */
 #wBand{margin:0 0 16px}
 .cgg-main section .sums .sum{text-align:center}
 .cgg-main section .sums .sum > span{display:block;text-align:center;justify-content:center}
@@ -162,3 +148,49 @@ V132_CSS = """
 """
 a3 = s.index('<style id="cgg-j4-wash-done">\n') + len('<style id="cgg-j4-wash-done">\n'); b3 = s.index('</style>', a3)
 s = s[:b3] + V132_CSS + s[b3:]
+
+# ══ 검사 일꾼(v132) 고침 ══
+# A. 되돌리기 어려운 일 — 확인 창에 «누구에게 · 몇 건 · 얼마» (규칙 5)
+rep('''function resendOut(list){''', '''/* v132: 확인 창 «누구에게» 줄 — 이름 셋까지 + 외 N곳 */
+function wWho(names){var u=[];(names||[]).forEach(function(n){n=String(n||"").trim();if(n&&u.indexOf(n)<0)u.push(n);});
+  return u.length?(u.slice(0,3).join(", ")+(u.length>3?" 외 "+(u.length-3)+"곳":"")):"-";}
+function resendOut(list){''')
+rep('''  ask(ok.length+"건에 출고 알림을 다시 보내요.\\n보내는 방식: "+''',
+    '''  ask("받는 딜러 · "+wWho(ok.map(function(r){return r.dealer||r.company;}))+"\\n몇 건 · "+ok.length+"건\\n얼마 · 약 "+won(ok.length*8)+" (알림톡 기준 · 문자로 가면 한 통 약 20~100원)\\n\\n출고 알림을 다시 보내요.\\n보내는 방식: "+''')
+rep('''  ask(periodLabel(B.month)+"\\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "+wonExact(tt.sum)+"\\n청구 알림을 보내요.''',
+    '''  ask(periodLabel(B.month)+"\\n받는 곳 · "+wWho(targets.map(function(b){return b.name;}))+"\\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "+wonExact(tt.sum)+"\\n청구 알림을 보내요.''')
+rep('''      go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+''',
+    '''      "받는 곳 · "+wWho(go.map(function(g){return g.issuerName;}))+"\\n"+go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+''')
+rep('''  ask(keys.length+"건에 주문 문자를 보내요.\\n"+''',
+    '''  ask("도매상 · "+wWho(keys.map(function(k){var m=g[k][0];return (m&&m.vendor)||k;}))+"\\n몇 건 · 문자 "+keys.length+"통 (자재 "+keys.reduce(function(t,k){return t+g[k].length;},0)+"가지)\\n얼마 · 문자 요금 약 "+won(keys.length*50)+"\\n\\n주문 문자를 보내요.\\n"+''')
+# B. 일감 달력 — 자료 없는 달을 골라도 그 달 그대로
+rep('''function fillMonths(sel,cur,keepAll){
+  var ks=monthsList();''', '''function fillMonths(sel,cur,keepAll){
+  var ks=monthsList();
+  if(cur&&ks.indexOf(cur)<0)ks=ks.concat([cur]).sort().reverse();   /* v132: 달력에서 고른 달(자료 없음)도 목록에 */''')
+rep('''sl.value=k||"";sl.onchange();},true);}''', '''L.month=k||"";L.monthSet=true;L.page=1;renderLedger();jPage();},true);}''')
+rep('''var op=document.createElement("option");op.value=k;op.textContent=monthLabel(k);sl.appendChild(op);}''', '''}''')
+rep('''    wireMonthBtn("lMonthBtn",L.month,function(k){var sl=$("lMonth");if(k&&!Array.prototype.some.call(sl.options,function(o){return o.value===k;})){}''',
+    '''    wireMonthBtn("lMonthBtn",L.month,function(k){''')
+# C. 세로 · 아이콘 배치 — 찾기 칸은 왼쪽 메뉴 안(세로) · 머리말 돋보기 단추(아이콘)
+rep('''    find:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) */''',
+    '''    find:pc?{mode:"nav",feats:wFeats(),onGo:goFeat}:null,   /* v132: 기능 찾기 = 메뉴 줄 오른쪽 끝(대표님 결정, 1.9 mode:"nav") */''')
+rep('''  var sig=[o.product,''', '''  var sig=[wLay(),o.product,''')
+rep('''function wSaved(){''', '''function wLay(){var a=$("app");return a&&a.classList.contains("lay-icon")?"icon":(a&&a.classList.contains("lay-side")?"side":"top");}
+function wSaved(){''')
+# D. 상태 색 — 빨강은 «막힘»에만. 확인 필요 = 주황, 출금 = 기본 글색
+rep('''    '<div class="sum"><span>출금 금액</span><b style="color:var(--danger)">'+won(outSum)+'</b></div>'+''',
+    '''    '<div class="sum"><span>출금 금액</span><b>'+won(outSum)+'</b></div>'+''')
+rep('''      (todo.length?"var(--danger)":"var(--muted)")+'">'+todo.length+'건</b></div>'+''',
+    '''      (todo.length?"var(--warn)":"var(--muted)")+'">'+todo.length+'건</b></div>'+''')
+rep('''        '<div class="sum"><span>받을 금액</span><b'+(dueSum?' style="color:var(--danger)"':'')+'>'+won(dueSum)+'</b></div>'+''',
+    '''        '<div class="sum"><span>받을 금액</span><b'+(dueSum?' style="color:var(--warn)"':'')+'>'+won(dueSum)+'</b></div>'+''')
+# E. 받을 금액 칸에서는 띠에 금액만(단추 없음)
+rep('''    return {count:MNTAB==="due"?0:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",empty:"지금 처리할 일이 없어요",go:"받을 금액 보기",
+      onGo:function(){goKey("money/due");}};}''', '''    if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 상사를 눌러 입금 완료를 해요"};
+    return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",go:"받을 금액 보기",onGo:function(){goKey("money/due");}};}''')
+# F. 이름 — 탭과 같게 «입·출금 내역»
+rep('''  <div class="dashhead"><h2>입금 · 출금 내역</h2>''', '''  <div class="dashhead"><h2>입·출금 내역</h2>''')
+rep('''toast("「입출금 기록」이 「입금 · 출금 내역」으로 이름이 바뀌었어요");''', '''toast("「입출금 기록」이 「입·출금 내역」으로 이름이 바뀌었어요");''')
+# G. 수정발행 확인 창 — 이름을 두 번 바꾸지 않게
+rep('''      pick[1]+"\\n"+esc(g.issuerName)+" · "+''', '''      pick[1]+"\\n"+g.issuerName+" · "+''')

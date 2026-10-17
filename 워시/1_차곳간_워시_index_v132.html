@@ -2149,7 +2149,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 
 <!-- ---- PC: 입금 · 출금 내역 ---- -->
 <section id="vMoney" hidden>
-  <div class="dashhead"><h2>입금 · 출금 내역</h2>
+  <div class="dashhead"><h2>입·출금 내역</h2>
     <div class="sub2">통장에 들어오고 나간 금액을 한 표로 봐요. 청구서와 맞은 입금은 입금 완료로 표시돼요.</div></div>
   <div class="card" style="padding:14px 16px">
     <div class="tools dtools" style="margin:0">
@@ -2763,7 +2763,7 @@ var CGG = (function(){
      목록 글은 모두 esc 해서 그려요. 바로가기 고정은 «이 기기에만»(localStorage) — 서버에 보내지 않아요. */
   function norm(s){ return String(s==null?"":s).toLowerCase().replace(/[\s·›>()\[\]«»,.\/_+:~-]+/g,""); }
   /* A — 큰 메뉴 + 그 아래 칸. 세로 배치(넓은 화면)에서는 아래 칸이 늘 펼쳐져 있어요. 가로 · 아이콘 배치와 폰에서는 큰 메뉴만 */
-  function nav(el, groups, cur, onPick){ if(!el) return;
+  function nav(el, groups, cur, onPick, opt){ if(!el) return; opt=opt||{};
     var cg=String(cur||"").split("/")[0];
     el.setAttribute("aria-label","메뉴");
     el.innerHTML=groups.map(function(g){ var on=g.key===cg, subs=g.subs||[];
@@ -2777,6 +2777,8 @@ var CGG = (function(){
     row.hidden=!row.innerHTML;
     Array.prototype.forEach.call(el.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
     Array.prototype.forEach.call(row.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
+    /* 1.9 기능 찾기 = 메뉴 줄 오른쪽 끝 (대표님 10/18 확정). opt.find = {feats, onGo}. 좁은 화면 · 세로 배치에서는 숨고 머리말 [찾기] 단추가 대신해요 */
+    if(opt.find){ var fb=document.createElement("div"); fb.className="cgg-navfind"; el.appendChild(fb); find(fb, opt.find.feats, opt.find.onGo, {ph:opt.find.ph}); }
   }
   /* 그 화면 안의 칸으로 내려가서 잠깐 빛나게 (spot: 칸의 id 또는 선택자 — 제품이 정한 고정 글자만) */
   function spot(sel){ var e=null; try{ e=typeof sel==="string"?document.querySelector(sel):sel; }catch(x){ e=null; } if(!e) return;
@@ -2861,13 +2863,13 @@ var CGG = (function(){
   function short(n){ n=Number(n)||0; var a=Math.abs(n); if(a>=1e8) return (Math.round(n/1e7)/10)+"억"; if(a>=1e4) return (Math.round(n/1e3)/10)+"만"; return won(n); }
   /* 머리말 윗줄 — el 은 .cgg-top. 차례는 늘 같아요: 로고 · 제품 이름 | 업체 | 찾기 · 공지사항 · 도움말 · 주소 · 새로고침 · 30초마다 · 연결됨 · 현장 화면 · 이름 ▾
      o = {product:"워시", sub:"광택 · 세차 정산", ver:"v128", biz:{name, line}, find:{feats, onGo, onPhone},
-          notice:fn, help:fn, link:fn, refresh:fn, auto:{value, options:[[값,글]], onChange}, date:"10/18", saved:true(«연결됨» — 초록 점) 또는 "연결됨 · 15:39", field:{label:"현장 화면", on:fn}, me:{name, items, onPick}}
+          notice:fn, help:fn, link:fn, refresh:fn, auto:{value, options:[[값,글]], onChange}, find:{mode:"nav", feats, onGo}, date:"10/18", saved:true(«연결됨» — 초록 점) 또는 "연결됨 · 15:39", field:{label:"현장 화면", on:fn}, me:{name, items, onPick}}
      없는 단추는 빼고 그려요(자리는 앞으로 당겨져요). 글자는 모두 esc. */
   function header(el, o){ if(!el) return {}; o=o||{};
     var B=[["notice","공지사항"],["help","도움말"],["link","주소"],["refresh","새로고침"]];   /* 1.9 «링크 복사» → «주소» (SKILL.md 머리말 차례) */
     el.innerHTML='<div class="cgg-brand"><span class="cgg-ci" aria-hidden="true">차</span><div><b>차곳간 '+esc(o.product||"")+'</b><small>'+esc([o.sub,o.ver,o.date].filter(Boolean).join(" · "))+'</small></div></div>'
       +(o.biz?'<div class="cgg-hdr-biz"><b>'+esc(o.biz.name||"")+'</b><small>'+esc(o.biz.line||"")+'</small></div>':'')
-      +'<div class="cgg-right">'+(o.find?(o.find.mode==="button"?'<button type="button" class="cgg-hb cgg-findbtn" data-hb="findbtn" aria-label="기능 찾기">'+ic("search")+'<span>찾기</span></button>':'<div class="cgg-hfind-slot"></div>'):'')
+      +'<div class="cgg-right">'+(o.find?(o.find.mode==="button"||o.find.mode==="nav"?'<button type="button" class="cgg-hb cgg-findbtn'+(o.find.mode==="nav"?' cgg-findalt':'')+'" data-hb="findbtn" aria-label="기능 찾기">'+ic("search")+'<span>찾기</span></button>':'<div class="cgg-hfind-slot"></div>'):'')
       +B.filter(function(b){ return o[b[0]]; }).map(function(b){ return '<button type="button" class="cgg-hb'+(b[0]==="refresh"?'':' cgg-wide')+'" data-hb="'+b[0]+'">'+(b[0]==="refresh"?ic("refresh"):'')+'<span>'+b[1]+'</span></button>'; }).join("")
       +(o.auto?'<select class="cgg-hb cgg-wide" data-hb="auto" aria-label="자동 새로고침">'+o.auto.options.map(function(x){ return '<option value="'+esc(x[0])+'"'+(String(x[0])===String(o.auto.value)?' selected':'')+'>'+esc(x[1])+'</option>'; }).join("")+'</select>':'')
       +(o.saved!=null?'<span class="cgg-hb cgg-saved cgg-conn cgg-wide" data-hb="saved" role="status"><i aria-hidden="true"></i><span>'+esc(o.saved===true?"연결됨":o.saved)+'</span></span>':'')
@@ -2879,7 +2881,8 @@ var CGG = (function(){
     var fd=el.querySelector('[data-hb="field"]'); if(fd) fd.onclick=function(){ o.field.on&&o.field.on(); };
     var me=el.querySelector('[data-hb="me"]'); if(me&&o.me.items) menu(me, {name:o.me.name, role:o.me.role}, o.me.items, o.me.onPick);
     var fs=el.querySelector(".cgg-hfind-slot"); if(fs) find(fs, o.find.feats, o.find.onGo, {phone:o.find.onPhone});
-    var fb=el.querySelector('[data-hb="findbtn"]'); if(fb) fb.onclick=function(){ findDialog(o.find.feats, o.find.onGo); };   /* 1.9 «공지 앞 돋보기 단추» (워시 시안 추천안) */
+    var fb=el.querySelector('[data-hb="findbtn"]'); if(fb) fb.onclick=function(){ findDialog(o.find.feats, o.find.onGo); };
+    /* 1.9 기능 찾기 자리 — find.mode: "nav"(대표님 10/18 확정 · 메뉴 줄 오른쪽 끝, CGG.nav(…, {find}) 와 함께. 머리말 [찾기]는 좁은 화면 · 세로 배치에서만 보여요) | "button"(늘 머리말 [찾기]) | 없음(1.8 머리말 칸) */
     /* 업체명은 절대 자르지 않아요(대표님 10/18). 자리가 모자라면 ① 기능 찾기 칸 → 돋보기 ② 단추 묶음 → «더보기 ▾» 차례로 접어요 */
     var more=el.querySelector('[data-hb="more"]');
     if(more) menu(more, null, function(){ var L=[];
@@ -3020,27 +3023,28 @@ var CGG = (function(){
 
 /* ═══════════════════════════════════════════════════════════════════
    차곳간 워시 — 메뉴 · 기능 목록 확정본 (2026-10-18, 디자인 방)
-   대표님 결정(10/18) «메뉴 찾기 쉽게 = A 왼쪽 메뉴 늘 펼침 + C 기능 찾기 + D 홈 바로가기», 배달은 큰 메뉴(운영/06 O)
-   cgg-j4 1.7 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.7 JS 바로 뒤에 붙여요.
+   대표님 결정(10/18) «메뉴 찾기 쉽게 = A 메뉴 아래 칸 늘 보임(가로 기본 · 세로는 왼쪽 펼침) + C 기능 찾기(메뉴 줄 오른쪽 끝) + D 홈 바로가기», 배달은 큰 메뉴(운영/06 O)
+   10/18 대표님 확정: 탭 차례 홈 → 일감 → 매출 → 월별 청구서 → 입·출금 내역 → 세금계산서 → (제품 전용) → 설정
+   cgg-j4 1.9 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.9 JS 바로 뒤에 붙여요.
    go = "묶음/칸" 이름표. 워시 화면 열쇠로 잇는 표는 디자인/메뉴지도/README.md «워시 열쇠 표»
    spot = 그 화면 안에서 빛낼 칸의 id (워시 방이 그 칸에 id 를 붙여요. 없으면 화면 맨 위만 열려요)
    ═══════════════════════════════════════════════════════════════════ */
 var CGG_MENU_WASH = {
-  /* A — 큰 메뉴 9개 (PC 왼쪽에 아래 칸까지 늘 펼침) */
+  /* A — 큰 메뉴 9개 (가로: 메뉴 밑 줄에 아래 칸 · 세로: 왼쪽에 늘 펼침) */
   groups: [
     {key:"home",     label:"홈",        icon:"home"},
     {key:"ledger",   label:"일감",      icon:"car",     subs:[{key:"list",label:"입고 · 출고 내역"}]},
-    {key:"delivery", label:"배달",      icon:"truck",   isNew:true, subs:[{key:"outlog",label:"출고 기록"},{key:"dest",label:"목적지"},{key:"msg",label:"문구 · 발송 설정"}]},
     {key:"sales",    label:"매출",      icon:"chart"},
-    {key:"bill",     label:"청구서",    icon:"file"},
-    {key:"money",    label:"입출금",    icon:"wallet",  subs:[{key:"io",label:"입금 · 출금"},{key:"due",label:"받을 금액"}]},
+    {key:"bill",     label:"월별 청구서", icon:"file"},
+    {key:"money",    label:"입·출금 내역", icon:"wallet",  subs:[{key:"io",label:"입금 · 출금"},{key:"due",label:"받을 금액"}]},
     {key:"tax",      label:"세금계산서", icon:"receipt"},
+    {key:"delivery", label:"배달",      icon:"truck",   isNew:true, subs:[{key:"outlog",label:"출고 기록"},{key:"dest",label:"목적지"},{key:"msg",label:"문구 · 발송 설정"}]},
     {key:"mat",      label:"자재",      icon:"box"},
     {key:"settings", label:"설정",      icon:"gear",    subs:[{key:"biz",label:"우리 사업장"},{key:"parties",label:"거래처"},{key:"staff",label:"직원 계정"},{key:"items",label:"작업 항목 · 단가표"},
                                                               {key:"caropt",label:"출고 지연 기준"},{key:"bank",label:"입금 자동 확인"},{key:"send",label:"알림"},{key:"outbox",label:"보낸 기록"},{key:"qr",label:"QR 코드"},{key:"bak",label:"백업 · 기기"}]}
   ],
   /* 폰 아래 탭 5칸 (PC 화면일 때. 현장 화면 탭 «홈 · 입고 · 출고 · 오늘 · 날짜 검색»은 그대로) */
-  tabs: [{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"delivery",icon:"truck",label:"배달"},{key:"money",icon:"wallet",label:"입출금"},{key:"__all",icon:"more",label:"전체"}],
+  tabs: [{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"delivery",icon:"truck",label:"배달"},{key:"money",icon:"wallet",label:"입·출금"},{key:"__all",icon:"more",label:"전체"}],
   /* C · D — 기능 목록 (label 은 화면에 보이는 이름, words 는 사람들이 칠 만한 쉬운 말 · 비슷한 말) */
   feats: [
     {id:"in",          label:"입고 등록",            path:"현장 화면 › 입고",                 go:"field/in",          words:"입고하기 입고차량 들어온 차 차 들어옴 차량 등록 사진 번호판 차번호"},
@@ -3053,11 +3057,11 @@ var CGG_MENU_WASH = {
     {id:"dest",        label:"목적지 추가",          path:"배달 › 목적지",                    go:"delivery/dest",     words:"목적지 배달 도착지 주소 자주 가는 곳 추가"},
     {id:"out-msg",     label:"출고 알림 문구",       path:"배달 › 문구 · 발송 설정",           go:"delivery/msg",      words:"출고 문자 문구 알림 내용 바꾸기 메시지"},
     {id:"sales",       label:"매출 보기",            path:"매출",                             go:"sales",             words:"매출 실적 월별 년별 통계 얼마 벌었"},
-    {id:"bill-make",   label:"청구서 만들기",        path:"청구서 › 1. 청구서 만들기",         go:"bill",              words:"월별 청구서 정산서 청구 만들기 명세 요금 엑셀"},
-    {id:"bill-send",   label:"청구서 보내기",        path:"청구서 › 2. 청구서 보내기",         go:"bill",              words:"청구서 발송 알림톡 문자 보내기 예약 시험", spot:"#billSendCard"},
-    {id:"bill-print",  label:"청구서 인쇄 · 그림 받기", path:"청구서 › 1. 청구서 만들기",      go:"bill",              words:"인쇄 출력 jpg 그림 엑셀 내려받기 다운로드"},
-    {id:"money",       label:"입금 · 출금 내역",         path:"입출금 › 입금 · 출금",                 go:"money/io",          words:"입금 출금 들어온 돈 나간 돈 통장 내역 수금 계좌 입·출금 입출금"},
-    {id:"due",         label:"받을 금액",       path:"입출금 › 받을 금액",           go:"money/due",         words:"미수 미수금 입금 대기 못 받은 돈 받을 금액 외상 수금 받아야 할"},
+    {id:"bill-make",   label:"청구서 만들기",        path:"월별 청구서 › 1. 청구서 만들기",         go:"bill",              words:"월별 청구서 정산서 청구 만들기 명세 요금 엑셀"},
+    {id:"bill-send",   label:"청구서 보내기",        path:"월별 청구서 › 2. 청구서 보내기",         go:"bill",              words:"청구서 발송 알림톡 문자 보내기 예약 시험", spot:"#billSendCard"},
+    {id:"bill-print",  label:"청구서 인쇄 · 그림 받기", path:"월별 청구서 › 1. 청구서 만들기",      go:"bill",              words:"인쇄 출력 jpg 그림 엑셀 내려받기 다운로드"},
+    {id:"money",       label:"입금 · 출금 내역",         path:"입·출금 내역 › 입금 · 출금",                 go:"money/io",          words:"입금 출금 들어온 돈 나간 돈 통장 내역 수금 계좌 입·출금 입출금"},
+    {id:"due",         label:"받을 금액",       path:"입·출금 내역 › 받을 금액",           go:"money/due",         words:"미수 미수금 입금 대기 못 받은 돈 받을 금액 외상 수금 받아야 할"},
     {id:"tax",         label:"세금계산서 발행",      path:"세금계산서",                        go:"tax",               words:"세금계산서 계산서 홈택스 발행 부가세 국세청 세금 발급 팝빌"},
     {id:"mat",         label:"자재 추가 · 재고",     path:"자재",                             go:"mat",               words:"자재 재고 약품 소모품 부족 주문"},
     {id:"mat-order",   label:"부족 자재 주문 문자",  path:"자재",                             go:"mat",               words:"자재 주문 발주 부족 문자"},
@@ -3072,14 +3076,14 @@ var CGG_MENU_WASH = {
     {id:"sms",         label:"문자 · 알림톡 설정",   path:"설정 › 알림",                      go:"settings/send",     words:"문자 알림톡 카카오 솔라피 자동 발송 연동 카톡 예약"},
     {id:"sender",      label:"발신번호",             path:"설정 › 알림",                      go:"settings/send",     words:"발신번호 보내는 번호 문자 번호 솔라피 등록 번호", spot:"#smsFrom"},
     {id:"outbox",      label:"보낸 기록",   path:"설정 › 보낸 기록",                    go:"settings/outbox",   words:"발송함 보낸 문자 예약 취소 발송 기록 (보낸 기록)"},
-    {id:"link",        label:"직원에게 앱 주소 보내기", path:"머리말 › 링크 복사",               go:"hdr/link",          words:"링크 복사 앱 주소 직원 주소 보내기 설치 링크"},
+    {id:"link",        label:"직원에게 앱 주소 보내기", path:"머리말 › 주소",               go:"hdr/link",          words:"링크 복사 앱 주소 직원 주소 보내기 설치 링크"},
     {id:"qr",          label:"QR 코드",              path:"설정 › QR 코드",                   go:"settings/qr",       words:"큐알 직원 앱 주소 링크 설치"},
     {id:"help",        label:"도움말 (기능 설명서)", path:"머리말 › 도움말",                  go:"hdr/help",          words:"도움말 설명서 사용법 모르겠 어떻게 안됨 안돼 오류 에러 고장 느림 느려"},
     {id:"notice",      label:"공지사항",             path:"머리말 › 공지사항",                go:"hdr/notice",        words:"공지 공지사항 새 소식 업데이트 안내 알림창 새소식 다시보지않기"},
     {id:"backup",      label:"백업 · 글씨 크기",     path:"설정 › 백업 · 기기",               go:"settings/bak",      words:"백업 되돌리기 글씨 크기 화면 배치 접속 기기"},
-    {id:"trash",       label:"휴지통",               path:"사람 버튼 ▾ › 휴지통",             go:"me/trash",          words:"휴지통 지운 것 지운거 실수로 지움 되돌리기 복구 삭제 되돌 출고취소 취소 잘못 실수"},
-    {id:"plan",        label:"요금제 · 결제",        path:"사람 버튼 ▾ › 요금제",             go:"me/plan",           words:"요금제 결제 구독 이용료 카드 캐시 지갑 잔액 남은돈 충전 이용요금 만료 기한 체험 연장 잠금 잠김 차단 막힘"},
-    {id:"me",          label:"마이페이지",           path:"사람 버튼 ▾ › 마이페이지",         go:"me/me",             words:"내 정보 비밀번호 내 계정 로그아웃"}
+    {id:"trash",       label:"휴지통",               path:"사람 단추 ▾ › 휴지통",             go:"me/trash",          words:"휴지통 지운 것 지운거 실수로 지움 되돌리기 복구 삭제 되돌 출고취소 취소 잘못 실수"},
+    {id:"plan",        label:"요금제 · 결제",        path:"사람 단추 ▾ › 요금제",             go:"me/plan",           words:"요금제 결제 구독 이용료 카드 캐시 지갑 잔액 남은돈 충전 이용요금 만료 기한 체험 연장 잠금 잠김 차단 막힘"},
+    {id:"me",          label:"마이페이지",           path:"사람 단추 ▾ › 마이페이지",         go:"me/me",             words:"내 정보 비밀번호 내 계정 로그아웃"}
   ],
   /* D — 홈 바로가기 처음 4개 (사용자가 바꾸면 이 기기에만 저장) */
   quickDefault: ["in","out","bill-send","pay-done"],   /* 4개까지 (대표님 10/18) — 입고 · 출고 · 청구서 보내기 · 입금 확인 */
@@ -4353,10 +4357,7 @@ function wAllMenu(focus){
   try{CGG.allMenu(wGroups(),wCur(),goKey,wFeats(),goFeat,{focus:!!focus});}catch(e){}
 }
 function wNav(){
-  try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}
-  try{var ob=$("wNavFind");if(ob)ob.remove();
-    if(S.mode==="pc"&&CGG.find){var fb=document.createElement("div");fb.id="wNavFind";fb.className="w-navfind";$("tabs").appendChild(fb);
-      CGG.find(fb,wFeats(),goFeat,{phone:function(){wAllMenu(true);}});}}catch(e){}
+  try{CGG.nav($("tabs"),wGroups(),wCur(),goKey,S.mode==="pc"?{find:{feats:wFeats(),onGo:goFeat}}:{});}catch(e){}
   wSubDup();
 }
 /* 아래 칸이 공통 메뉴에 이미 보이면(가로: 메뉴 밑 줄 · 세로: 왼쪽 펼침) 화면 안 작은 탭은 숨겨요 — 폰은 그대로 */
@@ -4369,8 +4370,7 @@ function wSubDup(){
 window.addEventListener("resize",function(){clearTimeout(WM.rt);WM.rt=setTimeout(wSubDup,120);});
 function wTabbar(){
   var M=window.CGG_MENU_WASH,gs=wGroups(),has=function(k){return gs.some(function(g){return g.key===k;});};
-  var W132_TABS=[{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"bill",icon:"file",label:"월별 청구서"},{key:"money",icon:"wallet",label:"입·출금 내역"},{key:"__all",icon:"more",label:"전체"}];
-  var items=W132_TABS.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){return {key:t.key,icon:t.icon,label:t.label};});
+  var items=M.tabs.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){var x={key:t.key,icon:t.icon,label:t.label};if(t.key==="delivery")x.badge=wDelivBad();return x;});
   /* 매니저처럼 칸이 빠지면 자재 · 설정으로 채워 늘 다섯 칸 */
   ["mat","settings"].forEach(function(k){
     if(items.length<5&&has(k)&&!items.some(function(t){return t.key===k;})){
@@ -4391,7 +4391,7 @@ function wHdr(){
   var fieldOn=canPC()&&$("btnMode")&&!$("btnMode").hidden;
   var o={product:"워시",sub:pc?(isManager()?"입출고 관리":"광택 · 세차 정산"):"현장 화면",ver:(APP_VER.split(" ")[1]||""),
     biz:{name:nm||appName(),line:sp.bizNo?("사업자 "+fmtBizNo(sp.bizNo)+(sp.ceo?(" · 대표 "+sp.ceo):"")):""},
-    find:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) */
+    find:pc?{mode:"nav",feats:wFeats(),onGo:goFeat}:null,   /* v132: 기능 찾기 = 메뉴 줄 오른쪽 끝(대표님 결정, 1.9 mode:"nav") */
     date:(APP_VER.match(/\d{4}-(\d{2})-(\d{2})/)||[]).slice(1).map(Number).join("/"),
     notice:function(){if(window.ccwNotice)window.ccwNotice();},
     help:function(){$("btnHelp").click();},
@@ -4401,7 +4401,7 @@ function wHdr(){
     saved:wSaved(),
     field:fieldOn?{label:$("btnMode").textContent,on:function(){$("btnMode").click();}}:null,
     me:{name:(S.me&&S.me.name)||"내 정보",role:roleDesc(),sub:isOwner()?"마이페이지 · 휴지통":"마이페이지",items:cggMeItems,onPick:cggMePick}};
-  var sig=[o.product,o.sub,o.ver,o.biz.name,o.biz.line,pc,fieldOn,o.me.name,o.me.role,o.find?o.find.feats.length:0,!!o.link,ps?ps.value:""].join("|");
+  var sig=[wLay(),o.product,o.sub,o.ver,o.biz.name,o.biz.line,pc,fieldOn,o.me.name,o.me.role,o.find?o.find.feats.length:0,!!o.link,ps?ps.value:""].join("|");
   if(WM.h&&WM.sig===sig&&$("hdrTop").firstChild){wHdrSync();return;}
   WM.sig=sig;
   WM.h=CGG.header($("hdrTop"),o);
@@ -4412,6 +4412,7 @@ function wHdr(){
   wHdrSync();
 }
 /* v132 저장 연결 — 잘 되면 «연결됨»(초록 점), 아니면 옛 글(저장 안 됨 · 확인 중) 그대로 */
+function wLay(){var a=$("app");return a&&a.classList.contains("lay-icon")?"icon":(a&&a.classList.contains("lay-side")?"side":"top");}
 function wSaved(){var t=$("dbState")?String($("dbState").textContent||""):"";return /저장됨|●/.test(t)?true:(t||"확인 중");}
 /* 숨긴 옛 단추에서 바뀐 것(저장 표시 · 공지 빨간 점 · 현장 화면 글 · 휴지통 개수)을 새 머리말로 */
 function wHdrSync(){
@@ -4486,15 +4487,15 @@ function wBandOf(tab){
     return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+"곳 · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
       onGo:function(){var c=$("billSendCard");if(c)try{CGG.spot(c);}catch(e){c.scrollIntoView();}}};}
   if(tab==="money"){var d=recs.filter(function(r){return statusOf(r)==="출고";});
-    return {count:MNTAB==="due"?0:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",empty:"지금 처리할 일이 없어요",go:"받을 금액 보기",
-      onGo:function(){goKey("money/due");}};}
+    if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 상사를 눌러 입금 완료를 해요"};
+    return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",go:"받을 금액 보기",onGo:function(){goKey("money/due");}};}
   if(tab==="tax"){var n=0;try{n=taxGroups().filter(function(g){var d=taxDoc(g);return g.issue&&!(d&&d.status==="발급");}).length;}catch(e){}
     return {count:n,text:"아직 발급 안 한 세금계산서 "+n+"건",onGo:function(){var t=$("tTable");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView();}}};}
   if(tab==="outlog"){var f=wDelivBad();
     return {count:(S.dSub||"outlog")==="outlog"?f:0,tone:"stop",text:"오늘 못 보낸 출고 알림 "+f+"건 — 다시 보내 주세요",
       onGo:function(){var b=$("olResend");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   if(tab==="mat"){var m=parseInt(String(($("mLow")||{}).textContent||"0").replace(/[^0-9]/g,""),10)||0;
-    return {count:m,tone:"stop",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
+    return {count:m,tone:"chk",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   /* 매출은 지금 화면 그대로(대표님 c0f996e) — 할 일 띠 없음 */
   return null;
 }
@@ -4527,7 +4528,7 @@ function renameNote(){
     if(!S.me)return;
     if(localStorage.getItem("ccw_rn_money"))return;
     localStorage.setItem("ccw_rn_money","1");
-    setTimeout(function(){toast("「입출금 기록」이 「입금 · 출금 내역」으로 이름이 바뀌었어요");},900);
+    setTimeout(function(){toast("「입출금 기록」이 「입·출금 내역」으로 이름이 바뀌었어요");},900);
   }catch(e){}
 }
 $("btnMore").onclick=moreSheet;
@@ -6854,6 +6855,7 @@ function monthsList(){
 }
 function fillMonths(sel,cur,keepAll){
   var ks=monthsList();
+  if(cur&&ks.indexOf(cur)<0)ks=ks.concat([cur]).sort().reverse();   /* v132: 달력에서 고른 달(자료 없음)도 목록에 */
   sel.innerHTML='<option value="">전체 기간</option>'+ks.map(function(k){
     var p=k.split("-");return '<option value="'+k+'">'+p[0]+'년 '+Number(p[1])+'월</option>';}).join("");
   /* keepAll 이면 사용자가 고른 '전체 기간'을 그대로 둬요 */
@@ -6966,7 +6968,7 @@ function renderLedger(){
   renderLateTable();
   L.month=fillMonths($("lMonth"),L.month,L.monthSet);
   if($("lMonthHost")){$("lMonthHost").innerHTML=monthBtnHtml("lMonthBtn");
-    wireMonthBtn("lMonthBtn",L.month,function(k){var sl=$("lMonth");if(k&&!Array.prototype.some.call(sl.options,function(o){return o.value===k;})){var op=document.createElement("option");op.value=k;op.textContent=monthLabel(k);sl.appendChild(op);}sl.value=k||"";sl.onchange();},true);}
+    wireMonthBtn("lMonthBtn",L.month,function(k){L.month=k||"";L.monthSet=true;L.page=1;renderLedger();jPage();},true);}
   var list=ledgerRows();
   var pages=Math.max(1,Math.ceil(list.length/L.size));
   if(L.page>pages)L.page=pages;
@@ -7522,11 +7524,14 @@ function outLogSheet(r){
   $("olEdit").onclick=function(){closeSheet();setTimeout(function(){sheetEdit(r);},200);};
   if($("olAgain"))$("olAgain").onclick=function(){resendOut([r]);};
 }
+/* v132: 확인 창 «누구에게» 줄 — 이름 셋까지 + 외 N곳 */
+function wWho(names){var u=[];(names||[]).forEach(function(n){n=String(n||"").trim();if(n&&u.indexOf(n)<0)u.push(n);});
+  return u.length?(u.slice(0,3).join(", ")+(u.length>3?" 외 "+(u.length-3)+"곳":"")):"-";}
 function resendOut(list){
   var c=sendCfg();
   var ok=list.filter(function(r){return r.phone;});
   if(!ok.length)return toast("연락처가 있는 건이 없어요",true);
-  ask(ok.length+"건에 출고 알림을 다시 보내요.\n보내는 방식: "+(OUT_MODES[outMode()]||"")+
+  ask("받는 딜러 · "+wWho(ok.map(function(r){return r.dealer||r.company;}))+"\n몇 건 · "+ok.length+"건\n얼마 · 약 "+won(ok.length*8)+" (알림톡 기준 · 문자로 가면 한 통 약 20~100원)\n\n출고 알림을 다시 보내요.\n보내는 방식: "+(OUT_MODES[outMode()]||"")+
       "\n보내는 형식: "+(fmtOf("out")==="ata"?"우리 업체 카카오 채널":(HQATA.off?"문자":"알림톡 먼저 (안 되면 문자)")),function(){
     ok.forEach(function(r){sendOutMsg(r,"출고 알림(다시 보냄)",null);});
     closeSheet();toast("다시 보냈어요");setTimeout(renderOutLog,600);
@@ -7906,7 +7911,7 @@ function renderBill(){
       return '<div class="sums" style="margin-bottom:8px">'+
         '<div class="sum"><span>청구처</span><b>'+list.length+'건</b></div>'+
         '<div class="sum"><span>총 청구액</span><b>'+won(totAmt)+'</b></div>'+
-        '<div class="sum"><span>받을 금액</span><b'+(dueSum?' style="color:var(--danger)"':'')+'>'+won(dueSum)+'</b></div>'+
+        '<div class="sum"><span>받을 금액</span><b'+(dueSum?' style="color:var(--warn)"':'')+'>'+won(dueSum)+'</b></div>'+
         '<div class="sum"><span>보낸 건</span><b>'+sentTax+' / '+taxYes+'</b></div>'+
       '</div>'+
       '<div class="hint" style="margin:0 2px 12px">'+
@@ -8174,7 +8179,7 @@ $("bmSend").onclick=function(){
   if($("bmFmt"))S.cfg.billFormat=$("bmFmt").value;
   var already=targets.filter(function(b){return billState(b.name);});
   var tt=billTargets();
-  ask(periodLabel(B.month)+"\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "+wonExact(tt.sum)+"\n청구 알림을 보내요. (알림톡이 안 되면 문자로 가요)"+
+  ask(periodLabel(B.month)+"\n받는 곳 · "+wWho(targets.map(function(b){return b.name;}))+"\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "+wonExact(tt.sum)+"\n청구 알림을 보내요. (알림톡이 안 되면 문자로 가요)"+
       (tt.skip?("\n번호 없음 · 0원 "+tt.skip+"곳은 빠져요."):"")+
       (already.length?("\n\n이미 보낸 곳 "+already.length+"건이 포함돼 있어요."):""),
     function(){
@@ -11115,9 +11120,9 @@ function renderMoney(){
   }
   $("mnSums").innerHTML=
     '<div class="sum"><span>입금 금액</span><b style="color:var(--good)">'+won(inSum)+'</b></div>'+
-    '<div class="sum"><span>출금 금액</span><b style="color:var(--danger)">'+won(outSum)+'</b></div>'+
+    '<div class="sum"><span>출금 금액</span><b>'+won(outSum)+'</b></div>'+
     '<div class="sum clickable" id="mnTodoBox"><span>확인 필요</span><b style="color:'+
-      (todo.length?"var(--danger)":"var(--muted)")+'">'+todo.length+'건</b></div>'+
+      (todo.length?"var(--warn)":"var(--muted)")+'">'+todo.length+'건</b></div>'+
     '<div class="sum"><span>받을 금액</span><b style="color:var(--warn)">'+won(dueAmt)+'</b></div>';
 
   if(!on){
@@ -12023,7 +12028,7 @@ function pbFixSheet(g){
     if(pick[3]==="차액"&&!amt)return toast("바뀐 금액을 넣어 주세요",true);
     var c=pbCfg();
     if(!confirmed((c.test?"[시험 모드] 진짜 발급되지 않아요.\n\n":"국세청으로 실제 발급돼요.\n\n")+
-      pick[1]+"\n"+esc(g.issuerName)+" · "+wonExact(pick[3]==="두장"?g.amount:amt),this,"수정발행"))return;
+      pick[1]+"\n"+g.issuerName+" · "+wonExact(pick[3]==="두장"?g.amount:amt),this,"수정발행"))return;
     var b=this;b.disabled=true;b.textContent="보내는 중…";
     gsCall("pbModify",[JSON.stringify({test:c.test,corpNum:digits(supplier().bizNo),
       modifyCode:pick[0], orgNTS:d.nts, orgMgtKey:d.mgtKey, amount:amt, key:g.key, month:T.month})])
@@ -12046,7 +12051,7 @@ function pbIssueSelected(all){
   if(!go.length)return toast("발급할 수 있는 건이 없어요 (이미 발급됐거나 사업자번호 없음)",true);
   var warn=go.filter(function(g){return pbProblems(g).length;});
   ask((c.test?"[시험 모드] 진짜 발급은 되지 않아요.\n\n":"국세청으로 실제 발급해요. 되돌리려면 수정·취소 세금계산서를 따로 끊어야 해요.\n\n")+
-      go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+
+      "받는 곳 · "+wWho(go.map(function(g){return g.issuerName;}))+"\n"+go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+
       (done.length?("\n이미 발급된 "+done.length+"건은 빼요."):"")+
       (bad.length?("\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+
       (warn.length?("\n\n확인 필요 "+warn.length+"건: "+warn.map(function(g){return g.issuerName+"("+pbProblems(g).join(", ")+")";}).join(" / ")):""),
@@ -13420,7 +13425,7 @@ function orderAllLow(){
   var noPhone=g["_none"]||[];delete g["_none"];
   var keys=Object.keys(g);
   if(!keys.length)return toast("도매상 번호가 들어간 자재가 없어요",true);
-  ask(keys.length+"건에 주문 문자를 보내요.\n"+
+  ask("도매상 · "+wWho(keys.map(function(k){var m=g[k][0];return (m&&m.vendor)||k;}))+"\n몇 건 · 문자 "+keys.length+"통 (자재 "+keys.reduce(function(t,k){return t+g[k].length;},0)+"가지)\n얼마 · 문자 요금 약 "+won(keys.length*50)+"\n\n주문 문자를 보내요.\n"+
       keys.map(function(k){return g[k].map(function(m){return m.name;}).join(", ");}).join("\n")+
       (noPhone.length?("\n\n번호가 없어 빠지는 자재: "+noPhone.map(function(m){return m.name;}).join(", ")):""),
     function(){
@@ -18349,6 +18354,20 @@ select.cgg-hb{width:auto}
 .cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
 .cgg-beta[hidden]{display:none}
 @media (max-width:600px){ .cgg-beta{font-size:12.5px} .cgg-beta .in{display:block;padding-block:6px} .cgg-beta b{margin-right:6px} }
+/* 기능 찾기 = 메뉴 줄 오른쪽 끝 (대표님 10/18 확정) — CGG.nav(…, {find}). 흰 바탕 칸 · 결과는 아래로 펼침
+   좁은 화면(1000 이하) · 세로 · 아이콘 배치에서는 숨고, 머리말 [찾기] 단추(.cgg-findalt)가 창으로 대신해요 */
+.cgg-nav .cgg-navfind{margin-left:auto;align-self:center;width:260px;flex:0 1 260px;min-width:170px;position:relative;z-index:var(--z-drop)}
+.cgg-nav:has(.cgg-navfind){overflow:visible}
+.cgg-navfind .in{display:flex;align-items:center;gap:7px;height:calc(var(--nav-h) - 18px);width:100%;box-sizing:border-box;border-radius:var(--r-ctl);padding:0 12px;background:var(--surface);border:1px solid var(--ln2);color:var(--muted)}
+.cgg-navfind input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:14px;color:var(--text);outline:none;box-shadow:none;height:auto;padding:0;margin:0}
+.cgg-navfind .in:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px #1668C422}
+.cgg-navfind input::placeholder{color:var(--muted)}
+.cgg-navfind .ph{display:none}
+.cgg-navfind .res{left:auto;right:0;width:340px}
+.cgg-navfind .res button{text-align:left;align-items:flex-start}
+.cgg-hb.cgg-findalt{display:none}
+@media (max-width:1000px){ .cgg-nav .cgg-navfind{display:none} .cgg-hb.cgg-findalt{display:inline-flex} .cgg-nav:has(.cgg-navfind){overflow-x:auto} }
+@media (min-width:1001px){ .lay-side .cgg-nav .cgg-navfind,.lay-icon .cgg-nav .cgg-navfind{display:none} .lay-side .cgg-hb.cgg-findalt,.lay-icon .cgg-hb.cgg-findalt{display:inline-flex} }
 
 </style>
 <!-- ===== 워시 이음 (공통 부품 위에 워시 머리말 단추 모양만) ===== -->
@@ -18743,14 +18762,7 @@ body.jpay #ccwLockBar{display:none!important}
 #vOutLog.d-msg #olMsgCard{margin-top:0!important}
 .cgg-hb .ntDot{display:inline-block;width:8px;height:8px;min-width:0;padding:0;margin-left:5px;border-radius:50%;background:#C0392B;vertical-align:middle}
 
-/* ── v132 새 규칙 — 메뉴 줄 끝 기능 찾기 · 할 일 띠 자리 · 숫자 칸 가운데 · 도구줄 43/42 ── */
-.w-navfind{margin-left:auto;align-self:center;flex:none;width:260px;position:relative;z-index:var(--z-drop)}
-.cgg-nav:has(.w-navfind){overflow:visible}
-.w-navfind .in{background:var(--surface);border-color:var(--ln2,#D0D5DD);color:var(--muted)}
-.w-navfind input{color:var(--text)}
-.w-navfind input::placeholder{color:var(--muted)}
-.w-navfind .res button{text-align:left;align-items:flex-start}
-@media (max-width:1000px){.w-navfind{display:none}}
+/* ── v132 새 규칙 — 할 일 띠 자리 · 숫자 칸 가운데 · 도구줄 43/42 ── */
 #wBand{margin:0 0 16px}
 .cgg-main section .sums .sum{text-align:center}
 .cgg-main section .sums .sum > span{display:block;text-align:center;justify-content:center}
