@@ -2143,11 +2143,16 @@ async function billLive(shop: string, b: any) {
 }
 
 /* sb18: 국세청 사업자등록정보 진위확인 및 상태조회(공공데이터포털) — 체크 v37 ntsVerify 와 같음 · 열쇠 NTS_API_KEY(Secrets) */
+/** 답 모양 — 체크 v47 약속(state · since · match:{ceo, start}) + 총괄 모양(closedAt · ok) 을 함께.
+    국세청 진위확인은 대표자·개업일을 한 번에 맞춰 보므로 둘이 같은 값이에요(안 물었으면 null) */
+function vres(ready: boolean, state: string, closed: string, ok: boolean | null, why: string) {
+  return { ready, state, since: closed, closedAt: closed, match: { ceo: ok, start: ok }, ok, why };
+}
 async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
   const key = env("NTS_API_KEY");
   const b = digits(bizNo);
-  if (b.length !== 10) return { ready: true, state: "없음", closedAt: "", match: null as boolean | null, why: "사업자번호는 숫자 10자리예요." };
-  if (!key) return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "사업자번호 확인은 아직 준비 중이에요." };
+  if (b.length !== 10) return vres(true, "없음", "", null, "사업자번호는 숫자 10자리예요.");
+  if (!key) return vres(false, "", "", null, "사업자번호 확인은 아직 준비 중이에요.");
   const base = "https://api.odcloud.kr/api/nts-businessman/v1/";
   const q = "?returnType=JSON";   // 보안(중간): 열쇠는 주소에 넣지 않고 머리글로 (오류 글·기록에 주소가 남아도 열쇠는 안 남게)
   const post = async (path: string, body: unknown) => {
@@ -2174,7 +2179,7 @@ async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
       const va = await post("validate", { businesses: [{ b_no: b, start_dt: od, p_nm: nm.slice(0, 40) }] });
       match = String(va.valid || "") === "01";
     }
-    return { ready: true, state, closedAt: end.length === 8 ? end.slice(0, 4) + "-" + end.slice(4, 6) + "-" + end.slice(6) : "", match, why: "" };
+    return vres(true, state, end.length === 8 ? end.slice(0, 4) + "-" + end.slice(4, 6) + "-" + end.slice(6) : "", match, "");
   } catch (e) {
     /* 기록·답에는 정해진 글만 (열쇠·주소·원문 오류는 남기지 않음) */
     const m = e instanceof Error ? e.message : "";
@@ -2185,7 +2190,7 @@ async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
       : code === "net" ? "국세청에 연결하지 못했어요. 잠시 뒤 다시 해 주세요."
       : code === "429" ? "국세청 확인이 잠시 몰려 있어요. 잠시 뒤 다시 해 주세요."
       : "지금은 국세청 확인이 안 돼요(" + code + "). 잠시 뒤 다시 해 주세요.";
-    return { ready: false, state: "", closedAt: "", match: null as boolean | null, why };
+    return vres(false, "", "", null, why);
   }
 }
 
@@ -2605,11 +2610,12 @@ const FN: Record<string, Fn> = {
   /* sb18(대표님 10/18): 거래처 사업자번호 진위·상태 확인 — 체크 v37 bizVerify 와 같은 모양 · 대표만 · 하루 100 */
   bizVerify: async (s2, a, ss) => {
     ownerOnly(ss);
-    const o: any = (a[0] && typeof a[0] === "object") ? a[0] : { bizNo: a[0], ceo: a[1], openDate: a[2] };
+    const o0: any = (a[0] && typeof a[0] === "object") ? a[0] : { bizNo: a[0], ceo: a[1], openDate: a[2] };
+    const o: any = { bizNo: o0.no ?? o0.bizNo, ceo: o0.ceo, openDate: o0.start ?? o0.openDate };   // 체크 v47 약속({no, ceo, start})도 받음
     if (!await rateOk("bizv:" + s2 + ":" + kstYmd(), Number(env("WASH_BIZV_DAY", "100"))))
       throw new Error("오늘 사업자번호 확인 한도를 다 썼습니다. 내일 다시 해 주세요.");
     const r = await ntsVerify(String(o.bizNo || ""), String(o.ceo || ""), String(o.openDate || ""));
-    console.log("bizVerify", s2, digits(o.bizNo).slice(0, 3) + "-**-*****", r.state, r.match, r.ready);
+    console.log("bizVerify", s2, digits(o.bizNo).slice(0, 3) + "-**-*****", r.state, r.ok, r.ready);
     return r;
   },
 
