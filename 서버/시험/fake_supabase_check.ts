@@ -15,7 +15,7 @@ class Q {
   upsert(p: any, o: { onConflict?: string } = {}) { this.op = "upsert"; this.payload = p; this.conflict = o.onConflict ?? "id"; return this; }
   update(p: any) { this.op = "update"; this.payload = p; return this; }
   delete() { this.op = "delete"; return this; }
-  eq(k: string, v: any) { this.filters.push((r) => r[k] === v); return this; }
+  eq(k: string, v: any) { if (k === "kind_auto") (this as any).__kindAutoFilter = true; this.filters.push((r) => r[k] === v); return this; }
   is(k: string, v: any) { this.filters.push((r) => (r[k] ?? null) === v); return this; }
   in(k: string, v: any[]) { this.filters.push((r) => v.includes(r[k])); return this; }
   gt(k: string, v: any) { this.filters.push((r) => r[k] > v); return this; }
@@ -80,6 +80,8 @@ class Q {
       }
       return { data: null, error: null };
     }
+    if (this.op === "update" && this.t === "check_deposit" && store.__noKindAuto && ("kind_auto" in (this.payload ?? {}) || (this as any).__kindAutoFilter))
+      return { data: null, error: { code: "42703", message: 'column "kind_auto" does not exist' } };   // v43 시험: SQL 16 전
     if (this.op === "update") { hit.forEach((r) => Object.assign(r, this.payload)); return { data: this.ret ? hit.map((r) => ({ ...r })) : null, error: null }; }
     if (this.op === "delete") { store[this.t] = tbl.filter((r) => !hit.includes(r)); return { data: null, error: null }; }
     let out = hit.map((r) => {
