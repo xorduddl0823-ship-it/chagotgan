@@ -232,13 +232,19 @@ rep('''function wireSub(){''', DEP_JS + '''function wireSub(){''')
 
 # ── 4) 거래처 부품 1.0 → 1.1 (대표님 v46 시험 10/18 — 사진으로 연락처 · 이메일 · 국세청 확인 · «번호 모양 맞음») ──
 JS10 = open(BASE + "부품/거래처_부품.js", encoding="utf-8").read()
-JS11 = open(BASE + "부품/거래처_부품_1.1.js", encoding="utf-8").read()
+JS11 = open(BASE + "부품/거래처_부품_1.2.js", encoding="utf-8").read()   # 1.2: 보안 덧붙임 — 창을 열기만 해서는 묻지 않음
 rep(JS10, JS11)
 rep('''      readBiz:function(b64){ return call("aiBiz",[b64]); } },''',
-    '''      readBiz:function(b64){ return call("aiBiz",[b64]); },
-      /* v47: 국세청 사업자 상태 확인 (서버 bizVerify — 없거나 열쇠가 없으면 {ready:false} → 모양 검사만) */
-      verifyBiz:function(q){ return call("bizVerify",[q]).catch(function(e){
-        if(/지원하지 않는 기능/.test(String(e&&e.message))) return {ready:false}; throw e; }); } },''')
+    '''      /* v47: 서버 v37 aiBiz 는 개업일을 openDate(YYYYMMDD)로 줌 → 부품 모양 start(YYYY-MM-DD) */
+      readBiz:function(b64){ return call("aiBiz",[b64]).then(function(r){ var o=r; if(typeof o==="string"){ try{ o=JSON.parse(o); }catch(e){ return r; } }
+        if(o && typeof o==="object" && o.openDate && !o.start){ var d=String(o.openDate).replace(/\\D/g,""); if(d.length===8) o.start=d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6); }
+        return o; }); },
+      /* v47: 국세청 확인 — 서버 v37 bizVerify({bizNo, ceo, openDate}) → {ready, state, closedAt, match:true|false|null}
+         부품 모양 {no, ceo, start} → {ready, state, since, match:{ceo, start}} 으로 이음 (보안 v47 덧붙임) */
+      verifyBiz:function(q){ return call("bizVerify",[{bizNo:q.no, ceo:q.ceo||"", openDate:String(q.start||"").replace(/\\D/g,"")}]).then(function(r){
+          r=r||{}; var m=(r.match===true||r.match===false)?r.match:null;
+          return {ready:r.ready!==false, state:r.state||"", since:r.closedAt||"", match:{ceo:m, start:m}}; })
+        .catch(function(e){ if(/지원하지 않는 기능/.test(String(e&&e.message))) return {ready:false}; throw e; }); } },''')
 
 rep('$("hdVer").textContent="체크 v46 · "', '$("hdVer").textContent="체크 v47 · "')
 assert JS11 in s and JS10 not in s

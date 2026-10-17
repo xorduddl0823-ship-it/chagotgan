@@ -151,13 +151,14 @@
         return {got:got, dup:dup, bad:[]};
       case "partnerCaps": return {later:true, more:true, last:true};
       case "aiCard": return JSON.stringify({name:"송민호", phone:"010-0000-0099", company:"광교오토", bizName:"", bizNo:"", email:"", addr:""});
-      case "aiBiz": return JSON.stringify({bizNo:"000-00-00150", bizName:"광교오토", ceo:"송민호", addr:"예시시 예시구 예시로 50", upte:"도소매", jongmok:"중고자동차", tel:"031-000-0000", email:"office@example.com", start:"2020-03-02"});
+      case "aiBiz": return JSON.stringify({bizNo:"000-00-00150", bizName:"광교오토", ceo:"송민호", addr:"예시시 예시구 예시로 50", upte:"도소매", jongmok:"중고자동차", tel:"031-000-0000", email:"office@example.com", openDate:"20200302"});
       /* v47 · 국세청 확인 (서버 bizVerify 약속) — 지어낸 번호마다 상태를 정해 둠 */
-      case "bizVerify": var bv=String((a[0]||{}).no||"").replace(/\D/g,"");
-        if(bv==="0000000112") return {ready:true, state:"휴업", since:"2026-08-01", match:{ceo:null, start:null}};
-        if(bv==="0000000126") return {ready:true, state:"폐업", since:"2025-12-31", match:{ceo:null, start:null}};
-        if(bv==="0000000131") return {ready:true, state:"계속", since:"", match:{ceo:false, start:null}};
-        return {ready:true, state:"계속", since:"", match:{ceo:true, start:(a[0]||{}).start?true:null}};
+      case "bizVerify": PV_BIZV=(typeof PV_BIZV==="number"?PV_BIZV:0)+1; var bq=a[0]||{}, bv=String(bq.bizNo||"").replace(/\D/g,"");   /* 서버 v37 모양 */
+        if(bv.length!==10) return {ready:true, state:"없음", closedAt:"", match:null};
+        if(bv==="0000000112") return {ready:true, state:"휴업", closedAt:"2026-08-01", match:null};
+        if(bv==="0000000126") return {ready:true, state:"폐업", closedAt:"2025-12-31", match:null};
+        if(bv==="0000000131") return {ready:true, state:"계속", closedAt:"", match:false};
+        return {ready:true, state:"계속", closedAt:"", match:(bq.openDate&&bq.ceo)?true:null};
       case "companyDel": var cd=(a[0]||{}).ids||[], kept=[], n=0;
         cd.forEach(function(id){ var k=+String(id).slice(1); var dn=DEALERS.filter(function(d){ return d.company && d.company.id===id; }).length;
           if(dn) kept.push({id:id, name:(COMP[k]||[])[0], dealerN:dn}); else if(COMP[k]){ COMP[k]=["(지움)",""]; n++; } });
@@ -2191,7 +2192,8 @@ var CGG = (function(){
 @media (max-width:600px){ .cpt-g2{grid-template-columns:1fr} .cpt-seg button{padding:8px 14px} }
 </style>
 <script>
-/* 차곳간 거래처 부품 cpt 1.1 (체크 v47~ · 워시가 그대로 가져다 씀)
+/* 차곳간 거래처 부품 cpt 1.2 (체크 v47~ · 워시가 그대로 가져다 씀)
+   1.2 (보안 v47 덧붙임 · 10/18): 창을 열기만 해서는 국세청에 묻지 않음 — 번호를 고치거나 사진으로 채울 때, 또는 «국세청에 확인» 단추를 누를 때만 (하루 한도 아끼기)
    1.1 (대표님 v46 시험 10/18): 사업자등록증 사진 → 연락처 · 이메일도 채우기 · 명함 → 이메일 · 국세청 확인(api.verifyBiz, 있으면)
        · 모양 검사 글은 «번호 모양 맞음»(진짜 확인과 헷갈리지 않게) · 휴업/폐업/없는 번호는 저장 전에 한 번 더 묻기
    시안: https://claude.ai/artifact/J6CqnRvhvefztsjWtqYH2Y
@@ -2213,8 +2215,8 @@ var CGG = (function(){
      fail(msg)                       서버 오류 글 (쉬운 말로 바꿔 보여 줌)
    } */
 var CGG_PARTNER = (function(){
-  var V="cpt 1.1";
-  var VERIFY=null, VST={}, VSTART={}, VCACHE={};   /* 1.1: 국세청 확인 — 창마다 새로 */
+  var V="cpt 1.2";
+  var VERIFY=null, VST={}, VSTART={}, VCACHE={}, WIRE_AUTO={};   /* WIRE_AUTO[pre]=true → 다음 wireBizNo 때 바로 물음(사진으로 채운 뒤) */   /* 1.1: 국세청 확인 — 창마다 새로 */
   function esc(s){ return (window.CGG&&CGG.esc) ? CGG.esc(s) : String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function dig(v){ return String(v==null?"":v).replace(/\D/g,""); }
   function bizOk(v){ var d=dig(v); if(d.length!==10) return false;
@@ -2383,31 +2385,37 @@ var CGG_PARTNER = (function(){
     function show(r){ VST[pre]=r;
       if(!r || r.ready===false){ put("번호 모양 맞음","ok"); return; }
       var st=String(r.state||""), mm=r.match||{}, diff=[mm.ceo===false?"대표자":"", mm.start===false?"개업일":""].filter(Boolean).join(" · ");
-      if(st==="계속") put("국세청 확인: 영업 중"+(diff?" — 국세청 등록과 "+diff+"가 달라요":""), diff?"bad":"ok");
+      if(st==="계속") put("국세청 확인: 영업 중"+(diff?" — 국세청 등록과 "+diff+(/일$/.test(diff)?"이":"가")+" 달라요":""), diff?"bad":"ok");
       else if(st==="휴업") put("휴업 중이에요"+(r.since?" ("+r.since+")":""),"bad");
       else if(st==="폐업") put("폐업한 번호예요"+(r.since?" ("+r.since+")":""),"bad");
       else if(st==="없음") put("국세청에 등록되지 않은 번호예요","bad");
       else put("번호 모양 맞음","ok"); }
-    function chk(){ bn.value=bizFmt(bn.value); var d=dig(bn.value); VST[pre]=null;
+    function ask(d){
+      put("번호 모양 맞음 · 국세청에 확인하는 중…","ok"); var key=d+"|"+ceoVal()+"|"+(VSTART[pre]||"");
+      Promise.resolve().then(function(){ return VERIFY({no:d, ceo:ceoVal(), start:VSTART[pre]||""}); }).then(function(r){
+        if(dig(bn.value)!==d) return; if(r && r.ready!==false) VCACHE[key]=r; show(r);
+      }).catch(function(){ if(dig(bn.value)===d) put("번호 모양 맞음 (국세청 확인은 잠시 뒤 다시 해 볼게요)","ok"); }); }
+    /* 모양만 맞고 아직 묻지 않았을 때 — «국세청에 확인» 단추 (누를 때만 물음) */
+    function askBtn(d){ var m=$id(pre+"chk"); if(!m || !VERIFY || bn.disabled) return;
+      var b=document.createElement("button"); b.type="button"; b.className="cgg-btn sm"; b.style.marginLeft="8px"; b.textContent="국세청에 확인";
+      b.onclick=function(){ ask(d); }; m.appendChild(b); }
+    function chk(auto){ bn.value=bizFmt(bn.value); var d=dig(bn.value); VST[pre]=null;
       if(!d){ put("",""); return; }
       if(!bizOk(d)){ put("사업자번호가 맞지 않아요. 다시 봐 주세요.","bad"); return; }
       var key=d+"|"+ceoVal()+"|"+(VSTART[pre]||"");
       if(VCACHE[key]){ show(VCACHE[key]); return; }
       put("번호 모양 맞음","ok");
       if(!VERIFY) return;
-      clearTimeout(t); t=setTimeout(function(){
-        put("번호 모양 맞음 · 국세청에 확인하는 중…","ok");
-        Promise.resolve().then(function(){ return VERIFY({no:d, ceo:ceoVal(), start:VSTART[pre]||""}); }).then(function(r){
-          if(dig(bn.value)!==d) return; if(r && r.ready!==false) VCACHE[key]=r; show(r);
-        }).catch(function(){ if(dig(bn.value)===d) put("번호 모양 맞음 (국세청 확인은 잠시 뒤 다시 해 볼게요)","ok"); });
-      }, 400); }
-    bn.oninput=chk; var ce=$id(pre+"ceo"); if(ce) ce.onchange=chk; chk();
+      if(auto===false){ askBtn(d); return; }
+      clearTimeout(t); t=setTimeout(function(){ ask(d); }, 600); }
+    bn.oninput=function(){ chk(true); }; var ce=$id(pre+"ceo"); if(ce) ce.onchange=function(){ if(VST[pre]) chk(true); };
+    chk(WIRE_AUTO[pre]===true); WIRE_AUTO[pre]=false;
   }
   /* 1.1: 휴업 · 폐업 · 없는 번호면 저장 전에 한 번 더 (막지는 않음) */
   function closedWarn(pres){ for(var i=0;i<pres.length;i++){ var r=VST[pres[i]]; if(!r||r.ready===false||!$id(pres[i]+"no")) continue;
       if(r.state==="휴업") return "휴업 중인 사업자번호예요."; if(r.state==="폐업") return "폐업한 사업자번호예요."; if(r.state==="없음") return "국세청에 등록되지 않은 사업자번호예요."; }
     return ""; }
-  function popStart(o){ VERIFY=(o.api&&o.api.verifyBiz)||null; VST={}; VSTART={}; }
+  function popStart(o){ VERIFY=(o.api&&o.api.verifyBiz)||null; VST={}; VSTART={}; WIRE_AUTO={}; }
   function readFields(pre, defs){ var r={}; defs.forEach(function(f){ var e=$id(pre+f[0]); if(e) r[f[0]]=String(e.value||"").trim(); });
     if(r.no!=null) r.no=dig(r.no); if(r.tel!=null) r.tel=dig(r.tel); return r; }
   function bizMsg(pre){ var e=$id(pre+"no"); if(e && dig(e.value) && !bizOk(e.value)) return "사업자등록번호가 맞지 않아요. 다시 봐 주세요."; return ""; }
@@ -2454,7 +2462,7 @@ var CGG_PARTNER = (function(){
           (own && o.api.readBiz?'<button type="button" class="cgg-btn sm cpt-sm" id="cpoPhoto">사업자등록증 사진으로 채우기</button>':'')+'</div>';
         wireBizNo("cpo_");
         var p=$id("cpoPhoto"); if(p) p.onclick=function(){ pickPhoto(function(x){ readPhoto(o.api.readBiz, x, function(r){
-          if(r.start) VSTART.cpo_=String(r.start); var k=fillEmpty([["cpo_name",r.bizName],["cpo_no",r.bizNo],["cpo_ceo",r.ceo],["cpo_addr",r.addr],["cpo_upte",r.upte],["cpo_jongmok",r.jongmok],["cpo_email",r.email]]); wireBizNo("cpo_"); return k; }); }); };
+          if(r.start) VSTART.cpo_=String(r.start); var k=fillEmpty([["cpo_name",r.bizName],["cpo_no",r.bizNo],["cpo_ceo",r.ceo],["cpo_addr",r.addr],["cpo_upte",r.upte],["cpo_jongmok",r.jongmok],["cpo_email",r.email]]); WIRE_AUTO.cpo_=true; wireBizNo("cpo_"); return k; }); }); };
         return; }
       if(v==="co"){
         if(!n){ box.innerHTML='<p class="cpt-note">상사를 먼저 넣어 주세요.</p>'; return; }
@@ -2465,7 +2473,7 @@ var CGG_PARTNER = (function(){
           (own && o.api.readBiz?'<button type="button" class="cgg-btn sm cpt-sm" id="cpcPhoto">사업자등록증 사진으로 채우기</button>':'')+'</div>';
         wireBizNo("cpc_");
         var q=$id("cpcPhoto"); if(q) q.onclick=function(){ pickPhoto(function(x){ readPhoto(o.api.readBiz, x, function(r){
-          if(r.start) VSTART.cpc_=String(r.start); var k=fillEmpty([["cpc_no",r.bizNo],["cpc_ceo",r.ceo],["cpc_tel",r.tel],["cpc_addr",r.addr],["cpc_upte",r.upte],["cpc_jongmok",r.jongmok],["cpc_email",r.email]]); wireBizNo("cpc_"); return k; }); }); };
+          if(r.start) VSTART.cpc_=String(r.start); var k=fillEmpty([["cpc_no",r.bizNo],["cpc_ceo",r.ceo],["cpc_tel",r.tel],["cpc_addr",r.addr],["cpc_upte",r.upte],["cpc_jongmok",r.jongmok],["cpc_email",r.email]]); WIRE_AUTO.cpc_=true; wireBizNo("cpc_"); return k; }); }); };
         return; }
       box.innerHTML = v==="none" ? '<p class="cpt-note">세금계산서를 끊지 않아요. 청구서에 «계산서 미발급»으로 나와요.</p>'
                                  : '<p class="cpt-note">표에 «정보 필요»로 남고, 위에 모아서 알려 드려요.</p>';
@@ -2527,7 +2535,7 @@ var CGG_PARTNER = (function(){
       body:body, ok:own?"저장":"", cancel:"닫기", onOk:function(){ save(); return false; }});
     wireBizNo("ck_");
     function fromBiz(x){ readPhoto(o.api.readBiz, x, function(r){
-      if(r.start) VSTART.ck_=String(r.start); var k=fillEmpty([["ckName",r.bizName],["ck_no",r.bizNo],["ck_ceo",r.ceo],["ck_tel",r.tel],["ck_addr",r.addr],["ck_upte",r.upte],["ck_jongmok",r.jongmok],["ck_email",r.email]]); wireBizNo("ck_"); return k; }); }
+      if(r.start) VSTART.ck_=String(r.start); var k=fillEmpty([["ckName",r.bizName],["ck_no",r.bizNo],["ck_ceo",r.ceo],["ck_tel",r.tel],["ck_addr",r.addr],["ck_upte",r.upte],["ck_jongmok",r.jongmok],["ck_email",r.email]]); WIRE_AUTO.ck_=true; wireBizNo("ck_"); return k; }); }
     var p=$id("ckPhoto"); if(p) p.onclick=function(){ pickPhoto(fromBiz); };
     if(opt.photo) fromBiz(opt.photo);
     var del=$id("ckDel"); if(del) del.onclick=function(){ closeD(); askDel(o, false, [c]); };
@@ -6431,10 +6439,16 @@ function ptMount(){
       delDealers:function(ids){ return call("dealerDel",[{ids:ids}]); },
       delCompanies:function(ids){ return call("companyDel",[{ids:ids}]); },
       readCard:function(b64){ return call("aiCard",[b64]); },
-      readBiz:function(b64){ return call("aiBiz",[b64]); },
-      /* v47: 국세청 사업자 상태 확인 (서버 bizVerify — 없거나 열쇠가 없으면 {ready:false} → 모양 검사만) */
-      verifyBiz:function(q){ return call("bizVerify",[q]).catch(function(e){
-        if(/지원하지 않는 기능/.test(String(e&&e.message))) return {ready:false}; throw e; }); } },
+      /* v47: 서버 v37 aiBiz 는 개업일을 openDate(YYYYMMDD)로 줌 → 부품 모양 start(YYYY-MM-DD) */
+      readBiz:function(b64){ return call("aiBiz",[b64]).then(function(r){ var o=r; if(typeof o==="string"){ try{ o=JSON.parse(o); }catch(e){ return r; } }
+        if(o && typeof o==="object" && o.openDate && !o.start){ var d=String(o.openDate).replace(/\D/g,""); if(d.length===8) o.start=d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6); }
+        return o; }); },
+      /* v47: 국세청 확인 — 서버 v37 bizVerify({bizNo, ceo, openDate}) → {ready, state, closedAt, match:true|false|null}
+         부품 모양 {no, ceo, start} → {ready, state, since, match:{ceo, start}} 으로 이음 (보안 v47 덧붙임) */
+      verifyBiz:function(q){ return call("bizVerify",[{bizNo:q.no, ceo:q.ceo||"", openDate:String(q.start||"").replace(/\D/g,"")}]).then(function(r){
+          r=r||{}; var m=(r.match===true||r.match===false)?r.match:null;
+          return {ready:r.ready!==false, state:r.state||"", since:r.closedAt||"", match:{ceo:m, start:m}}; })
+        .catch(function(e){ if(/지원하지 않는 기능/.test(String(e&&e.message))) return {ready:false}; throw e; }); } },
     done:function(msg){ bar(msg,"ok",true); DEALERS=[]; refresh(["set","bill"]); },
     fail:function(e){ return niceMsg(e&&e.message); }
   });

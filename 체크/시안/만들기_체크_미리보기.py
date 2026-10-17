@@ -157,13 +157,14 @@ FAKE = r'''<script>
         return {got:got, dup:dup, bad:[]};
       case "partnerCaps": return {later:true, more:true, last:true};
       case "aiCard": return JSON.stringify({name:"송민호", phone:"010-0000-0099", company:"광교오토", bizName:"", bizNo:"", email:"", addr:""});
-      case "aiBiz": return JSON.stringify({bizNo:"000-00-00150", bizName:"광교오토", ceo:"송민호", addr:"예시시 예시구 예시로 50", upte:"도소매", jongmok:"중고자동차", tel:"031-000-0000", email:"office@example.com", start:"2020-03-02"});
+      case "aiBiz": return JSON.stringify({bizNo:"000-00-00150", bizName:"광교오토", ceo:"송민호", addr:"예시시 예시구 예시로 50", upte:"도소매", jongmok:"중고자동차", tel:"031-000-0000", email:"office@example.com", openDate:"20200302"});
       /* v47 · 국세청 확인 (서버 bizVerify 약속) — 지어낸 번호마다 상태를 정해 둠 */
-      case "bizVerify": var bv=String((a[0]||{}).no||"").replace(/\D/g,"");
-        if(bv==="0000000112") return {ready:true, state:"휴업", since:"2026-08-01", match:{ceo:null, start:null}};
-        if(bv==="0000000126") return {ready:true, state:"폐업", since:"2025-12-31", match:{ceo:null, start:null}};
-        if(bv==="0000000131") return {ready:true, state:"계속", since:"", match:{ceo:false, start:null}};
-        return {ready:true, state:"계속", since:"", match:{ceo:true, start:(a[0]||{}).start?true:null}};
+      case "bizVerify": PV_BIZV=(typeof PV_BIZV==="number"?PV_BIZV:0)+1; var bq=a[0]||{}, bv=String(bq.bizNo||"").replace(/\D/g,"");   /* 서버 v37 모양 */
+        if(bv.length!==10) return {ready:true, state:"없음", closedAt:"", match:null};
+        if(bv==="0000000112") return {ready:true, state:"휴업", closedAt:"2026-08-01", match:null};
+        if(bv==="0000000126") return {ready:true, state:"폐업", closedAt:"2025-12-31", match:null};
+        if(bv==="0000000131") return {ready:true, state:"계속", closedAt:"", match:false};
+        return {ready:true, state:"계속", closedAt:"", match:(bq.openDate&&bq.ceo)?true:null};
       case "companyDel": var cd=(a[0]||{}).ids||[], kept=[], n=0;
         cd.forEach(function(id){ var k=+String(id).slice(1); var dn=DEALERS.filter(function(d){ return d.company && d.company.id===id; }).length;
           if(dn) kept.push({id:id, name:(COMP[k]||[])[0], dealerN:dn}); else if(COMP[k]){ COMP[k]=["(지움)",""]; n++; } });
