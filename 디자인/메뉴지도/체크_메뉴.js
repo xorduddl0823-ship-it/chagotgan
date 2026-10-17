@@ -29,11 +29,11 @@ var CGG_MENU_CHECK = {
     {id:"bill-send",    label:"청구서 보내기",          path:"청구서 › 월별 청구서 › 2. 청구서 보내기", go:"bill/month",   words:"청구서 발송 알림톡 문자 보내기 시험", spot:"#billSendCard"},
     {id:"bill-group",   label:"청구처 묶음",            path:"청구서 › 청구처 묶음",                go:"bill/group",       words:"묶음 딜러 묶기 한 곳으로 청구처"},
     {id:"tpl",          label:"알림톡 템플릿",          path:"청구서 › 알림톡 템플릿",              go:"bill/tpl",         words:"알림톡 템플릿 카카오 등록 문구 승인"},
-    {id:"deposit",      label:"입금 내역 · 입금 처리",  path:"입출금 › 입금 내역",                  go:"deposit/in",       words:"입금 들어온 돈 통장 팝빌 가져오기 입금 처리 미수 미수금 입금 대기 못 받은 돈 받을 금액 수금 계좌"},
+    {id:"deposit",      label:"입금 확인",  path:"입출금 › 입금 내역",                  go:"deposit/in",       words:"입금 들어온 돈 통장 팝빌 가져오기 입금 처리 미수 미수금 입금 대기 못 받은 돈 받을 금액 수금 계좌 입금 내역 입금 처리 입금 확인 수금"},
     {id:"insurance",    label:"보험료 대조",            path:"입출금 › 보험료 대조",                go:"deposit/ins",      words:"보험료 보험사 대조 성능보증"},
     {id:"tax",          label:"세금계산서 발급",        path:"세금계산서",                          go:"hometax",          words:"세금계산서 계산서 팝빌 발급 홈택스 수정 국세청 세금 부가세 발행"},
     {id:"remind",       label:"재검사 알림 보내기",     path:"재검사 알림",                         go:"remind",           words:"재검사 알림 유효기간 만료 규칙 보내기"},
-    {id:"deliv-log",    label:"배달 기록",              path:"배달 › 배달 기록",                    go:"delivery/log",     words:"배달 기록 출고 차량 이동 배송 탁송 확인 못 보낸"},
+    {id:"deliv-log",    label:"배달 기록",              path:"배달 › 배달 기록",                    go:"delivery/log",     words:"배달 기록 출고 차량 이동 배송 탁송 확인 못 보낸 출고차량 오늘 출고 오늘 배달 나간 차"},
     {id:"dealer-wait",  label:"딜러 등록 대기",         path:"배달 › 배달 기록 › 맨 위",            go:"delivery/log",     words:"딜러 등록 승인 대기 기사가 적은 번호 처음 번호", spot:"#dealerWait"},
     {id:"deliv-dest",   label:"목적지별 배달",          path:"배달 › 목적지별",                     go:"delivery/bydest",  words:"목적지별 장소별 모아 보기"},
     {id:"dest-add",     label:"목적지 추가",            path:"배달 › 목적지 관리",                  go:"delivery/dest",    words:"목적지 도착지 주소 추가 관리"},
@@ -58,6 +58,6 @@ var CGG_MENU_CHECK = {
     {id:"plan",         label:"요금제 · 결제",          path:"사람 버튼 ▾ › 요금제",                go:"me/plan",          words:"요금제 결제 구독 이용료 카드 캐시 지갑 잔액 남은돈 충전 이용요금 만료 기한 체험 연장 잠금 잠김 차단 막힘"},
     {id:"me",           label:"마이페이지",             path:"사람 버튼 ▾ › 마이페이지",            go:"me/me",            words:"내 정보 비밀번호 내 계정 로그아웃"}
   ],
-  quickDefault: ["deliv-log","bill-make","deposit","tax","remind","dealer-add"],
-  quickKey: "cgg_check_quick"
+  quickDefault: ["upload","bill-make","deposit","deliv-log"],   /* 4개까지 (대표님 10/18) — 자료 올리기 · 청구서 · 입금 확인 · 배달 기록 */
+  quickKey: "cgg_check_quick"   /* 실제 저장 이름은 "cgg_check_quick:"+검사소id+":"+사람id */
 };

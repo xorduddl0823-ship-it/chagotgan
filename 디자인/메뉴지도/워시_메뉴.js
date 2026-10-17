@@ -23,11 +23,12 @@ var CGG_MENU_WASH = {
   tabs: [{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"delivery",icon:"truck",label:"배달"},{key:"money",icon:"wallet",label:"입출금"},{key:"__all",icon:"more",label:"전체"}],
   /* C · D — 기능 목록 (label 은 화면에 보이는 이름, words 는 사람들이 칠 만한 쉬운 말 · 비슷한 말) */
   feats: [
-    {id:"in",          label:"입고 등록",            path:"현장 화면 › 입고",                 go:"field/in",          words:"입고하기 차 들어옴 차량 등록 사진 번호판 차번호"},
-    {id:"ledger",      label:"입출고 내역",          path:"일감 › 입출고 내역",               go:"ledger/list",       words:"차 목록 작업 중 일감 장부 입고 출고 내역 수금 대기"},
-    {id:"pay-done",    label:"입금 완료 표시",       path:"일감 › 입출고 내역",               go:"ledger/list",       words:"수금 완료 돈 받음 입금 처리", spot:"#wkBulkPaid"},
+    {id:"in",          label:"입고 등록",            path:"현장 화면 › 입고",                 go:"field/in",          words:"입고하기 입고차량 들어온 차 차 들어옴 차량 등록 사진 번호판 차번호"},
+    {id:"out",         label:"출고 등록",            path:"현장 화면 › 출고",                 go:"field/out",         words:"출고하기 출고차량 나간 차 차 나감 내보내기 배달 보내기"},
+    {id:"ledger",      label:"입출고 내역",          path:"일감 › 입출고 내역",               go:"ledger/list",       words:"차 목록 작업 중 일감 장부 입고 출고 내역 수금 대기 입고차량 오늘 입고 들어온 차"},
+    {id:"pay-done",    label:"입금 확인",       path:"일감 › 입출고 내역",               go:"ledger/list",       words:"수금 완료 돈 받음 입금 처리 입금 완료 표시 입금 확인 수금 확인", spot:"#wkBulkPaid"},
     {id:"extra-ok",    label:"추가 작업 확인 · 입금 확인", path:"일감 › 입출고 내역 › 차 줄 누르기", go:"ledger/list",     words:"추가 작업 확인 요청 추가 작업 승인 입금 확인 차 자세히"},
-    {id:"outlog",      label:"출고 기록",            path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"배달 기록 출고 내역 나간 차 배송 이동 확인 탁송"},
+    {id:"outlog",      label:"출고 기록",            path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"배달 기록 출고 내역 나간 차 배송 이동 확인 탁송 출고차량 오늘 출고 오늘 배달 나간 차"},
     {id:"out-resend",  label:"출고 알림 다시 보내기", path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"재발송 다시 보내기 못 보낸 실패 문자"},
     {id:"dest",        label:"도착지 추가",          path:"배달 › 도착지",                    go:"delivery/dest",     words:"목적지 배달 도착지 주소 자주 가는 곳"},
     {id:"out-msg",     label:"출고 알림 문구",       path:"배달 › 문구 · 발송 설정",           go:"delivery/msg",      words:"출고 문자 문구 알림 내용 바꾸기 메시지"},
@@ -60,7 +61,7 @@ var CGG_MENU_WASH = {
     {id:"plan",        label:"요금제 · 결제",        path:"사람 버튼 ▾ › 요금제",             go:"me/plan",           words:"요금제 결제 구독 이용료 카드 캐시 지갑 잔액 남은돈 충전 이용요금 만료 기한 체험 연장 잠금 잠김 차단 막힘"},
     {id:"me",          label:"마이페이지",           path:"사람 버튼 ▾ › 마이페이지",         go:"me/me",             words:"내 정보 비밀번호 내 계정 로그아웃"}
   ],
-  /* D — 홈 바로가기 처음 6개 (사용자가 바꾸면 이 기기에만 저장) */
-  quickDefault: ["outlog","bill-make","due","tax","dealer-add","in"],
-  quickKey: "cgg_wash_quick"
+  /* D — 홈 바로가기 처음 4개 (사용자가 바꾸면 이 기기에만 저장) */
+  quickDefault: ["in","out","bill-send","pay-done"],   /* 4개까지 (대표님 10/18) — 입고 · 출고 · 청구서 보내기 · 입금 확인 */
+  quickKey: "cgg_wash_quick"   /* 실제 저장 이름은 "cgg_wash_quick:"+업체id+":"+사람id (한 PC에 여러 사람이 로그인할 수 있어서) */
 };

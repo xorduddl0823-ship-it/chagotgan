@@ -79,7 +79,7 @@ var CGG = (function(){
   function tabbar(el, items, current, onPick){
     if(!el) return;
     el.setAttribute("aria-label","아래 메뉴");
-    el.innerHTML=items.map(function(t){ return '<button type="button" data-tb="'+esc(t.key)+'"'+(t.key===current?' class="on" aria-current="page"':'')+'>'+ic(t.icon)+'<span>'+esc(t.label)+'</span></button>'; }).join("");
+    el.innerHTML=items.map(function(t){ return '<button type="button" data-tb="'+esc(t.key)+'"'+(t.key===current?' class="on" aria-current="page"':'')+'>'+ic(t.icon)+'<span>'+esc(t.label)+'</span>'+(t.badge>0?'<i class="cgg-nbadge" aria-label="'+esc(t.badge)+'건">'+esc(t.badge>99?"99+":t.badge)+'</i>':'')+'</button>'; }).join("");   /* 1.8: badge = 빨간 숫자 (예: 못 보낸 도착 알림) */
     Array.prototype.forEach.call(el.children,function(b){ b.onclick=function(){ onPick && onPick(b.getAttribute("data-tb")); }; });
   }
 
@@ -279,7 +279,7 @@ var CGG = (function(){
     var cg=String(cur||"").split("/")[0];
     el.setAttribute("aria-label","메뉴");
     el.innerHTML=groups.map(function(g){ var on=g.key===cg, subs=g.subs||[];
-      return '<div class="cgg-ngrp'+(on?' on':'')+(subs.length>1?' has':'')+'"><button type="button" data-nk="'+esc(g.key+(subs.length?"/"+subs[0].key:""))+'" aria-selected="'+on+'">'+ic(g.icon||"file")+'<span class="lbl">'+esc(g.label)+'</span>'+(g.isNew?'<i class="cgg-new">새</i>':'')+'</button>'
+      return '<div class="cgg-ngrp'+(on?' on':'')+(subs.length>1?' has':'')+'"><button type="button" data-nk="'+esc(g.key+(subs.length?"/"+subs[0].key:""))+'" aria-selected="'+on+'">'+ic(g.icon||"file")+'<span class="lbl">'+esc(g.label)+'</span>'+(g.isNew?'<i class="cgg-new">새</i>':'')+(g.badge>0?'<i class="cgg-nbadge" aria-label="'+esc(g.badge)+'건">'+esc(g.badge>99?"99+":g.badge)+'</i>':'')+'</button>'
         +(subs.length>1?'<div class="cgg-nsubs">'+subs.map(function(s){ var k=g.key+"/"+s.key; return '<button type="button" class="cgg-nsub" data-nk="'+esc(k)+'"'+(k===cur?' aria-current="page"':'')+'>'+esc(s.label)+'</button>'; }).join("")+'</div>':'')+'</div>'; }).join("");
     Array.prototype.forEach.call(el.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
   }
@@ -338,7 +338,7 @@ var CGG = (function(){
   }
   document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeSheet(); });
   /* D — 홈 바로가기: 사용자가 고른 기능 id 를 이 기기에만 저장 (알 수 없는 id 는 버리고, 최대 max 개) */
-  function quick(el, feats, key, defs, onGo, o){ if(!el) return; o=o||{}; var max=o.max||8, by=Object.create(null);
+  function quick(el, feats, key, defs, onGo, o){ if(!el) return; o=o||{}; var max=o.max||4, by=Object.create(null);   /* 1.8: 바로가기는 4개까지 (대표님 10/18) */
     feats.forEach(function(f){ by[f.id]=f; });
     function clean(v){ var seen=Object.create(null); return (Array.isArray(v)?v:[]).filter(function(id){ if(typeof id!=="string"||!by[id]||seen[id]) return false; seen[id]=1; return true; }).slice(0,max); }
     function load(){ var v=null; try{ v=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){ v=null; } return clean(Array.isArray(v)?v:(defs||[])); }
@@ -354,9 +354,11 @@ var CGG = (function(){
       dialog({size:"form", title:"홈 바로가기 고르기", desc:"최대 "+max+"개까지 골라요. 이 기기에만 저장돼요.",
         body:'<div class="cgg-qpick">'+feats.map(function(f){ return '<label><input type="checkbox" value="'+esc(f.id)+'"'+(l.indexOf(f.id)>=0?' checked':'')+'><span><b>'+esc(f.label)+'</b><small>'+esc(f.path)+'</small></span></label>'; }).join("")+'</div>',
         ok:"저장", onOk:function(d){ var v=Array.prototype.map.call(d.querySelectorAll(".cgg-qpick input:checked"),function(i){ return i.value; });
-          if(v.length>max){ toast("최대 "+max+"개까지 고를 수 있어요"); return false; }
+          if(v.length>max){ toast(max+"개까지예요. 하나를 빼고 넣어 주세요"); return false; }
           v.sort(function(a,b){ var A=l.indexOf(a),B=l.indexOf(b); return (A<0?99:A)-(B<0?99:B); });
-          save(v); draw(); toast("바로가기를 저장했어요"); } }); }
+          save(v); draw(); toast("바로가기를 저장했어요"); } });
+      var dl=document.querySelector(".cgg-dlg .cgg-qpick");
+      if(dl) Array.prototype.forEach.call(dl.querySelectorAll("input"),function(c){ c.onchange=function(){ if(c.checked&&dl.querySelectorAll("input:checked").length>max){ c.checked=false; toast(max+"개까지예요. 하나를 빼고 넣어 주세요"); } }; }); }
     draw(); return { redraw:draw, list:load };
   }
 

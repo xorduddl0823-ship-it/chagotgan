@@ -367,6 +367,10 @@
 .cgg-quick .qt:hover{border-color:var(--blue)}
 .cgg-quick .qt b{font-size:14px} .cgg-quick .qt small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cgg-quick .none{grid-column:1/-1;margin:0;color:var(--muted);font-size:13px}
+/* 빨간 숫자 (메뉴 · 아래 탭) — 예: 못 보낸 도착 알림 */
+.cgg-nbadge{font-style:normal;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--stop);color:#fff;font-size:11px;font-weight:800;display:inline-grid;place-items:center;line-height:1;margin-left:4px;box-sizing:border-box}
+.cgg-tbar button{position:relative}
+.cgg-tbar .cgg-nbadge{position:absolute;top:5px;left:calc(50% + 6px);margin:0;min-width:16px;height:16px;font-size:10px}
 .cgg-qpick{display:flex;flex-direction:column;max-height:52vh;overflow:auto;margin:0 -4px}
 .cgg-dlg .cgg-qpick label{flex-direction:row;align-items:center;gap:12px;padding:9px 4px;border-bottom:1px solid var(--line);color:var(--text);font-weight:500;font-size:14px;cursor:pointer}
 .cgg-qpick span{display:flex;flex-direction:column;min-width:0} .cgg-qpick small{color:var(--muted);font-size:12px;font-weight:400}
@@ -374,7 +378,6 @@
 @keyframes cggSpot{0%,55%{box-shadow:0 0 0 4px var(--sky)}100%{box-shadow:0 0 0 0 transparent}}
 .cgg-spot{animation:cggSpot 2.1s ease-out}
 @media (prefers-reduced-motion:reduce){ .cgg-spot{animation:none;outline:3px solid var(--sky);outline-offset:2px} }
-@media (max-width:1100px){ .cgg-quick .qg{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:600px){
   .cgg-hdr .cgg-hfind .in{display:none}
   .cgg-hdr .cgg-hfind .ph{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;cursor:pointer;padding:0}
