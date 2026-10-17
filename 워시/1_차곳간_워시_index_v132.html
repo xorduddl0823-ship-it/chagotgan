@@ -4242,15 +4242,15 @@ function decideMode(init){
 /* ══════════════ v129 — 공통 부품 1.8 페이지 뼈대 · 메뉴 찾기 (디자인/메뉴지도/README.md 열쇠 표) ══════════════ */
 var WM={h:null,sig:"",obs:null};
 /* 이 권한이 쓸 수 있는 큰 메뉴 · 아래 칸 */
-/* v132 — 대표님 결정(10/18 시안 확인). REC:false 면 «기록» 탭을 빼고 매출 기록은 «일감 › 매출 기록» */
+/* v132 — 대표님 결정(10/18 c0f996e): 세 번째 탭 = «매출»(지금 매출 화면 그대로). REC:false 면 탭을 빼고 «일감 › 매출» */
 var W132={REC:true};
 var W132_ORDER=["home","ledger","sales","bill","money","tax","delivery","mat","settings"];
-var W132_NAME={sales:"기록",bill:"월별 청구서",money:"입·출금 내역"};
+var W132_NAME={sales:"매출",bill:"월별 청구서",money:"입·출금 내역"};
 function wGroups(){
   var g=wGroups0();
   if(!W132.REC&&g.some(function(x){return x.key==="sales";})){
     g=g.filter(function(x){return x.key!=="sales";});
-    g.forEach(function(x){if(x.key==="ledger")x.subs=[{key:"list",label:"입고 · 출고 내역"},{key:"sales",label:"매출 기록"}];});
+    g.forEach(function(x){if(x.key==="ledger")x.subs=[{key:"list",label:"입고 · 출고 내역"},{key:"sales",label:"매출"}];});
   }
   g.forEach(function(x){if(W132_NAME[x.key])x.label=W132_NAME[x.key];});
   g.sort(function(a,b){return W132_ORDER.indexOf(a.key)-W132_ORDER.indexOf(b.key);});
@@ -4300,11 +4300,11 @@ function wFeats(){
   }
   return M.feats.map(wFeat).filter(function(f){return ok(f.go);});
 }
-/* v132 기능 하나 — 새 탭 이름 · 기록 자리 · «주소» */
+/* v132 기능 하나 — 새 탭 이름 · 매출 자리 · «주소» */
 function wFeat(f){
   var x={},k;for(k in f)if(Object.prototype.hasOwnProperty.call(f,k))x[k]=f[k];
   var p=String(x.path||"");
-  if(x.go==="sales"){x.go=W132.REC?"sales":"ledger/sales";p=W132.REC?"기록":"일감 › 매출 기록";}
+  if(x.go==="sales"){x.go=W132.REC?"sales":"ledger/sales";p=W132.REC?"매출":"일감 › 매출";}
   p=p.replace(/^청구서 › .*/,"월별 청구서").replace(/^청구서$/,"월별 청구서").replace(/^입출금 ›/,"입·출금 내역 ›").replace("머리말 › 링크 복사","머리말 › 주소").replace(/^사람 버튼/,"사람 단추");
   x.path=p;return x;
 }
@@ -4466,7 +4466,7 @@ function wHome(c){
     money:{title:"이번 달 입금",link:{label:"입·출금 내역",onClick:function(){goKey("money/io");}},big:c.paid,
       bar:{done:c.paid,total:c.billed||0},legend:[["받은 것",c.paid,"done"],["받을 것",c.dueAmt,"chk"]],
       rows:[["아직 작업 중(청구 전)",won(c.rows.filter(function(r){return statusOf(r)==="입고";}).reduce(function(t,r){return t+(r.total||0);},0))]]},
-    rank:{title:"이번 달 일감",link:mgr?{label:"일감",onClick:function(){goKey("ledger/list");}}:{label:W132.REC?"기록":"매출 기록",onClick:function(){goKey(W132.REC?"sales":"ledger/sales");}},
+    rank:{title:"이번 달 일감",link:mgr?{label:"일감",onClick:function(){goKey("ledger/list");}}:{label:"매출",onClick:function(){goKey(W132.REC?"sales":"ledger/sales");}},
       sub:"작업 항목별 · 금액 많은 차례",items:ri.map(function(x){return {label:x.name,value:x.n+"대",pct:(x.amt||0)/mx};})}});   /* 도움 카드는 워시 «이 화면 사용법»(jPage) 하나만 */
   /* 정산(이번 달 입금)은 매니저에게 보이지 않아요 */
   if(mgr){var mc=host.querySelector(".cgg-homeside .cgg-side");if(mc)mc.remove();}
@@ -4495,7 +4495,7 @@ function wBandOf(tab){
       onGo:function(){var b=$("olResend");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   if(tab==="mat"){var m=parseInt(String(($("mLow")||{}).textContent||"0").replace(/[^0-9]/g,""),10)||0;
     return {count:m,tone:"stop",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
-  if(tab==="sales")return {count:0,empty:"매출 기록은 보기만 하는 화면이에요 — 처리할 일이 없어요"};
+  /* 매출은 지금 화면 그대로(대표님 c0f996e) — 할 일 띠 없음 */
   return null;
 }
 function wSkel(sec){
@@ -4518,7 +4518,7 @@ function j4Note(){
     if(localStorage.getItem("ccw_rn_j18"))return;
     try{localStorage.setItem("ccw_rn_j4","1");}catch(e){}
     localStorage.setItem("ccw_rn_j18","1");
-    setTimeout(function(){toast("화면이 새 모양으로 바뀌었어요. 매출은 «기록», 출고 기록 · 목적지는 «배달» 안에 있어요. 메뉴 줄 오른쪽 «기능 찾기»에 하고 싶은 일을 쳐 보세요");},1600);
+    setTimeout(function(){toast("화면이 새 모양으로 바뀌었어요. 출고 기록 · 목적지는 «배달» 안에 있어요. 메뉴 줄 오른쪽 «기능 찾기»에 하고 싶은 일을 쳐 보세요");},1600);
   }catch(e){}
 }
 /* 이름이 바뀐 것을 한 번만 알려 드려요 */
@@ -14898,7 +14898,7 @@ function salesHtml(){
       (last12.length?'':'<div class="note" style="margin:8px 0 0">자료가 쌓이면 달마다 막대가 생겨요.</div>')+
       '</div></div>')+'</section>';
 
-  return head("매출 기록","올린 입·출고가 곧 자료예요. 청구서를 만들지 않아도 달마다 몇 대 · 얼마인지 바로 보여요.")+
+  return head("매출","올린 입·출고가 곧 자료예요. 청구서를 만들지 않아도 달마다 몇 대 · 얼마인지 바로 보여요.")+
   (empty?'<div class="msg info">아직 올라온 자료가 없어요. 입고 · 출고 내역에서 차를 올리면 여기에 바로 쌓여요.</div>':'')+
   '<div class="tools">'+
     '<div class="seg"><button type="button" id="vOut" aria-pressed="'+(!VATIN)+'">부가세 별도</button>'+
@@ -14909,7 +14909,8 @@ function salesHtml(){
     '<button class="btn" id="salXls">엑셀 다운로드</button>'+
   '</div>'+
   sums([[thisY+"년 들어온 차",swon(ty.n||0)+"대"],[thisY+"년 매출",swon(vmoney(ty.total||0))+"원"],
-        [thisY+"년 입금",swon(vmoney(ty.paid||0))+"원"],[thisY+"년 받을 금액",swon(vmoney(ty.due||0))+"원"]],"")+   /* v132: 숫자 칸 4개 — «지난해 대비»는 아래 큰 칸에 있어요 */
+        [thisY+"년 입금",swon(vmoney(ty.paid||0))+"원"],[thisY+"년 받을 금액",swon(vmoney(ty.due||0))+"원"],
+        ["지난해 대비", yGrow==null?"—":pct(yGrow)]],"c5")+
   hero+
   card("월별 매출","한 줄이 한 달이에요. 막대는 입금 · 받을 금액을 이어 붙인 거예요.",
     tableBlock("sal",[
@@ -15013,7 +15014,7 @@ function renderAll(){
   clearTimeout(window.__jpT);window.__jpT=setTimeout(jPage,700);   /* 늦게 그려지는 칸(세금계산서 등)도 한 번 더 */
 }
 /* ===== v121 · J 화면 일곱 칸 — ② 묶음 이름 › 제목 · ⑦ 이 화면 사용법 (그린 뒤 한 번 더 손봄) ===== */
-var JGROUP={home:"홈",sales:"기록",ledger:"일감",outlog:"배달",bill:"월별 청구서",money:"입·출금 내역",tax:"세금계산서",mat:"자재",settings:"설정"};
+var JGROUP={home:"홈",sales:"매출",ledger:"일감",outlog:"배달",bill:"월별 청구서",money:"입·출금 내역",tax:"세금계산서",mat:"자재",settings:"설정"};
 var JHELP={
   vHome:"할 일 카드를 누르면 그 화면으로 가요. 숫자 카드는 오늘 입고 · 작업 중 · 오늘 출고를 지난주 같은 날과 견줘요. 달력의 날짜를 누르면 그날 메모를 남길 수 있어요.",
   vSales:"올해와 달별 매출을 봐요. 부가세 포함 · 별도를 바꿀 수 있고, 엑셀 다운로드로 표를 받을 수 있어요.",

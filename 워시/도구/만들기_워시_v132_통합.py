@@ -1,11 +1,9 @@
 # 워시 v132 — 새 규칙(.claude/skills/chagotgan-builder/SKILL.md) 덧붙임. 만들기_워시_v132.py 가 맨 끝에서 불러요(s · rep 그대로 씀)
-# 대표님 시안 확인(10/18): ① 기능 찾기 = 메뉴 줄 오른쪽 끝 ② 기록 = 매출 기록 ③ 이번 달 입금
-# «기록» 탭을 빼기로 하면 W132={REC:false} 한 줄만 바꾸면 돼요 → 매출 기록은 «일감 › 매출 기록»으로
+# 대표님 결정(10/18): ① 기능 찾기 = 메뉴 줄 오른쪽 끝 ② 세 번째 탭 = «매출»(지금 매출 화면 그대로, c0f996e) ③ 이번 달 입금
+# «매출» 탭(세 번째)을 빼기로 하면 W132={REC:false} 한 줄만 바꾸면 돼요 → 매출은 «일감 › 매출»로
 
 # ── A. 숫자 칸 4개 (규칙 4: 4칸 고정) ──
-rep('''[thisY+"년 받을 금액",swon(vmoney(ty.due||0))+"원"],
-        ["지난해 대비", yGrow==null?"—":pct(yGrow)]],"c5")+''',
-    '''[thisY+"년 받을 금액",swon(vmoney(ty.due||0))+"원"]],"")+   /* v132: 숫자 칸 4개 — «지난해 대비»는 아래 큰 칸에 있어요 */''')
+# (매출 화면 숫자 칸 5개는 그대로 — 대표님 c0f996e «지금 매출 화면 모양 그대로»)
 rep('''      return '<div class="sums c5" style="margin-bottom:8px">'+''', '''      return '<div class="sums" style="margin-bottom:8px">'+''')
 rep('''        '<div class="sum"><span>세금계산서 미발급</span><b'+(taxNo?' style="color:var(--warn)"':'')+'>'+taxNo+'건</b></div>'+
 ''', '')   # v132: 미발급은 세금계산서 화면 할 일 띠에서
@@ -23,8 +21,6 @@ rep('''  $("mBuy").textContent=won(buy);
 ''', '''  $("mBuy").textContent=won(buy);
   if($("mVend"))$("mVend").textContent=(S.vendors||[]).length+"곳";
 ''')
-# 기록 탭 화면 이름
-rep('''  return head("매출","올린 입·출고가 곧 자료예요.''', '''  return head("매출 기록","올린 입·출고가 곧 자료예요.''')
 
 # ── B. 일감 달 고르기 — 목록 상자 대신 달력식(청구서 · 세금계산서와 같은 단추) ──
 rep('''    <select id="lMonth"></select>''', '''    <span id="lMonthHost"></span><select id="lMonth" hidden></select>''')
@@ -32,17 +28,17 @@ rep('''  L.month=fillMonths($("lMonth"),L.month,L.monthSet);''', '''  L.month=fi
   if($("lMonthHost")){$("lMonthHost").innerHTML=monthBtnHtml("lMonthBtn");
     wireMonthBtn("lMonthBtn",L.month,function(k){var sl=$("lMonth");if(k&&!Array.prototype.some.call(sl.options,function(o){return o.value===k;})){var op=document.createElement("option");op.value=k;op.textContent=monthLabel(k);sl.appendChild(op);}sl.value=k||"";sl.onchange();},true);}''')
 
-# ── C. 메뉴 — 탭 차례(규칙 3) · 이름 · 기록 탭 스위치 ──
+# ── C. 메뉴 — 탭 차례(규칙 3) · 이름 · 매출 탭 스위치 ──
 rep('''function wGroups(){
-  var M=window.CGG_MENU_WASH;if(!M)return [];''', '''/* v132 — 대표님 결정(10/18 시안 확인). REC:false 면 «기록» 탭을 빼고 매출 기록은 «일감 › 매출 기록» */
+  var M=window.CGG_MENU_WASH;if(!M)return [];''', '''/* v132 — 대표님 결정(10/18 c0f996e): 세 번째 탭 = «매출»(지금 매출 화면 그대로). REC:false 면 탭을 빼고 «일감 › 매출» */
 var W132={REC:true};
 var W132_ORDER=["home","ledger","sales","bill","money","tax","delivery","mat","settings"];
-var W132_NAME={sales:"기록",bill:"월별 청구서",money:"입·출금 내역"};
+var W132_NAME={sales:"매출",bill:"월별 청구서",money:"입·출금 내역"};
 function wGroups(){
   var g=wGroups0();
   if(!W132.REC&&g.some(function(x){return x.key==="sales";})){
     g=g.filter(function(x){return x.key!=="sales";});
-    g.forEach(function(x){if(x.key==="ledger")x.subs=[{key:"list",label:"입고 · 출고 내역"},{key:"sales",label:"매출 기록"}];});
+    g.forEach(function(x){if(x.key==="ledger")x.subs=[{key:"list",label:"입고 · 출고 내역"},{key:"sales",label:"매출"}];});
   }
   g.forEach(function(x){if(W132_NAME[x.key])x.label=W132_NAME[x.key];});
   g.sort(function(a,b){return W132_ORDER.indexOf(a.key)-W132_ORDER.indexOf(b.key);});
@@ -55,11 +51,11 @@ rep('''  if(t==="ledger")return "ledger/list";''', '''  if(t==="ledger")return "
 rep('''  if(g==="ledger")S.tab="ledger";''', '''  if(g==="ledger")S.tab=(sub==="sales")?"sales":"ledger";''')
 # 기능 찾기 목록 — 새 메뉴 이름 · 자리로
 rep('''  return M.feats.filter(function(f){return ok(f.go);});''', '''  return M.feats.map(wFeat).filter(function(f){return ok(f.go);});''')
-rep('''/* 배달 안쪽 작은 탭 */''', '''/* v132 기능 하나 — 새 탭 이름 · 기록 자리 · «주소» */
+rep('''/* 배달 안쪽 작은 탭 */''', '''/* v132 기능 하나 — 새 탭 이름 · 매출 자리 · «주소» */
 function wFeat(f){
   var x={},k;for(k in f)if(Object.prototype.hasOwnProperty.call(f,k))x[k]=f[k];
   var p=String(x.path||"");
-  if(x.go==="sales"){x.go=W132.REC?"sales":"ledger/sales";p=W132.REC?"기록":"일감 › 매출 기록";}
+  if(x.go==="sales"){x.go=W132.REC?"sales":"ledger/sales";p=W132.REC?"매출":"일감 › 매출";}
   p=p.replace(/^청구서 › .*/,"월별 청구서").replace(/^청구서$/,"월별 청구서").replace(/^입출금 ›/,"입·출금 내역 ›").replace("머리말 › 링크 복사","머리말 › 주소").replace(/^사람 버튼/,"사람 단추");
   x.path=p;return x;
 }
@@ -90,11 +86,11 @@ function wSaved(){var t=$("dbState")?String($("dbState").textContent||""):"";ret
 # ── E. 홈 — 오른쪽 카드 이름 · 이동 이름 ──
 rep('''    money:{title:"이번 달 입금",link:{label:"입출금",onClick:function(){goKey("money/io");}},big:c.paid,''',
     '''    money:{title:"이번 달 입금",link:{label:"입·출금 내역",onClick:function(){goKey("money/io");}},big:c.paid,''')
-rep('''{label:"매출",onClick:function(){goKey("sales");}},''', '''{label:W132.REC?"기록":"매출 기록",onClick:function(){goKey(W132.REC?"sales":"ledger/sales");}},''')
+rep('''{label:"매출",onClick:function(){goKey("sales");}},''', '''{label:"매출",onClick:function(){goKey(W132.REC?"sales":"ledger/sales");}},''')
 
 # ── F. 화면 머리 작은 길 · 이름 ──
 rep('''var JGROUP={home:"홈",sales:"매출",ledger:"일감",outlog:"배달",bill:"청구서",money:"입출금",''',
-    '''var JGROUP={home:"홈",sales:"기록",ledger:"일감",outlog:"배달",bill:"월별 청구서",money:"입·출금 내역",''')
+    '''var JGROUP={home:"홈",sales:"매출",ledger:"일감",outlog:"배달",bill:"월별 청구서",money:"입·출금 내역",''')
 
 # ── G. 화면 뼈대 (규칙 4): 제목+설명 → 할 일 띠 → 도구줄 → 숫자 칸 4 → 표 → 도움 ──
 rep('''    if(S.tab==="ledger"){jLedger();jLedgerTable();}''', '''    if(S.tab==="ledger"){jLedger();jLedgerTable();}
@@ -121,7 +117,7 @@ function wBandOf(tab){
       onGo:function(){var b=$("olResend");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   if(tab==="mat"){var m=parseInt(String(($("mLow")||{}).textContent||"0").replace(/[^0-9]/g,""),10)||0;
     return {count:m,tone:"stop",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
-  if(tab==="sales")return {count:0,empty:"매출 기록은 보기만 하는 화면이에요 — 처리할 일이 없어요"};
+  /* 매출은 지금 화면 그대로(대표님 c0f996e) — 할 일 띠 없음 */
   return null;
 }
 function wSkel(sec){
@@ -141,7 +137,7 @@ function wSkel(sec){
 rep('''/* 새 모양(J안)으로 바뀐 것을 한 번만 알려 드려요 */''', SKEL_JS + '''/* 새 모양(J안)으로 바뀐 것을 한 번만 알려 드려요 */''')
 # 새 모양 안내 글 (한 번만)
 rep('''"화면이 새 모양으로 바뀌었어요. 메뉴는 왼쪽에 늘 펼쳐져 있고, 출고 기록 · 목적지는 «배달» 안에 있어요. 위 «기능 찾기»에 하고 싶은 일을 쳐 보세요"''',
-    '''"화면이 새 모양으로 바뀌었어요. 매출은 «기록», 출고 기록 · 목적지는 «배달» 안에 있어요. 메뉴 줄 오른쪽 «기능 찾기»에 하고 싶은 일을 쳐 보세요"''')
+    '''"화면이 새 모양으로 바뀌었어요. 출고 기록 · 목적지는 «배달» 안에 있어요. 메뉴 줄 오른쪽 «기능 찾기»에 하고 싶은 일을 쳐 보세요"''')
 
 # 상태 색(규칙 1): 파랑 = 하는 중 → «작업 중» 숫자 칸도 파랑
 rep('''busyAt(end(k));}),color:"#B26B00"},''', '''busyAt(end(k));}),color:"#1668C4"},''')
