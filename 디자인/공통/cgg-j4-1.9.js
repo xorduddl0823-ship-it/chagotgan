@@ -215,7 +215,7 @@ var CGG = (function(){
     function draw(){
       var r=list(), pages=Math.max(1,Math.ceil(r.length/T.size)); if(T.page>pages) T.page=pages;
       var v=r.slice((T.page-1)*T.size, T.page*T.size); v.forEach(function(w){ w.k=kid(w.x,w.i); }); var all=v.length&&v.every(function(w){ return T.sel[w.k]; });
-      var tabs=o.tabs||[["","전체"],["진행 중","진행 중"],["확인 필요","확인 필요"],["보류","보류"],["완료","완료"]];
+      var tabs=o.tabs||[["","전체"],["진행 중","진행 중"],["확인 필요","확인 필요"],["보류","보류"],["완료","완료"]].concat(o.rows.some(function(x){ return x[si]==="입금 완료"; })?[["입금 완료","입금 완료"]]:[]);
       el.className="cgg-card";
       el.innerHTML=(si>=0?'<div class="cgg-tabsH" role="tablist">'+tabs.map(function(t){ return '<button type="button" role="tab" data-f="'+esc(t[0])+'" aria-selected="'+(T.f===t[0])+'">'+esc(t[1])+'<b>'+cnt(t[0])+'</b></button>'; }).join("")+'</div>':'')
         +'<div class="cgg-filters">'+(o.filters||[]).map(function(f,i){ return '<button type="button" class="cgg-fp'+(i?'':' on')+'">'+esc(f)+'</button>'; }).join("")+'<span class="sp"></span>'
@@ -522,9 +522,9 @@ var CGG = (function(){
     return { set:function(a,b){ y=Number(a)||y; m=Number(b)||m; label(); }, get:function(){ return {y:y,m:m}; } }; }
   /* 기능 찾기 창 — 머리말 [찾기] 단추(find.mode:"button")가 열어요. 가운데 창 안에 찾기 칸(43px) + 결과 목록 */
   function findDialog(feats, onGo){
-    dialog({size:"form", title:"기능 찾기", desc:"하고 싶은 일을 쉬운 말로 쳐 보세요. 예) 입금 완료, 청구서 보내기", body:'<div class="cgg-finddlg"></div>'});
+    dialog({size:"form", title:"기능 찾기", desc:"하고 싶은 일을 쉬운 말로 쳐 보세요. 예) 입금 완료, 청구서 보내기, 딜러 추가", body:'<div class="cgg-finddlg"></div>'});
     var b=document.querySelector(".cgg-dialog .cgg-finddlg"); if(!b) return;
-    find(b, feats, function(f){ closeDialog(); onGo&&onGo(f); }, {ph:"기능 찾기"});
+    find(b, feats, function(f){ closeDialog(); onGo&&onGo(f); }, {});
     setTimeout(function(){ var i=b.querySelector("input"); if(i) i.focus(); },60); }
   /* 마이페이지 창 — 사람 단추 › 마이페이지 (SKILL.md: 요금제 · 사용량은 여기서)
      o = {who:"김대표 · 대표 · 예시 광택", plan:[[이름,값]…], usage:[[이름, 쓴 것, 한도(없으면 막대 없음), 단위]…], account:[[이름,값]…], ok:"요금제 바꾸기", onOk:fn} */
