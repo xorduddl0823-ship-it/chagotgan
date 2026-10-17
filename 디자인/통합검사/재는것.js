@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    차곳간 통합 검사표 — 재는 것 (2026-10-18, 디자인 방)
-   한 화면(document)을 받아 «두 제품이 같아야 하는 것» 29가지를 숫자로 재요. 눈이 아니라 숫자로 «같음 ✅»을 확인해요.
+   한 화면(document)을 받아 «두 제품이 같아야 하는 것» 30가지를 숫자로 재요. 눈이 아니라 숫자로 «같음 ✅»을 확인해요.
    쓰는 곳: 디자인/통합검사/검사.js (명령 줄) · 디자인/메뉴찾기_합친모양.html (미리보기 안에서 바로 잼)
    재는 화면: 홈, 넓은 화면(1400). 공통 이름표(cgg-…)만 보므로 판이 바뀌어도 그대로 써요.
    ═══════════════════════════════════════════════════════════════════ */
@@ -27,6 +27,10 @@ function cggMeasure(doc){
   put("brand_sub","제품 아래 줄 글자",fs(first([".cgg-brand small",".cgg-brand .sub"])),"머리말");
   var biz=first([".cgg-hdr-biz",".cgg-biz"]), bizb=biz&&(biz.querySelector("b,strong,h1,h2,.nm")||biz.firstElementChild);
   put("biz_fs","업체명 글자",fs(bizb),"머리말");
+  /* 업체명 잘림 (대표님 10/18 — 어느 폭에서도 업체명 전체가 보여야 해요) */
+  var cut="안 보임"; if(bizb&&vis(bizb)){ var cs=win.getComputedStyle(bizb), lh=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.3;
+    cut=(bizb.scrollWidth>bizb.clientWidth+1||cs.textOverflow==="ellipsis"&&bizb.scrollWidth>bizb.clientWidth||R(bizb).height>lh*2+2||R(bizb).right>win.innerWidth)?"잘림":"안 잘림"; }
+  put("biz_cut","업체명 잘림",cut,"머리말");
   var hdr=q(".cgg-hdr"); put("biz_x","업체명 자리 (왼쪽에서)",biz&&hdr?px(R(biz).left-R(hdr).left):"없음","머리말");
   var bs=right?Array.prototype.slice.call(right.querySelectorAll("button,select,.cgg-hb,a")).filter(function(b){ return vis(b)&&!b.closest(".cgg-hfind")&&!b.closest(".cgg-drop"); }):[];
   bs=bs.filter(function(b){ return !bs.some(function(o){ return o!==b&&o.contains(b); }); }).sort(function(x,y){ return R(x).left-R(y).left; });
@@ -34,7 +38,7 @@ function cggMeasure(doc){
   put("hb_fs","단추 글자",uniq(bs.map(function(b){ return parseFloat(win.getComputedStyle(b).fontSize)+"px · "+win.getComputedStyle(b).fontWeight; })).join(" / ")||"없음","단추");
   var gaps=[]; for(var i=1;i<bs.length;i++){ var g=Math.round(R(bs[i]).left-R(bs[i-1]).right); if(g>=0&&g<40) gaps.push(g+"px"); }
   put("hb_gap","단추 간격",uniq(gaps).join(" / ")||"없음","단추");
-  put("hb_order","단추 차례",bs.map(function(b){ var t=(b.tagName==="SELECT"?"자동 새로고침":(b.textContent||"").trim()); if(/저장/.test(t)) return "저장 표시"; if(/▾/.test(t)) return /마이페이지/.test(t)?"마이페이지 ▾":"이름 ▾"; if(/초마다|분마다|자동/.test(t)) return "자동 새로고침"; return t.replace(/[0-9]+/g,"#"); }).filter(function(t){ return t!=="현장 화면"; }).join(" · ")||"없음","단추");   /* «현장 화면»은 워시에만 있는 단추로 정해서 차례 비교에서 빼요 */
+  put("hb_order","단추 차례",bs.map(function(b){ var t=(b.tagName==="SELECT"?"자동 새로고침":(b.textContent||"").trim()); if(/저장/.test(t)) return "저장 표시"; if(/^더보기/.test(t)) return "더보기 ▾"; if(/▾/.test(t)) return /마이페이지/.test(t)?"마이페이지 ▾":"이름 ▾"; if(/초마다|분마다|자동/.test(t)) return "자동 새로고침"; return t.replace(/[0-9]+/g,"#"); }).filter(function(t){ return t!=="현장 화면"; }).join(" · ")||"없음","단추");   /* «현장 화면»은 워시에만 있는 단추로 정해서 차례 비교에서 빼요 */
   /* 2 메뉴 · 본문 */
   var nav=q(".cgg-nav"), app=q(".cgg-app"), side=app&&/lay-side|lay-icon/.test(app.className)&&win.innerWidth>=1000;
   put("nav","메뉴 줄",nav?(side?"왼쪽 "+px(R(q(".cgg-hdr")).width):"위 "+px(R(nav).height)):"없음","본문");

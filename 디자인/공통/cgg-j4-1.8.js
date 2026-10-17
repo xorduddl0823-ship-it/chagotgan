@@ -384,13 +384,41 @@ var CGG = (function(){
       +(o.auto?'<select class="cgg-hb cgg-wide" data-hb="auto" aria-label="자동 새로고침">'+o.auto.options.map(function(x){ return '<option value="'+esc(x[0])+'"'+(String(x[0])===String(o.auto.value)?' selected':'')+'>'+esc(x[1])+'</option>'; }).join("")+'</select>':'')
       +(o.saved!=null?'<span class="cgg-hb cgg-saved cgg-wide" data-hb="saved" role="status">'+esc(o.saved)+'</span>':'')
       +(o.field?'<button type="button" class="cgg-hb cgg-hb-pri cgg-wide" data-hb="field">'+esc(o.field.label||"현장 화면")+'</button>':'')
+      +'<button type="button" class="cgg-hb cgg-more" data-hb="more" aria-label="단추 더보기">더보기 ▾</button>'
       +(o.me?'<button type="button" class="cgg-hb cgg-me" data-hb="me">'+esc(o.me.name||"내 정보")+' ▾</button>':'')+'</div>';
     B.forEach(function(b){ var x=el.querySelector('[data-hb="'+b[0]+'"]'); if(x) x.onclick=function(){ o[b[0]](); }; });
     var au=el.querySelector('[data-hb="auto"]'); if(au) au.onchange=function(){ o.auto.onChange&&o.auto.onChange(au.value); };
     var fd=el.querySelector('[data-hb="field"]'); if(fd) fd.onclick=function(){ o.field.on&&o.field.on(); };
     var me=el.querySelector('[data-hb="me"]'); if(me&&o.me.items) menu(me, {name:o.me.name, role:o.me.role}, o.me.items, o.me.onPick);
     var fs=el.querySelector(".cgg-hfind-slot"); if(fs) find(fs, o.find.feats, o.find.onGo, {phone:o.find.onPhone});
-    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; }, me:me };
+    /* 업체명은 절대 자르지 않아요(대표님 10/18). 자리가 모자라면 ① 기능 찾기 칸 → 돋보기 ② 단추 묶음 → «더보기 ▾» 차례로 접어요 */
+    var more=el.querySelector('[data-hb="more"]');
+    if(more) menu(more, null, function(){ var L=[];
+        B.forEach(function(b){ if(o[b[0]]&&b[0]!=="refresh") L.push({key:b[0], icon:{notice:"bell",help:"file",link:"out"}[b[0]], label:b[1]}); });
+        if(o.auto){ L.push("-"); o.auto.options.forEach(function(x){ L.push({key:"auto:"+x[0], icon:"refresh", label:"자동 새로고침 · "+x[1], note:String(x[0])===String(o.auto.value)?"지금":""}); }); }
+        if(o.field){ L.push("-"); L.push({key:"field", icon:"pc", label:o.field.label||"현장 화면"}); }
+        return L; },
+      function(k){ if(k.indexOf("auto:")===0){ o.auto.value=k.slice(5); var a2=el.querySelector('[data-hb="auto"]'); if(a2) a2.value=o.auto.value; o.auto.onChange&&o.auto.onChange(o.auto.value); }
+        else if(k==="field") o.field.on&&o.field.on(); else if(o[k]) o[k](); });
+    function fit(){ el.classList.remove("cgg-fold1","cgg-fold2");
+      if(window.innerWidth<=600) return;
+      /* «현장 화면»(워시만) 자리를 두 제품 모두 셈에 넣어요 — 같은 폭이면 두 제품이 같은 때 접혀요 */
+      var extra=0; if(!o.field){ var tb=document.createElement("button"); tb.className="cgg-hb cgg-hb-pri"; tb.textContent="현장 화면"; tb.style.cssText="position:absolute;visibility:hidden"; el.querySelector(".cgg-right").appendChild(tb); extra=tb.offsetWidth+(parseFloat(getComputedStyle(el.querySelector(".cgg-right")).columnGap)||6); tb.remove(); }
+      function tight(){ var r=el.querySelector(".cgg-right"), b=el.querySelector(".cgg-hdr-biz b"); if(!r) return false;
+        if(el.scrollWidth>el.clientWidth+1||r.scrollWidth>r.clientWidth+1) return true;
+        if(b&&(b.scrollWidth>b.clientWidth+1||b.getBoundingClientRect().height>parseFloat(getComputedStyle(b).lineHeight)*2+2)) return true;
+        var kids=Array.prototype.filter.call(r.children,function(k){ return k.offsetWidth>0; }); if(!kids.length) return false;
+        var side=getComputedStyle(el).display==="contents", rs=getComputedStyle(r), gap=parseFloat(rs.columnGap)||6, left, right;
+        if(side){ var rr=r.getBoundingClientRect(); left=rr.left+(parseFloat(rs.paddingLeft)||0); right=rr.right-(parseFloat(rs.paddingRight)||0); }
+        else { var bz=el.querySelector(".cgg-hdr-biz")||el.querySelector(".cgg-brand"), er=el.getBoundingClientRect(), es=getComputedStyle(el);
+          left=bz.getBoundingClientRect().right+(parseFloat(es.columnGap)||16); right=er.right-(parseFloat(es.paddingRight)||0); }
+        var need=kids.reduce(function(t,k){ return t+k.getBoundingClientRect().width; },0)+gap*(kids.length-1)+extra;
+        return need>right-left+0.5; }   /* 단추 폭 합계(+«현장 화면» 자리)가 쓸 수 있는 폭보다 크면 접어요 */
+      if(tight()) el.classList.add("cgg-fold1");
+      if(tight()) el.classList.add("cgg-fold2"); }
+    fit(); if(!el.__cggFit){ el.__cggFit=1; window.addEventListener("resize",fit); }
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; fit(); }, me:me, fit:fit };
   }
   /* 할 일 3장 + 위 오른쪽 «할 일 N건 모두 보기» (두 제품 같은 자리) */
   function todoBlock(el, items, total, onPick, onAll){ if(!el) return;

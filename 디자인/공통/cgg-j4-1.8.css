@@ -400,7 +400,9 @@
 .cgg-brand b{font-size:var(--brand-fs);font-weight:900;display:block;line-height:1.3}
 .cgg-brand small{font-size:var(--brand-sub)}
 .cgg-hdr .cgg-hdr-biz{min-width:0;flex:0 1 auto;line-height:1.35}
-.cgg-hdr .cgg-hdr-biz b{font-size:var(--biz-fs);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 업체명은 자르지 않아요 — 길면 두 줄까지 (줄임표 금지) */
+.cgg-hdr .cgg-hdr-biz{flex:0 0 auto;max-width:15em}
+.cgg-hdr .cgg-hdr-biz b{font-size:var(--biz-fs);font-weight:800;white-space:normal;overflow:visible;word-break:keep-all;overflow-wrap:anywhere;line-height:1.3}
 .cgg-hdr .cgg-hdr-biz small{display:block;font-size:var(--biz-sub);opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cgg-right{gap:var(--hb-gap);flex-wrap:nowrap}
 .cgg-hb{box-sizing:border-box;height:var(--hb-h);padding:0 12px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:var(--hb-fs);font-weight:500;line-height:1;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
@@ -489,3 +491,38 @@ select.cgg-hb option{color:#101828}
   .cgg-cal .d .mk span{font-size:9.5px;padding:0 3px;line-height:13px} .cgg-cal .lg{padding:10px 12px 12px;font-size:11.5px}
   .cgg-side .big{padding:8px 12px 0;font-size:21px} .cgg-side .bar{margin:8px 12px 0} .cgg-side .lgd,.cgg-side .rk{padding-left:12px;padding-right:12px} .cgg-side dl{margin:10px 12px 0} .cgg-side .sub{margin:4px 12px 0}
 }
+
+/* 1.8 보강 — 업체명 우선: 자리가 모자라면 접기 (CGG.header 가 cgg-fold1 · cgg-fold2 를 붙여요) */
+.cgg-hb.cgg-more{display:none}
+.cgg-top.cgg-fold1 .cgg-hfind .in{display:none}
+.cgg-top.cgg-fold1 .cgg-hfind .ph{display:grid;place-items:center;width:var(--hb-h);height:var(--hb-h);border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;cursor:pointer;padding:0}
+.cgg-top.cgg-fold1 .cgg-hfind .ph svg.ic{width:17px;height:17px}
+.cgg-top.cgg-fold2 .cgg-right .cgg-wide{display:none}
+.cgg-top.cgg-fold2 .cgg-hb.cgg-more{display:inline-flex}
+@media (min-width:1000px){ .lay-side .cgg-top.cgg-fold1 .cgg-hfind .ph,.lay-icon .cgg-top.cgg-fold1 .cgg-hfind .ph{border-color:var(--ln2);background:var(--surface);color:var(--btn-ink)} }
+/* 줄 높이를 뼈대가 정해요 — 제품 body 줄 높이와 상관없이 같은 크기 (워시 방 알림 10/18) */
+.cgg-top,.cgg-head,.cgg-quick,.cgg-sec,.cgg-acts,.cgg-kpis,.cgg-cal,.cgg-side,.cgg-help{line-height:1.45}
+.cgg-act .tx b,.cgg-act .tx small{line-height:1.45}
+.cgg-act .tx{min-width:0} .cgg-act .tx b,.cgg-act .tx small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* 할 일 카드 높이가 글 길이로 달라지지 않게 */
+/* 폰: 머리말에 업체명을 보여요 (제품 이름 대신) — 두 줄까지, 자르지 않음 */
+@media (max-width:600px){
+  .cgg-top .cgg-brand b,.cgg-top .cgg-brand small{display:none}
+  .cgg-hdr .cgg-top .cgg-hdr-biz{display:block;flex:1 1 auto;max-width:none;min-width:0}
+  .cgg-hdr .cgg-top .cgg-hdr-biz b{font-size:13.5px;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;overflow:visible}
+  .cgg-hdr .cgg-top .cgg-hdr-biz small{display:none}
+  .cgg-top .cgg-hb[data-hb="refresh"] span{display:none}
+  .cgg-top .cgg-hb[data-hb="refresh"]{padding:0;width:var(--hb-h);justify-content:center}
+  .cgg-top .cgg-hb.cgg-me{max-width:92px;overflow:hidden;text-overflow:ellipsis}
+}
+
+@media (min-width:1000px){
+  /* 세로 · 아이콘 배치: 단추 줄이 넘치면 오른쪽으로 넘치게 해서(접기 판단용) 왼쪽 메뉴 위로 겹치지 않게 */
+  .lay-side .cgg-right,.lay-icon .cgg-right{justify-content:flex-start;overflow:hidden}
+  .lay-side .cgg-right>:first-child,.lay-icon .cgg-right>:first-child{margin-left:auto}
+  /* 왼쪽 메뉴 안 업체명은 칸 폭을 다 써요 (두 줄까지, 자르지 않음) */
+  .lay-side .cgg-hdr .cgg-hdr-biz{max-width:none;flex:none}
+  .lay-side .cgg-hdr .cgg-hdr-biz small{white-space:normal;overflow:visible}
+}
+
+/* 기능 찾기 칸이 몰래 줄어들지 않게 (두 제품이 같은 때 접히도록) */
+.cgg-right .cgg-hfind{flex:none}

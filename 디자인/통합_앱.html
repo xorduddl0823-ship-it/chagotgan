@@ -28,6 +28,7 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 /* 미리보기 전용 — 지어낸 자료. 주소 끝 #wash · #check (뒤에 -side 를 붙이면 세로(왼쪽) 메뉴 배치) */
 var P=/check/.test(location.hash)?"check":"wash", LAY=/-side/.test(location.hash)?"side":(/-top/.test(location.hash)?"top":null);   /* 처음은 가로(위). #wash-side 는 세로(왼쪽) 보기 */
 var D=P==="check"?CGG_MENU_CHECK:CGG_MENU_WASH, cur="home";
+var LONG=/long/.test(location.hash);   /* #wash-long : 긴 업체명 시험 («브라더모터스광택성남지점») */
 /* 배달은 홈에 두지 않아요 (대표님 10/18 — 홈은 정산만). 못 보낸 도착 알림은 «배달» 메뉴 옆 빨간 숫자로만 */
 D.groups.forEach(function(g){ if(g.key==="delivery") g.badge=1; }); D.tabs.forEach(function(t){ if(t.key==="delivery") t.badge=1; });
 /* 두 제품이 다른 것은 «내용» 뿐 — 글 · 숫자 · 메뉴 목록 */
@@ -75,7 +76,7 @@ function draw(){
   }
 }
 CGG.layout.init(document.getElementById("app"), "cgg_frame_preview_layout_"+(LAY||"d"), LAY||undefined);
-var H=CGG.header(document.getElementById("top"),{product:C.product, sub:C.sub, ver:C.ver, biz:C.biz,
+var H=CGG.header(document.getElementById("top"),{product:C.product, sub:C.sub, ver:C.ver, biz:LONG?{name:P==="check"?"브라더성능점검장성남지점":"브라더모터스광택성남지점",line:C.biz.line}:C.biz,
   find:{feats:D.feats, onGo:goFeat, onPhone:function(){ CGG.allMenu(D.groups, cur, go, D.feats, goFeat, {focus:true}); }},
   notice:function(){ CGG.toast("공지사항 (미리보기)"); }, help:function(){ CGG.toast("도움말 (미리보기)"); }, link:function(){ CGG.toast("직원 앱 주소를 복사했어요 (미리보기)"); }, refresh:function(){ CGG.toast("새로고침했어요"); },
   auto:{value:"30", options:[["0","자동 끄기"],["30","30초마다"],["60","1분마다"]], onChange:function(){}}, saved:"저장됨 09:12",
