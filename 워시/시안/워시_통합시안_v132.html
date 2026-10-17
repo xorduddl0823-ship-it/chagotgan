@@ -646,6 +646,7 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .cgg-nav:has(.wz-navfind){overflow:visible}
 .wz-navfind{position:relative;z-index:var(--z-drop)}
 .wz-navfind .res button{text-align:left;align-items:flex-start}
+.cgg-st.out{background:var(--line);color:var(--muted)}
 
 </style>
 </head><body>
@@ -1242,7 +1243,7 @@ var Q=[
 var CHANGED=[
   ["머리말 왼쪽","«광택 · 세차 정산 · v132 · 2026-10-18» — 설명 · 판 · 날짜 한 줄"],
   ["머리말 오른쪽 차례","(기능 찾기) → 공지 → 도움말 → 주소 → 새로고침 → 30초마다 → 연결됨 → 현장 화면 → 사람 단추"],
-  ["단추 이름","«링크 복사» → «주소», «저장됨 09:12» → «연결됨»"],
+  ["단추 이름","«링크 복사» → «주소», «저장됨 09:12» → «연결됨» (좁은 PC «더보기 ▾» 안 이름은 공통 부품 1.9에서 함께 바뀌어요)"],
   ["사람 단추","이름 밑에 «마이페이지 · 휴지통»이 보여요. 휴지통 · 로그아웃은 그 안에"],
   ["탭 차례","홈 → 일감 → 기록 → 월별 청구서 → 입·출금 내역 → 세금계산서 → 배달 · 자재(워시 전용) → 설정"],
   ["탭 이름","«청구서» → «월별 청구서», «입출금» → «입·출금 내역», «매출» → «기록»(② 고르기)"],
@@ -1276,11 +1277,11 @@ function groups(){
     {key:"settings",label:"설정",icon:"gear",subs:st}
   ];
 }
-var TABS=[{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"bill",icon:"file",label:"청구서"},{key:"money",icon:"wallet",label:"입·출금"},{key:"__all",icon:"more",label:"전체"}];
+var TABS=[{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"bill",icon:"file",label:"월별 청구서"},{key:"money",icon:"wallet",label:"입·출금 내역"},{key:"__all",icon:"more",label:"전체"}];
 /* 기능 목록 — 메뉴 지도 확정본을 새 이름으로 */
 function feats(){
   return CGG_MENU_WASH.feats.map(function(f){ var x=Object.assign({},f), p=x.path;
-    p=p.replace(/^청구서 ›.*/,"월별 청구서").replace(/^청구서$/,"월별 청구서").replace(/^입출금 ›/,"입·출금 내역 ›").replace(/^매출$/,"기록 › 매출")
+    p=p.replace(/^청구서 ›.*/,"월별 청구서").replace(/^청구서$/,"월별 청구서").replace(/^입출금 ›/,"입·출금 내역 ›").replace(/^매출$/,PICK.rec==="sales"?"기록":"기록 › 매출")
        .replace("머리말 › 링크 복사","머리말 › 주소").replace(/^사람 버튼/,"사람 단추");
     if(x.go==="sales") x.go="record/sales";
     if(x.id==="outbox"&&PICK.rec==="both"){ p="기록 › 보낸 알림"; x.go="record/sent"; }
@@ -1304,7 +1305,7 @@ var CARS=[
   ["77타8899","샘플모터스","오지안","실내세차","10-10",40000,"출고"]
 ];
 var BILLS=[["가온모터스","4대",400000,"안 보냄"],["샘플모터스","3대",110000,"안 보냄"],["누리상사","2대",190000,"보냄"],["다온카","2대",340000,"안 보냄"],["가람모터스","2대",140000,"보냄"]];
-var ST={"입고":"run","출고":"done","입금 완료":"pay","보냄":"done","안 보냄":"chk","발행 대기":"chk","발행됨":"done","입금":"pay","출금":"stop","실패":"stop","보냄 · 알림톡":"done","부족":"stop","넉넉":"done","예약":"run"};
+var ST={"입고":"run","출고":"done","입금 완료":"pay","보냄":"done","안 보냄":"chk","발행 대기":"chk","발행됨":"done","입금":"pay","출금":"out","실패":"stop","보냄 · 알림톡":"done","부족":"stop","넉넉":"done","예약":"run"};
 var MON={y:2026,m:10};
 function monLabel(){ return MON.y+"년 "+MON.m+"월"; }
 function sum(a){ return a.reduce(function(t,x){ return t+x; },0); }
@@ -1352,6 +1353,8 @@ function screen(o){
     +(o.band?'<div class="wz-band'+(o.band.ok?' ok':'')+'" role="status"><span>'+esc(o.band.text)+'</span>'+(o.band.go?'<button type="button" class="cgg-btn pri" id="wzBandGo">해결하러 가기</button>':'')+'</div>':'')
     +'<div class="wz-tools" id="wzTools"></div><div id="wzKpi"></div><div class="wz-gap"></div><div id="wzTbl"></div>'+CGG.help(o.help||"","이 화면 사용법");
   var t=document.getElementById("wzTools");
+  if(o.month===false&&!o.tools&&!o.pri){ t.remove(); }
+  else
   t.innerHTML=(o.month!==false?'<button type="button" class="cgg-btn wz-mon" id="wzMon">'+CGG.ic("today")+'<b>'+monLabel()+'</b> ▾</button>':'')
     +(o.tools||"")+'<span class="sp"></span>'+(o.pri?'<button type="button" class="cgg-btn pri" id="wzPri">'+esc(o.pri.label)+'</button>':'');
   var m=document.getElementById("wzMon"); if(m) m.onclick=monthPick;
@@ -1361,6 +1364,7 @@ function screen(o){
   TBL[cur]=TBL[cur]||{};
   if(o.table) return CGG.table(document.getElementById("wzTbl"), Object.assign({state:TBL[cur], size:10, stateMap:ST}, o.table));
 }
+var XLS='<button type="button" class="cgg-btn" onclick="CGG.toast(\'엑셀 받기 (시안)\')">'+CGG.ic("down")+'엑셀 받기</button>';
 function monthPick(){
   var y=MON.y;
   function body(){ return '<div class="wz-yr"><button type="button" class="cgg-btn sm" data-y="-1">‹ '+(y-1)+'</button><b>'+y+'년</b><button type="button" class="cgg-btn sm" data-y="1">'+(y+1)+' ›</button></div>'
@@ -1373,7 +1377,7 @@ function monthPick(){
 }
 /* 되돌리기 어려운 일 — 누구에게 · 몇 건 · 얼마 */
 function sure(o){
-  CGG.dialog({size:"confirm",title:o.title,desc:o.desc,rows:[["누구에게",o.who],["몇 건",o.n],["얼마",won(o.amt)+"원"]],ok:o.ok,cancel:"취소",
+  CGG.dialog({size:"confirm",title:o.title,desc:o.desc,rows:[["누구에게",o.who],["몇 건",o.n],[o.amtLabel||"얼마",won(o.amt)+"원"]].concat(o.more||[]),ok:o.ok,cancel:"취소",
     onOk:function(){ CGG.toast(o.done+" (시안이라 실제로는 아무것도 바뀌지 않아요)"); }});
 }
 function whoOf(rows,col){ var n={}; rows.forEach(function(r){ n[r[col]]=1; }); var k=Object.keys(n); return k.slice(0,3).join(", ")+(k.length>3?" 외 "+(k.length-3)+"곳":"")+" ("+k.length+"곳)"; }
@@ -1387,7 +1391,7 @@ function drawHome(){
     todo:{items:[{tone:"stop",icon:"box",title:"자재가 부족해요 2건",sub:"광택약(컴파운드), 휠크리너 — 주문하세요"},{tone:"run",icon:"car",title:"작업 중 · 아직 출고 안 됨 4건",sub:"출고하면 입금 대상이 돼요"},{tone:"chk",icon:"wallet",title:"입금 기한 지난 상사 1곳",sub:"샘플모터스 · 110,000원"}],
       total:9, onPick:function(i){ go(["mat","ledger","money/due"][i]); }, onAll:function(){ CGG.toast("할 일 전체 목록 (시안)"); }},
     kpis:[{label:"오늘 입고차량",value:"7",unit:"대",delta:"+2대",vs:"지난주보다",spark:[3,5,4,6,5,5,7],color:"#1668C4"},
-          {label:"작업 중",value:"4",unit:"대",delta:"+1대",vs:"지난주보다",spark:[2,3,3,2,4,3,4],color:"#B26B00"},
+          {label:"작업 중",value:"4",unit:"대",delta:"+1대",vs:"지난주보다",spark:[2,3,3,2,4,3,4],color:"#1668C4"},
           {label:"오늘 출고차량",value:"12",unit:"대",delta:"−1대",down:true,vs:"지난주보다",spark:[9,11,13,10,12,13,12],color:"#1E9E5A"},
           {label:"이번 달 "+pay,value:"840,000",unit:"원",delta:"+12%",vs:"지난달보다",spark:[5,6,6,7,7,8,8.4],color:"#0B2545"}],
     cal:{y:2026,m:10,today:18,legend:[["in","입고","run"],["out","출고","done"],["pay",pay,"pay"]],amtLabel:"그날 청구",
@@ -1406,8 +1410,8 @@ function drawLedger(){
   var out=rows.filter(function(r){ return r[6]==="출고"; });
   var api=screen({crumb:"일감", title:doneMode?"작업 중 · 출고 대기":"입고 · 출고 내역", desc:"차 한 대가 한 줄이에요. 출고한 차를 골라 «입금 완료»로 바꿔요.",
     band:{text:"출고했는데 아직 입금 안 된 차 "+out.length+"대 · "+won(sum(out.map(function(r){ return r[5]; })))+"원", go:function(){ TBL[cur].f="출고"; TBL[cur].page=1; draw(); CGG.spot&&CGG.spot(document.getElementById("wzTbl")); }},
-    tools:'<button type="button" class="cgg-btn">'+CGG.ic("down")+'엑셀 받기</button>', pri:{label:"입고 등록",on:function(){ CGG.toast("현장 화면 «입고»로 가요 (시안)"); }},
-    kpis:[{label:"이번 달 입고",value:"48",unit:"대",color:"#1668C4"},{label:"작업 중",value:"4",unit:"대",color:"#B26B00"},{label:"출고 · 입금 대기",value:String(out.length),unit:"대",color:"#1E9E5A"},{label:"이번 달 "+PICK.pay,value:"840,000",unit:"원",color:"#0B2545"}],
+    tools:XLS, pri:{label:"입고 등록",on:function(){ CGG.toast("현장 화면 «입고»로 가요 (시안)"); }},
+    kpis:[{label:"이번 달 입고",value:"48",unit:"대",color:"#1668C4"},{label:"작업 중",value:"4",unit:"대",color:"#1668C4"},{label:"출고 · 입금 대기",value:String(out.length),unit:"대",color:"#1E9E5A"},{label:"이번 달 "+PICK.pay,value:"840,000",unit:"원",color:"#0B2545"}],
     help:"차량번호를 누르면 자세히 창이 열려요. 표를 옆으로 밀어도 차량번호 칸은 그대로 보여요. 입금 완료는 대표만 할 수 있어요.",
     table:{cols:["차량번호","상사","딜러","작업","입고일","금액","상태"], kinds:["name","text","text","text","date","money","state"], rows:rows,
       tabs:doneMode?[["","전체"],["입고","입고"],["출고","출고"]]:[["","전체"],["입고","입고"],["출고","출고"],["입금 완료","입금 완료"]],
@@ -1434,22 +1438,22 @@ function drawRecord(){
   if(sub==="done"){
     var dr=CARS.filter(function(r){ return r[6]==="입금 완료"; });
     screen({crumb:"기록 › 끝난 차", title:"끝난 차 기록", desc:"출고하고 입금까지 끝난 차예요. 일감에는 아직 할 일이 있는 차만 남아요.",
-      band:{text:"이번 달 끝난 차 "+dr.length+"대 · 모두 입금 완료", ok:true},
+      band:{text:"이번 달 끝난 차 "+dr.length+"대 · 모두 입금 완료", ok:true}, tools:XLS,
       kpis:[{label:"끝난 차",value:String(dr.length),unit:"대"},{label:"합계",value:won(sum(dr.map(function(r){ return r[5]; }))),unit:"원"},{label:"평균 작업일",value:"1.4",unit:"일"},{label:"다시 온 차",value:"2",unit:"대"}],
       help:"지난달 차도 달 고르기로 봐요. 입금 완료를 되돌리려면 차량번호를 눌러요(대표만).",
       table:{cols:["차량번호","상사","딜러","작업","입고일","금액","상태"], kinds:["name","text","text","text","date","money","state"], rows:dr, tabs:[["","전체"]], find:"차량번호 · 상사 · 딜러",
-        mline:function(x){ return x[1]+" · "+x[3]; }, bulk:[{key:"xls",label:"엑셀 받기",icon:"down"}], onBulk:function(){ CGG.toast("엑셀 받기 (시안)"); }}});
+        mline:function(x){ return x[1]+" · "+x[3]; }}});
     return;
   }
   var by={}; CARS.forEach(function(r){ var b=by[r[1]]||(by[r[1]]={n:0,a:0,p:0}); b.n++; b.a+=r[5]; if(r[6]==="입금 완료") b.p+=r[5]; });
   var srows=Object.keys(by).map(function(k){ var b=by[k]; return [k,b.n+"대",b.a,b.p,b.a-b.p]; });
   screen({crumb:PICK.rec==="sales"?"기록":"기록 › 매출", title:"매출 기록", desc:"상사별 · 달별로 얼마를 했는지 봐요. 숫자는 출고 기준이에요.",
     band:{text:"지난달보다 매출이 12% 늘었어요", ok:true},
-    tools:'<button type="button" class="cgg-btn">상사별</button><button type="button" class="cgg-btn">작업별</button><button type="button" class="cgg-btn">날짜별</button>',
+    tools:'<button type="button" class="cgg-btn">상사별</button><button type="button" class="cgg-btn">작업별</button><button type="button" class="cgg-btn">날짜별</button>'+XLS,
     kpis:[{label:"이번 달 매출",value:won(sum(CARS.map(function(r){ return r[5]; }))),unit:"원",delta:"+12%",vs:"지난달보다"},{label:"차 대수",value:String(CARS.length),unit:"대"},{label:PICK.pay+" 받은 것",value:"310,000",unit:"원"},{label:"한 대 평균",value:"88,333",unit:"원"}],
     help:"상사 이름을 누르면 그 상사 차만 모아 봐요. 엑셀로도 받을 수 있어요.",
     table:{cols:["상사","대수","매출","받은 것","받을 것"], kinds:["name","id","money","money","money"], rows:srows, find:"상사",
-      onName:function(x){ CGG.toast(x[0]+" 차만 모아 봐요 (시안)"); }, bulk:[{key:"xls",label:"엑셀 받기",icon:"down"}], onBulk:function(){ CGG.toast("엑셀 받기 (시안)"); }}});
+      onName:function(x){ CGG.toast(x[0]+" 차만 모아 봐요 (시안)"); }}});
 }
 function drawBill(){
   var rows=BILLS.map(function(r){ return r.slice(); });
@@ -1480,7 +1484,7 @@ function drawMoney(){
     band:{text:"누가 보낸 돈인지 모르는 입금 1건이 있어요", go:function(){ CGG.toast("확인할 입금으로 가요 (시안)"); }},
     pri:{label:"입금 · 출금 넣기",on:function(){ CGG.toast("넣기 창 (시안)"); }},
     kpis:[{label:"이번 달 "+PICK.pay,value:"840,000",unit:"원"},{label:"이번 달 출금",value:"88,000",unit:"원"},{label:"남은 돈",value:"752,000",unit:"원"},{label:"확인 필요",value:"1",unit:"건"}],
-    help:"입금은 남색, 출금은 빨강으로 보여요.",
+    help:"입금은 남색, 출금은 회색으로 보여요.",
     table:{cols:["누구","날짜","종류","금액","상태"], kinds:["name","date","text","money","state"], rows:io, tabs:[["","전체"],["입금","입금"],["출금","출금"]], find:"누구 · 메모"}});
 }
 function drawTax(){
@@ -1493,7 +1497,7 @@ function drawTax(){
     table:{cols:["받는 곳","사업자번호","공급가액","상태"], kinds:["name","id","money","state"], rows:rows, tabs:[["","전체"],["발행 대기","발행 대기"],["발행됨","발행됨"]], find:"받는 곳",
       bulk:[{key:"iss",label:"선택한 곳 발행",needSel:true}],
       onBulk:function(k,ids){ var s=ids.map(function(i){ return rows[i]; }); var a=sum(s.map(function(r){ return r[2]; }));
-        sure({title:"세금계산서를 발행할까요?",desc:"발행하면 국세청으로 바로 가요. 되돌릴 수 없어요.",who:whoOf(s,0),n:s.length+"건",amt:Math.round(a*1.1),ok:s.length+"건 발행",done:s.length+"건을 발행했어요"}); }}});
+        sure({title:"세금계산서를 발행할까요?",desc:"발행하면 국세청으로 바로 가요. 되돌릴 수 없어요.",who:whoOf(s,0),n:s.length+"건",amtLabel:"얼마 (부가세 포함)",amt:Math.round(a*1.1),more:[["공급가액 · 부가세",won(a)+"원 · "+won(Math.round(a*0.1))+"원"]],ok:s.length+"건 발행",done:s.length+"건을 발행했어요"}); }}});
 }
 function drawDelivery(){
   var rows=[["34나5678","샘플모터스 전시장","10-17 11:05","보냄 · 알림톡"],["90마5678","다온카 본점","10-15 16:40","실패"],["33아4455","가람 오토갤러리","10-14 10:20","보냄 · 알림톡"]];
@@ -1513,7 +1517,9 @@ function drawMat(){
     kpis:[{label:"자재 가지 수",value:"4",unit:"가지"},{label:"부족",value:"2",unit:"가지"},{label:"이번 달 산 돈",value:"88,000",unit:"원"},{label:"도매상",value:"3",unit:"곳"}],
     help:"도매상 목록은 이 화면 아래쪽에 있어요.",
     table:{cols:["자재","남은 양","기준","상태"], kinds:["name","id","id","state"], rows:rows, tabs:[["","전체"],["부족","부족"],["넉넉","넉넉"]], find:"자재",
-      bulk:[{key:"ord",label:"선택한 자재 주문 문자",needSel:true}], onBulk:function(){ CGG.toast("주문 문자 창 (시안)"); }}});
+      bulk:[{key:"ord",label:"선택한 자재 주문 문자",needSel:true}],
+      onBulk:function(k,ids){ var s2=ids.map(function(i){ return rows[i]; }); if(!s2.length) return;
+        sure({title:"주문 문자를 보낼까요?",desc:"도매상에게 문자 1통으로 가요: "+s2.map(function(r){ return r[0]; }).join(", "),who:"한빛상사 (도매상 1곳)",n:"자재 "+s2.length+"가지 · 문자 1통",amtLabel:"얼마 (문자 요금)",amt:30,ok:"주문 문자 보내기",done:"주문 문자를 보냈어요"}); }}});
 }
 function drawOther(g,sub){
   screen({crumb:g.label+(sub?" › "+sub.label:""), title:sub?sub.label:g.label, desc:"이 화면도 같은 뼈대(제목 → 할 일 띠 → 도구줄 → 숫자 칸 4 → 표 → 도움)로 바뀌어요. 내용은 v131 그대로예요.", month:false,
