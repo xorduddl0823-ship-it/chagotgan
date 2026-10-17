@@ -1465,8 +1465,8 @@ var tt;function toast(m){S.toast=m;render();clearTimeout(tt);tt=setTimeout(funct
 function keepChecks(fn){var ids=["aT","aP","aM","aAll"],k=ids.map(function(id){return $(id)&&$(id).checked;});fn();ids.forEach(function(id,i){if($(id))$(id).checked=k[i];});}
 
 /* ---------- 동작 ---------- */
-function loadBills(){S.billsAt=Date.now();return api("myBills").then(function(r){var L=(r&&r.list)||[],rd=!!(r&&r.ready),sig=JSON.stringify([rd,L]);
-  if(sig===S.billsSig&&S.bills)return;S.billsSig=sig;S.bills=L;S.billsReady=rd;render();},function(){if(S.bills)return;S.bills=[];S.billsReady=false;render();});}
+function loadBills(){var k=S.key;S.billsAt=Date.now();return api("myBills").then(function(r){if(S.key!==k)return;var L=(r&&r.list)||[],rd=!!(r&&r.ready),sig=JSON.stringify([rd,L]);
+  if(sig===S.billsSig&&S.bills)return;S.billsSig=sig;S.bills=L;S.billsReady=rd;render();},function(){if(S.key!==k)return;if(S.bills)return;S.bills=[];S.billsReady=false;render();});}
 /* d3.9 — 청구서는 탭을 열 때 · 앱으로 돌아올 때 다시 불러옴 (gap 밀리초 안에 또 부르면 건너뜀) */
 function freshBills(gap){if(!S.key||!S.agreed||S.view==="login"||S.view==="agree")return;if(Date.now()-(S.billsAt||0)<gap)return;loadBills();}
 try{document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")freshBills(30000);});}catch(e){}

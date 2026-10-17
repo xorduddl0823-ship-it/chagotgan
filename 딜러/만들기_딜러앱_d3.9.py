@@ -10,6 +10,7 @@
   3. 받은 청구서가 전과 같으면 화면을 다시 그리지 않음 (고른 줄 · 열린 창 그대로)
   4. 서버가 paidAt(입금 확인한 날)을 주면 «입금 확인 · 10/17» 로 보여 줌 (없으면 지금처럼 «입금 확인»)
   5. 로그아웃 때 불러온 시각 · 표시도 비움
+  6. (보안 낮음) 불러오는 도중 로그아웃 · 다른 번호 로그인이면 늦게 온 답은 버림
 공통 부품: cgg-j4 1.5 동결 그대로."""
 import os, shutil
 ROOT = "/home/user/chagotgan"
@@ -28,8 +29,8 @@ rep('var VER="d3.8";', 'var VER="d3.9";')
 
 # 1~3) 청구서 다시 불러오기
 rep('''function loadBills(){return api("myBills").then(function(r){S.bills=(r&&r.list)||[];S.billsReady=!!(r&&r.ready);render();},function(){S.bills=[];S.billsReady=false;render();});}''',
-    '''function loadBills(){S.billsAt=Date.now();return api("myBills").then(function(r){var L=(r&&r.list)||[],rd=!!(r&&r.ready),sig=JSON.stringify([rd,L]);
-  if(sig===S.billsSig&&S.bills)return;S.billsSig=sig;S.bills=L;S.billsReady=rd;render();},function(){if(S.bills)return;S.bills=[];S.billsReady=false;render();});}
+    '''function loadBills(){var k=S.key;S.billsAt=Date.now();return api("myBills").then(function(r){if(S.key!==k)return;var L=(r&&r.list)||[],rd=!!(r&&r.ready),sig=JSON.stringify([rd,L]);
+  if(sig===S.billsSig&&S.bills)return;S.billsSig=sig;S.bills=L;S.billsReady=rd;render();},function(){if(S.key!==k)return;if(S.bills)return;S.bills=[];S.billsReady=false;render();});}
 /* d3.9 — 청구서는 탭을 열 때 · 앱으로 돌아올 때 다시 불러옴 (gap 밀리초 안에 또 부르면 건너뜀) */
 function freshBills(gap){if(!S.key||!S.agreed||S.view==="login"||S.view==="agree")return;if(Date.now()-(S.billsAt||0)<gap)return;loadBills();}
 try{document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")freshBills(30000);});}catch(e){}''')
