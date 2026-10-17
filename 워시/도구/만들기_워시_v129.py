@@ -381,6 +381,8 @@ rep('''  vOutLog:"차가 어디로 갔는지, 딜러에게 알림이 나갔는�
 V129_CSS = """
 /* ── v129 공통 부품 1.8 뼈대 — 숨긴 옛 머리말 · 옛 홈, 배달 안쪽 칸 ── */
 #hdrOld,#homeOld{display:none!important}
+/* 메뉴 줄 줄 높이 — 체크 v45 와 같은 한 줄(공통 부품 504줄 묶음에 아직 없음 · 디자인 방에 요청) */
+.cgg-nav,.cgg-navsub{line-height:1.45}
 .wsubdup #setSub,.wsubdup #mnTabs{display:none!important}
 #vOutLog.d-log #olMsgCard{display:none}
 #vOutLog.d-msg > :not(#olMsgCard):not(#jHelp){display:none}
@@ -392,5 +394,18 @@ V129_CSS = """
 a2 = s.index('<style id="cgg-j4-wash-done">\n') + len('<style id="cgg-j4-wash-done">\n'); b2 = s.index('</style>', a2)
 s = s[:b2] + V129_CSS + s[b2:]
 
+# 9) 용어 사전(디자인/워딩/용어사전.md) — 디자인 방 요청 이름만 먼저: 상태 칩 «입금 완료»(대표님 10/18) · 탭 · 화면 이름
+#    공통 부품 · 메뉴 목록 · 손님에게 가는 문자 줄 · 도움말 비슷한 말 사전(HSYN)은 건드리지 않아요. 저장 값(«수금완료» 등)도 그대로
+KEEP = [CSS18, JS18 + "\n" + MENU, 'out+="\\n\\n도착지: "']
+h0 = s.index("var HSYN={"); h1 = s.index("\n};", h0) + 3; KEEP.append(s[h0:h1])
+for i, k in enumerate(KEEP):
+    assert k in s, ("KEEP", i)
+    s = s.replace(k, "\u0000KEEP%d\u0000" % i)
+WORDS = [("수금 완료", "입금 완료"), ("수금 대기", "입금 대기"), ("입출고 내역", "입고 · 출고 내역"), ("발송함", "보낸 기록"),
+         ("배달 도착지", "목적지"), ("도착지", "목적지"), ("입·출금", "입금 · 출금"), ("받아야 할 금액", "받을 금액")]
+for a_, b_ in WORDS:
+    s = s.replace(a_, b_)
+for i, k in enumerate(KEEP):
+    s = s.replace("\u0000KEEP%d\u0000" % i, k)
 assert CSS18 in s and JS18 in s and MENU in s
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))

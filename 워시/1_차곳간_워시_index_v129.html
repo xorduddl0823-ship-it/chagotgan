@@ -345,7 +345,7 @@ h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.02em}
 .sums.c5{grid-template-columns:repeat(5,1fr)}
 @media(max-width:1100px){.sums.c5{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.sums.c5{grid-template-columns:repeat(2,1fr)}}
-/* 발송함 — 실패 띠 (UI 1.0) */
+/* 보낸 기록 — 실패 띠 (UI 1.0) */
 .obbar{display:flex;gap:12px;align-items:center;background:var(--danger-soft);
   border:1px solid var(--line);border-left:4px solid var(--danger);
   border-radius:12px;padding:12px 14px;margin:0 0 12px}
@@ -1111,7 +1111,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 .lateItem .pl{display:block;font-weight:800;font-size:14px;color:var(--text)}
 .lateItem small{display:block;color:var(--muted);font-size:12px;margin-top:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* 입·출금 내역 — 손 갈 일 카드 */
+/* 입금 · 출금 내역 — 손 갈 일 카드 */
 .mnTodo{margin:0 0 12px;padding:13px 14px;border-radius:12px;background:#fff5f4;border:1px solid #f3d2cf}
 .mnTodo .lt{display:flex;align-items:center;gap:7px;font-weight:900;font-size:14px;margin:0 0 9px;color:var(--text)}
 .mnTodo .lt .n{background:var(--danger);color:#fff;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:800}
@@ -1792,13 +1792,13 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 
 <!-- ---- PC: 정산 장부 ---- -->
 <section id="vLedger" hidden>
-  <div class="dashhead"><h2>입출고 내역</h2>
+  <div class="dashhead"><h2>입고 · 출고 내역</h2>
     <div class="sub2">들어온 차와 나간 차를 한 표로 봐요. 입금 여부도 여기서 표시해요.</div></div>
   <div class="sums">
     <div class="sum"><span>총 대수</span><b id="lCnt">0대</b></div>
     <div class="sum"><span>총 금액</span><b id="lAmt">0원</b></div>
     <div class="sum"><span>받을 금액</span><b id="lDue">0원</b></div>
-    <div class="sum"><span>수금 완료</span><b id="lPaid">0원</b></div>
+    <div class="sum"><span>입금 완료</span><b id="lPaid">0원</b></div>
   </div>
   <div class="tools">
     <select id="lMonth"></select>
@@ -1808,7 +1808,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
       <option value="body">판금·도색 중</option>
       <option value="reIn">판금·도색 다녀옴(재입고)</option>
       <option value="출고">출고(입금 대상)</option>
-      <option value="수금완료">수금 완료</option>
+      <option value="수금완료">입금 완료</option>
     </select>
     <input type="text" id="lq" placeholder="검색 · 상사 · 딜러 · 차량번호 · 작업">
     <select id="lView"><option value="table">표로 보기</option><option value="card">한눈에 보기</option></select>
@@ -2146,10 +2146,10 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 <!-- ---- 도움말 ---- -->
 <section id="vHelp" hidden><div id="helpBody"></div></section>
 
-<!-- ---- PC: 입·출금 내역 ---- -->
+<!-- ---- PC: 입금 · 출금 내역 ---- -->
 <section id="vMoney" hidden>
-  <div class="dashhead"><h2>입·출금 내역</h2>
-    <div class="sub2">통장에 들어오고 나간 금액을 한 표로 봐요. 청구서와 맞은 입금은 수금 완료로 표시돼요.</div></div>
+  <div class="dashhead"><h2>입금 · 출금 내역</h2>
+    <div class="sub2">통장에 들어오고 나간 금액을 한 표로 봐요. 청구서와 맞은 입금은 입금 완료로 표시돼요.</div></div>
   <div class="card" style="padding:14px 16px">
     <div class="tools dtools" style="margin:0">
       <button class="btn" data-mn="today">오늘</button>
@@ -2164,7 +2164,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
     </div>
   </div>
   <div class="sums" id="mnSums" style="grid-template-columns:repeat(4,1fr)"></div>
-  <!-- 작은 탭 — 입·출금 / 받아야 할 금액 (UI 1.0) -->
+  <!-- 작은 탭 — 입금 · 출금 / 받을 금액 (UI 1.0) -->
   <div class="subtabs" id="mnTabs"></div>
   <div id="mnIoPane">
     <div id="mnTable"></div>
@@ -2176,13 +2176,13 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 <!-- ---- 설정: 입금 자동 확인 ---- -->
 <section id="vBank" hidden>
   <div class="dashhead"><h2>입금 자동 확인</h2>
-    <div class="sub2">통장에 입금이 들어오면 청구서와 맞춰 자동으로 수금 완료로 바꿔요.</div></div>
+    <div class="sub2">통장에 입금이 들어오면 청구서와 맞춰 자동으로 입금 완료로 바꿔요.</div></div>
   <div id="bankBody"></div>
 </section>
 
-<!-- ---- PC: 발송함 ---- -->
+<!-- ---- PC: 보낸 기록 ---- -->
 <section id="vOutbox" hidden>
-  <div class="dashhead"><h2>발송함</h2>
+  <div class="dashhead"><h2>보낸 기록</h2>
   <div class="sub2">보낸 알림과 못 보낸 알림이 모두 남아요. 못 보낸 건 다시 보낼 수 있어요.</div></div>
   <div id="outboxBody"></div>
 </section>
@@ -2443,7 +2443,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 
 <!-- ---- PC: 목적지 관리 ---- -->
 <section id="vSms" hidden>
-  <div class="dashhead"><h2>배달 도착지</h2>
+  <div class="dashhead"><h2>목적지</h2>
     <div class="sub2">차가 자주 가는 곳을 등록해 둬요. 출고할 때 버튼만 눌러 고르고, 문자에 주소·지도 링크가 들어가요.</div></div>
   <div class="card">
     <h2>자주 가는 목적지</h2>
@@ -2533,6 +2533,10 @@ var CGG = (function(){
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
 
+  function syncBeta(){ var b=document.querySelector(".cgg-beta"), h=0;
+    if(b&&!b.hidden&&getComputedStyle(b).display!=="none") h=b.offsetHeight;
+    document.documentElement.style.setProperty("--beta-h", h+"px"); }
+  window.addEventListener("resize", function(){ syncBeta(); });
   /* ① 메뉴 배치 — 문구는 워시 원본 LY_INFO 그대로 */
   var LAYS=[["top","가로 메뉴","메뉴가 화면 위에 가로로 놓여요. 지금까지 쓰던 모습이에요."],
             ["side","세로 메뉴","메뉴가 왼쪽에 세로로 놓여요. 메뉴 이름이 다 보여서 찾기 쉬워요."],
@@ -2541,7 +2545,9 @@ var CGG = (function(){
     init:function(app,key,def){ this.app=app; if(key) this.key=key; if(def==='top'||def==='side'||def==='icon') this.def=def; this.apply(this.get()); },
     get:function(){ var v=store(this.key); return (v==="top"||v==="side"||v==="icon")?v:this.def; },
     set:function(v){ store(this.key,v); this.apply(v); },
-    apply:function(v){ if(!this.app) return; this.app.classList.remove("lay-top","lay-side","lay-icon"); this.app.classList.add("lay-"+v); },
+    apply:function(v){ if(!this.app) return; this.app.classList.remove("lay-top","lay-side","lay-icon"); this.app.classList.add("lay-"+v);
+      /* 1.8: 세로 · 아이콘 배치에서는 머리말이 화면에 붙어 있어서, 오픈 베타 띠(.cgg-beta)도 맨 위에 붙이고 그 높이만큼 머리말을 내려요 (체크 방 알림) */
+      document.documentElement.classList.toggle("cgg-lay-fixed", v!=="top"); syncBeta(); },
     name:function(v){ for(var i=0;i<LAYS.length;i++) if(LAYS[i][0]===(v||this.get())) return LAYS[i][1]; return ""; },
     chooser:function(box,done){ var self=this, cur=this.get();
       box.innerHTML='<div class="cgg-lays" role="group" aria-label="메뉴 배치">'+LAYS.map(function(x){
@@ -2968,15 +2974,15 @@ var CGG_MENU_WASH = {
   /* A — 큰 메뉴 9개 (PC 왼쪽에 아래 칸까지 늘 펼침) */
   groups: [
     {key:"home",     label:"홈",        icon:"home"},
-    {key:"ledger",   label:"일감",      icon:"car",     subs:[{key:"list",label:"입출고 내역"}]},
-    {key:"delivery", label:"배달",      icon:"truck",   isNew:true, subs:[{key:"outlog",label:"출고 기록"},{key:"dest",label:"도착지"},{key:"msg",label:"문구 · 발송 설정"}]},
+    {key:"ledger",   label:"일감",      icon:"car",     subs:[{key:"list",label:"입고 · 출고 내역"}]},
+    {key:"delivery", label:"배달",      icon:"truck",   isNew:true, subs:[{key:"outlog",label:"출고 기록"},{key:"dest",label:"목적지"},{key:"msg",label:"문구 · 발송 설정"}]},
     {key:"sales",    label:"매출",      icon:"chart"},
     {key:"bill",     label:"청구서",    icon:"file"},
-    {key:"money",    label:"입출금",    icon:"wallet",  subs:[{key:"io",label:"입·출금"},{key:"due",label:"받아야 할 금액"}]},
+    {key:"money",    label:"입출금",    icon:"wallet",  subs:[{key:"io",label:"입금 · 출금"},{key:"due",label:"받을 금액"}]},
     {key:"tax",      label:"세금계산서", icon:"receipt"},
     {key:"mat",      label:"자재",      icon:"box"},
     {key:"settings", label:"설정",      icon:"gear",    subs:[{key:"biz",label:"우리 사업장"},{key:"parties",label:"거래처"},{key:"staff",label:"직원 계정"},{key:"items",label:"작업 항목 · 단가표"},
-                                                              {key:"caropt",label:"출고 지연 기준"},{key:"bank",label:"입금 자동 확인"},{key:"send",label:"알림"},{key:"outbox",label:"발송함"},{key:"qr",label:"QR 코드"},{key:"bak",label:"백업 · 기기"}]}
+                                                              {key:"caropt",label:"출고 지연 기준"},{key:"bank",label:"입금 자동 확인"},{key:"send",label:"알림"},{key:"outbox",label:"보낸 기록"},{key:"qr",label:"QR 코드"},{key:"bak",label:"백업 · 기기"}]}
   ],
   /* 폰 아래 탭 5칸 (PC 화면일 때. 현장 화면 탭 «홈 · 입고 · 출고 · 오늘 · 날짜 검색»은 그대로) */
   tabs: [{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"delivery",icon:"truck",label:"배달"},{key:"money",icon:"wallet",label:"입출금"},{key:"__all",icon:"more",label:"전체"}],
@@ -2984,19 +2990,19 @@ var CGG_MENU_WASH = {
   feats: [
     {id:"in",          label:"입고 등록",            path:"현장 화면 › 입고",                 go:"field/in",          words:"입고하기 입고차량 들어온 차 차 들어옴 차량 등록 사진 번호판 차번호"},
     {id:"out",         label:"출고 등록",            path:"현장 화면 › 출고",                 go:"field/out",         words:"출고하기 출고차량 나간 차 차 나감 내보내기 배달 보내기"},
-    {id:"ledger",      label:"입출고 내역",          path:"일감 › 입출고 내역",               go:"ledger/list",       words:"차 목록 작업 중 일감 장부 입고 출고 내역 수금 대기 입고차량 오늘 입고 들어온 차"},
-    {id:"pay-done",    label:"입금 확인",       path:"일감 › 입출고 내역",               go:"ledger/list",       words:"수금 완료 돈 받음 입금 처리 입금 완료 표시 입금 확인 수금 확인", spot:"#wkBulkPaid"},
-    {id:"extra-ok",    label:"추가 작업 확인 · 입금 확인", path:"일감 › 입출고 내역 › 차 줄 누르기", go:"ledger/list",     words:"추가 작업 확인 요청 추가 작업 승인 입금 확인 차 자세히"},
+    {id:"ledger",      label:"입고 · 출고 내역",          path:"일감 › 입고 · 출고 내역",               go:"ledger/list",       words:"차 목록 작업 중 일감 장부 입고 출고 내역 입고차량 오늘 입고 들어온 차 입출고"},
+    {id:"pay-done",    label:"입금 확인",       path:"일감 › 입고 · 출고 내역",               go:"ledger/list",       words:"수금 완료 돈 받음 입금 처리 입금 완료 표시 입금 확인 수금 확인 입출고 내역", spot:"#wkBulkPaid"},
+    {id:"extra-ok",    label:"추가 작업 확인 · 입금 확인", path:"일감 › 입고 · 출고 내역 › 차 줄 누르기", go:"ledger/list",     words:"추가 작업 확인 요청 추가 작업 승인 입금 확인 차 자세히 입출고 내역"},
     {id:"outlog",      label:"출고 기록",            path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"배달 기록 출고 내역 나간 차 배송 이동 확인 탁송 출고차량 오늘 출고 오늘 배달 나간 차"},
     {id:"out-resend",  label:"출고 알림 다시 보내기", path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"재발송 다시 보내기 못 보낸 실패 문자"},
-    {id:"dest",        label:"도착지 추가",          path:"배달 › 도착지",                    go:"delivery/dest",     words:"목적지 배달 도착지 주소 자주 가는 곳"},
+    {id:"dest",        label:"목적지 추가",          path:"배달 › 목적지",                    go:"delivery/dest",     words:"목적지 배달 도착지 주소 자주 가는 곳 추가"},
     {id:"out-msg",     label:"출고 알림 문구",       path:"배달 › 문구 · 발송 설정",           go:"delivery/msg",      words:"출고 문자 문구 알림 내용 바꾸기 메시지"},
     {id:"sales",       label:"매출 보기",            path:"매출",                             go:"sales",             words:"매출 실적 월별 년별 통계 얼마 벌었"},
     {id:"bill-make",   label:"청구서 만들기",        path:"청구서 › 1. 청구서 만들기",         go:"bill",              words:"월별 청구서 정산서 청구 만들기 명세 요금 엑셀"},
     {id:"bill-send",   label:"청구서 보내기",        path:"청구서 › 2. 청구서 보내기",         go:"bill",              words:"청구서 발송 알림톡 문자 보내기 예약 시험", spot:"#billSendCard"},
     {id:"bill-print",  label:"청구서 인쇄 · 그림 받기", path:"청구서 › 1. 청구서 만들기",      go:"bill",              words:"인쇄 출력 jpg 그림 엑셀 내려받기 다운로드"},
-    {id:"money",       label:"입·출금 내역",         path:"입출금 › 입·출금",                 go:"money/io",          words:"입금 출금 들어온 돈 나간 돈 통장 내역 수금 계좌"},
-    {id:"due",         label:"받아야 할 금액",       path:"입출금 › 받아야 할 금액",           go:"money/due",         words:"미수 미수금 입금 대기 못 받은 돈 받을 금액 외상 수금"},
+    {id:"money",       label:"입금 · 출금 내역",         path:"입출금 › 입금 · 출금",                 go:"money/io",          words:"입금 출금 들어온 돈 나간 돈 통장 내역 수금 계좌 입·출금 입출금"},
+    {id:"due",         label:"받을 금액",       path:"입출금 › 받을 금액",           go:"money/due",         words:"미수 미수금 입금 대기 못 받은 돈 받을 금액 외상 수금 받아야 할"},
     {id:"tax",         label:"세금계산서 발행",      path:"세금계산서",                        go:"tax",               words:"세금계산서 계산서 홈택스 발행 부가세 국세청 세금 발급 팝빌"},
     {id:"mat",         label:"자재 추가 · 재고",     path:"자재",                             go:"mat",               words:"자재 재고 약품 소모품 부족 주문"},
     {id:"mat-order",   label:"부족 자재 주문 문자",  path:"자재",                             go:"mat",               words:"자재 주문 발주 부족 문자"},
@@ -3010,7 +3016,7 @@ var CGG_MENU_WASH = {
     {id:"bank",        label:"입금 자동 확인",       path:"설정 › 입금 자동 확인",             go:"settings/bank",     words:"통장 연결 은행 자동 수금 입금 확인 계좌"},
     {id:"sms",         label:"문자 · 알림톡 설정",   path:"설정 › 알림",                      go:"settings/send",     words:"문자 알림톡 카카오 솔라피 자동 발송 연동 카톡 예약"},
     {id:"sender",      label:"발신번호",             path:"설정 › 알림",                      go:"settings/send",     words:"발신번호 보내는 번호 문자 번호 솔라피 등록 번호", spot:"#smsFrom"},
-    {id:"outbox",      label:"보낸 문자 (발송함)",   path:"설정 › 발송함",                    go:"settings/outbox",   words:"발송함 보낸 문자 예약 취소 발송 기록"},
+    {id:"outbox",      label:"보낸 기록",   path:"설정 › 보낸 기록",                    go:"settings/outbox",   words:"발송함 보낸 문자 예약 취소 발송 기록 (보낸 기록)"},
     {id:"link",        label:"직원에게 앱 주소 보내기", path:"머리말 › 링크 복사",               go:"hdr/link",          words:"링크 복사 앱 주소 직원 주소 보내기 설치 링크"},
     {id:"qr",          label:"QR 코드",              path:"설정 › QR 코드",                   go:"settings/qr",       words:"큐알 직원 앱 주소 링크 설치"},
     {id:"help",        label:"도움말 (기능 설명서)", path:"머리말 › 도움말",                  go:"hdr/help",          words:"도움말 설명서 사용법 모르겠 어떻게 안됨 안돼 오류 에러 고장 느림 느려"},
@@ -3521,11 +3527,11 @@ function twinsOf(rec,list){
 
 /* ===== 화면 모드 · 탭 ===== */
 var MTABS=[["fhome","홈"],["in","입고"],["out","출고"],["today","오늘"],["search","날짜 검색"]];
-var PTABS=[["home","홈"],["sales","매출 내역"],["ledger","입출고 내역"],["outlog","출고 기록"],["bill","월별 청구서"],["money","입·출금 내역"],["tax","세금계산서"],["mat","자재"],["settings","설정"]];
-var SETSUB=[["biz","우리 사업장"],["qr","QR 코드"],["bak","백업 · 기기"],["caropt","출고 지연 기준"],["parties","거래처"],["staff","직원 계정"],["items","작업 항목 · 단가표"],["sms","배달 도착지"],["bank","입금 자동 확인"],["send","알림"],["outbox","발송함"],["trash","휴지통"]];
+var PTABS=[["home","홈"],["sales","매출 내역"],["ledger","입고 · 출고 내역"],["outlog","출고 기록"],["bill","월별 청구서"],["money","입금 · 출금 내역"],["tax","세금계산서"],["mat","자재"],["settings","설정"]];
+var SETSUB=[["biz","우리 사업장"],["qr","QR 코드"],["bak","백업 · 기기"],["caropt","출고 지연 기준"],["parties","거래처"],["staff","직원 계정"],["items","작업 항목 · 단가표"],["sms","목적지"],["bank","입금 자동 확인"],["send","알림"],["outbox","보낸 기록"],["trash","휴지통"]];
 /* J안 4판 메뉴 이름 (v112) — 화면 열쇠(S.tab)는 그대로, 큰 메뉴 글자만 */
 var JLAB={sales:"매출",ledger:"일감",bill:"청구서",money:"입출금"};
-var WORKSUB=[["ledger","입출고 내역"],["outlog","출고 기록"]];
+var WORKSUB=[["ledger","입고 · 출고 내역"],["outlog","출고 기록"]];
 /* 사람 버튼 ▾ 항목 — 차례는 공통 부품 README 1.1 그대로 (요금제 · 휴지통은 대표만) */
 var CGGWHO={name:"",role:""};
 function cggMeItems(){
@@ -3599,7 +3605,7 @@ function cggTabbar(){
 function cggAllSheet(all){
   $("sheet").innerHTML='<h3>전체 메뉴</h3><div class="cgg-allm">'+all.map(function(t){
     var lb=(S.mode==="pc")?(JLAB[t[0]]||(t[0]==="outlog"?"출고 기록":t[1])):t[1];
-    if(t[0]==="ledger"&&S.mode==="pc")lb="입출고 내역";
+    if(t[0]==="ledger"&&S.mode==="pc")lb="입고 · 출고 내역";
     return '<button type="button" data-go="'+t[0]+'"'+(t[0]===S.tab?' class="on"':'')+'>'+CGG.ic(NAVIC[t[0]]||"file")+'<span>'+esc(lb)+'</span></button>';}).join("")+
     '</div><div class="sheetbtns"><button class="btn" id="allClose" style="flex:1">닫기</button></div>';
   openSheet();
@@ -3754,7 +3760,7 @@ function decideMode(init){
   var wide=window.innerWidth>=1000;
   if(init) S.mode=(canPC()&&wide&&!isFieldUrl())?"pc":"mobile";
   if(!canPC()) S.mode="mobile";
-  /* v129: 배달 도착지는 설정이 아니라 «배달 › 도착지» */
+  /* v129: 목적지는 설정이 아니라 «배달 › 목적지» */
   if(S.tab==="settings"&&S.setSub==="sms"){S.tab="outlog";S.dSub="dest";}
   if(S.tab==="outlog"&&S.dSub==="dest"&&!isOwner())S.dSub="outlog";
   $("btnMode").hidden=!canPC();
@@ -3774,7 +3780,7 @@ function decideMode(init){
   var tabs=S.mode==="pc"?tabsFor():MTABS.concat((S.cfg&&S.cfg.matMobile)?[["matm","자재"]]:[]);
   var keep=(S.tab==="help")||(S.mode!=="pc"&&(S.tab==="in"||S.tab==="out"));
   if(!keep&&!tabs.some(function(t){return t[0]===S.tab;})) S.tab=tabs[0][0];
-  /* J안: 「입출고 내역」 · 「출고 기록」은 큰 메뉴 「일감」 하나로 묶고, 안쪽 작은 탭으로 나눠요 */
+  /* J안: 「입고 · 출고 내역」 · 「출고 기록」은 큰 메뉴 「일감」 하나로 묶고, 안쪽 작은 탭으로 나눠요 */
   var sb0=$("setSub"); if(sb0&&sb0.parentNode===$("tabs"))$("tabs").parentNode.insertBefore(sb0,$("tabs").nextSibling);
   if(S.mode==="pc"&&window.CGG_MENU_WASH&&CGG.nav){wNav();}else{
   var pcT=(S.mode==="pc"), hasL=tabs.some(function(t){return t[0]==="ledger";});
@@ -3798,7 +3804,7 @@ function decideMode(init){
   var inWork=(S.mode==="pc"&&S.tab==="outlog");
   $("setSub").hidden=(S.tab!=="settings")&&!inWork;
   if(inWork){
-    /* v129: 배달 안쪽 작은 탭 — 출고 기록 · 도착지 · 문구 · 발송 설정 */
+    /* v129: 배달 안쪽 작은 탭 — 출고 기록 · 목적지 · 문구 · 발송 설정 */
     var ws=wDSubs(), ds=S.dSub||"outlog";
     $("setSub").hidden=ws.length<2;
     $("setSub").innerHTML=ws.map(function(w){
@@ -4037,7 +4043,7 @@ function j4Note(){
     if(localStorage.getItem("ccw_rn_j18"))return;
     try{localStorage.setItem("ccw_rn_j4","1");}catch(e){}
     localStorage.setItem("ccw_rn_j18","1");
-    setTimeout(function(){toast("화면이 새 모양으로 바뀌었어요. 메뉴는 왼쪽에 늘 펼쳐져 있고, 출고 기록 · 도착지는 «배달» 안에 있어요. 위 «기능 찾기»에 하고 싶은 일을 쳐 보세요");},1600);
+    setTimeout(function(){toast("화면이 새 모양으로 바뀌었어요. 메뉴는 왼쪽에 늘 펼쳐져 있고, 출고 기록 · 목적지는 «배달» 안에 있어요. 위 «기능 찾기»에 하고 싶은 일을 쳐 보세요");},1600);
   }catch(e){}
 }
 /* 이름이 바뀐 것을 한 번만 알려 드려요 */
@@ -4046,7 +4052,7 @@ function renameNote(){
     if(!S.me)return;
     if(localStorage.getItem("ccw_rn_money"))return;
     localStorage.setItem("ccw_rn_money","1");
-    setTimeout(function(){toast("「입출금 기록」이 「입·출금 내역」으로 이름이 바뀌었어요");},900);
+    setTimeout(function(){toast("「입출금 기록」이 「입금 · 출금 내역」으로 이름이 바뀌었어요");},900);
   }catch(e){}
 }
 $("btnMore").onclick=moreSheet;
@@ -4352,7 +4358,7 @@ function askDelRecs(recs, ok){
     '<div style="font-size:13.5px;line-height:1.9">'+
       '지우려는 '+recs.length+'대 가운데 <b>'+money.length+'대</b>가 출고·입금으로 잡혀 있어요.<br>'+
       '이 자료가 빠지면 <b>'+won(amt)+'</b> 만큼 청구액이 줄어들어요.'+
-      (paid.length?('<br><span style="color:var(--danger);font-weight:700">· 수금 완료된 것이 '+paid.length+'대 있어요</span>'):"")+
+      (paid.length?('<br><span style="color:var(--danger);font-weight:700">· 입금 완료된 것이 '+paid.length+'대 있어요</span>'):"")+
       (bk.length?('<br><span style="color:var(--danger);font-weight:700">· 청구서를 이미 보낸 달이 있어요 — '+esc(bk.join(", "))+'</span>'):"")+
     '</div>'+
     '<div style="font-size:13px;line-height:1.85;margin-top:10px;color:var(--muted)">'+
@@ -4687,7 +4693,7 @@ function savedSheet(rec,inP){
   openSheet();
   $("okNext").onclick=function(){closeSheet();$("fPlate").focus();};
   function inDone(o){
-    if($("okInHint"))$("okInHint").textContent=(o&&o.status==="보냄")?(o.sentKind==="ATA"?"입고 알림톡을 보냈어요":"입고 문자를 보냈어요"):"발송함에 남겼어요";
+    if($("okInHint"))$("okInHint").textContent=(o&&o.status==="보냄")?(o.sentKind==="ATA"?"입고 알림톡을 보냈어요":"입고 문자를 보냈어요"):"보낸 기록에 남겼어요";
   }
   if(inP)inP.then(inDone,function(){inDone(null);});
   if($("okInMsg"))$("okInMsg").onclick=function(){
@@ -5194,7 +5200,7 @@ function sheetOut(r,outImg){
 /* ══════════════════════════════════════════════════════
    출고 취소 — 잘못 내보낸 건을 «작업 중»으로 되돌려요
    · 이유를 적어야 해요. 누가 언제 왜 되돌렸는지 남아요.
-   · 수금 완료된 건과 청구서가 나간 건은 대표만 되돌릴 수 있어요.
+   · 입금 완료된 건과 청구서가 나간 건은 대표만 되돌릴 수 있어요.
    ══════════════════════════════════════════════════════ */
 function undoOutBox(r, after){
   var st=statusOf(r);
@@ -5211,7 +5217,7 @@ function undoOutBox(r, after){
 
   var warn="";
   if(paid) warn+='<div style="margin-top:8px;color:var(--danger);font-weight:700">'+
-    '· 이 건은 <b>수금 완료</b>로 잡혀 있어요. 되돌리면 입금 기록도 같이 지워져요.</div>';
+    '· 이 건은 <b>입금 완료</b>로 잡혀 있어요. 되돌리면 입금 기록도 같이 지워져요.</div>';
   if(bill) warn+='<div style="margin-top:6px;color:var(--danger);font-weight:700">'+
     '· '+esc(bill.name)+' 의 '+esc(bill.month)+' 청구서를 <b>이미 보냈어요.</b><br>'+
     '&nbsp;&nbsp;금액이 달라지니 거래처에 먼저 연락하고 되돌려 주세요.</div>';
@@ -5303,7 +5309,7 @@ function sentSheet(n,photo,autoSent){
      (n.phone?'<button class="btn" id="stSms">문자만 보내기</button>':"")+
      (canPhoto?'<button class="btn go" id="stShare" style="flex:2">사진 붙여 보내기</button>':"")+
    '</div>'+
-   (canPhoto?'':'<div class="hint" style="margin-top:10px">이 기기에서는 사진을 문자에 자동으로 붙일 수 없어요. 사진은 시스템에 남아 PC 입출고 내역에서 볼 수 있어요.</div>');
+   (canPhoto?'':'<div class="hint" style="margin-top:10px">이 기기에서는 사진을 문자에 자동으로 붙일 수 없어요. 사진은 시스템에 남아 PC 입고 · 출고 내역에서 볼 수 있어요.</div>');
   openSheet();
   $("stClose2").onclick=closeSheet;
   if($("stSms"))$("stSms").onclick=function(){location.href=smsHref(n);};
@@ -6428,7 +6434,7 @@ function renderLateTable(){
 }
 /* v122: 대표 목록 — 공통 부품 CGG.table. 열: 선택 → 상사명 → 차량번호 → 차종 → 작업 → 입고일 → 금액 → 상태 → 할 일 */
 var JLT={o:null,h:null,sig:"",ids:[],st:{}};   /* 1.5 state — 찾기 · 쪽 · 정렬 · 고른 줄이 다시 그려도 남음 */
-function jLedgerState(r){var st=statusOf(r);if(st==="입고")return atBody(r)?"판금·도색 중":"입고";return st==="수금완료"?"수금 완료":st;}
+function jLedgerState(r){var st=statusOf(r);if(st==="입고")return atBody(r)?"판금·도색 중":"입고";return st==="수금완료"?"입금 완료":st;}
 function jMD(iso){var d=new Date(iso);return isNaN(d)?"":(String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0"));}
 function jLedgerTable(){
   var on=(S.mode==="pc"&&L.view!=="card"&&window.CGG&&CGG.table);
@@ -6449,8 +6455,8 @@ function jLedgerTable(){
   var hj=document.querySelector("#vLedger .dashhead .jacts");if(hj)hj.hidden=true;   /* 표에서는 일괄 버튼이 표 위에 */
   if(!JLT.o){
     JLT.o={cols:["상사명","차량번호","차종","작업","입고일","금액","상태"],kinds:["name","id","text","text","date","money","state"],rows:[],
-      tabs:[["","전체"],["입고","작업 중"],["판금·도색 중","판금·도색 중"],["출고","수금 대기"],["수금 완료","수금 완료"]],
-      stateMap:{"입고":"run","판금·도색 중":"stop","출고":"chk","수금 완료":"done"},
+      tabs:[["","전체"],["입고","작업 중"],["판금·도색 중","판금·도색 중"],["출고","입금 대기"],["입금 완료","입금 완료"]],
+      stateMap:{"입고":"run","판금·도색 중":"stop","출고":"chk","입금 완료":"done"},
       filters:[],find:"검색 · 상사 · 차량번호 · 작업",size:20,state:JLT.st,
       /* 1.5 일괄 버튼 (거르기 줄 오른쪽 · 검색 앞) — 고른 줄 번호 → 줄 id 로 바꿔서 기존 확인 창 · 서버 길 그대로 */
       bulk:[{key:"paid",label:"선택한 차 입금 완료",needSel:true},{key:"del",label:"선택한 차 지우기",needSel:true,danger:true},{key:"xls",label:"엑셀 다운로드",icon:"down"}],
@@ -7072,7 +7078,7 @@ $("olCsv").onclick=function(){
     .then(function(){toast("내려받았어요");}).catch(function(e){toast(errMsg(e),true);});
 };
 
-/* ===== 입출고 내역: 한눈에 보기 ===== */
+/* ===== 입고 · 출고 내역: 한눈에 보기 ===== */
 function ledgerCards(list){
   return '<div class="cardgrid">'+list.map(function(r){
     var st=statusOf(r);
@@ -7235,7 +7241,7 @@ function resvSheet(targets){
    '</div>'+
    '<div class="card" style="background:var(--surface2);box-shadow:none;margin:6px 0 0"><div id="rvSum" style="font-size:14px"></div>'+
    '<div class="hint" style="margin-top:6px">예약한 알림은 그 시각에 나가요. 이 화면을 닫아도, 컴퓨터를 꺼도 나가요.<br>'+
-   '취소는 이 청구서 줄을 눌러 [예약 취소], 또는 설정 → 발송함에서 할 수 있어요.</div></div>'+
+   '취소는 이 청구서 줄을 눌러 [예약 취소], 또는 설정 → 보낸 기록에서 할 수 있어요.</div></div>'+
    '<div style="max-height:22vh;overflow:auto;margin-top:10px">'+targets.map(function(b){
      var st=billState(b.name);
      return '<div class="kv"><span>'+esc(b.name)+(st?' <small style="color:var(--warn)">(이미 '+(isReserved(st)?"예약됨":"보냄")+')</small>':"")+'</span><b>'+esc(won(b.amount))+'</b></div>';}).join("")+'</div>'+
@@ -7267,7 +7273,7 @@ function resvSheet(targets){
     (function next(){
       if(i>=targets.length){
         closeSheet();renderBill();
-        if(bad.length)toast(ok+"건 예약 · "+bad.length+"건 실패 ("+bad.join(", ")+") — 발송함에서 이유를 볼 수 있어요",true);
+        if(bad.length)toast(ok+"건 예약 · "+bad.length+"건 실패 ("+bad.join(", ")+") — 보낸 기록에서 이유를 볼 수 있어요",true);
         else toast(ok+"건을 "+fmtTime(iso)+" 에 보내도록 예약했어요");
         return;}
       var b=targets[i++];
@@ -7290,7 +7296,7 @@ function cancelReserve(job){
 }
 function cancelReserveByRef(ref){
   var job=(S.outbox||[]).filter(function(o){return o.ref===ref&&o.status==="예약";})[0];
-  if(!job){toast("발송함에서 이 예약을 찾지 못했어요",true);return Promise.resolve();}
+  if(!job){toast("보낸 기록에서 이 예약을 찾지 못했어요",true);return Promise.resolve();}
   return cancelReserve(job).then(function(){toast("예약을 취소했어요");})
     .catch(function(e){toast(errMsg(e),true);});
 }
@@ -8196,7 +8202,7 @@ function renderStaff(){
   /* 권한을 고르면 무엇을 할 수 있는지 한 줄로 알려 줘요 */
   var nsWhat={
     staff:"현장(휴대폰)에서 입고·출고만 해요. PC로는 들어올 수 없어요.",
-    manager:"PC로 들어와 입출고 내역·출고 기록·자재를 봐요. 청구서·입출금·세금계산서와 설정은 보이지 않아요. 설정에서는 「알림」만 고칠 수 있어요.",
+    manager:"PC로 들어와 입고 · 출고 내역·출고 기록·자재를 봐요. 청구서·입출금·세금계산서와 설정은 보이지 않아요. 설정에서는 「알림」만 고칠 수 있어요.",
     owner:"모든 화면과 설정, 정산까지 다 돼요.",
     admin:""
   };
@@ -8603,7 +8609,7 @@ function outSmsPreview(){
   if(hn)hn.textContent=oMode==="hq"?"보내는 방식(사진 + 글자 · 글자만(장문) · 간단히)은 알림톡이 안 될 때 가는 문자 모양이에요.":"";
   var addr=destAddrOf(demo.dest);
   $("osMsg").style.color="";
-  $("osMsg").textContent=addr?("미리보기 도착지 주소: "+addr):"미리보기 목적지에는 등록된 주소가 없어요 (설정 → 배달 도착지에서 넣어요)";
+  $("osMsg").textContent=addr?("미리보기 목적지 주소: "+addr):"미리보기 목적지에는 등록된 주소가 없어요 (설정 → 목적지에서 넣어요)";
 }
 ["{업체}","{상사}","{딜러}","{차량번호}","{작업}","{금액}","{목적지}","{목적지주소}","{지도링크}","{연락처}"].forEach(function(tk){
   var b=document.createElement("button");b.type="button";b.className="chip";b.textContent=tk;
@@ -10197,7 +10203,7 @@ function renderBiz(){
       chk();toast("읽었어요. 확인하고 저장해 주세요");}).catch(function(e){if(e)toast(errMsg(e),true);});
   };
 }
-/* ===== 입·출금 내역 화면 ===== */
+/* ===== 입금 · 출금 내역 화면 ===== */
 var MN={from:"",to:"",rows:null,loadedAt:0};
 var MN_MIN=10000;   /* 1만원 미만 입금은 손 갈 일 목록에서 빼요 */
 function mnRange(kind){
@@ -10214,7 +10220,7 @@ function mnCacheSet(rows){try{localStorage.setItem("ccw_money",JSON.stringify(ro
 /* ══════════════════════════════════════════════════════
    받을 돈 · 입금 확인
    통장을 연결하지 않아도 써요. 통장에서 입금을 보시고
-   그 딜러 줄의 [입금 확인] 을 누르시면 수금 완료로 바뀌어요.
+   그 딜러 줄의 [입금 확인] 을 누르시면 입금 완료로 바뀌어요.
    ══════════════════════════════════════════════════════ */
 var DUE={ q:"", size:10, key:"dealer", dir:"asc", hide:true };
 function dueDay(iso){ var d=new Date(iso); if(isNaN(d)) return "-";
@@ -10258,7 +10264,7 @@ function dueView(){
   });
   return { list:list.slice(0,DUE.size), all:G };
 }
-/* ===== 입·출금 작은 탭 (UI 1.0) ===== */
+/* ===== 입금 · 출금 작은 탭 (UI 1.0) ===== */
 var MNTAB = "io";
 function mnPaintTabs(){
   var el = $("mnTabs"); if (!el) return;
@@ -10267,8 +10273,8 @@ function mnPaintTabs(){
   el.hidden = !show;
   if (!show) { MNTAB = "io"; }
   el.innerHTML =
-    '<button type="button" data-mntab="io" aria-selected="' + (MNTAB === "io") + '">입·출금</button>' +
-    '<button type="button" data-mntab="due" aria-selected="' + (MNTAB === "due") + '">받아야 할 금액' +
+    '<button type="button" data-mntab="io" aria-selected="' + (MNTAB === "io") + '">입금 · 출금</button>' +
+    '<button type="button" data-mntab="due" aria-selected="' + (MNTAB === "due") + '">받을 금액' +
       (cnt ? (' ' + cnt + '건') : '') + '</button>';
   Array.prototype.forEach.call(el.children, function(b){
     b.onclick = function(){ MNTAB = b.getAttribute("data-mntab"); mnShowTab(); };
@@ -10301,7 +10307,7 @@ function renderDue(){
   }
   box.innerHTML=
    '<div class="card">'+
-    '<h2>받아야 할 금액 <span class="rt">'+dueCnt+'건 · '+won(dueAmt)+'</span></h2>'+
+    '<h2>받을 금액 <span class="rt">'+dueCnt+'건 · '+won(dueAmt)+'</span></h2>'+
     '<div class="hint" style="margin:-6px 0 12px">청구서를 보낸 뒤 아직 안 들어온 금액입니다. '+
       '통장에 입금이 보이면 그 줄의 <b>[입금 확인]</b> 을 누르세요. 금액은 차곳간이 이미 알고 있어요.</div>'+
     '<div class="tools" style="margin:0 0 10px">'+
@@ -10334,7 +10340,7 @@ function renderDue(){
         '<td class="num"><b>'+won(b.amt)+'</b></td>'+
         '<td>'+cell+'</td></tr>';
     }).join("")
-      :'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:22px">받아야 할 금액이 없어요</td></tr>')+
+      :'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:22px">받을 금액이 없어요</td></tr>')+
     '</tbody></table></div>'+
    '</div>';
 
@@ -10376,7 +10382,7 @@ function duePaySheet(key){
        Number(b.amt||0).toLocaleString("ko-KR")+'"></div>'+
    '</div>'+
    '<div id="dpWarn" hidden></div>'+
-   '<div class="hint" style="margin-top:12px">확인하시면 <b>수금 완료</b> 로 바뀌어요. 잘못 누르셨으면 그 줄에서 되돌릴 수 있어요.</div>'+
+   '<div class="hint" style="margin-top:12px">확인하시면 <b>입금 완료</b> 로 바뀌어요. 잘못 누르셨으면 그 줄에서 되돌릴 수 있어요.</div>'+
     (canNotify()?'<label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:13.5px;cursor:pointer"><input type="checkbox" id="dpAta" style="width:18px;height:18px;margin-top:2px">'+
       '<span>거래처에 <b>«입금 확인» 안내</b> 보내기<br><small style="color:var(--muted)">알림톡으로 보내요. 본사 알림톡이 아직 준비 전이면 문자로 가요(문자 요금).</small></span></label>':'')+
    '<div class="btns" style="margin-top:16px">'+
@@ -10389,9 +10395,9 @@ function duePaySheet(key){
     var v=num(g.value), w=$("dpWarn");
     if(v<=0){ w.hidden=false; w.className="dueWarn"; w.textContent="금액을 넣어 주세요"; return; }
     if(v<b.amt){ w.hidden=false; w.className="dueWarn";
-      w.textContent="받아야 할 금액보다 "+won(b.amt-v)+" 적어요. 이대로 확인하면 나머지는 그대로 남아요."; return; }
+      w.textContent="받을 금액보다 "+won(b.amt-v)+" 적어요. 이대로 확인하면 나머지는 그대로 남아요."; return; }
     if(v>b.amt){ w.hidden=false; w.className="dueWarn";
-      w.textContent="받아야 할 금액보다 "+won(v-b.amt)+" 많아요. 다른 달 것이 같이 들어왔는지 확인해 주세요."; return; }
+      w.textContent="받을 금액보다 "+won(v-b.amt)+" 많아요. 다른 달 것이 같이 들어왔는지 확인해 주세요."; return; }
     w.hidden=true;
   }
   g.oninput=function(){ var v=num(this.value); this.value=v?v.toLocaleString("ko-KR"):""; check(); };
@@ -10418,7 +10424,7 @@ function depositNotice(b, v, day){
       else toast("«입금 확인» 안내를 보내지 못했어요: "+sendErrText(o.err),true); })
     .catch(function(e){ toast(kmsg(e,"«입금 확인» 안내를 보내지 못했어요. 잠시 뒤 다시 시도해 주세요."),true); });
 }
-/* 들어온 금액만큼 «오래된 차부터» 수금 완료로 바꿔요 */
+/* 들어온 금액만큼 «오래된 차부터» 입금 완료로 바꿔요 */
 function duePay(b, amount, day){
   var recs=(S.records||[]).filter(function(r){ return b.ids.indexOf(r.id)>=0 && statusOf(r)==="출고"; });
   recs.sort(function(x,y){ return String(x.outAt||x.createdAt||"").localeCompare(String(y.outAt||y.createdAt||"")); });
@@ -10440,14 +10446,14 @@ function duePay(b, amount, day){
   Promise.all(jobs).then(function(){
     closeSheet();
     var rest=b.amt-picked.reduce(function(a2,r){ return a2+(r.total||0); },0);
-    toast(b.dealer+" 님 "+won(amount)+" 수금 완료"+(rest>0?(" · "+won(rest)+" 남음"):""));
+    toast(b.dealer+" 님 "+won(amount)+" 입금 완료"+(rest>0?(" · "+won(rest)+" 남음"):""));
     renderDue(); renderAll();
   }).catch(function(e){ toast(errMsg(e),true); });
 }
 /* 되돌리기 */
 function dueUndo(key){
   var b=dueFind(key); if(!b) return;
-  ask(b.dealer+" 님 "+periodLabel(b.month)+" 입금을 되돌릴까요?\n다시 «받아야 할 금액» 으로 돌아가요.",function(){
+  ask(b.dealer+" 님 "+periodLabel(b.month)+" 입금을 되돌릴까요?\n다시 «받을 금액» 으로 돌아가요.",function(){
     var jobs=(S.records||[]).filter(function(r){ return b.ids.indexOf(r.id)>=0 && statusOf(r)==="수금완료"; })
       .map(function(r){
         var i=S.records.indexOf(r);
@@ -10573,7 +10579,7 @@ function bindMoney(rows){
       .then(function(){toast("내려받았어요");}).catch(function(e){toast(errMsg(e),true);});
   };
 }
-/* 입금 한 건을 청구서에 맞추기 — 맞추면 그 청구서의 차들이 '수금 완료'로 바뀌어요 */
+/* 입금 한 건을 청구서에 맞추기 — 맞추면 그 청구서의 차들이 '입금 완료'로 바뀌어요 */
 function mnKey(r){return String(r.id||r.at||"");}
 function mnMatch(){try{return JSON.parse(localStorage.getItem("ccw_mnmatch")||"{}");}catch(e){return {};}}
 function mnMatchSet(k,v){
@@ -10607,7 +10613,7 @@ function mnFixSheet(r){
   var pick=null;
   function line(b){
     var diff=b.due-amt;
-    var tag = (b.due<=0) ? '<span class="tag paid">이미 수금 완료</span>'
+    var tag = (b.due<=0) ? '<span class="tag paid">이미 입금 완료</span>'
       : (diff===0) ? '<span class="tag paid">금액이 딱 맞아요</span>'
       : (diff>0) ? ('<span class="tag out">'+won(diff)+' 덜 들어왔어요</span>')
                  : ('<span class="tag in">'+won(-diff)+' 더 들어왔어요</span>');
@@ -10644,13 +10650,13 @@ function mnFixSheet(r){
       $("mbGo").disabled=false;
       var todo=pick.recs.filter(function(x){return statusOf(x)!=="수금완료";});
       $("mbMsg").innerHTML='맞추면 <b>'+esc(pick.name)+'</b> 의 '+esc(periodLabel(pick.month))+
-        ' 차 <b>'+todo.length+'대</b>가 <b>수금 완료</b>로 바뀌어요.'+
-        (pick.due-amt>0?' 받을 금액 '+won(pick.due-amt)+' 은 그대로 남아요. 부분 입금이면 [입출고 내역]에서 대수를 골라 수금 완료로 바꿔 주세요.':'');
+        ' 차 <b>'+todo.length+'대</b>가 <b>입금 완료</b>로 바뀌어요.'+
+        (pick.due-amt>0?' 받을 금액 '+won(pick.due-amt)+' 은 그대로 남아요. 부분 입금이면 [입고 · 출고 내역]에서 대수를 골라 입금 완료로 바꿔 주세요.':'');
     };});
   $("mbGo").onclick=function(){
     if(!pick)return;
     var todo=pick.recs.filter(function(x){return statusOf(x)!=="수금완료";});
-    if(!confirmed(pick.name+" · "+periodLabel(pick.month)+"\n차 "+todo.length+"대를 수금 완료로 바꿔요.",this,"맞추기"))return;
+    if(!confirmed(pick.name+" · "+periodLabel(pick.month)+"\n차 "+todo.length+"대를 입금 완료로 바꿔요.",this,"맞추기"))return;
     var b=this;b.disabled=true;b.textContent="맞추는 중…";
     Promise.all(todo.map(function(x){
       var n=Object.assign({},x,{status:"수금완료",paidAt:nowIso()});
@@ -10674,7 +10680,7 @@ function mnFetch(){
   }).catch(function(e){toast(errMsg(e),true);})
     .then(function(){var b2=$("mnLoad");if(b2){b2.disabled=false;b2.textContent="검색";}});
 }
-/* 알림에서 [자세히 보기] 를 누르면 입·출금 내역으로 가고, 못 맞춘 입금이면 맞추기 창을 엽니다 */
+/* 알림에서 [자세히 보기] 를 누르면 입금 · 출금 내역으로 가고, 못 맞춘 입금이면 맞추기 창을 엽니다 */
 function mnGoScreen(dep){
   S.tab="money";decideMode(false);window.scrollTo(0,0);
   if(dep&&!dep.matched)setTimeout(function(){mnFixSheet(dep);},250);
@@ -10751,7 +10757,7 @@ function renderBank(){
    '<h2>통장 연결 <span class="rt">'+
      (c.on?('<span style="color:var(--good)">연결됨 · '+esc(bankName(c.bank))+' '+esc(c.acct)+'</span>')
           :'<span style="color:var(--muted)">아직 연결 안 됨</span>')+'</span></h2>'+
-   '<div class="hint" style="margin:-6px 0 12px">청구서에 찍히는 입금 통장을 연결해 두면, 금액이 들어오는 대로 차곳간이 읽어와 <b>수금 완료</b>로 바꿔 드려요. '+
+   '<div class="hint" style="margin:-6px 0 12px">청구서에 찍히는 입금 통장을 연결해 두면, 금액이 들어오는 대로 차곳간이 읽어와 <b>입금 완료</b>로 바꿔 드려요. '+
      '<b>보기만 하는 연결</b>이라 금액이 나가는 기능은 없어요.</div>'+
 
    '<div class="plate-result" style="background:var(--warn-soft);color:var(--warn);margin:0 0 14px">'+
@@ -10791,14 +10797,14 @@ function renderBank(){
   '</div>'+
 
   '<div class="card">'+
-   '<h2>자동으로 수금 완료 처리</h2>'+
+   '<h2>자동으로 입금 완료 처리</h2>'+
    '<div class="hint" style="margin:-6px 0 12px">입금된 금액과 청구 금액이 맞으면 자동으로 바꿀지 정해요.</div>'+
    '<label class="chip" style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px">'+
-     '<input type="checkbox" id="bk_auto" style="width:22px;height:22px"'+(c.auto?" checked":"")+'> 금액이 맞으면 자동으로 수금 완료로 바꾸기</label>'+
+     '<input type="checkbox" id="bk_auto" style="width:22px;height:22px"'+(c.auto?" checked":"")+'> 금액이 맞으면 자동으로 입금 완료로 바꾸기</label>'+
    '<div class="row2" style="margin-top:6px">'+
      '<div><label class="f" for="bk_gap">얼마까지 차이를 봐줄까요</label>'+
        '<input type="number" id="bk_gap" min="0" step="100" value="'+c.gap+'"> </div>'+
-     '<div style="align-self:flex-end"><div class="hint">예) 1,000 을 넣으면 1,000원까지 덜 들어와도 수금 완료로 봐요. 0이면 딱 맞아야 해요.</div></div>'+
+     '<div style="align-self:flex-end"><div class="hint">예) 1,000 을 넣으면 1,000원까지 덜 들어와도 입금 완료로 봐요. 0이면 딱 맞아야 해요.</div></div>'+
    '</div>'+
    '<button class="btn primary" id="bkSaveOpt" type="button" style="margin-top:12px">저장</button>'+
   '</div>'+
@@ -11727,11 +11733,11 @@ function sendNow(o){
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
       o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";
       if(o.via==="sms"&&o.sentKind==="ATA")o.sentKind="AUTO"; else if(o.via==="ata")o.sentKind="ATA";}
-    else{o.status="실패";o.err=kmsg(res&&(res.error||res.message),"보내지 못했어요. 발송함에서 다시 보내 주세요.");}
+    else{o.status="실패";o.err=kmsg(res&&(res.error||res.message),"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");}
     return saveJob(o).then(function(){return o;});
   }).catch(function(e){
     o.status="실패";
-    o.err=kmsg(e,"보내지 못했어요. 발송함에서 다시 보내 주세요.");
+    o.err=kmsg(e,"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");
     return saveJob(o).then(function(){throw e;});
   });
 }
@@ -11742,15 +11748,15 @@ function sendOrOpen(job,openFallback){
       return o;
     }
     return sendNow(o).then(function(x){
-        if(x&&x.status==="실패"){toast("자동 발송 실패 — 발송함에 남겼어요. 문자 앱으로 보내요",true);if(openFallback)openFallback();return x;}
+        if(x&&x.status==="실패"){toast("자동 발송 실패 — 보낸 기록에 남겼어요. 문자 앱으로 보내요",true);if(openFallback)openFallback();return x;}
         toast(x&&x.sentKind==="ATA"?"알림톡을 보냈어요":"문자를 보냈어요");return x;})
       .catch(function(){
-        toast("자동 발송 실패 — 발송함에 남겼어요. 문자 앱으로 보내요",true);
+        toast("자동 발송 실패 — 보낸 기록에 남겼어요. 문자 앱으로 보내요",true);
         if(openFallback)openFallback();
       });
   });
 }
-/* ===== 차곳간 UI 1.0 — 발송함 (설정 ▸ 알림에서 떼어냈어요) ===== */
+/* ===== 차곳간 UI 1.0 — 보낸 기록 (설정 ▸ 알림에서 떼어냈어요) ===== */
 /* v124 — 보낸 방식 말하기: 서버가 res.via(ata/sms)를 주면 그대로, 없으면 «보냈어요» */
 function sentHow(o){var v=o&&o.via;return v==="ata"?"알림톡을 보냈어요":(v==="sms"?"문자로 보냈어요":"보냈어요");}
 /* 보내기 실패 이유를 쉬운 말로 — 영어 코드는 감춥니다 */
@@ -11765,8 +11771,8 @@ function sendErrText(raw){
   if (/NotFound|없는 번호/i.test(t)) return "받는 번호가 올바르지 않아요";
   if (/timeout|시간/i.test(t)) return "서버가 응답하지 않았어요 — 다시 보내 주세요";
   var m = t.match(/"errorMessage"\s*:\s*"([^"]+)"/);
-  if (m) return kmsg(m[1], "보내지 못했어요. 발송함에서 다시 보내 주세요.");
-  return kmsg(t.replace(/\s*\{[\s\S]*\}\s*/, "").trim(), "보내지 못했어요. 발송함에서 다시 보내 주세요.");
+  if (m) return kmsg(m[1], "보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");
+  return kmsg(t.replace(/\s*\{[\s\S]*\}\s*/, "").trim(), "보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");
 }
 function renderOutbox(){
   /* 숫자 4칸 — 다른 화면과 같은 자리 */
@@ -12186,7 +12192,7 @@ function renderHome(){
       function(){S.tab="ledger";L.month="";L.monthSet=true;L.page=1;L.sel={};
         $("lStatus").value="입고";$("lq").value="";L.q="";decideMode(false);
         window.scrollTo(0,0);}],
-    [failed.length,"알림 보내기 실패","발송함에서 다시 보낼 수 있어요",function(){
+    [failed.length,"알림 보내기 실패","보낸 기록에서 다시 보낼 수 있어요",function(){
       S.tab="settings"; S.setSub="outbox";
       try{ OB.sel={}; (S.outbox||[]).forEach(function(o){ if(o.status==="실패") OB.sel[o.id]=true; }); }catch(e){}
       decideMode(false); window.scrollTo(0,0);
@@ -12390,7 +12396,7 @@ function daySheet(k){
        '<b>'+won(r.total)+' <span class="tag '+(st==="입고"?"in":st==="출고"?"out":"paid")+'">'+esc(stLabel(r))+'</span></b></div>';}).join("")
     :'<div class="empty">이 날은 들어온 차가 없어요.</div>')+'</div>'+
    '<div class="sheetbtns"><button class="btn" id="dsClose">닫기</button>'+
-   '<button class="btn primary" id="dsGo">입출고 내역에서 보기</button></div>';
+   '<button class="btn primary" id="dsGo">입고 · 출고 내역에서 보기</button></div>';
   openSheet();
   $("dsClose").onclick=closeSheet;
   bindMemoBox(k);
@@ -13118,8 +13124,8 @@ var HELP=[
   "<li><b>오늘 할 일</b>: 늦어지는 차, 청구 안 보낸 곳, 부족한 자재 등. 누르면 그 화면으로 가요.</li>"+
   "<li><b>빨간 [중요]</b> 표시: 자재 부족 · 청구서 안 보냄 · 세금계산서 안 보냄(지난달분, 이번 달 10일까지). 세금계산서를 홈택스로 발행했으면 세금계산서 화면에서 [이 달 발행 완료로 표시]를 누르면 사라져요(팝빌로 발급한 건은 자동).</li>"+
   "<li><b>작업 항목별 · 이번 달 일감 · 입금</b>: 이번 달 흐름을 한눈에 봐요.</li></ul>"},
- {id:"ledger",who:"pc",t:"PC · 입출고 내역",h:
-  "<ul><li>모든 입출고 기록 장부예요. 월·상태(작업 중/출고/수금 완료)로 거르고, 검색해요.</li>"+
+ {id:"ledger",who:"pc",t:"PC · 입고 · 출고 내역",h:
+  "<ul><li>모든 입출고 기록 장부예요. 월·상태(작업 중/출고/입금 완료)로 거르고, 검색해요.</li>"+
   "<li>줄을 누르면 <b>고치기</b> 창: 사진 확인, 상사·딜러·번호·작업·금액·상태를 고쳐요.</li>"+
   "<li>체크 후 [선택한 차 입금 완료] — 입금된 차를 한 번에 정리해요.</li>"+
   "<li>[선택한 줄 지우기]는 <b>휴지통</b>으로 가요. 바로 사라지지 않아요.</li>"+
@@ -13132,7 +13138,7 @@ var HELP=[
   "<li><b>출고 문자 문구·보내는 방식</b>이 이 화면 아래에 있어요. 문구를 고치면 오른쪽 폰 모양에 바로 보이고, [내 번호로 시험]으로 먼저 받아 볼 수 있어요.</li>"+
   "<li><b>보내는 방식 4가지</b>: 사진+글자(사진문자) / 사진만 / 글자만(장문) / 간단히(단문·짧은 문구).</li>"+
   "<li><b>보내는 형식</b>: 기본은 <b>알림톡 먼저 (안 되면 문자)</b> — 차곳간 채널로 알림톡이 먼저 가고, 안 되면 위 문구가 문자로 가요. <b>우리 업체 카카오 채널</b>은 설정 → 알림에서 채널ID·템플릿ID를 넣고 승인이 나야 고를 수 있어요(승인 전에는 회색).</li>"+
-  "<li><b>도착지 주소</b>: 목적지에 주소가 등록돼 있으면 문자 끝에 주소(+지도 링크)가 붙어요. 여기서 [주소+링크 / 주소만 / 안 붙이기]를 골라요.</li>"+
+  "<li><b>목적지 주소</b>: 목적지에 주소가 등록돼 있으면 문자 끝에 주소(+지도 링크)가 붙어요. 여기서 [주소+링크 / 주소만 / 안 붙이기]를 골라요.</li>"+
   "<li><b>우리 연락처 넣기</b>: 문구에 <b>{연락처}</b> 를 넣으면 설정 → 우리 사업장에서 <b>체크한 번호(최대 2개)</b>가 들어가요. 문구 위 조각을 눌러도 돼요.</li></ul>"},
  {id:"bill",who:"pc",t:"PC · 월별 청구서",h:
   "<ol><li><b>청구서 만들기</b>: 청구 월, 단위(매매상사별/딜러별), 0원 제외 여부, 범위(출고된 차만/작업 중 포함)를 고르고 [청구서 만들기].</li>"+
@@ -13145,12 +13151,12 @@ var HELP=[
   "<li><b>청구 시기</b>: 그 달분은 <b>다음 달 1일부터</b> 청구해요(9월분 → 10월 1일부터). 그래서 홈 [오늘 할 일]의 빨간 '청구서 아직 안 보냄'도 <b>지난달분</b>만 떠요.</li>"+
   "<li><b>보내는 형식</b>: 기본은 <b>알림톡 먼저 (안 되면 문자)</b>. 보내는 방식 4가지는 알림톡이 안 될 때 가는 문자 모양이에요. <b>우리 업체 카카오 채널</b>은 승인 뒤 고를 수 있어요.</li>"+
   "<li><b>우리 연락처 넣기</b>: 문구에 <b>{연락처}</b> 를 넣으면 설정 → 우리 사업장에서 <b>체크한 번호(최대 2개)</b>가 들어가요. 문의가 오는 번호를 청구 문자에 같이 보낼 때 써요.</li>"+
-  "<li><b>[예약 발송]</b>: 날짜·시각(오전 7시~밤 9시)을 고르면 그때 나가요. 화면·컴퓨터를 꺼도 나가요. 취소는 청구서 줄 → [예약 취소], 또는 설정 → 발송함.</li></ol>"+
+  "<li><b>[예약 발송]</b>: 날짜·시각(오전 7시~밤 9시)을 고르면 그때 나가요. 화면·컴퓨터를 꺼도 나가요. 취소는 청구서 줄 → [예약 취소], 또는 설정 → 보낸 기록.</li></ol>"+
   "<p class='hl'>보낸 곳은 '보냄', 예약한 곳은 '예약'으로 표시돼요. 잘못 표시됐으면 체크 후 [선택항목 보냄 표시 지우기].</p>"},
- {id:"money",who:"pc",t:"PC · 입·출금 내역",h:
+ {id:"money",who:"pc",t:"PC · 입금 · 출금 내역",h:
   "<ul><li>통장에 들어오고 나간 금액을 한 표로 봐요. 먼저 통장을 연결해야 해요 — 위쪽 메뉴에서 <b>설정</b> 을 누르고, 그 아래 줄에서 <b>입금 자동 확인</b> 을 누른 뒤 통장을 연결하세요.</li>"+
   "<li><b>맨 위 「청구서와 못 맞춘 입금」</b>: 손 갈 일만 맨 위에 모아 둬요. 없으면 이 칸은 아예 보이지 않아요.</li>"+
-  "<li>못 맞춘 입금을 누르면 <b>청구서에 맞추기</b> 창이 떠요. 금액이 가까운 청구서 순서로 놓아 드리니 고르기만 하면 돼요. 맞추면 그 곳의 차들이 <b>수금 완료</b>로 바뀌어요.</li>"+
+  "<li>못 맞춘 입금을 누르면 <b>청구서에 맞추기</b> 창이 떠요. 금액이 가까운 청구서 순서로 놓아 드리니 고르기만 하면 돼요. 맞추면 그 곳의 차들이 <b>입금 완료</b>로 바뀌어요.</li>"+
   "<li>청구서와 관계없는 입금(이자, 직접 넣은 금액 등)은 <b>[청구서와 관계없는 입금]</b> 을 눌러 치워 두세요.</li>"+
   "<li><b>요약 네 칸</b>: 들어온 금액 · 나간 금액 · 확인이 필요한 입금 · 받을 금액.</li>"+
   "<li>10분마다 저절로 확인해서 새 입금이 있으면 <b>입고·출고와 똑같이 알림</b>이 떠요. 알림에서 [자세히 보기]를 누르면 바로 맞추기 창이 열려요.</li>"+
@@ -13181,12 +13187,12 @@ var HELP=[
   "<li>넣는 곳: <b>출고 기록</b>의 출고 문자 문구, <b>월별 청구서</b>의 청구 문자 문구(간단히 문구 포함). 문구 위 <b>{연락처}</b> 조각을 누르면 그 자리에 들어가요.</li>"+
   "<li>아무것도 체크하지 않으면 발신번호가 대신 들어가요. 번호를 전혀 안 넣고 싶으면 문구에서 {연락처} 줄을 지우면 돼요.</li></ul>"},
  {id:"set-bank",who:"pc",t:"설정 · 입금 자동 확인",h:
-  "<ul><li>청구서에 찍히는 <b>입금 통장</b>을 연결해 두면, 금액이 들어오는 대로 프로그램이 읽어와 <b>수금 완료</b>로 바꿔 줘요.</li>"+
+  "<ul><li>청구서에 찍히는 <b>입금 통장</b>을 연결해 두면, 금액이 들어오는 대로 프로그램이 읽어와 <b>입금 완료</b>로 바꿔 줘요.</li>"+
   "<li><b>보기만 하는 연결</b>이에요. 금액을 옮기거나 보내는 기능은 프로그램에 없어요.</li>"+
   "<li><b>먼저 하실 것</b>: 은행 홈페이지에서 <b>빠른 계좌조회(간편조회)</b>를 신청해야 합니다. 신한은행은 오른쪽 위 [기업] → [간편조회서비스] → [계좌조회] → 로그인 → [계좌조회] → [간편계좌관리] → [간편계좌조회 추가하기] 순서입니다.</li>"+
   "<li><b>가는 길</b>: ① 위쪽 메뉴에서 <b>설정</b> 을 누릅니다 → ② 그 아래 줄에서 <b>입금 자동 확인</b> 을 누릅니다 → ③ 은행을 고르고 통장번호·비밀번호를 넣습니다 → ④ <b>[연결하기]</b> 를 누릅니다.</li>"+
   "<li><b>통장 비밀번호는 저장되지 않습니다.</b> 넣으신 값은 은행 조회를 맡는 곳으로 바로 넘어가고, 이 프로그램에는 남지 않습니다.</li>"+
-  "<li><b>얼마까지 차이를 봐줄까요</b>: 1,000을 넣으면 1,000원까지 덜 들어와도 수금 완료로 봐요. 0이면 딱 맞아야 해요.</li>"+
+  "<li><b>얼마까지 차이를 봐줄까요</b>: 1,000을 넣으면 1,000원까지 덜 들어와도 입금 완료로 봐요. 0이면 딱 맞아야 해요.</li>"+
   "<li>입금 내역과 통장 설정은 <b>대표만</b> 볼 수 있어요. 현장 직원 화면에는 나오지 않아요.</li></ul>"},
  {id:"set-car",who:"pc",t:"설정 · 출고 지연 기준",h:
   "<ul><li><b>출고 늦음 기준</b>: 입고 후 며칠이 지나면 '늦어지는 차'로 볼지, 며칠 넘으면 빨갛게 볼지 정해요.</li>"+
@@ -13198,8 +13204,8 @@ var HELP=[
   "<p>차가 많은 곳에서 <b>어디에 세웠는지</b> 적어두는 칸이에요. 큰 사업장에서 차 찾느라 걸리는 시간이 크게 줄어들어요.</p>"+
   "<ul><li><b>어디에 적나</b>: 입고 화면 <b>차종 바로 아래</b>에 '주차 위치' 칸이 있어요. 직접 적어도 되고, 아래 버튼을 눌러도 돼요.</li>"+
   "<li><b>구역 버튼</b>: 설정 → 출고 지연 기준 → <b>🅿 주차 구역</b>에 등록해 둔 것이 버튼으로 깔려요. 버튼을 누르고 뒤에 번호만 더 치면 돼요(예: [A구역] 누르고 <b>3번</b> 입력 → A구역 3번).</li>"+
-  "<li><b>어디에 보이나</b>: 현장 <b>작업 중 목록</b>과 <b>출고 창</b>, <b>오늘</b> 화면, PC <b>입출고 내역</b>표의 '주차 위치' 칸, <b>늦어지는 차</b> 표에 보라색 <b>P</b> 표시로 나와요.</li>"+
-  "<li><b>나중에 고치기</b>: PC 입출고 내역에서 줄을 누르면 나오는 수정 창에 '주차 위치' 칸이 있어요.</li>"+
+  "<li><b>어디에 보이나</b>: 현장 <b>작업 중 목록</b>과 <b>출고 창</b>, <b>오늘</b> 화면, PC <b>입고 · 출고 내역</b>표의 '주차 위치' 칸, <b>늦어지는 차</b> 표에 보라색 <b>P</b> 표시로 나와요.</li>"+
+  "<li><b>나중에 고치기</b>: PC 입고 · 출고 내역에서 줄을 누르면 나오는 수정 창에 '주차 위치' 칸이 있어요.</li>"+
   "<li>차를 옮겼으면 그 칸만 고쳐주면 돼요.</li></ul>"},
  {id:"voice",who:"pc",t:"말로 알려주기 (음성 알림)",h:
   "<p>입고·출고가 되면 PC가 <b>사람 목소리로</b> 읽어 줘요. 손이 바쁘거나 화면을 안 보고 있을 때 좋아요.</p>"+
@@ -13217,7 +13223,7 @@ var HELP=[
   "<ul><li><b>입고하자마자 판금·도색으로</b>: 입고 화면 맨 아래 [입고하고 판금·도색 맡기기]을 누르면, 장부에 입고로 올리고 바로 '어디로 보냈는지' 적는 창이 떠요.</li>"+
   "<li><b>작업 중에 보낼 때</b>: 출고 목록에서 차를 누르고 [판금·도색 보냄].</li>"+
   "<li>보낸 차는 목록·오늘·달력에 <b>판금·도색 중</b>으로 표시되고, 홈 [오늘 할 일] 맨 위에도 몇 대인지 나와요. 출고·정산은 돌아온 뒤에 해요.</li>"+
-  "<li><b>모아 보기</b>: 홈 [오늘 할 일]의 <b>판금·도색 맡긴 차</b>를 누르면 <b>입출고 내역</b>으로 가서 <b>판금·도색 중인 차만</b> 추려 보여 줘요. 상태 고르는 칸에서 직접 <b>판금·도색 중</b> / <b>판금·도색 다녀옴(재입고)</b>을 골라도 돼요.</li>"+
+  "<li><b>모아 보기</b>: 홈 [오늘 할 일]의 <b>판금·도색 맡긴 차</b>를 누르면 <b>입고 · 출고 내역</b>으로 가서 <b>판금·도색 중인 차만</b> 추려 보여 줘요. 상태 고르는 칸에서 직접 <b>판금·도색 중</b> / <b>판금·도색 다녀옴(재입고)</b>을 골라도 돼요.</li>"+
   "<li><b>입고 날짜 색깔</b>: 아직 안 나간 차는 입고 날짜에 색이 들어가요(설정 → 출고 지연 기준의 기준대로 <b>주황</b> → <b>빨강</b>, 며칠째인지도 같이). <b>판금·도색에 나가 있는 차도</b> 같은 기준으로 색이 들어가요.</li>"+
   "<li><b>돌아왔을 때</b>: ① 차 사진을 다시 찍고 <b>입고</b>를 누르면 '다시 들어온 차예요 — 작업을 이어서 하려면 [확인 · 작업 진행]을 눌러 주세요' 안내가 떠요. 확인을 누르면 새 줄이 생기지 않고 <b>그 차가 돌아온 것으로</b> 처리돼요. ② 또는 출고 목록에서 차를 누르고 [↩ 판금·도색에서 돌아옴].</li>"+
   "<li>돌아온 차는 표시가 <b>입고</b>가 아니라 <b>재입고</b>로 바뀌고, 옆에 어느 업체를 다녀왔는지 함께 나와요.</li></ul>"},
@@ -13268,19 +13274,19 @@ var HELP=[
   "<table class='htb'><tr><th>할 수 있는 일</th><th>직원</th><th>매니저</th><th>대표</th></tr>"+
   "<tr><td>현장(휴대폰)에서 입고·출고</td><td>○</td><td>○</td><td>○</td></tr>"+
   "<tr><td><b>PC 화면 접속</b></td><td class='x'>✕</td><td>○</td><td>○</td></tr>"+
-  "<tr><td>입출고 내역 보기·고치기</td><td class='x'>오늘 것만</td><td>○</td><td>○</td></tr>"+
+  "<tr><td>입고 · 출고 내역 보기·고치기</td><td class='x'>오늘 것만</td><td>○</td><td>○</td></tr>"+
   "<tr><td>출고 기록 보기</td><td class='x'>✕</td><td>○</td><td>○</td></tr>"+
   "<tr><td>자재</td><td class='x'>✕</td><td>○</td><td>○</td></tr>"+
   "<tr><td>알림창·음성 설정</td><td class='x'>✕</td><td>○</td><td>○</td></tr>"+
   "<tr><td>월별 청구서 · 입출금 · 세금계산서</td><td class='x'>✕</td><td class='x'>✕</td><td>○</td></tr>"+
-  "<tr><td>수금 완료로 바꾸기</td><td class='x'>✕</td><td class='x'>✕</td><td>○</td></tr>"+
+  "<tr><td>입금 완료로 바꾸기</td><td class='x'>✕</td><td class='x'>✕</td><td>○</td></tr>"+
   "<tr><td>금액이 걸린 기록 지우기</td><td class='x'>✕</td><td class='x'>✕</td><td>○</td></tr>"+
   "<tr><td>사진 없이 출고 (비상구)</td><td class='x'>✕</td><td class='x'>✕</td><td>○</td></tr>"+
   "<tr><td>그 밖의 설정 전부</td><td class='x'>✕</td><td class='x'>✕</td><td>○</td></tr>"+
   "<tr><td>캐시 · 요금 결제</td><td class='x'>✕</td><td class='x'>✕</td><td>○</td></tr></table>"+
   "<ul><li><b>직원</b>은 PC로 들어올 수 없어요. 휴대폰에서만 돼요. "+
   "PC 주소로 로그인하면 «직원 계정은 휴대폰에서만 들어올 수 있습니다» 라고 나옵니다.</li>"+
-  "<li><b>매니저</b>는 PC로 들어와서 입출고 내역과 출고 기록, 자재를 보고 고칠 수 있어요. "+
+  "<li><b>매니저</b>는 PC로 들어와서 입고 · 출고 내역과 출고 기록, 자재를 보고 고칠 수 있어요. "+
   "금액(청구서·입출금·세금계산서)과 설정은 보이지 않아요.</li>"+
   "<li>매니저가 설정 탭에 들어가면 <b>「알림」</b> 한 가지만 보여요. "+
   "입고·출고가 되면 이 PC 에 어떻게 알려줄지, 소리로 읽어줄지를 정할 수 있어요.</li>"+
@@ -13289,14 +13295,14 @@ var HELP=[
   "<ul><li>작업 항목(광택·세차 등)과 <b>차종별 세부 단가</b>를 넣어요. 여기서 고치면 현장 작업 버튼이 바로 바뀌어요.</li>"+
   "<li><b>단가표를 기간별로</b>: 단가가 오르면 [＋ 새 단가표]로 복사해 적용 시작일을 정해요. 그 날짜 전 차는 옛 단가, 이후 차는 새 단가로 계산돼요.</li>"+
   "<li>금액 넣는 단위(원/만원)도 여기서 정해요.</li></ul>"},
- {id:"set-sms",who:"pc",t:"설정 · 배달 도착지",h:
+ {id:"set-sms",who:"pc",t:"설정 · 목적지",h:
   "<ul><li><b>자주 가는 목적지</b>: 이름·연락처·<b>주소</b>를 넣어 둬요. [명함 사진으로 추가]도 돼요.</li>"+
-  "<li>주소를 넣어 두면 <b>출고 문자에 도착지 주소·지도 링크</b>가 같이 나가요 (출고 기록 화면에서 켜고 꺼요).</li>"+
+  "<li>주소를 넣어 두면 <b>출고 문자에 목적지 주소·지도 링크</b>가 같이 나가요 (출고 기록 화면에서 켜고 꺼요).</li>"+
   "<li>출고 문자 문구는 <b>출고 기록</b> 화면, 청구 문자·계좌는 <b>월별 청구서</b> 화면에서 고쳐요.</li></ul>"},
- {id:"set-send",who:"pc",t:"설정 · 알림 · 발송함 · 알림톡",h:
+ {id:"set-send",who:"pc",t:"설정 · 알림 · 보낸 기록 · 알림톡",h:
   "<ul><li><b>발신번호</b>(솔라피에 등록한 번호)를 넣으면 출고·청구 문자가 자동으로 나가요. 없으면 폰 문자 앱이 열려요.</li>"+
   "<li>[연결 확인], [내 번호로 시험 발송]으로 확인해요.</li>"+
-  "<li><b>발송함</b>: 보낸·실패·예약한 문자가 모두 남아요. 실패는 [선택항목 다시 보내기], 예약은 [선택항목 예약 취소].</li>"+
+  "<li><b>보낸 기록</b>: 보낸·실패·예약한 문자가 모두 남아요. 실패는 [선택항목 다시 보내기], 예약은 [선택항목 예약 취소].</li>"+
   "<li><b>카카오 알림톡</b>: 템플릿 승인이 난 뒤 켜요. 신청 순서와 신청할 문구가 그 칸에 있어요. 켜도 사진이 있는 출고 알림은 사진 문자로 나가게 할 수 있어요.</li></ul>"},
  {id:"trash",who:"pc",t:"휴지통",h:
   "<ul><li>지운 자료(입출고·거래처·자재·도매상·직원 등)는 전부 휴지통에 남아요. 오른쪽 위 «마이페이지 ▾» › 휴지통으로 가요.</li>"+
@@ -13312,7 +13318,7 @@ var HELP=[
   "<li>문자·알림톡·세금계산서는 <b>실제로 나가지 않고</b> '보냄'으로만 표시돼요. 안심하고 눌러 보여주세요.</li>"+
   "<li>[샘플 자료 넣기]: 상사 3건·딜러 5명·차량 14대·자재·도매상이 들어가 화면이 채워져요.</li>"+
   "<li>[시연 자료 모두 지우기]: 시연용 시트를 비우고 처음 상태로.</li>"+
-  "<li><b>설명 순서 추천</b>: ① 홈(달력·오늘 할 일) → ② 현장 화면으로 바꿔 입고 한 대 넣기(사진·번호 읽기) → ③ 출고(목적지·사진·문자) → ④ PC 입출고 내역 → ⑤ 월별 청구서(미리보기·JPG·예약) → ⑥ 세금계산서(홈택스 엑셀) → ⑦ 자재·도매상.</li>"+
+  "<li><b>설명 순서 추천</b>: ① 홈(달력·오늘 할 일) → ② 현장 화면으로 바꿔 입고 한 대 넣기(사진·번호 읽기) → ③ 출고(목적지·사진·문자) → ④ PC 입고 · 출고 내역 → ⑤ 월별 청구서(미리보기·JPG·예약) → ⑥ 세금계산서(홈택스 엑셀) → ⑦ 자재·도매상.</li>"+
   "<li>로그아웃하면 실제 자료 화면으로 돌아가요.</li>"+
   "<li><b>블라인드(숨기기)</b>: 주황 띠의 [시연 관리자 설정]에서 켜면, 대표·직원 화면의 로그인 목록·직원 계정·도움말에서 시연 관리자가 보이지 않습니다.</li>"+
   "<li><b>숨긴 뒤 들어가는 법</b>: 로그인 화면의 파란 <b>'워시' 로고를 빠르게 5번</b> 누르면 숨은 계정이 나타납니다. (또는 주소 끝에 <b>?admin=1</b>)</li>"+
@@ -13360,7 +13366,7 @@ var HELP=[
  {id:"faq",who:"all",t:"문제가 생겼을 때",h:
   "<ul><li><b>저장이 안 된다 / 빨간 표시</b>: 인터넷 연결 확인 → [새로고침]. 계속되면 대표에게 알려 주세요.</li>"+
   "<li><b>번호판을 못 읽는다</b>: 번호판이 화면 가운데 크게 나오게 다시 찍거나, 번호를 직접 쳐요.</li>"+
-  "<li><b>문자가 안 갔다</b>: 설정 → 발송함에서 못 보낸 이유를 보고 [다시 보내기].</li>"+
+  "<li><b>문자가 안 갔다</b>: 설정 → 보낸 기록에서 못 보낸 이유를 보고 [다시 보내기].</li>"+
   "<li><b>잘못 지웠다</b>: 휴지통에서 되돌려요.</li>"+
   "<li><b>문자가 갑자기 멈췄다</b>: 「내 요금제」 줄의 <b>캐시</b>가 0원이 아닌지 보세요. 0원이면 충전해야 다시 나가요. 무료 체험이나 이용기한이 끝났을 수도 있어요.</li>"+
   "<li><b>캐시 칸이 안 보인다</b>: 대표 계정에만 보여요. 직원 계정으로 들어오셨는지 확인해 주세요.</li>"+
@@ -13401,7 +13407,7 @@ var HSUB={
  mat:"자재 재고와 도매상 주문", ntf:"입고·출고 때 뜨는 알림창",
  "set-biz":"상호·사업자번호·대표자", "set-party":"매매상사와 딜러 관리",
  "set-staff":"직원 계정과 로그인", roles:"직원·매니저·대표가 각각 뭘 할 수 있나", "set-items":"작업 항목과 단가, 부가세",
- "set-sms":"자주 가는 목적지 등록", "set-send":"문자·알림톡 연동과 발송함",
+ "set-sms":"자주 가는 목적지 등록", "set-send":"문자·알림톡 연동과 보낸 기록",
  "set-bank":"입금 들어오면 입금 자동 처리", "set-car":"차량 출고할 때 쓰는 설정",
  "set-car2":"출고 지연 기준 — 더 보기", "set-bak":"자료 백업, 화면 배치, 글씨 크기",
  voice:"입고·출고를 소리로 알려주기",
@@ -14278,7 +14284,7 @@ function salesHtml(){
       '</div></div>')+'</section>';
 
   return head("매출","올린 입·출고가 곧 자료예요. 청구서를 만들지 않아도 달마다 몇 대 · 얼마인지 바로 보여요.")+
-  (empty?'<div class="msg info">아직 올라온 자료가 없어요. 입출고 내역에서 차를 올리면 여기에 바로 쌓여요.</div>':'')+
+  (empty?'<div class="msg info">아직 올라온 자료가 없어요. 입고 · 출고 내역에서 차를 올리면 여기에 바로 쌓여요.</div>':'')+
   '<div class="tools">'+
     '<div class="seg"><button type="button" id="vOut" aria-pressed="'+(!VATIN)+'">부가세 별도</button>'+
     '<button type="button" id="vIn" aria-pressed="'+VATIN+'">부가세 포함</button></div>'+
@@ -14399,9 +14405,9 @@ var JHELP={
   vSales:"올해와 달별 매출을 봐요. 부가세 포함 · 별도를 바꿀 수 있고, 엑셀 다운로드로 표를 받을 수 있어요.",
   vLedger:"들어온 차와 나간 차를 한 표로 봐요. 위 상태 탭으로 거르고, 이름을 누르면 자세히 창이 열려요. 고른 차는 오른쪽 위 버튼으로 입금 완료 · 지우기를 해요.",
   vOutLog:"차가 어디로 갔는지, 딜러에게 알림이 나갔는지 봐요. 출고 알림 문구와 보내는 방식은 «배달 › 문구 · 발송 설정»에서 고쳐요.",
-  vSms:"자주 가는 도착지를 이름 · 주소와 함께 적어 둬요. 출고할 때 도착지를 고르면 알림에 주소와 지도 링크가 붙어요.",
+  vSms:"자주 가는 목적지를 이름 · 주소와 함께 적어 둬요. 출고할 때 목적지를 고르면 알림에 주소와 지도 링크가 붙어요.",
   vBill:"한 달치 청구서를 딜러별 · 상사별로 만들어요. 미리보기 · 인쇄 · 알림톡 보내기 · 예약 보내기를 여기서 해요.",
-  vMoney:"입금 · 출금 내역과 받아야 할 금액을 봐요.",
+  vMoney:"입금 · 출금 내역과 받을 금액을 봐요.",
   vTax:"한 달치 세금계산서를 모아 보고, 발급하거나 홈택스용 엑셀을 만들어요.",
   vMat:"자재 재고와 부족한 자재를 봐요. 자재를 더하고, 산 것 · 쓴 것을 적어요.",
   vSettings:"우리 사업장 · 거래처 · 직원 계정 · 작업 단가 · 알림 같은 기본 값을 정해요. 위 작은 탭에서 고르면 돼요."
@@ -14413,7 +14419,7 @@ function jPage(){
     var sec=document.querySelector(".cgg-main > section:not([hidden])");
     if(!sec)return;
     var g=JGROUP[S.tab]||"",sub="";
-    if(S.tab==="ledger")sub="입출고 내역";
+    if(S.tab==="ledger")sub="입고 · 출고 내역";
     else if(S.tab==="outlog")sub=(wDSubs().filter(function(x){return x[0]===(S.dSub||"outlog");})[0]||[])[1]||"";
     else if(S.tab==="settings")sub=(SETSUB.filter(function(x){return x[0]===S.setSub;})[0]||[])[1]||"";
     var heads=document.querySelectorAll(".cgg-main section:not([hidden]) .dashhead");
@@ -14454,16 +14460,16 @@ function jPage(){
     jTrialMarks();
   }catch(e){}
 }
-/* 입출고 내역 — 말하는 제목 · 상태별 탭 + 개수 · 오른쪽 위 버튼 */
-var JST=[["","전체"],["입고","작업 중"],["body","판금·도색 중"],["출고","수금 대기"],["수금완료","수금 완료"]];
+/* 입고 · 출고 내역 — 말하는 제목 · 상태별 탭 + 개수 · 오른쪽 위 버튼 */
+var JST=[["","전체"],["입고","작업 중"],["body","판금·도색 중"],["출고","입금 대기"],["수금완료","입금 완료"]];
 function jLedger(){
   var sec=$("vLedger");if(!sec)return;
   var h2=sec.querySelector(".dashhead h2");
   var wk=S.records.filter(function(r){return statusOf(r)==="입고";}).length;
   var due=S.records.filter(function(r){return statusOf(r)==="출고";}).length;
-  if(h2){h2.__jsay=1;h2.innerHTML='작업 중인 차 <em>'+wk+'대</em>, 수금 대기 <em>'+due+'대</em>가 있어요';}
+  if(h2){h2.__jsay=1;h2.innerHTML='작업 중인 차 <em>'+wk+'대</em>, 입금 대기 <em>'+due+'대</em>가 있어요';}
   var cr=sec.querySelector(".jcrumb");
-  if(cr)cr.innerHTML='일감 › <b>입출고 내역</b> · '+esc(jToday());
+  if(cr)cr.innerHTML='일감 › <b>입고 · 출고 내역</b> · '+esc(jToday());
   var head=sec.querySelector(".dashhead");
   if(head&&!head.querySelector(".jacts")){
     var ac=document.createElement("div");ac.className="jacts";
@@ -14474,7 +14480,7 @@ function jLedger(){
 }
 /* ===== 체험 모드 자리 (cgg-j4 1.2 CGG.trial) — 체험판 계정이면 띠 · 잠금 버튼에 자물쇠
    모양만 맡아요. 진짜 잠금 · 횟수 세기는 서버가 해요 (워시/기획/2026-10-14_체험판_기능_분류표.md 잠금 14) */
-var JLOCK=[["salXls","매출 엑셀 다운로드","매출 표를 엑셀 파일로 받아요."],["lCsv","입출고 엑셀 다운로드","입출고 내역을 엑셀 파일로 받아요."],
+var JLOCK=[["salXls","매출 엑셀 다운로드","매출 표를 엑셀 파일로 받아요."],["lCsv","입출고 엑셀 다운로드","입고 · 출고 내역을 엑셀 파일로 받아요."],
   ["olCsv","출고 기록 엑셀 다운로드","출고 기록을 엑셀 파일로 받아요."],["mnCsv","입출금 엑셀 다운로드","입출금 내역을 엑셀 파일로 받아요."],["cXls","엑셀 다운로드","표를 엑셀 파일로 받아요."],
   ["tCsvBtn","세금계산서 엑셀 다운로드","세금계산서 목록을 엑셀 파일로 받아요."],["pvJpg","청구서 JPG 다운로드","청구서를 그림 파일로 받아요."],["pvJpgAll","청구서 JPG 모두 받기","청구서를 그림 파일로 받아요."],
   ["lkQrSave","QR 그림 저장","직원 로그인 QR을 그림으로 저장해요."],["lkQrPrint","QR 인쇄","직원 로그인 QR을 인쇄해요."],["olResend","선택한 차 알림 다시 보내기","딜러에게 출고 알림을 다시 보내요."],
@@ -17623,6 +17629,18 @@ select.cgg-hb option{color:#101828}
 /* 기능 찾기 칸이 몰래 줄어들지 않게 (두 제품이 같은 때 접히도록) */
 .cgg-right .cgg-hfind{flex:none}
 
+/* 1.8 보강 — 세로 · 아이콘 배치에서 오픈 베타 띠가 머리말에 가려지지 않게 (체크 방 알림 10/18)
+   띠를 맨 위에 붙이고(--beta-h = 띠 높이, CGG.layout 이 잼), 붙어 있는 머리말 · 윗줄 · 작은 탭 · 본문을 그만큼 내려요 */
+@media (min-width:1000px){
+  html.cgg-lay-fixed .cgg-beta{position:fixed;top:0;left:0;right:0;z-index:calc(var(--z-hdr) + 2)}
+  .lay-side > .cgg-hdr,.lay-icon > .cgg-hdr{top:var(--beta-h,0px)}
+  .lay-side .cgg-right,.lay-icon .cgg-right{top:var(--beta-h,0px)}
+  .lay-side .cgg-sub,.lay-icon .cgg-sub{top:calc(64px + var(--beta-h,0px))}
+  .lay-side > .cgg-main,.lay-icon > .cgg-main{padding-top:calc(var(--hdr-h) + 22px + var(--beta-h,0px))}
+  .lay-side.hasSub > .cgg-main,.lay-icon.hasSub > .cgg-main{padding-top:calc(132px + var(--beta-h,0px))}
+  .lay-icon .cgg-hdr .cgg-hdr-biz{top:var(--beta-h,0px)}
+}
+
 </style>
 <!-- ===== 워시 이음 (공통 부품 위에 워시 머리말 단추 모양만) ===== -->
 <style id="cgg-j4-wash">
@@ -17794,7 +17812,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
 /* 쪽 넘김 */
 .pager .btn{min-height:34px;padding:0 12px;font-size:13px}
 
-/* 상태별 탭 + 개수 (J 데이터 카드 머리) — 입출고 내역 */
+/* 상태별 탭 + 개수 (J 데이터 카드 머리) — 입고 · 출고 내역 */
 .jstab{display:flex;gap:2px;padding:4px 16px 0;margin:0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;background:var(--surface);border-radius:var(--r-card) var(--r-card) 0 0;box-shadow:var(--sh)}
 .jstab button{border:0;background:transparent;font:inherit;font-size:14px;color:var(--muted);padding:13px 10px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-weight:500}
 .jstab button b{margin-left:5px;font-size:12px;font-weight:700;color:var(--muted);background:var(--bg);border-radius:999px;padding:1px 8px}
@@ -17952,6 +17970,8 @@ body.jpay #ccwLockBar{display:none!important}
 
 /* ── v129 공통 부품 1.8 뼈대 — 숨긴 옛 머리말 · 옛 홈, 배달 안쪽 칸 ── */
 #hdrOld,#homeOld{display:none!important}
+/* 메뉴 줄 줄 높이 — 체크 v45 와 같은 한 줄(공통 부품 504줄 묶음에 아직 없음 · 디자인 방에 요청) */
+.cgg-nav,.cgg-navsub{line-height:1.45}
 .wsubdup #setSub,.wsubdup #mnTabs{display:none!important}
 #vOutLog.d-log #olMsgCard{display:none}
 #vOutLog.d-msg > :not(#olMsgCard):not(#jHelp){display:none}
