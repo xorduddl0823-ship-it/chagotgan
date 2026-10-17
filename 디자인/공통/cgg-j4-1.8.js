@@ -402,7 +402,7 @@ var CGG = (function(){
   }
   /* 일정 달력 — o = {y, m, today, days:{일:{amt, marks:[[종류,개수]], tone}}, legend:[[종류,이름,색(run|done|chk|stop)]], onMove(-1|0|1), onDay(일)} */
   function calendar(el, o){ if(!el) return; o=o||{};
-    var y=o.y, m=o.m, first=new Date(y,m-1,1).getDay(), last=new Date(y,m,0).getDate(), lg={};
+    var y=Math.floor(Number(o.y))||2000, m=Math.min(12,Math.max(1,Math.floor(Number(o.m))||1)), first=new Date(y,m-1,1).getDay(), last=new Date(y,m,0).getDate(), lg={};
     (o.legend||[]).forEach(function(l){ lg[l[0]]=l; });
     var cells=[]; for(var i=0;i<first;i++) cells.push('<span class="d e" aria-hidden="true"></span>');
     for(var d=1; d<=last; d++){ var x=(o.days||{})[d]||{}, wd=(first+d-1)%7;
