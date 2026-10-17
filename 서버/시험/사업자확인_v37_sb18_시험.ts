@@ -24,7 +24,7 @@ if (WHICH === "wash") {
     check_log: [], cgg_access: [], wash_sessions: [], check_rate: [], check_usage: [],
   });
 }
-let answer = "", ntsStatus: any = { b_stt_cd: "01", end_dt: "" }, ntsValid = "01", ntsDown = false, ntsThrow = false, ntsBadKey = false, ntsHeaderBad = false;
+let answer = "", ntsStatus: any = { b_stt_cd: "01", end_dt: "" }, ntsValid = "01", ntsDown = false, ntsThrow = false, ntsBadKey = false, ntsHeaderBad = false, ntsHdrThrow = false, ntsSlow = false;
 const logs: string[] = [];
 const asked: any[] = [];
 globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
@@ -32,6 +32,8 @@ globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
   if (u.includes("anthropic")) return Response.json({ content: [{ text: answer }], usage: {} });
   if (u.includes("odcloud.kr")) {
     asked.push({ u, b: JSON.parse(String(init?.body)), auth: (init?.headers as any)?.Authorization });
+    if (ntsHdrThrow && (init?.headers as any)?.Authorization) throw new TypeError("Header value is not a valid ByteString");
+    if (ntsSlow) return await new Promise((_, rej) => init?.signal?.addEventListener("abort", () => rej(init.signal!.reason)));
     if (ntsThrow) throw new TypeError("error sending request for url (" + u + "&serviceKey=" + (init?.headers as any)?.Authorization + "): dns error");
     if (ntsHeaderBad && (init?.headers as any)?.Authorization) return new Response(JSON.stringify({ code: -4, msg: "등록되지 않은 인증키 입니다." }), { status: 401 });
     if (ntsBadKey) return new Response(JSON.stringify({ code: -4, msg: "SERVICE_KEY_IS_NOT_REGISTERED_ERROR" }), { status: 401 });
@@ -118,5 +120,22 @@ r = await call("bizVerify", [{ bizNo: "1238145678" }]);
 check("국세청이 안 되면 ready:false (오류로 막지 않음)", !r.__err && r.result?.ready === false && /500/.test(r.result?.why), r);
 r = await call("bizVerify", [{ bizNo: "12345" }]);
 check("10자리가 아니면 없음", r.result?.state === "없음", r);
+if (Deno.env.get("NEW") === "1") {
+  console.log("③ v42·sb20 연결 실패 갈래");
+  ntsDown = false; ntsThrow = true; logs.length = 0; const n0 = asked.length;
+  r = await call("bizVerify", [{ bizNo: "1238145678" }]);
+  check("dns 실패 → 글 끝에 (dns) · 기록도 dns · 주소 방식으로 다시 안 함 · 열쇠·주소 없음", /연결하지 못했어요.*\(dns\)/.test(r.result?.why) && logs.some((l) => /bizVerify 실패 dns/.test(l)) &&
+    asked.length - n0 === 1 && !logs.join("\n").includes("odcloud") && !logs.join("\n").includes("a+b"), [r, logs]);
+  ntsThrow = false; ntsHdrThrow = true;
+  r = await call("bizVerify", [{ bizNo: "1238145678" }]);
+  check("머리글 글자가 깨져 던지면(hdr) 주소 방식으로 한 번 더 → 됨", r.result?.ready === true && asked.at(-1)?.u.includes("serviceKey="), [r, asked.at(-1)?.u]);
+  ntsHdrThrow = false; Deno.env.set("NTS_API_KEY", ' "a+b/c==" \n');
+  r = await call("bizVerify", [{ bizNo: "1238145678" }]);
+  check("열쇠 앞뒤 줄바꿈·따옴표를 떼고 머리글로", r.result?.ready === true && asked.at(-1)?.auth === "Infuser a+b/c==", asked.at(-1));
+  ntsSlow = true; const t0 = Date.now();
+  r = await call("bizVerify", [{ bizNo: "1238145678" }]);
+  check("8초 넘으면 끊음 → (timeout) · 다시 안 함", /늦어요.*\(timeout\)/.test(r.result?.why) && Date.now() - t0 < 12000 && r.result?.ready === false, r);
+  ntsSlow = false;
+}
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);
