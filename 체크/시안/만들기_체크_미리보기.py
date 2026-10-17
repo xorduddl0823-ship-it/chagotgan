@@ -54,15 +54,17 @@ FAKE = r'''<script>
         view_key:"PV"+i, dom_n:dom, imp_n:imp, etc_n:etc};
     });
   }
+  var DEPPV=null;   /* v47: 이 창 안에서 바뀌는 입금 목록 */
   function deposits(){
+    if(DEPPV) return DEPPV.filter(function(x){ return x.state!=="지움"; });
     var out=[], now=new Date();
     for(var k=0;k<40;k++){
       var t=new Date(now.getTime()-k*1.5*86400000), d=DEALERS[k%DEALERS.length], r=seedN(String(k));
       var kind = k%5===0 ? "정비비" : (k%7===0 ? "보험료" : "검사비");
-      out.push({tx_at:t.toISOString(), sender:d.name, amount:(3+(r%30))*11000, kind:kind,
+      out.push({id:"dp"+k, invoice_id: k<3 ? null : "inv_"+nowYm()+"_"+(k%DEALERS.length), tx_at:t.toISOString(), sender:d.name, amount:(3+(r%30))*11000, kind:kind,
         state: k<3 ? "확인 대기" : "맞음", src:"예시은행", memo:""});
     }
-    return out;
+    out[1].sender="모르는 입금자"; DEPPV=out; return out;
   }
   function sales(){
     var rows=[], ym=nowYm();
@@ -142,6 +144,17 @@ FAKE = r'''<script>
         for(var ci2=0;ci2<COMP.length;ci2++) if(COMP[ci2][0]===cs.name) return {id:"c"+ci2, name:cs.name};
         COMP.push(crow); return {id:"c"+(COMP.length-1), name:cs.name};
       /* v46 · 서버 v35 약속 (체크/기획/2026-10-18_v46_거래처_한화면_창구_약속.md) — 미리보기는 다 켬 */
+      /* v47 · 입금 처리 창구 약속 초안 (체크/기획/2026-10-18_입금처리_창구_약속_초안.md) */
+      case "depositApply": deposits(); var ap2=(a[0]||{}).ids||[]; DEPPV.forEach(function(x){ if(ap2.indexOf(x.id)>=0){ x.state="입금 처리"; x.invoice_id=(a[0]||{}).invoiceId; } });
+        var pi=+String((a[0]||{}).invoiceId||"").split("_").pop(); if(!isNaN(pi)) PAID[String((a[0]||{}).invoiceId).slice(4,11)+pi]=1; return {n:ap2.length};
+      case "depositUnapply": deposits(); var un=(a[0]||{}).ids||[]; DEPPV.forEach(function(x){ if(un.indexOf(x.id)>=0){ x.state="확인 대기"; x.invoice_id=null; } }); return {n:un.length};
+      case "depositKind": deposits(); var kd=(a[0]||{}).ids||[]; DEPPV.forEach(function(x){ if(kd.indexOf(x.id)>=0) x.kind=(a[0]||{}).kind; }); return {n:kd.length};
+      case "depositDel": deposits(); var dl=(a[0]||{}).ids||[], kp=[]; DEPPV.forEach(function(x){ if(dl.indexOf(x.id)>=0){ if(x.invoice_id) kp.push({id:x.id, why:"청구서에 맞춘 입금"}); else x.state="지움"; } }); return {n:dl.length-kp.length, kept:kp};
+      case "depositImport": deposits(); var ir=(a[0]||{}).rows||[], got=0, dup=0;
+        ir.forEach(function(x,i){ var k2=x.tx_at.slice(0,16)+"|"+x.amount+"|"+x.sender;
+          if(DEPPV.some(function(y){ return (String(y.tx_at).slice(0,16)+"|"+y.amount+"|"+y.sender)===k2; })){ dup++; return; }
+          DEPPV.unshift({id:"dx"+Date.now()+i, invoice_id:null, tx_at:x.tx_at, sender:x.sender, amount:x.amount, kind:"미분류", state:"확인 대기", src:"엑셀", memo:""}); got++; });
+        return {got:got, dup:dup, bad:[]};
       case "partnerCaps": return {later:true, more:true, last:true};
       case "aiCard": return JSON.stringify({name:"송민호", phone:"010-0000-0099", company:"광교오토", bizName:"", bizNo:"", email:"", addr:""});
       case "aiBiz": return JSON.stringify({bizNo:"000-00-00150", bizName:"광교오토", ceo:"송민호", addr:"예시시 예시구 예시로 50", upte:"도소매", jongmok:"중고자동차"});
