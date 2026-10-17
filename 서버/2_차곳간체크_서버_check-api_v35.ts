@@ -13,6 +13,9 @@
 //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
 //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
+//  v35 (2026-10-18): 대표님 «체크에도 청구서·결제 알림톡 다» — 입금이 청구서에 자동으로 맞춰지면 «차곳간_입금확인»(tpl.deposit_ok)을
+//    그 청구처 등록 번호로 한 번(원문 그대로 · 변수만 · 청구서 보내기 하루 상한). 결제완료·충전완료·잔액·기한 안내는 체크 결제가 워시 지갑으로 돌아
+//    워시 서버가 이미 보냄(서버/설계/24 표).
 //  v35 (2026-10-18): 요청서 C(운영/요청서/2026-10-18_08) — 거래처 화면의 명함·사업자등록증 사진 읽기 aiCard·aiBiz 를 대표만 ·
 //    검사소당 하루 한도 따로(CHECK_AI_DOC_DAY, 기본 60 · 번호판 한도 AI_MAX_DAY 와 함께 셈) · 사진 크기 상한(6MB) · png/webp 도 받음 ·
 //    아무 글이나 시키는 aiJson 도 대표만 · 같은 한도 · 돌려주는 칸은 정해진 이름만(길이 자름) · 오류 글은 «사진을 읽지 못했습니다. 직접 적어 주세요» 쪽(번호판 말 안 섞임). 답 모양은 그대로(JSON 글자). SQL 없음.
@@ -1525,8 +1528,29 @@ async function depositMatch(ctx: Ctx) {
       paid_amount: paid, state: paid >= N(hit.total_amount) ? "완료" : "수금중",
     }).eq("id", hit.id);
     hit.paid_amount = paid; n++;
+    await depositNotice(ctx, hit, dep).catch((e) => console.error("deposit notice", e));   // v35: 입금확인 알림톡
   }
   return n;
+}
+/* v35(대표님 10/18 · 알림톡 확정본 5 «차곳간_입금확인»): 입금이 청구서에 맞춰지면 그 청구처에 한 번 알림 — 원문 그대로, 변수만.
+   받는 번호는 이 검사소 청구처 딜러의 등록 번호만 · 청구서 보내기와 같은 하루 상한 · 같은 입금은 한 번(자동 반영은 한 번만 일어남) */
+const DEPOSIT_SMS = "[차곳간] #{금액}원 입금 확인되었습니다. 감사합니다.\n#{업체명} #{업체전화}";
+async function depositNotice(ctx: Ctx, inv: any, dep: any) {
+  const o = ctx.office;
+  if (!S(inv.bill_to_id)) return;
+  const { data: d } = await db.from("check_dealer").select("tel,active").eq("office_id", o.id).eq("id", S(inv.bill_to_id)).maybeSingle();
+  const to = onlyDigits(d?.tel);
+  if (!d || d.active === false || !/^01\d{8,9}$/.test(to)) return;
+  if (!(await rateOk("bill:o:" + S(o.id) + ":" + ymdK(kstNow()), BILL_DAY_MAX()))) return;
+  const [yy, mm] = S(inv.ym).split("-");
+  const when = fmtTs(new Date(new Date(S(dep.tx_at) || Date.now()).getTime() + KST)).slice(0, 16);
+  const vars: Record<string, string> = {
+    "#{받는곳}": S(inv.bill_to_name) || "-", "#{금액}": Math.round(N(dep.amount)).toLocaleString("ko-KR"),
+    "#{업체명}": S(o.name) || "-", "#{확인일시}": when,
+    "#{기간}": yy && mm ? yy + "년 " + Number(mm) + "월" : "-", "#{업체전화}": S(o.tel) || "-",
+  };
+  const s2 = await ataSend(o, to, "deposit_ok", vars, DEPOSIT_SMS, { shop: S(o.code), tpl: "check_deposit_ok", ref: S(dep.id) });
+  await log(ctx, "입금확인 알림", { invoice: S(inv.id), ok: s2.ok, how: s2.how });
 }
 
 /* ============================================================
