@@ -1,0 +1,103 @@
+<title>메뉴 찾기 합친 모양</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 위 — 결정 한 줄과 써 볼 것 · 가운데 — 실제 부품(cgg-j4 1.7)으로 돌아가는 앱을 PC · 폰 크기로 나란히 · 아래 — 확정 메뉴 지도 */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface2:#F7F9FC; --text:#101828; --muted:#667085; --line:#EAECF0; --ln2:#E3E8EE;
+  --navy:#0B2545; --blue:#1668C4; --sky:#8FC9F2; --tabon:#E8F1FC; --frame:#D5DCE6;
+  --sh:0 1px 2px #1018280d,0 12px 32px -20px #0B254540;
+  --f-body:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;--blue:#5FA8E8;--tabon:#102B47;--frame:#334052;--sh:0 2px 10px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;--blue:#5FA8E8;--tabon:#102B47;--frame:#334052;--sh:0 2px 10px rgba(0,0,0,.4);color-scheme:dark}
+body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.55;word-break:keep-all;overflow-wrap:anywhere}
+.wrap{max-width:1240px;margin:0 auto;padding-block:26px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1,h2{margin:0;text-wrap:balance;letter-spacing:-.4px} h1{font-size:27px;font-weight:900} h2{font-size:19px;font-weight:900}
+.eyebrow{font-size:12.5px;font-weight:700;color:var(--muted)}
+.dec{background:var(--navy);color:#fff;border-radius:18px;padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.dec b{font-size:16px} .dec span{font-size:13px;color:#ffffffc0}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#ffffff1a;border-radius:999px;padding:3px 11px;font-size:13px;font-weight:700}
+.try{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.try div{background:var(--surface);border-radius:14px;box-shadow:var(--sh);padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.try b{font-size:14px} .try small{font-size:12.5px;color:var(--muted);line-height:1.5}
+.try .k{font-size:11.5px;font-weight:900;color:var(--blue)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;background:var(--surface);border-radius:12px;padding:3px;box-shadow:var(--sh)}
+.seg button{border:0;background:transparent;font:inherit;padding:7px 16px;border-radius:9px;cursor:pointer;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff;font-weight:700}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.lbl{font-size:12px;font-weight:700;color:var(--muted);margin:0 0 6px 4px}
+.box{border:1px solid var(--frame);border-radius:16px;overflow:hidden;background:var(--surface);position:relative}
+.box iframe{border:0;display:block;transform-origin:0 0;position:absolute;left:0;top:0;background:#fff}
+.phbox{border-radius:30px;margin:0 auto}
+.note{font-size:13px;color:var(--muted);margin:0}
+.map{background:var(--surface);border-radius:18px;box-shadow:var(--sh);padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.mf{display:flex;align-items:center;gap:6px;border:1px solid var(--ln2);border-radius:10px;height:38px;padding:0 12px;background:var(--surface);max-width:380px;color:var(--muted)}
+.mf input{border:0;background:transparent;font:inherit;font-size:14px;color:var(--text);width:100%;outline:0}
+.mf svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:13.5px}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td small{color:var(--muted)}
+.tree{display:flex;flex-wrap:wrap;gap:8px}
+.tree div{background:var(--surface2);border-radius:12px;padding:8px 12px;font-size:13px;min-width:0}
+.tree b{display:block;font-size:13.5px} .tree .nw{color:var(--blue);font-size:11px;font-weight:900;margin-left:3px}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+@media (max-width:980px){ .stage{grid-template-columns:minmax(0,1fr)} .try{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:460px){ h1{font-size:22px} .try{grid-template-columns:minmax(0,1fr)} }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">디자인 방 · 2026-10-18 · 워시 · 체크 공통 · 공통 부품 cgg-j4 1.7 초안으로 실제로 돌아가요</span>
+    <h1>메뉴 찾기 합친 모양</h1>
+    <div class="dec"><b>대표님 결정: A + C + D 모두 합치기</b><span class="chip">A 왼쪽 메뉴 늘 펼침</span><span class="chip">C 기능 찾기</span><span class="chip">D 홈 바로가기</span><span class="chip">배달은 큰 메뉴</span></div>
+  </header>
+
+  <section class="try" aria-label="써 볼 것">
+    <div><span class="k">A · PC</span><b>왼쪽 메뉴</b><small>큰 메뉴 아래 칸까지 늘 펼쳐져 있어요. «배달 새»를 눌러 보세요.</small></div>
+    <div><span class="k">C · PC 위 · 폰 돋보기</span><b>기능 찾기</b><small>«딜러 추가» «발신번호» «미수금»을 쳐 보세요. 그 화면 그 칸이 빛나요.</small></div>
+    <div><span class="k">D · 홈</span><b>자주 쓰는 기능</b><small>«바로가기 고르기»로 바꾸면 이 기기에만 저장돼요.</small></div>
+    <div><span class="k">폰</span><b>아래 탭 «전체»</b><small>맨 위 찾기 칸 + 모든 메뉴가 한 장에 펼쳐져요.</small></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <div class="bar"><h2 id="pt">워시</h2>
+      <div class="seg" role="group" aria-label="제품"><button type="button" id="bW" aria-pressed="true">워시</button><button type="button" id="bC" aria-pressed="false">체크</button></div></div>
+    <div class="stage">
+      <div><p class="lbl">PC (넓은 화면 1280을 줄여 보여 줌 — 안에서 바로 눌러 보세요)</p><div class="box" id="pcBox"><iframe id="pcF" title="PC 미리보기" src="메뉴찾기_앱.html#wash"></iframe></div></div>
+      <div><p class="lbl">폰 (375 · 같은 화면 파일)</p><div class="box phbox" id="phBox"><iframe id="phF" title="폰 미리보기" src="메뉴찾기_앱.html#wash"></iframe></div></div>
+    </div>
+    <p class="note">지어낸 자료예요. 서버에 연결하지 않아요. 바로가기는 이 미리보기 안에서만 기억해요.</p>
+  </section>
+
+  <section class="map" aria-labelledby="mt">
+    <div class="bar"><h2 id="mt">확정 메뉴 지도 — 기능이 어디로 가나요</h2>
+      <label class="mf"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="mq" placeholder="기능 · 쉬운 말로 찾기" aria-label="메뉴 지도 찾기"></label></div>
+    <div class="tree" id="tree"></div>
+    <div class="tw"><table><thead><tr><th>기능</th><th>새 위치</th><th>찾기에서 통하는 쉬운 말</th></tr></thead><tbody id="mb"></tbody></table></div>
+    <p class="note">같은 목록이 기능 찾기 · 바로가기 · 이 표에 함께 쓰여요 (저장소 디자인/메뉴지도/워시_메뉴.js · 체크_메뉴.js).</p>
+  </section>
+</div>
+<script src="메뉴지도/워시_메뉴.js"></script>
+<script src="메뉴지도/체크_메뉴.js"></script>
+<script>
+var P="wash";
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function fit(){ [["pcBox","pcF",1280,800],["phBox","phF",375,720]].forEach(function(a){ var box=document.getElementById(a[0]), f=document.getElementById(a[1]);
+  var w=box.parentElement.clientWidth, s=Math.min(1,w/a[2]); if(a[0]==="phBox") box.style.width=Math.round(a[2]*s)+"px";
+  f.style.width=a[2]+"px"; f.style.height=a[3]+"px"; f.style.transform="scale("+s+")"; box.style.height=Math.round(a[3]*s)+"px"; }); }
+function setP(p){ P=p; document.getElementById("bW").setAttribute("aria-pressed",p==="wash"); document.getElementById("bC").setAttribute("aria-pressed",p==="check");
+  document.getElementById("pt").textContent=p==="wash"?"워시":"체크";
+  ["pcF","phF"].forEach(function(id){ document.getElementById(id).src="메뉴찾기_앱.html#"+p; }); drawMap(); }
+function drawMap(){ var D=P==="wash"?CGG_MENU_WASH:CGG_MENU_CHECK, q=document.getElementById("mq").value.trim().toLowerCase().replace(/\s+/g,"");
+  document.getElementById("tree").innerHTML=D.groups.map(function(g){ return '<div><b>'+esc(g.label)+(g.isNew?'<span class="nw">새</span>':'')+'</b>'+((g.subs&&g.subs.length>1)?esc(g.subs.map(function(s){return s.label;}).join(" · ")):'')+'</div>'; }).join("");
+  var rows=D.feats.filter(function(f){ return !q||(f.label+f.path+f.words).toLowerCase().replace(/\s+/g,"").indexOf(q)>=0; });
+  document.getElementById("mb").innerHTML=rows.length?rows.map(function(f){ return '<tr><td><b>'+esc(f.label)+'</b></td><td>'+esc(f.path)+'</td><td><small>'+esc(f.words)+'</small></td></tr>'; }).join(""):'<tr><td colspan="3"><small>찾는 기능이 없어요.</small></td></tr>'; }
+document.getElementById("bW").onclick=function(){ setP("wash"); };
+document.getElementById("bC").onclick=function(){ setP("check"); };
+document.getElementById("mq").oninput=drawMap;
+window.addEventListener("resize",fit); fit(); drawMap();
+</script>
