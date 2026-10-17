@@ -132,6 +132,13 @@ check("승인 뒤에는 대기에서 사라짐", !((await callT("delivPendingDea
 sent.length = 0;
 ap = await callT("delivApproveDealer", [{ name: "새딜러", tel: NEW }], "chk_o1");
 check("두 번 승인해도 다시 안 보냄", sent.length === 0 && ap.result?.results?.[0]?.ok === false, ap);
+/* 동시에 두 번 승인 — 한 번만 보냄 */
+const c1 = await arrive({ dealer: "동시딜러", tel: "010-8181-8282" });
+sent.length = 0;
+const [p1, p2] = await Promise.all([callT("delivApproveDealer", [{ name: "동시딜러", tel: "010-8181-8282" }], "chk_o1"),
+  callT("delivApproveDealer", [{ name: "동시딜러", tel: "010-8181-8282", dealerId: "d1" }], "chk_o1")]);
+check("동시에 두 번 승인해도 알림은 한 번", sent.length === 1 && c1.state === "보냄" &&
+  ((p1.result?.results?.[0]?.sent ?? 0) + (p2.result?.results?.[0]?.sent ?? 0)) === 1, [sent.length, p1, p2]);
 /* 기존 딜러에 번호 더하기 */
 const r3 = await arrive({ dealer: "홍딜러", tel: "010-4444-5555" });
 ap = await callT("delivApproveDealer", [{ name: "홍딜러", tel: "010-4444-5555", dealerId: "d1" }], "chk_o1");

@@ -3224,6 +3224,10 @@ async function delivApproveDealer(ctx: Ctx, opt: any) {
       for (const r0 of mine.filter((r: any) => new Date(S(r.arrived_at)).getTime() >= since)) {
         const { data: r } = await db.from("check_deliv").select("*").eq("office_id", office.id).eq("id", r0.id).maybeSingle();
         if (!r || S(r.state) === "보냄" || S(r.state) === "취소" || r.trashed === true) continue;
+        /* 보안 낮음(a5e1b14): 승인을 동시에 두 번 눌러도 한 번만 — 조건부로 먼저 잡고 잡힌 것만 보냄 */
+        const { data: got } = await db.from("check_deliv").update({ state: "보내는 중" })
+          .eq("office_id", office.id).eq("id", r.id).neq("state", "보냄").neq("state", "취소").neq("state", "보내는 중").select("id");
+        if (!got || !got.length) continue;
         const vkey = S(r.view_key) || viewKey();
         const s = await notifyOne(office, conf, r, vkey, await photoB64(S(r.id)));
         await db.from("check_deliv").update({
