@@ -75,7 +75,20 @@ body{background:var(--bg);color:var(--text);font-size:16px;line-height:1.55;over
 #cggBar .tabs button{border:0;background:transparent;color:var(--muted);font-family:inherit;font-size:14px;font-weight:700;
   padding:6px 16px;border-radius:9px;cursor:pointer;white-space:nowrap}
 #cggBar .tabs button[aria-selected="true"]{background:var(--surface);color:var(--brand);box-shadow:var(--shadow)}
-#cggBar .sp{flex:1}
+#cggBar .sp{flex:1;min-width:0}
+/* 폰 머리줄 한 줄로 (대표님 폰 시험 10/18): 글자는 꺾지 않고, 좁으면 이름을 줄이고(…) «모두»를 뺌 */
+#cggBar,#cggBar *{white-space:nowrap}
+#cggBar .nm,#cggBar .tabs,#cggBar .mini{flex:none}
+#cggBar .who{min-width:0;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+@media (max-width:480px){
+  #cggBar{gap:6px;padding:0 10px}
+  #cggBar .nm{font-size:14px}
+  #cggBar .tabs button{padding:6px 11px;font-size:13.5px}
+  #cggBar .mini{padding:6px 8px;font-size:12px}
+  #cggBar .mini .all{display:none}
+  #cggBar .who{max-width:22vw;font-size:11.5px}
+}
+@media (max-width:350px){ #cggBar .who{display:none} }
 #cggBar .who{font-size:12px;color:var(--muted)}
 #cggBar .mini{font-family:inherit;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:var(--surface2);
   color:var(--text);border-radius:9px;padding:6px 10px;cursor:pointer}
@@ -111,7 +124,7 @@ body.multi .cggFrame{top:calc(var(--bh,0px) + 46px);height:calc(100% - var(--bh,
       <div id="lgBuy" hidden style="font-size:14px;background:var(--tabon,#E8F1FC);color:var(--text,#101828);border-radius:10px;padding:10px 12px;margin-top:8px;line-height:1.6"></div>
       <div id="lgStep1">
         <label style="@@LAB@@" for="lgId">아이디 (휴대폰 번호)</label>
-        <input id="lgId" type="text" autocomplete="username" placeholder="010-0000-0000" style="@@IN@@">
+        <input id="lgId" type="tel" inputmode="numeric" autocomplete="username" placeholder="010-0000-0000" style="@@IN@@">
         <label style="@@LAB@@" for="lgPw">비밀번호</label>
         <input id="lgPw" type="password" autocomplete="current-password" placeholder="비밀번호" style="@@IN@@">
         <button id="lgGo" style="@@BTN@@">로그인</button>
@@ -136,7 +149,7 @@ body.multi .cggFrame{top:calc(var(--bh,0px) + 46px);height:calc(100% - var(--bh,
   <div class="tabs" id="cggTabs" role="tablist"></div>
   <span class="sp"></span>
   <span class="who" id="cggWho"></span>
-  <button class="mini" id="cggOut">모두 로그아웃</button>
+  <button class="mini" id="cggOut" aria-label="모두 로그아웃"><span class="all">모두 </span>로그아웃</button>
 </div>
 <div id="cggBusy" hidden>여는 중…</div>
 <div id="cggNote" role="status" hidden style="position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:100001;max-width:calc(100% - 32px);background:#14202e;color:#fff;font-size:14px;line-height:1.5;padding:12px 16px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25);word-break:keep-all;text-align:center"></div>
