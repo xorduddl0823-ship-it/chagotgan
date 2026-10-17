@@ -74,7 +74,7 @@ check("업체명·업체전화 = 검사소 값", k.variables?.["#{업체명}"] =
 check("대체 문자는 지금 도착 글 그대로 · 대신 보내기 켜짐", /도착/.test(String(sent[0]?.text)) && k.disableSms === false, sent[0]?.text);
 check("방법 ata", row.state === "보냄" && row.how === "ata", row);
 row = await arrive({ comp: "" });
-check("상사가 없으면 «-»", sent[0]?.kakaoOptions?.variables?.["#{상사명}"] === "-", sent[0]?.kakaoOptions?.variables);
+check("상사가 없으면 «개인»", sent[0]?.kakaoOptions?.variables?.["#{상사명}"] === "개인", sent[0]?.kakaoOptions?.variables);
 
 console.log("② 순서: check_arrive 가 있으면 그것이 먼저");
 setCfg({ tpl: { check_arrive: "KA_ARRIVE", release: "KA_RELEASE" } });

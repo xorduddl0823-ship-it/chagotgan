@@ -15,7 +15,7 @@
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
 //  v34 (2026-10-17): 대표님 결정(운영/06 M) — 차량 도착 알림은 이미 승인된 «차곳간_출고안내»(관리 설정 tpl.release) 템플릿으로.
 //    순서: tpl.check_arrive → tpl.release → 검사소 ata_tpl → 문자. 본문 글은 솔라피 원문 그대로, 변수만 채움
-//    (딜러명·상사명(없으면 -)·차량번호·작업내용 «성능점검 · 배달»·목적지·출고일시=도착 시각·업체전화·업체명·보기코드).
+//    (딜러명·상사명(없으면 개인)·차량번호·작업내용 «성능점검 · 배달»·목적지·출고일시=도착 시각·업체전화·업체명·보기코드).
 //    버튼 https://app.cgg.co.kr/v.html?c=#{보기코드} → 보기코드는 «d» + 배달 열쇠글(18자). v.html 이 d 로 시작하면 deliv_view 로 엶.
 //    딜러 등록 대기(체크 방 설계 · 보안 의견 ①~⑨): delivPendingDealers() · delivApproveDealer({name, tel, dealerId?, companyId?, resend}|[…20줄])
 //    · delivRejectDealer({name, tel}|[…]) — 대표만 · 최근 14일 «등록된 딜러 번호가 아님» 기록에 실제로 있는 이름·번호만 ·
@@ -620,7 +620,7 @@ async function invoiceBuild(ctx: Ctx, ym: string, opt: Record<string, unknown> =
     if (!total && !keepZero) continue;
     if (lockedTo.has(S(g.head.id))) continue;                 // v32: 발급·입금된 청구서는 그대로
     const comp = g.head.company_id ? (await db.from("check_company").select("name,biz_no")
-      .eq("id", g.head.company_id).maybeSingle()).data : null;
+      .eq("office_id", ctx.office.id).eq("id", g.head.company_id).maybeSingle()).data : null;   // v34(보안 3bf8d9b ②): 이 검사소 상사만
     const issuerKind = S(g.head.issuer_kind) || "company";
     const inv = {
       office_id: ctx.office.id, ym,
@@ -2982,7 +2982,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
           "#{업체전화}": S(office.tel) || "-", "#{업체명}": S(office.name) || "-" } }
       : (ha.tpl.release && ha.pf)   // v34(운영/06 M): 승인된 «차곳간_출고안내» 템플릿 — 변수만 채움 (본문은 솔라피 원문)
       ? { pf: ha.pf, tpl: ha.tpl.release, vars: {
-          "#{딜러명}": S(row.dealer_name) || "-", "#{상사명}": S(row.company_name) || "-",
+          "#{딜러명}": S(row.dealer_name) || "-", "#{상사명}": S(row.company_name) || "개인",   // 알림톡 방: 상사가 없으면 «개인»
           "#{차량번호}": S(row.plate) || "-", "#{작업내용}": "성능점검 · 배달",
           "#{목적지}": S(row.dest_name) || "-", "#{출고일시}": arrive,
           "#{업체전화}": S(office.tel) || "-", "#{업체명}": S(office.name) || "-",
