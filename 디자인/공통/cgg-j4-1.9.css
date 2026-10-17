@@ -552,13 +552,12 @@ select.cgg-hb{width:auto}
 @media (min-width:601px){ .cgg-dup-sub{display:none !important} }
 
 /* ═════════ 1.9 — 새 규칙(.claude/skills/chagotgan-builder/SKILL.md) 맞춤 · 대표님 10/18 «화면 통합은 출시 전에» ═════════ */
-/* 숫자 칸 4개: 가운데 정렬 · 자릿수 맞춤. 작은 그래프는 숫자 아래로 */
+/* 숫자 칸 4개: 가운데 정렬 · 자릿수 맞춤. 작은 그래프는 오른쪽 위 그대로 (워시 시안 v132) */
+.cgg-kpi .tr{display:block} .cgg-kpi strong{font-variant-numeric:tabular-nums}
 .cgg-kpi{text-align:center}
 .cgg-kpi small{justify-content:center}
-.cgg-kpi.has-sp small,.cgg-kpi:has(>svg.sp) small{padding-right:0}
-.cgg-kpi svg.sp{position:static;display:block;margin:8px auto 0}
 /* 도구줄 안 칸 · 단추 높이 43px (폰 42px) */
-.cgg-find,.cgg-fp,.cgg-filters .cgg-btn.sm,.cgg-tools .cgg-btn.sm,.cgg-pager .cgg-btn,.cgg-pager select,.cgg-mhead select,.cgg-clsrow button,.cgg-mbtn{height:var(--ctl)}
+.cgg-find,.cgg-fp,.cgg-filters .cgg-btn.sm,.cgg-tools .cgg-btn.sm,.cgg-pager .cgg-btn,.cgg-pager select,.cgg-mhead select,.cgg-clsrow button,.cgg-mbtn,.cgg-band .cgg-btn{height:var(--ctl)}
 .cgg-fp{padding:0 16px;font-size:13.5px}
 .cgg-filters .cgg-btn.sm{padding:0 14px;font-size:13.5px}
 @media (max-width:600px){
@@ -567,38 +566,62 @@ select.cgg-hb{width:auto}
 }
 /* 표 체크칸 크게 (이름 칸은 1.6부터 틀 고정 .fx1) */
 .cgg-table input[type=checkbox],.cgg-mlist input[type=checkbox]{width:22px;height:22px}
-/* 할 일 띠 + [해결하러 가기] — CGG.todoBand */
-.cgg-band{display:flex;align-items:center;gap:12px;padding:12px 14px 12px 16px;border-radius:var(--r-card);background:var(--surface);box-shadow:var(--sh);margin:0 0 var(--sec-gap);line-height:1.45;border-left:4px solid var(--chk)}
-.cgg-band .ico{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:900;color:#fff;background:var(--chk);flex:none}
-.cgg-band .tx{flex:1;min-width:0;font-size:14px;color:var(--text)}
-.cgg-band .tx b{font-weight:800;margin-right:8px}
+/* 할 일 띠 + [해결하러 가기] — CGG.todoBand (워시 시안 v132 모양: 색 바탕 · 굵은 글 한 줄 · 오른쪽 파란 단추) */
+.cgg-band{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-radius:var(--r-card);padding:12px 16px;margin:0 0 var(--sec-gap);font-weight:700;line-height:1.45;background:var(--chk-bg);color:var(--chk)}
+.cgg-band .tx{flex:1 1 240px;min-width:0}
 .cgg-band .cgg-btn{flex:none}
-.cgg-band.stop{border-left-color:var(--stop)} .cgg-band.stop .ico{background:var(--stop)}
-.cgg-band.run{border-left-color:var(--run)} .cgg-band.run .ico{background:var(--run)}
-.cgg-band.done{border-left-color:var(--done)} .cgg-band.done .ico{background:var(--done)}
-@media (max-width:600px){ .cgg-band{flex-wrap:wrap;padding:12px} .cgg-band .tx{flex-basis:calc(100% - 40px)} .cgg-band .cgg-btn{width:100%} }
-/* 달력식 달 고르기 — CGG.monthPick */
-.cgg-mpick{position:relative;display:inline-block}
-.cgg-mbtn{font-weight:700;padding:0 14px}
-.cgg-mbtn svg.ic{width:17px;height:17px}
-.cgg-mpop{position:absolute;top:calc(100% + 6px);left:0;z-index:calc(var(--z-hdr) + 3);width:272px;box-sizing:border-box;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px -16px #0B254555;line-height:1.45}
-.cgg-mpop[hidden]{display:none}
-.cgg-mpop .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cgg-mpop .hd b{font-size:15px;font-weight:800}
-.cgg-mpop .hd button{width:36px;height:36px;border-radius:10px;border:1px solid var(--ln2);background:var(--surface);color:var(--text);font:inherit;font-size:18px;cursor:pointer}
-.cgg-mpop .gr{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.cgg-mpop .gr button{height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:14px;cursor:pointer}
-.cgg-mpop .gr button:hover{background:var(--hov)}
-.cgg-mpop .gr button[aria-current]{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
-.cgg-mpop button:disabled{opacity:.35;cursor:default}
-@media (max-width:600px){ .cgg-mpop{width:min(272px,calc(100vw - 32px))} }
-/* 숫자 칸 차례: 이름 → 숫자 → 작은 그래프 → 비교 줄 (가운데 정렬) */
-.cgg-kpi{display:flex;flex-direction:column;align-items:center}
-.cgg-kpi small{order:1} .cgg-kpi strong{order:2} .cgg-kpi svg.sp{order:3} .cgg-kpi .tr{order:4}
+.cgg-band.stop{background:var(--stop-bg);color:var(--stop)}
+.cgg-band.run{background:var(--run-bg);color:var(--run)}
+.cgg-band.done{background:var(--done-bg);color:var(--done)}
+/* 달력식 달 고르기 — CGG.monthPick (가운데 창 · 4×3 칸 높이 52) */
+.cgg-mpick{display:inline-flex}
+.cgg-mbtn b{font-variant-numeric:tabular-nums}
+.cgg-myr{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+.cgg-myr b{font-size:18px;font-variant-numeric:tabular-nums}
+.cgg-dlg .cgg-myr .cgg-btn{flex:none;width:auto;height:36px;padding:0 12px}
+.cgg-mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cgg-mgrid button{height:52px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.cgg-mgrid button:hover{background:var(--hov)}
+.cgg-mgrid button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.cgg-mgrid button.now:not([aria-pressed="true"]){border-color:var(--blue);color:var(--blue)}
+.cgg-mgrid button:disabled,.cgg-myr button:disabled{opacity:.35;cursor:default}
+/* 머리말 «연결됨» — 초록 점(8px · 바깥 고리 3px) + 글, 테두리 없음 */
+.cgg-hb.cgg-conn{background:transparent;border-color:transparent;gap:6px}
+.cgg-hb.cgg-conn i{width:8px;height:8px;border-radius:50%;background:#3DD68C;box-shadow:0 0 0 3px #3DD68C33;flex:none}
+@media (min-width:1000px){ .lay-side .cgg-hb.cgg-conn,.lay-icon .cgg-hb.cgg-conn{border-color:transparent;color:var(--done)} }
+/* 사람 단추 두 줄: 위 «김대표 ▾», 아래 작게 «마이페이지 · 휴지통» (폰은 아래 줄 숨김) */
+.cgg-hb.cgg-me{height:auto;min-height:var(--hb-h);padding-block:3px;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;line-height:1.2}
+.cgg-hb.cgg-me small{font-size:10.5px;opacity:.75;font-weight:500}
+@media (max-width:600px){ .cgg-hb.cgg-me small{display:none} }
+/* 머리말 [찾기] 단추 → 기능 찾기 창 */
+.cgg-hb.cgg-findbtn{gap:6px} .cgg-hb.cgg-findbtn svg.ic{width:16px;height:16px}
+.cgg-finddlg{min-height:260px}
+.cgg-finddlg label.in{flex-direction:row;margin:0}
+.cgg-finddlg input::placeholder{color:var(--muted)}
+.cgg-finddlg .in{display:flex;align-items:center;gap:8px;width:100%;height:var(--ctl);box-sizing:border-box;padding:0 12px;border:1px solid var(--ln2);border-radius:var(--r-ctl);background:var(--surface);color:var(--muted)}
+.cgg-finddlg .in input{border:0;background:transparent;height:auto;padding:0;margin:0;box-shadow:none;width:auto;flex:1;min-width:0;font:inherit;font-size:15px;color:var(--text);outline:none}
+.cgg-finddlg .res{position:static;width:auto;box-shadow:none;border:1px solid var(--line);margin-top:8px}
+.cgg-finddlg .res button{text-align:left;align-items:flex-start}
+/* 마이페이지 창 — CGG.myPage */
+.cgg-mypage{display:grid;gap:12px}
+.cgg-mypage section{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.cgg-mypage h4{margin:0 0 8px;font-size:14px}
+.cgg-mypage dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:14px}
+.cgg-mypage dt{color:var(--muted)}
+.cgg-mypage dd{margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.cgg-mypage .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:4px;grid-column:1 / -1}
+.cgg-mypage .bar i{display:block;height:100%;background:var(--blue)}
+/* 알림 색 — 입고 파랑 · 출고 초록 · 입금 남색 (SKILL.md 1). 상태 칩 «입금 완료» = .cgg-st.pay */
+:root{--pay:#0B2545;--pay-bg:#E3E8F0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pay:#c9d6ea;--pay-bg:#1c2a3d}}
+:root[data-theme="dark"]{--pay:#c9d6ea;--pay-bg:#1c2a3d}
+.cgg-st.pay{background:var(--pay-bg);color:var(--pay)}
+.cgg-cal .mk .pay,.cgg-cal .lg .pay{background:var(--pay-bg);color:var(--pay)}
+.cgg-cal .lg i.pay{background:var(--pay)}
 /* 도구줄 — 화면 뼈대 «할 일 띠» 다음 줄: 달 고르기 · 거르기 · 단추 (높이 43 / 폰 42) */
 .cgg-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 var(--sec-gap);line-height:1.45}
 .cgg-tools .sp{flex:1}
-@media (max-width:600px){ .cgg-tools .cgg-btn{flex:1 1 auto} }
+@media (max-width:600px){ .cgg-tools .sp{display:none} }
 /* 오픈 베타 띠 — 1.9부터 공통 부품에 들어 있어요(제품이 따로 붙이지 않아요). 색은 머리말과 같은 남색 #0B2545 (총괄 10/18 · 홈페이지 · 앱 방 점검) */
 :root{--beta-bg:#0B2545;--beta-ink:#e8f0fb}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}

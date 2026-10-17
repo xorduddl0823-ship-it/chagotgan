@@ -86,3 +86,4 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .cgg-nav:has(.wz-navfind){overflow:visible}
 .wz-navfind{position:relative;z-index:var(--z-drop)}
 .wz-navfind .res button{text-align:left;align-items:flex-start}
+.cgg-st.out{background:var(--line);color:var(--muted)}
