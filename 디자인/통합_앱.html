@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>차곳간 통합 뼈대 앱</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+html,body{margin:0;background:var(--bg)}
+body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;color:var(--text)}
+.demo{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px;margin:0 0 16px;display:flex;flex-direction:column;gap:10px}
+.demo h3{margin:0;font-size:15px}
+.demo i{display:block;height:10px;border-radius:5px;background:var(--line)} .demo i:nth-of-type(2){width:72%} .demo i:nth-of-type(3){width:48%}
+.spotcard p{margin:0;font-size:13px;color:var(--muted)}
+.gap{height:220px}
+</style>
+<link rel="stylesheet" href="공통/cgg-j4-1.8.css">
+</head><body>
+<div class="cgg-app" id="app">
+  <header class="cgg-hdr">
+    <div class="cgg-top" id="top"></div>
+    <nav class="cgg-nav" id="nav"></nav>
+  </header>
+  <main class="cgg-main" id="main"></main>
+  <nav class="cgg-tbar" id="tbar"></nav>
+</div>
+<script src="공통/cgg-j4-1.8.js"></script>
+<script src="메뉴지도/워시_메뉴.js"></script>
+<script src="메뉴지도/체크_메뉴.js"></script>
+<script>
+/* 미리보기 전용 — 지어낸 자료. 주소 끝 #wash · #check (뒤에 -top 을 붙이면 가로 메뉴 배치) */
+var P=/check/.test(location.hash)?"check":"wash", LAY=/-top/.test(location.hash)?"top":null;
+var D=P==="check"?CGG_MENU_CHECK:CGG_MENU_WASH, cur="home";
+/* 두 제품이 다른 것은 «내용» 뿐 — 글 · 숫자 · 메뉴 목록 */
+var C={
+ wash:{product:"워시", sub:"광택 · 세차 정산", ver:"v128", biz:{name:"예시 광택", line:"사업자 000-00-00091 · 대표 홍길동"}, field:true,
+  title:'받을 금액 <em>730,000원</em>이 남아 있어요', desc:"오늘 10월 18일 · 09:12 기준",
+  todos:[{tone:"stop",icon:"box",title:"자재가 부족해요 2건",sub:"광택약(컴파운드), 휠크리너 — 주문하세요"},{tone:"run",icon:"car",title:"작업 중 · 아직 출고 안 됨 4건",sub:"출고하면 입금 대상이 돼요"},{tone:"chk",icon:"truck",title:"오늘 배달 12대 · 못 보낸 것 1대",sub:"누르면 배달 기록으로 가요"}], total:9, todoGo:["mat","ledger","delivery"],
+  kpis:[{label:"오늘 입고",value:"7",unit:"대",delta:"+2대",vs:"지난주보다",spark:[3,5,4,6,5,5,7],color:"#1668C4"},{label:"작업 중",value:"4",unit:"대",delta:"+1대",vs:"지난주보다",spark:[2,3,3,2,4,3,4],color:"#B26B00"},{label:"오늘 출고",value:"12",unit:"대",delta:"−1대",down:true,vs:"지난주보다",spark:[9,11,13,10,12,13,12],color:"#1E9E5A"},{label:"이번 달 청구 금액",value:"1,570,000",unit:"원",delta:"+12%",vs:"지난달보다",spark:[2,2.4,2.9,3.1,3.6,4.2,4.8],color:"#0B2545"}],
+  cal:{legend:[["in","입고","run"],["out","출고","done"],["late","지연","chk"]], amtLabel:"그날 청구", days:{1:{amt:220000,marks:[["in",3],["out",2]]},2:{amt:180000,marks:[["in",2],["out",2]]},6:{amt:330000,marks:[["in",4],["out",3]]},8:{amt:150000,marks:[["out",2]]},13:{amt:270000,marks:[["in",3],["out",3]]},15:{amt:90000,marks:[["in",1]]},16:{amt:410000,marks:[["in",5],["out",4],["late",1]],tone:"chk"},17:{amt:120000,marks:[["in",2],["out",1]]},18:{marks:[["in",7],["late",1]]}}},
+  money:{title:"이번 달 입금", link:"입출금", big:840000, bar:{done:840000,total:1570000}, legend:[["받은 것",840000,"done"],["받을 것",730000,"chk"]], rows:[["청구한 상사","6곳"],["입금 기한 지난 곳","1곳"]]},
+  rank:{title:"이번 달 일감", link:"매출", sub:"작업 항목별 · 금액 많은 차례", items:[{label:"광택 · 국산 중형",value:"14대",pct:1},{label:"실내세차",value:"9대",pct:.64},{label:"유리막코팅",value:"5대",pct:.36},{label:"휠복원",value:"3대",pct:.21}]}},
+ check:{product:"체크", sub:"성능점검 정산", ver:"v45", biz:{name:"예시 성능검사소", line:"사업자 000-00-00042 · 대표 김검사"}, field:false,
+  title:'청구서 보낼 곳 <em>4곳</em>, 입금 대기 <em>2,926,000원</em>이 있어요', desc:"오늘 10월 18일 · 09:12 기준",
+  todos:[{tone:"chk",icon:"wallet",title:"확인 필요 입금 3건",sub:"눌러서 바로 처리해요"},{tone:"run",icon:"file",title:"아직 안 보낸 청구서 4건",sub:"10월분"},{tone:"chk",icon:"truck",title:"오늘 배달 8대 · 못 보낸 것 1대",sub:"누르면 배달 기록으로 가요"}], total:4, todoGo:["deposit","bill","delivery"],
+  kpis:[{label:"이번 달 검사 건수",value:"163",unit:"건",delta:"+21건",vs:"지난달보다",spark:[120,131,128,140,142,150,163],color:"#1668C4"},{label:"청구 합계",value:"6,226,000",unit:"원",delta:"+8%",vs:"지난달보다",spark:[4.9,5.1,5.4,5.2,5.8,6,6.2],color:"#0B2545"},{label:"입금",value:"3,300,000",unit:"원",delta:"+5%",vs:"지난달보다",spark:[2.4,2.6,2.9,3,3.1,3.2,3.3],color:"#1E9E5A"},{label:"입금 대기",value:"2,926,000",unit:"원",delta:"+3%",down:true,vs:"지난달보다",spark:[2.5,2.6,2.7,2.8,2.8,2.9,2.9],color:"#D64545"}],
+  cal:{legend:[["chk","검사","run"],["bill","청구","done"],["re","재검사 기한","chk"]], amtLabel:"그날 검사비", days:{1:{amt:396000,marks:[["chk",12]]},2:{amt:264000,marks:[["chk",8]]},6:{amt:495000,marks:[["chk",15],["re",2]]},7:{amt:330000,marks:[["chk",10]]},8:{amt:363000,marks:[["chk",11]]},13:{amt:429000,marks:[["chk",13],["bill",4]]},14:{amt:297000,marks:[["chk",9]]},15:{amt:462000,marks:[["chk",14]]},16:{amt:396000,marks:[["chk",12],["re",3]],tone:"chk"},17:{amt:231000,marks:[["chk",7]]},18:{marks:[["chk",5]]}}},
+  money:{title:"이번 달 입금", link:"입금 내역", big:3300000, bar:{done:3300000,total:6226000}, legend:[["받은 것",3300000,"done"],["받을 것",2926000,"chk"]], rows:[["검사비 · 정비비 청구","5,511,000 · 715,000"],["입금 기한 지난 곳","2곳"]]},
+  rank:{title:"이번 달 일감", link:"청구서", sub:"많이 밀린 곳 · 검사비 입금 대기", items:[{label:"예시상사",value:"990,000원",pct:1},{label:"가람모터스",value:"726,000원",pct:.73},{label:"누리상사",value:"594,000원",pct:.6},{label:"다온카",value:"330,000원",pct:.33}]}}
+}[P];
+function grp(k){ return D.groups.filter(function(g){ return g.key===k.split("/")[0]; })[0]; }
+function norm(k){ var g=grp(k); if(!g) return "home"; if(g.subs&&g.subs.length&&k.indexOf("/")<0) return g.key+"/"+g.subs[0].key; return k; }
+function go(k){ cur=norm(k); draw(); window.scrollTo(0,0); }
+function goFeat(f){ if(/^me\//.test(f.go)){ CGG.toast("사람 버튼 ▾ 안의 «"+f.label+"»을(를) 열어요 (미리보기)"); return; } if(/^field\//.test(f.go)){ CGG.toast("현장 화면 «입고»로 가요 (미리보기)"); return; } go(f.go); }
+function tabKey(){ var g=cur.split("/")[0]; return D.tabs.some(function(t){ return t.key===g; })?g:"__all"; }
+function linkTo(name){ var g=D.groups.filter(function(x){ return x.label===name||(x.subs||[]).some(function(s){ return s.label===name; }); })[0]; return g?g.key:"home"; }
+function draw(){
+  CGG.nav(document.getElementById("nav"), D.groups, cur, go);
+  CGG.tabbar(document.getElementById("tbar"), D.tabs, tabKey(), function(k){ if(k==="__all"){ if(!CGG.closeSheet()) CGG.allMenu(D.groups, cur, go, D.feats, goFeat); return; } CGG.closeSheet(); go(k); });
+  var main=document.getElementById("main"), g=grp(cur)||D.groups[0], sub=(g.subs||[]).filter(function(s){ return g.key+"/"+s.key===cur; })[0];
+  if(cur==="home"){
+    CGG.home(main,{date:"10월 18일 토요일", title:C.title, desc:C.desc,
+      quick:{feats:D.feats, key:D.quickKey+"_preview", defs:D.quickDefault, onGo:goFeat},
+      todo:{items:C.todos, total:C.total, onPick:function(i){ go(C.todoGo[i]); }, onAll:function(){ CGG.toast("할 일 전체 목록 (미리보기)"); }},
+      kpis:C.kpis, cal:Object.assign({y:2026,m:10,today:18,onMove:function(){ CGG.toast("달 옮기기 (미리보기)"); },onDay:function(d){ CGG.toast("10월 "+d+"일 자세히 (미리보기)"); }},C.cal),
+      money:Object.assign({},C.money,{link:{label:C.money.link,onClick:function(){ go(linkTo(C.money.link)); }}}),
+      rank:Object.assign({},C.rank,{link:{label:C.rank.link,onClick:function(){ go(linkTo(C.rank.link)); }}}),
+      help:"홈은 두 제품이 같은 차례예요. 자주 쓰는 기능 → 오늘 할 일 → 숫자 칸 4개 → 일정 · 이번 달 입금 · 이번 달 일감."});
+  } else {
+    var here=D.feats.filter(function(f){ return norm(f.go)===cur && f.spot; });
+    main.innerHTML=CGG.head({crumb:g.label+(sub&&g.subs.length>1?" › "+sub.label:""), title:CGG.esc(sub&&g.subs.length>1?sub.label:g.label), desc:"미리보기 화면이에요."})
+      +'<div class="demo"><h3>'+CGG.esc(sub?sub.label:g.label)+'</h3><i></i><i></i><i></i></div><div class="demo"><i></i><i></i><i></i></div>'
+      +(here.length?'<div class="gap"></div>':'')
+      +here.map(function(f){ return '<div class="demo spotcard" id="'+CGG.esc(f.spot.replace(/^#/,""))+'"><h3>'+CGG.esc(f.label)+'</h3><p>기능 찾기 · 바로가기로 오면 이 칸으로 내려와요.</p><i></i><i></i></div>'; }).join("")
+      +CGG.help("왼쪽 메뉴에서 아래 칸까지 늘 보여요. 위 «기능 찾기»에 하고 싶은 일을 쳐도 바로 와요.");
+  }
+}
+CGG.layout.init(document.getElementById("app"), "cgg_frame_preview_layout_"+(LAY||"d"), LAY||undefined);
+var H=CGG.header(document.getElementById("top"),{product:C.product, sub:C.sub, ver:C.ver, biz:C.biz,
+  find:{feats:D.feats, onGo:goFeat, onPhone:function(){ CGG.allMenu(D.groups, cur, go, D.feats, goFeat, {focus:true}); }},
+  notice:function(){ CGG.toast("공지사항 (미리보기)"); }, help:function(){ CGG.toast("도움말 (미리보기)"); }, link:function(){ CGG.toast("직원 앱 주소를 복사했어요 (미리보기)"); }, refresh:function(){ CGG.toast("새로고침했어요"); },
+  auto:{value:"30", options:[["0","자동 끄기"],["30","30초마다"],["60","1분마다"]], onChange:function(){}}, saved:"저장됨 09:12",
+  field:C.field?{label:"현장 화면", on:function(){ CGG.toast("현장 화면으로 (미리보기)"); }}:null,
+  me:{name:"김대표", role:"대표", items:[{key:"me",icon:"user",label:"마이페이지"},{key:"plan",icon:"wallet",label:"요금제"},{key:"trash",icon:"trash",label:"휴지통"},"-",{key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()},"-",{key:"out",icon:"out",label:"로그아웃"}], onPick:function(){ CGG.toast("미리보기예요"); }}});
+window.addEventListener("hashchange",function(){ location.reload(); });
+draw();
+</script>
+</body></html>

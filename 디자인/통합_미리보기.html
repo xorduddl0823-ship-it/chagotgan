@@ -1,0 +1,134 @@
+<title>차곳간 통합 뼈대</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 맨 위 — 지금 다른 곳 N가지 → 바뀐 뒤 N가지(숫자) · 1 지금(시험판 사진 두 장) · 2 바뀐 뒤(실제 부품으로 도는 워시 · 체크 나란히) · 3 통합 검사표(29가지 숫자) */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface2:#F7F9FC; --text:#101828; --muted:#667085; --line:#EAECF0; --ln2:#E3E8EE;
+  --navy:#0B2545; --blue:#1668C4; --sky:#8FC9F2; --tabon:#E8F1FC; --frame:#D5DCE6;
+  --ok:#1E9E5A; --ok-bg:#E4F5EC; --bad:#D64545; --bad-bg:#FDE8E8;
+  --sh:0 1px 2px #1018280d,0 12px 32px -20px #0B254540;
+  --f-body:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;--blue:#5FA8E8;--tabon:#102B47;--frame:#334052;--ok:#4ad48f;--ok-bg:#12312a;--bad:#ff8b82;--bad-bg:#331614;--sh:0 2px 10px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;--blue:#5FA8E8;--tabon:#102B47;--frame:#334052;--ok:#4ad48f;--ok-bg:#12312a;--bad:#ff8b82;--bad-bg:#331614;--sh:0 2px 10px rgba(0,0,0,.4);color-scheme:dark}
+body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.55;word-break:keep-all;overflow-wrap:anywhere}
+.wrap{max-width:1320px;margin:0 auto;padding-block:26px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:26px}
+h1,h2{margin:0;text-wrap:balance;letter-spacing:-.4px} h1{font-size:27px;font-weight:900} h2{font-size:19px;font-weight:900}
+.eyebrow{font-size:12.5px;font-weight:700;color:var(--muted)}
+.quote{background:var(--navy);color:#fff;border-radius:18px;padding:16px 20px;display:flex;flex-direction:column;gap:4px}
+.quote b{font-size:16px} .quote span{font-size:13px;color:#ffffffc0}
+.score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:stretch}
+.score .s{background:var(--surface);border-radius:18px;box-shadow:var(--sh);padding:16px 20px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.score .s small{font-size:13px;color:var(--muted);font-weight:700}
+.score .s b{font-size:34px;font-weight:900;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.score .s.bad b{color:var(--bad)} .score .s.ok b{color:var(--ok)}
+.score .arr{display:grid;place-items:center;font-size:26px;color:var(--muted)}
+.sec{display:flex;flex-direction:column;gap:12px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;background:var(--surface);border-radius:12px;padding:3px;box-shadow:var(--sh)}
+.seg button{border:0;background:transparent;font:inherit;padding:7px 16px;border-radius:9px;cursor:pointer;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff;font-weight:700}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pair figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pair figcaption{font-size:13px;font-weight:700;color:var(--muted)}
+.pair img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--frame)}
+.box{border:1px solid var(--frame);border-radius:14px;overflow:hidden;background:var(--surface);position:relative}
+.box iframe{border:0;display:block;transform-origin:0 0;position:absolute;left:0;top:0;background:#fff}
+.note{font-size:13px;color:var(--muted);margin:0}
+.diffs{display:flex;flex-wrap:wrap;gap:6px}
+.diffs span{font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--bad-bg);color:var(--bad)}
+.card{background:var(--surface);border-radius:18px;box-shadow:var(--sh);padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:13px}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+td.g{color:var(--muted);font-size:12px;white-space:nowrap}
+.y{color:var(--ok);font-weight:900} .n{color:var(--bad);font-weight:900}
+tr.was-bad td.now{background:var(--bad-bg)}
+.eight{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.eight div{background:var(--surface);border-radius:14px;box-shadow:var(--sh);padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.eight b{font-size:14px} .eight small{font-size:12.5px;color:var(--muted);line-height:1.5} .eight .st{font-size:12px;font-weight:900}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+@media (max-width:900px){ .pair{grid-template-columns:minmax(0,1fr)} .eight{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:520px){ h1{font-size:22px} .score{grid-template-columns:minmax(0,1fr)} .score .arr{transform:rotate(90deg)} .eight{grid-template-columns:minmax(0,1fr)} }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">디자인 방 · 2026-10-18 · 공통 부품 cgg-j4 1.8 «페이지 뼈대» · 메뉴 찾기(A + C + D) 포함</span>
+    <h1>차곳간 통합 뼈대</h1>
+    <div class="quote"><b>「레이아웃이 다른 것 같다. UI 통합이 아닌 것 같다. 너무 다르다.」</b><span>대표님 · 10월 18일 · 시험판 워시 v125 · 체크 v42를 나란히 보시고</span></div>
+  </header>
+
+  <section class="score" aria-label="다른 곳 수">
+    <div class="s bad"><small>지금 — 워시 v125 ↔ 체크 v42</small><b id="nNow">12가지</b><small>29가지를 숫자로 재서 다른 것</small></div>
+    <div class="arr" aria-hidden="true">→</div>
+    <div class="s ok"><small>바뀐 뒤 — 공통 부품 1.8 (아래에서 지금 다시 잼)</small><b id="nAfter">재는 중…</b><small>두 제품이 같은 뼈대 · 같은 크기 변수</small></div>
+  </section>
+
+  <section class="sec" aria-labelledby="t1">
+    <h2 id="t1">1. 지금 — 시험판 그대로</h2>
+    <div class="pair">
+      <figure><figcaption>워시 v125 (넓은 화면 1400)</figcaption><img src="통합검사/지금_워시_v125.png" alt="지금 워시 v125 홈 화면" width="1400" height="800"></figure>
+      <figure><figcaption>체크 v42 (넓은 화면 1400)</figcaption><img src="통합검사/지금_체크_v42.png" alt="지금 체크 v42 홈 화면" width="1400" height="800"></figure>
+    </div>
+    <div class="diffs" id="nowDiffs"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="t2">
+    <div class="bar"><h2 id="t2">2. 바뀐 뒤 — 같은 뼈대, 글과 숫자만 달라요</h2>
+      <div class="seg" role="group" aria-label="보기 크기"><button type="button" id="vPC" aria-pressed="true">PC</button><button type="button" id="vPH" aria-pressed="false">폰</button></div></div>
+    <div class="pair">
+      <figure><figcaption>워시 (안에서 바로 눌러 보세요)</figcaption><div class="box" id="bW"><iframe id="fW" title="바뀐 뒤 워시" src="통합_앱.html#wash"></iframe></div></figure>
+      <figure><figcaption>체크</figcaption><div class="box" id="bC"><iframe id="fC" title="바뀐 뒤 체크" src="통합_앱.html#check"></iframe></div></figure>
+    </div>
+    <p class="note">지어낸 자료예요. 왼쪽 메뉴(늘 펼침) · 위 «기능 찾기» · 홈 «자주 쓰는 기능»(메뉴 찾기 A + C + D)도 그대로 들어 있어요. 폰에서는 아래 탭 «전체»를 눌러 보세요.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="t3">
+    <h2 id="t3">대표님이 짚으신 8가지</h2>
+    <div class="eight" id="eight"></div>
+  </section>
+
+  <section class="card" aria-labelledby="t4">
+    <h2 id="t4">3. 통합 검사표 — 29가지를 숫자로</h2>
+    <p class="note">«바뀐 뒤» 칸은 이 페이지가 위 두 화면을 지금 직접 재서 채워요. 판을 올릴 때마다 같은 표로 재요 (저장소 디자인/통합검사/).</p>
+    <div class="tw"><table><thead><tr><th>묶음</th><th>재는 것</th><th>지금 워시</th><th>지금 체크</th><th>바뀐 뒤 워시</th><th>바뀐 뒤 체크</th><th>같음</th></tr></thead><tbody id="tb"></tbody></table></div>
+  </section>
+</div>
+<script src="통합검사/재는것.js"></script>
+<script>
+var NOW=null, AFTER=null, VIEW="pc";
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+var EIGHT=[["로고 · 제목","같은 로고 · «차곳간 ○○» · 판 표시 같은 자리",["logo","logo_kind","brand_fs","brand_txt","brand_sub"]],
+ ["업체명 자리","같은 자리 · 같은 크기",["biz_fs","biz_x"]],
+ ["오른쪽 위 단추","같은 차례 · 이름 · 크기 · 간격",["hb_h","hb_fs","hb_gap","hb_order"]],
+ ["할 일","3장 + 위 오른쪽 «모두 보기»",["todo_n","todo_h","todo_all"]],
+ ["숫자 칸 4개","작은 그래프 + 지난주 · 지난달 비교",["kpi_n","kpi_sp","kpi_tr","kpi_fs"]],
+ ["일정 달력","같은 달력 부품 · 금액 · 범례 아래",["cal_h","cal_amt","cal_lg"]],
+ ["오른쪽 칸","이번 달 입금 · 이번 달 일감 같은 부품",["side_fs","side_bar"]],
+ ["폭 · 여백 · 첫 줄","머리말 높이 · 메뉴 · 여백 · 한 줄 요약 제목",["hdr_h","nav","main_pad","main_max","h1_fs","h1_kind"]]];
+function fit(){ var specs=VIEW==="pc"?[1400,900]:[375,760];
+  ["W","C"].forEach(function(k){ var box=document.getElementById("b"+k), f=document.getElementById("f"+k), w=box.parentElement.clientWidth, s=Math.min(1,w/specs[0]);
+    f.style.width=specs[0]+"px"; f.style.height=specs[1]+"px"; f.style.transform="scale("+s+")"; box.style.height=Math.round(specs[1]*s)+"px"; box.style.width=VIEW==="pc"?"auto":Math.round(specs[0]*s)+"px"; }); }
+function measure(){ if(VIEW!=="pc") return; try{
+    var a=cggMeasure(document.getElementById("fW").contentDocument), b=cggMeasure(document.getElementById("fC").contentDocument);
+    if(!a.length||!b.length) return; AFTER=cggCompare(a,b); draw(); }catch(e){ document.getElementById("nAfter").textContent="잴 수 없어요"; } }
+function draw(){ if(!NOW) return; var byK={}; (AFTER||[]).forEach(function(r){ byK[r.k]=r; });
+  var nowBad=NOW.filter(function(r){ return !r.same; });
+  document.getElementById("nNow").textContent=nowBad.length+"가지";
+  document.getElementById("nowDiffs").innerHTML=nowBad.map(function(r){ return '<span>'+esc(r.label)+'</span>'; }).join("");
+  if(AFTER){ var ab=AFTER.filter(function(r){ return !r.same; }).length; document.getElementById("nAfter").textContent=ab+"가지"; }
+  document.getElementById("tb").innerHTML=NOW.map(function(r){ var x=byK[r.k];
+    return '<tr class="'+(r.same?'':'was-bad')+'"><td class="g">'+esc(r.group)+'</td><td>'+esc(r.label)+'</td><td class="now">'+esc(r.a)+'</td><td class="now">'+esc(r.b)+'</td><td>'+(x?esc(x.a):'…')+'</td><td>'+(x?esc(x.b):'…')+'</td><td>'+(r.same?'<span class="y">✅</span>':'<span class="n">❌</span>')+' → '+(x?(x.same?'<span class="y">✅</span>':'<span class="n">❌</span>'):'…')+'</td></tr>'; }).join("");
+  document.getElementById("eight").innerHTML=EIGHT.map(function(e){ var ks=e[2], before=ks.filter(function(k){ var r=NOW.filter(function(x){return x.k===k;})[0]; return r&&!r.same; }).length, after=AFTER?ks.filter(function(k){ return byK[k]&&!byK[k].same; }).length:null;
+    return '<div><b>'+esc(e[0])+'</b><small>'+esc(e[1])+'</small><span class="st"><span class="'+(before?'n':'y')+'">지금 '+(before?'다름 '+before:'같음')+'</span> → '+(after==null?'…':'<span class="'+(after?'n':'y')+'">바뀐 뒤 '+(after?'다름 '+after:'같음 ✅')+'</span>')+'</span></div>'; }).join(""); }
+function setView(v){ VIEW=v; document.getElementById("vPC").setAttribute("aria-pressed",v==="pc"); document.getElementById("vPH").setAttribute("aria-pressed",v==="ph"); fit(); }
+document.getElementById("vPC").onclick=function(){ setView("pc"); };
+document.getElementById("vPH").onclick=function(){ setView("ph"); };
+window.addEventListener("resize",fit);
+var loaded=0; ["fW","fC"].forEach(function(id){ document.getElementById(id).addEventListener("load",function(){ loaded++; if(loaded>=2) setTimeout(measure,1500); }); });
+fetch("통합검사/지금_v125_v42.json").then(function(r){ return r.json(); }).then(function(j){ NOW=j; draw(); }).catch(function(){ NOW=[]; draw(); });
+fit();
+</script>
