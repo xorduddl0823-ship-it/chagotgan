@@ -406,7 +406,7 @@ var CGG = (function(){
         return L; },
       function(k){ if(k.indexOf("auto:")===0){ o.auto.value=k.slice(5); var a2=el.querySelector('[data-hb="auto"]'); if(a2) a2.value=o.auto.value; o.auto.onChange&&o.auto.onChange(o.auto.value); }
         else if(k==="field") o.field.on&&o.field.on(); else if(o[k]) o[k](); });
-    function fit(){ el.classList.remove("cgg-fold1","cgg-fold2");
+    function fit(){ el.classList.remove("cgg-fold1","cgg-fold2","cgg-fold3");
       if(window.innerWidth<=600) return;
       /* «현장 화면»(워시만) 자리를 두 제품 모두 셈에 넣어요 — 같은 폭이면 두 제품이 같은 때 접혀요 */
       var extra=0; if(!o.field){ var tb=document.createElement("button"); tb.className="cgg-hb cgg-hb-pri"; tb.textContent="현장 화면"; tb.style.cssText="position:absolute;visibility:hidden"; el.querySelector(".cgg-right").appendChild(tb); extra=tb.offsetWidth+(parseFloat(getComputedStyle(el.querySelector(".cgg-right")).columnGap)||6); tb.remove(); }
@@ -421,7 +421,8 @@ var CGG = (function(){
         var need=kids.reduce(function(t,k){ return t+k.getBoundingClientRect().width; },0)+gap*(kids.length-1)+extra;
         return need>right-left+0.5; }   /* 단추 폭 합계(+«현장 화면» 자리)가 쓸 수 있는 폭보다 크면 접어요 */
       if(tight()) el.classList.add("cgg-fold1");
-      if(tight()) el.classList.add("cgg-fold2"); }
+      if(tight()) el.classList.add("cgg-fold2");
+      if(getComputedStyle(el).display!=="contents"&&el.scrollWidth>el.clientWidth+1) el.classList.add("cgg-fold3"); }   /* 그래도 넘치면(좁은 PC) 제품 이름 글자를 숨겨요 */
     fit(); if(!el.__cggFit){ el.__cggFit=1; window.addEventListener("resize",fit); }
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
     return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; fit(); }, me:me, fit:fit };
