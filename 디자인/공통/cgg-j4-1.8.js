@@ -56,6 +56,10 @@ var CGG = (function(){
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
 
+  function syncBeta(){ var b=document.querySelector(".cgg-beta"), h=0;
+    if(b&&!b.hidden&&getComputedStyle(b).display!=="none") h=b.offsetHeight;
+    document.documentElement.style.setProperty("--beta-h", h+"px"); }
+  window.addEventListener("resize", function(){ syncBeta(); });
   /* ① 메뉴 배치 — 문구는 워시 원본 LY_INFO 그대로 */
   var LAYS=[["top","가로 메뉴","메뉴가 화면 위에 가로로 놓여요. 지금까지 쓰던 모습이에요."],
             ["side","세로 메뉴","메뉴가 왼쪽에 세로로 놓여요. 메뉴 이름이 다 보여서 찾기 쉬워요."],
@@ -64,7 +68,9 @@ var CGG = (function(){
     init:function(app,key,def){ this.app=app; if(key) this.key=key; if(def==='top'||def==='side'||def==='icon') this.def=def; this.apply(this.get()); },
     get:function(){ var v=store(this.key); return (v==="top"||v==="side"||v==="icon")?v:this.def; },
     set:function(v){ store(this.key,v); this.apply(v); },
-    apply:function(v){ if(!this.app) return; this.app.classList.remove("lay-top","lay-side","lay-icon"); this.app.classList.add("lay-"+v); },
+    apply:function(v){ if(!this.app) return; this.app.classList.remove("lay-top","lay-side","lay-icon"); this.app.classList.add("lay-"+v);
+      /* 1.8: 세로 · 아이콘 배치에서는 머리말이 화면에 붙어 있어서, 오픈 베타 띠(.cgg-beta)도 맨 위에 붙이고 그 높이만큼 머리말을 내려요 (체크 방 알림) */
+      document.documentElement.classList.toggle("cgg-lay-fixed", v!=="top"); syncBeta(); },
     name:function(v){ for(var i=0;i<LAYS.length;i++) if(LAYS[i][0]===(v||this.get())) return LAYS[i][1]; return ""; },
     chooser:function(box,done){ var self=this, cur=this.get();
       box.innerHTML='<div class="cgg-lays" role="group" aria-label="메뉴 배치">'+LAYS.map(function(x){

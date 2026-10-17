@@ -526,3 +526,15 @@ select.cgg-hb option{color:#101828}
 
 /* 기능 찾기 칸이 몰래 줄어들지 않게 (두 제품이 같은 때 접히도록) */
 .cgg-right .cgg-hfind{flex:none}
+
+/* 1.8 보강 — 세로 · 아이콘 배치에서 오픈 베타 띠가 머리말에 가려지지 않게 (체크 방 알림 10/18)
+   띠를 맨 위에 붙이고(--beta-h = 띠 높이, CGG.layout 이 잼), 붙어 있는 머리말 · 윗줄 · 작은 탭 · 본문을 그만큼 내려요 */
+@media (min-width:1000px){
+  html.cgg-lay-fixed .cgg-beta{position:fixed;top:0;left:0;right:0;z-index:calc(var(--z-hdr) + 2)}
+  .lay-side > .cgg-hdr,.lay-icon > .cgg-hdr{top:var(--beta-h,0px)}
+  .lay-side .cgg-right,.lay-icon .cgg-right{top:var(--beta-h,0px)}
+  .lay-side .cgg-sub,.lay-icon .cgg-sub{top:calc(64px + var(--beta-h,0px))}
+  .lay-side > .cgg-main,.lay-icon > .cgg-main{padding-top:calc(var(--hdr-h) + 22px + var(--beta-h,0px))}
+  .lay-side.hasSub > .cgg-main,.lay-icon.hasSub > .cgg-main{padding-top:calc(132px + var(--beta-h,0px))}
+  .lay-icon .cgg-hdr .cgg-hdr-biz{top:var(--beta-h,0px)}
+}

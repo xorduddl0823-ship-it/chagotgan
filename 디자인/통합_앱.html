@@ -12,7 +12,18 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .gap{height:220px}
 </style>
 <link rel="stylesheet" href="공통/cgg-j4-1.8.css">
+<style>
+:root{--beta-bg:#0d2440;--beta-ink:#e8f0fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--beta-bg:#1d3a5f}}
+:root[data-theme="dark"]{--beta-bg:#1d3a5f}
+.cgg-beta{background:var(--beta-bg);color:var(--beta-ink);font-size:13.5px;line-height:1.5;word-break:keep-all}
+.cgg-beta .in{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
+.cgg-beta[hidden]{display:none}
+@media (max-width:600px){.cgg-beta{font-size:12.5px}.cgg-beta .in{display:block;padding-block:6px}.cgg-beta b{margin-right:6px}}
+</style>
 </head><body>
+<div class="cgg-beta" id="cggBeta" role="note"><div class="in"><b>오픈 베타</b><span>차곳간은 지금 오픈 베타예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</span></div></div>
 <div class="cgg-app" id="app">
   <header class="cgg-hdr">
     <div class="cgg-top" id="top"></div>
