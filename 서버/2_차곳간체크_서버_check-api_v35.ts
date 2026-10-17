@@ -3635,6 +3635,7 @@ const FN: Record<string, (ctx: Ctx, ...a: any[]) => Promise<unknown>> = {
   /* v35: 아무 글이나 시키는 창구는 대표만 · 사진 읽기 한도와 함께 셈 (직원이 aiCard 대신 이걸로 돌아가지 못하게) */
   aiJson: async (c, prompt, b64) => {
     bossOnly(c);
+    if (S(b64).length > 6_000_000) throw new Error("사진이 너무 큽니다. 조금 작게 찍어 주세요.");   // 보안 낮음(6daa65b)
     if (!await rateOk("aidoc:" + aiShop(c) + ":" + ymdK(kstNow()), Number(env("CHECK_AI_DOC_DAY", "60"))))
       throw new Error("오늘 사진으로 채우기 한도를 다 썼습니다. 직접 적어 주세요.");
     return await aiJson(aiShop(c), S(prompt).slice(0, 2000), S(b64));

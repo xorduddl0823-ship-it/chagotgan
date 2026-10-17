@@ -57,6 +57,7 @@ check("직원은 거절", !!(await call("aiCard", [JPG], "chk_stf")).__err && !!
 check("직원은 아무 글 창구(aiJson)로도 못 돌아감", !!(await call("aiJson", ["사업자등록증 읽어", JPG], "chk_stf")).__err);
 check("빈 사진은 거절(요금 안 나감)", !!(await call("aiCard", [""])).__err);
 check("너무 큰 사진은 거절", !!(await call("aiCard", ["A".repeat(6_000_001)])).__err);
+check("aiJson 도 너무 큰 사진은 거절", !!(await call("aiJson", ["읽어", "A".repeat(6_000_001)])).__err);
 const n0 = asked.length;
 answer = "모르겠어요";
 r = await call("aiCard", [JPG]);
