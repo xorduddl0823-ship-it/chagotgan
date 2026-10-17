@@ -154,6 +154,10 @@ s = s[:b3] + V132_CSS + s[b3:]
 rep('''function resendOut(list){''', '''/* v132: 확인 창 «누구에게» 줄 — 이름 셋까지 + 외 N곳 */
 function wWho(names){var u=[];(names||[]).forEach(function(n){n=String(n||"").trim();if(n&&u.indexOf(n)<0)u.push(n);});
   return u.length?(u.slice(0,3).join(", ")+(u.length>3?" 외 "+(u.length-3)+"곳":"")):"-";}
+/* 번호 → 딜러 · 상사 이름 (보낸 기록은 번호만 남아요) */
+function wNameOf(ph){var d=String(ph||"").replace(/\\D/g,"");if(!d)return "";
+  var x=(S.dealers||[]).filter(function(r){return String(r.phone||"").replace(/\\D/g,"")===d;})[0]||(S.comps||[]).filter(function(r){return String(r.managerPhone||r.mainPhone||"").replace(/\\D/g,"")===d;})[0];
+  return x?x.name+" ("+ph+")":"";}
 function resendOut(list){''')
 rep('''  ask(ok.length+"건에 출고 알림을 다시 보내요.\\n보내는 방식: "+''',
     '''  ask("받는 딜러 · "+wWho(ok.map(function(r){return r.dealer||r.company;}))+"\\n몇 건 · "+ok.length+"건\\n얼마 · 약 "+won(ok.length*8)+" (알림톡 기준 · 문자로 가면 한 통 약 20~100원)\\n\\n출고 알림을 다시 보내요.\\n보내는 방식: "+''')
@@ -194,3 +198,26 @@ rep('''  <div class="dashhead"><h2>입금 · 출금 내역</h2>''', '''  <div cl
 rep('''toast("「입출금 기록」이 「입금 · 출금 내역」으로 이름이 바뀌었어요");''', '''toast("「입출금 기록」이 「입·출금 내역」으로 이름이 바뀌었어요");''')
 # G. 수정발행 확인 창 — 이름을 두 번 바꾸지 않게
 rep('''      pick[1]+"\\n"+esc(g.issuerName)+" · "+''', '''      pick[1]+"\\n"+g.issuerName+" · "+''')
+
+# ══ 검사 일꾼(v132 두 번째) 고침 ══
+# 1. 자재 한 가지 주문 · 사용 뒤 주문 — 확인 창에 «누구에게 · 몇 건 · 얼마»
+rep('''    if(shortQty(cur)<=0&&!confirmed("아직 부족하지 않아요. 그래도 주문 문자를 보낼까요?",this))return;
+    orderSend([cur],cur.vendorPhone);''', '''    ask("도매상 · "+(cur.vendor||cur.vendorPhone)+"\\n몇 건 · 문자 1통 (자재 1가지: "+(cur.name||"")+")\\n얼마 · 문자 요금 약 50원"+
+        (shortQty(cur)<=0?"\\n\\n아직 부족하지 않아요.":"")+"\\n\\n주문 문자를 보내요.",function(){orderSend([cur],cur.vendorPhone);},"보내기");''')
+rep('''        ask(o.name+" 재고가 부족해요.\\n도매상에 주문 문자를 보낼까요?",function(){orderSend([o],matPhone(o));},"보내기");''',
+    '''        ask(o.name+" 재고가 부족해요.\\n\\n도매상 · "+(o.vendor||matPhone(o))+"\\n몇 건 · 문자 1통 (자재 1가지)\\n얼마 · 문자 요금 약 50원\\n\\n주문 문자를 보낼까요?",function(){orderSend([o],matPhone(o));},"보내기");''')
+# 2. 설정 › 보낸 기록 «선택항목 다시 보내기» — 확인 창 뒤에 보내기
+rep('''    jobs.forEach(function(o){if(o.scheduledDate&&new Date(o.scheduledDate)<new Date(Date.now()+10*60000))o.scheduledDate="";});
+    Promise.all(jobs.map(function(o){return sendNow(o).catch(function(){});}))
+     .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});''', '''    ask("받는 곳 · "+wWho(jobs.map(function(o){return wNameOf(o.to)||o.to;}))+"\\n몇 건 · "+jobs.length+"건\\n얼마 · 약 "+won(jobs.length*8)+" ~ "+won(jobs.length*100)+" (알림톡이면 적게 · 사진 문자면 많이)\\n\\n고른 알림을 다시 보내요.",function(){
+    jobs.forEach(function(o){if(o.scheduledDate&&new Date(o.scheduledDate)<new Date(Date.now()+10*60000))o.scheduledDate="";});
+    Promise.all(jobs.map(function(o){return sendNow(o).catch(function(){});}))
+     .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});},"다시 보내기");''')
+# 3. 이름 «입·출금 내역» — 기능 찾기 줄(메뉴 지도 글은 그대로 두고 화면에서만) · 도움말 · 화면 설명
+rep('''  x.path=p;return x;''', '''  if(x.label==="입금 · 출금 내역")x.label="입·출금 내역";
+  x.path=p;return x;''')
+rep('''t:"PC · 입금 · 출금 내역",''', '''t:"PC · 입·출금 내역",''')
+rep('''  vMoney:"입금 · 출금 내역과 받을 금액을 봐요.",''', '''  vMoney:"입·출금 내역과 받을 금액을 봐요.",''')
+# 다음 판에서 하려던 것 — 배치를 바꾸면 머리말 · 메뉴를 바로 다시 그려요(아이콘 배치 돋보기)
+rep('''function applyLayout(){''', '''function applyLayout(){
+  setTimeout(function(){try{if(S.mode==="pc"&&typeof wHdr==="function"){WM.sig="";wHdr();wNav();}}catch(e){}},0);''')
