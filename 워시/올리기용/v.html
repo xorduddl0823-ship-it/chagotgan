@@ -214,6 +214,21 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
     shopFoot(j.shop); until(j.until);
   }
 
+  /* ───── 체크: 차량 도착 (출고안내 알림톡 버튼 · d+18 · check-api deliv_view) ─────
+     보이는 것: 차량번호 · 차명 · 도착한 곳 · 도착 시각 · 사진 · 보낸 곳 이름 · 전화 (기사 · 딜러는 안 보임) */
+  function drawDeliv(r){
+    clear(); var d=r.deliv||{}, o=r.office||{};
+    head(o.name, "차량 도착");
+    var c=card(); var h=el("p","big",d.plate||"차량"); h.appendChild(el("span","tag out","도착")); c.appendChild(h);
+    kv(c,"차명",d.car); kv(c,"도착한 곳",d.dest); kv(c,"도착 시각",dt(d.at));
+    var ph=(r.photos||[]).filter(safeImg);
+    if(ph.length){ var p=card("도착 사진"); var g=el("div","shots");
+      ph.forEach(function(u){ var f=el("figure"); var im=el("img"); im.alt="도착 사진"; im.loading="lazy"; im.referrerPolicy="no-referrer"; im.src=u; f.appendChild(im); g.appendChild(f); });
+      p.appendChild(g); }
+    if(o.name||o.tel){ var f2=card("보낸 곳"); kv(f2,"업체",o.name); var t=telText(o.tel);
+      if(t){ var rw=el("div","kv"); rw.appendChild(el("span",null,"전화")); rw.appendChild(el("b","tel",t)); f2.appendChild(rw); } }
+  }
+
   /* ───── 시작 ───── */
   var q=new URLSearchParams(location.search), c=String(q.get("c")||"").trim();
   try{ history.replaceState(null,"",location.pathname+"?c="+encodeURIComponent(c)); }catch(e){}
@@ -223,6 +238,11 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
       /* 그리기는 체크 방 조각 하나로 (서버 v33 답을 그대로 넘김 — 약속 모양 to/fee/rep · e8c5587) */
       clear(); head(r.office&&r.office.name, "청구 내역"); window.cggCheckInvoice(card(), r);
     },function(e){ stop("청구서를 열지 못했어요", ko(e,"잠시 뒤 다시 열어 주세요.")); });
+  } else if(/^d[a-z0-9]{18}$/.test(c)){
+    post(CHECK,"deliv_view",[c]).then(function(r){
+      if(!r||!r.deliv) return stop("열 수 없는 주소예요","주소가 닫혔거나 올바르지 않습니다. 보낸 곳으로 문의해 주세요");
+      drawDeliv(r);
+    },function(e){ stop("열지 못했어요", ko(e,"잠시 뒤 다시 열어 주세요.")); });
   } else if(/^[A-Fa-f0-9]{24}$/.test(c)){
     post(WASH,"viewCar",[c]).then(function(r){
       if(!r||!r.ok) return stop("열 수 없는 주소예요", (r&&r.why)||"주소가 닫혔거나 올바르지 않습니다. 맡기신 업체로 문의해 주세요");

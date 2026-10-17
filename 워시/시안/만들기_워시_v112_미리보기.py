@@ -186,7 +186,7 @@ if os.environ.get("SEEDMODE"):
     s = s.replace("function seedDemo(){", "window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};\nfunction seedDemo(){", 1)
 # 시험할 때만 (TESTHOOK=1): 같은 범위 안 함수를 밖에서 부를 수 있게 — 최종 미리보기에는 안 들어감
 if os.environ.get("TESTHOOK") and "function sendOutMsg(" in s:
-    s = s.replace("function sendOutMsg(", "window.__t={out:function(i,f){return sendOutMsg(S.records[i],'시험',f);},inn:function(i,f){return sendInMsg(S.records[i],'시험',f);},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;},cfg:function(k,v){S.cfg=Object.assign({},S.cfg);S.cfg[k]=v;}};\nfunction sendOutMsg(", 1)
+    s = s.replace("function sendOutMsg(", "window.__t={out:function(i,f){return sendOutMsg(S.records[i],'시험',f);},inn:function(i,f){return sendInMsg(S.records[i],'시험',f);},bp:function(){return (B.made||[]).map(billPayload);},tab:function(t){S.tab=t;decideMode(false);},osPrev:function(){outSmsPreview();},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;},cfg:function(k,v){S.cfg=Object.assign({},S.cfg);S.cfg[k]=v;}};\nfunction sendOutMsg(", 1)
 i = s.index("<script")
 s = s[:i] + FAKE + s[i:]
 s = s.replace("<title>차곳간 워시</title>", "<title>워시 %s 미리보기</title>" % VER, 1)

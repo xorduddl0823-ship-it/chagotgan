@@ -716,6 +716,12 @@ h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.02em}
 .phone-msg{background:var(--surface2);border-radius:14px;margin:0 12px;padding:12px 13px;
   font-size:13px;white-space:pre-wrap;line-height:1.6;min-height:120px;word-break:break-all;overflow-wrap:anywhere}
 #smsPrev,#billPrev,#bmPrev,#of_prev{word-break:break-all;overflow-wrap:anywhere}
+/* v127 — 본사 알림톡이 먼저 갈 때: 알림톡 모양 + 아래 «안 되면 이 문자» */
+.phone.kakao .phone-top{background:#3c1e1e;color:#fee500}
+.phone.kakao .phone-msg{background:#fffbe0;color:#191919}
+.phone-btn{margin:8px 12px 0;border:1px solid var(--line);border-radius:10px;text-align:center;font-size:12.5px;font-weight:700;padding:8px;background:var(--surface)}
+.phone-alt{max-width:330px;margin:10px auto 0;font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-all;overflow-wrap:anywhere;border:1px dashed var(--line);border-radius:12px;padding:8px 10px;line-height:1.5}
+.phone-alt b{display:block;color:var(--ink,inherit);margin-bottom:4px}
 
 .thumb{width:44px;height:34px;object-fit:cover;border-radius:6px;vertical-align:middle;border:1px solid var(--line)}
 .photo2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
@@ -2033,10 +2039,11 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
       </div>
       <div>
         <div class="phone">
-          <div class="phone-top">문자 메시지</div>
+          <div class="phone-top" id="osTop">문자 메시지</div>
           <div class="phone-from" id="osFrom">보내는 번호 없음</div>
           <div class="phone-msg" id="osPrev"></div>
         </div>
+        <div class="phone-alt" id="osAlt" hidden></div>
         <div class="legend" style="justify-content:center;margin-top:10px">
           <span>글자 수 <b id="osLen">0자</b></span>
           <span>종류 <b id="osKind">SMS</b></span>
@@ -2118,10 +2125,11 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
       </div>
       <div>
         <div class="phone">
-          <div class="phone-top">문자 메시지</div>
+          <div class="phone-top" id="bmTop">문자 메시지</div>
           <div class="phone-from" id="bmFrom">보내는 번호 없음</div>
           <div class="phone-msg" id="bmPrev"></div>
         </div>
+        <div class="phone-alt" id="bmAlt" hidden></div>
         <div class="legend" style="justify-content:center;margin-top:10px">
           <span>글자 수 <b id="bmLen">0자</b></span>
           <span>종류 <b id="bmKind">SMS</b></span>
@@ -6648,7 +6656,7 @@ function resendOut(list){
   var ok=list.filter(function(r){return r.phone;});
   if(!ok.length)return toast("연락처가 있는 건이 없어요",true);
   ask(ok.length+"건에 출고 알림을 다시 보내요.\n보내는 방식: "+(OUT_MODES[outMode()]||"")+
-      "\n보내는 형식: "+(fmtOf("out")==="ata"?"카카오 알림톡":"문자"),function(){
+      "\n보내는 형식: "+(fmtOf("out")==="ata"?"우리 업체 카카오 채널":(HQATA.off?"문자":"알림톡 먼저 (안 되면 문자)")),function(){
     ok.forEach(function(r){sendOutMsg(r,"출고 알림(다시 보냄)",null);});
     closeSheet();toast("다시 보냈어요");setTimeout(renderOutLog,600);
   },"보내기");
@@ -7127,18 +7135,20 @@ function renderBillPreview(){
   var plan=billPlan(target);
   var fmt=$("bmFmt")?$("bmFmt").value:"sms";
   var txt=plan.text;
-  if(fmt==="ata"&&ataReady("bill"))txt=ataFill(ataCfg().bill.text,billVars(target));
+  var bMode=(fmt==="ata"&&ataReady("bill"))?"ata":(HQATA.off?"sms":"hq");
+  var aTxt=bMode==="ata"?ataFill(ataCfg().bill.text,billVars(target)):ataFill(DEF_ATA_BILL,billVars(target));
   S.cfg.billSms=saved.t;S.cfg.billShort=saved.sh;S.cfg.billSendMode=saved.m;
-  $("bmPrev").textContent=txt;
+  phonePrev("bm",bMode,txt,aTxt,"청구 내역 보기",S.cfg&&S.cfg.send&&S.cfg.send.from);
+  if(bMode==="ata")txt=aTxt;
   var len=txt.length;
   $("bmLen").textContent=len+"자";
   var lms=len>45;
-  $("bmKind").textContent=(fmt==="ata")?"알림톡":(plan.photo?"사진 문자":(lms?"긴 문자":"짧은 문자"));
-  $("bmPhoto").textContent=(fmt!=="ata"&&plan.photo)?"청구서 그림 붙임":"안 붙임";
-  $("bmCost").textContent=(fmt==="ata")?"약 8원":(plan.photo?"약 100원":(lms?"약 50원":"약 20원"));
-  $("bmModeHint").textContent=(fmt!=="ata"&&plan.photo)
+  $("bmKind").textContent=(fmt==="ata")?"알림톡":((bMode==="hq"?"알림톡 · 안 되면 ":"")+(plan.photo?"사진 문자":(lms?"긴 문자":"짧은 문자")));
+  $("bmPhoto").textContent=(fmt!=="ata"&&plan.photo)?(bMode==="hq"?"문자일 때 청구서 그림":"청구서 그림 붙임"):"안 붙임";
+  $("bmCost").textContent=(fmt==="ata")?"약 8원":((bMode==="hq"?"알림톡 약 8원 · 문자면 ":"")+(plan.photo?"약 100원":(lms?"약 50원":"약 20원")));
+  $("bmModeHint").textContent=(bMode==="hq"?"보내는 방식(사진 + 글자 · 글자만(장문) · 간단히)은 알림톡이 안 될 때 가는 문자 모양이에요. ":"")+((fmt!=="ata"&&plan.photo)
     ? "보낼 때 청구처마다 청구서 그림을 만들어 붙여요 — 곳이 많으면 시간이 조금 걸려요."
-    : ((plan.mode==="short"&&lms)?"간단 문구가 45자를 넘어 장문으로 나가요 — 더 줄이면 단문 요금이 돼요.":"");
+    : ((plan.mode==="short"&&lms)?"간단 문구가 45자를 넘어 장문으로 나가요 — 더 줄이면 단문 요금이 돼요.":""));
   $("bmWho").textContent="지금 목록의 "+target.name+" 기준으로 보여 드려요"+
     (ids.length?(" · 고른 것 "+ids.length+"건"):" · 고른 것 없음(전체)");
   $("bSelInfo").textContent=ids.length?(ids.length+"건 선택됨"):"";
@@ -8057,13 +8067,14 @@ function fmtOf(key){
 function fmtSelHtml(id,key,cur){
   var ok=ataReady(key);
   return '<select id="'+id+'">'+
-    '<option value="sms"'+(cur==="sms"?" selected":"")+'>문자 (SMS·LMS·MMS)</option>'+
-    '<option value="ata"'+(cur==="ata"?" selected":"")+(ok?"":" disabled")+'>카카오 알림톡'+
-      (ok?"":" — 신청·승인 뒤에 켜져요")+'</option></select>';
+    '<option value="sms"'+(cur==="sms"?" selected":"")+'>'+(HQATA.off?'문자 (SMS·LMS·MMS)':'알림톡 먼저 (안 되면 문자)')+'</option>'+
+    '<option value="ata"'+(cur==="ata"?" selected":"")+(ok?"":" disabled")+'>우리 업체 카카오 채널'+
+      (ok?"":" (신청·승인 뒤)")+'</option></select>';
 }
 function fmtHintHtml(key){
-  return ataReady(key)?'<span class="hint">알림톡을 고르면 승인된 문구로 나가고, 안 되면 문자로 가요.</span>'
-    :'<span class="hint">알림톡은 <b>설정 → 알림</b>에서 채널ID·템플릿ID를 넣고 승인되면 고를 수 있어요.</span>';
+  var hq=HQATA.off?'':'기본은 <b>차곳간 알림톡이 먼저</b> 가고, 안 되면 문자로 가요. ';
+  return ataReady(key)?'<span class="hint">'+hq+'«우리 업체 카카오 채널»을 고르면 업체가 승인받은 문구로 나가요.</span>'
+    :'<span class="hint">'+hq+'«우리 업체 카카오 채널»은 <b>설정 → 알림</b>에서 채널ID·템플릿ID를 넣고 승인되면 고를 수 있어요.</span>';
 }
 function outMode(){return (S.cfg&&S.cfg.outSendMode)||"photo_text";}
 
@@ -8138,6 +8149,19 @@ function renderOutSms(){
     : '연락처를 넣으려면 <b>설정 → 우리 사업장 → 문자에 넣을 연락처</b>에서 번호를 체크해 주세요';
   outSmsPreview();
 }
+/* v127 — 폰 미리보기 모양: 본사 알림톡 먼저면 알림톡(차곳간 채널 · 확정 문구) + «안 되면 이 문자» */
+function phonePrev(p,mode,smsText,ataText,btn,from){
+  var box=$(p+"Prev"),ph=box&&box.parentNode,alt=$(p+"Alt"),top=$(p+"Top");
+  if(!box)return;
+  if(ph)ph.classList.toggle("kakao",mode!=="sms");
+  if(top)top.textContent=mode==="sms"?"문자 메시지":"카카오 알림톡";
+  $(p+"From").textContent=mode==="hq"?"차곳간 (본사 채널)":((from||"보내는 번호 없음")+" 에서");
+  box.textContent=mode==="sms"?smsText:ataText;
+  var old=ph&&ph.querySelector(".phone-btn");if(old)old.remove();
+  if(mode!=="sms"&&btn&&ph){var b=document.createElement("div");b.className="phone-btn";b.textContent=btn;ph.appendChild(b);}
+  if(alt){alt.hidden=(mode!=="hq");alt.textContent="";
+    if(mode==="hq"){var h=document.createElement("b");h.textContent="알림톡이 안 되면 이 문자로 가요";alt.appendChild(h);alt.appendChild(document.createTextNode(smsText));}}
+}
 function osTemp(fn){
   var saved={t:S.cfg.smsText,sh:S.cfg.smsShort,m:S.cfg.smsMapMode,o:S.cfg.outSendMode};
   S.cfg=Object.assign({},S.cfg);
@@ -8152,12 +8176,16 @@ function outSmsPreview(){
   var p=osTemp(function(){return outPlan(demo);});
   var fmt=$("osFmt")?$("osFmt").value:"sms";
   var txt=p.text;
-  if(fmt==="ata"&&ataReady("out"))txt=ataFill(ataCfg().out.text,outVars(demo));
-  $("osPrev").textContent=txt;
+  var oMode=(fmt==="ata"&&ataReady("out"))?"ata":(HQATA.off?"sms":"hq");
+  var aTxt=oMode==="ata"?ataFill(ataCfg().out.text,outVars(demo)):ataFill(DEF_ATA_OUT,outVars(demo));
+  phonePrev("os",oMode,txt,aTxt,"도착 사진 보기",(S.cfg&&S.cfg.send&&S.cfg.send.from));
+  if(oMode==="ata")txt=aTxt;
   var n=txt.length;
   $("osLen").textContent=n+"자";
-  $("osKind").textContent=(fmt==="ata")?"알림톡":(p.imageId?"사진 문자":(n>45?"긴 문자":"짧은 문자"));
-  $("osPhoto").textContent=(fmt!=="ata"&&p.imageId)?"붙임":"안 붙임";
+  $("osKind").textContent=(fmt==="ata")?"알림톡":((oMode==="hq"?"알림톡 · 안 되면 ":"")+(p.imageId?"사진 문자":(n>45?"긴 문자":"짧은 문자")));
+  $("osPhoto").textContent=(fmt!=="ata"&&p.imageId)?(oMode==="hq"?"문자일 때 붙임":"붙임"):"안 붙임";
+  var hn=$("osHqNote");if(!hn&&$("osFmtHint")){hn=document.createElement("div");hn.id="osHqNote";hn.className="hint";hn.style.marginTop="4px";$("osFmtHint").after(hn);}
+  if(hn)hn.textContent=oMode==="hq"?"보내는 방식(사진 + 글자 · 글자만(장문) · 간단히)은 알림톡이 안 될 때 가는 문자 모양이에요.":"";
   var addr=destAddrOf(demo.dest);
   $("osMsg").style.color="";
   $("osMsg").textContent=addr?("미리보기 도착지 주소: "+addr):"미리보기 목적지에는 등록된 주소가 없어요 (설정 → 배달 도착지에서 넣어요)";
@@ -10706,7 +10734,7 @@ function billPayload(b){
     taxOn:!!b.taxOn,workText:b.workText||"",bank:(S.cfg&&S.cfg.bank)||"",
     dueDate:billDueDate(b.month),
     rows:(b.recs||[]).map(function(r){
-      return {plate:r.plate||"",model:r.model||"",dealer:r.dealer||"",company:r.company||"",
+      return {id:String(r.id||""),plate:r.plate||"",model:r.model||"",dealer:r.dealer||"",company:r.company||"",
         inAt:r.createdAt||"",outAt:r.outAt||"",
         works:(r.works||[]).map(function(w){return w.name;}).filter(Boolean),
         total:r.total||0};})};
@@ -12676,7 +12704,7 @@ var HELP=[
   "<li>알림을 못 보낸 차는 체크 후 [선택항목 다시 보내기].</li>"+
   "<li><b>출고 문자 문구·보내는 방식</b>이 이 화면 아래에 있어요. 문구를 고치면 오른쪽 폰 모양에 바로 보이고, [내 번호로 시험]으로 먼저 받아 볼 수 있어요.</li>"+
   "<li><b>보내는 방식 4가지</b>: 사진+글자(사진문자) / 사진만 / 글자만(장문) / 간단히(단문·짧은 문구).</li>"+
-  "<li><b>보내는 형식</b>: <b>문자</b> 또는 <b>카카오 알림톡</b>. 알림톡은 설정 → 알림에서 채널ID·템플릿ID를 넣고 승인이 나야 고를 수 있고, 승인 전에는 회색으로 잠겨 있어요. 알림톡이 실패하면 문자로 자동 대체돼요.</li>"+
+  "<li><b>보내는 형식</b>: 기본은 <b>알림톡 먼저 (안 되면 문자)</b> — 차곳간 채널로 알림톡이 먼저 가고, 안 되면 위 문구가 문자로 가요. <b>우리 업체 카카오 채널</b>은 설정 → 알림에서 채널ID·템플릿ID를 넣고 승인이 나야 고를 수 있어요(승인 전에는 회색).</li>"+
   "<li><b>도착지 주소</b>: 목적지에 주소가 등록돼 있으면 문자 끝에 주소(+지도 링크)가 붙어요. 여기서 [주소+링크 / 주소만 / 안 붙이기]를 골라요.</li>"+
   "<li><b>우리 연락처 넣기</b>: 문구에 <b>{연락처}</b> 를 넣으면 설정 → 우리 사업장에서 <b>체크한 번호(최대 2개)</b>가 들어가요. 문구 위 조각을 눌러도 돼요.</li></ul>"},
  {id:"bill",who:"pc",t:"PC · 월별 청구서",h:
@@ -12688,7 +12716,7 @@ var HELP=[
   "<li><b>알림 보내기</b>: 아래 '청구서 발송' 칸에서 문구·입금 계좌를 고치면 오른쪽 폰 모양에 바로 보여요. [내 번호로 시험] → [선택항목 보내기]. 체크를 안 하면 목록 전체.</li>"+
   "<li><b>보내는 방식 4가지</b>: <b>사진+글자</b>(청구서 그림 + 문구) / <b>사진만</b>(청구서 그림 + 한 줄) / <b>글자만</b>(장문) / <b>간단히</b>(단문·제일 쌈). 사진을 고르면 보낼 때 청구처마다 청구서 그림을 자동으로 만들어 붙여요.</li>"+
   "<li><b>청구 시기</b>: 그 달분은 <b>다음 달 1일부터</b> 청구해요(9월분 → 10월 1일부터). 그래서 홈 [오늘 할 일]의 빨간 '청구서 아직 안 보냄'도 <b>지난달분</b>만 떠요.</li>"+
-  "<li><b>보내는 형식</b>: 문자 또는 카카오 알림톡(승인 뒤 선택 가능).</li>"+
+  "<li><b>보내는 형식</b>: 기본은 <b>알림톡 먼저 (안 되면 문자)</b>. 보내는 방식 4가지는 알림톡이 안 될 때 가는 문자 모양이에요. <b>우리 업체 카카오 채널</b>은 승인 뒤 고를 수 있어요.</li>"+
   "<li><b>우리 연락처 넣기</b>: 문구에 <b>{연락처}</b> 를 넣으면 설정 → 우리 사업장에서 <b>체크한 번호(최대 2개)</b>가 들어가요. 문의가 오는 번호를 청구 문자에 같이 보낼 때 써요.</li>"+
   "<li><b>[예약 발송]</b>: 날짜·시각(오전 7시~밤 9시)을 고르면 그때 나가요. 화면·컴퓨터를 꺼도 나가요. 취소는 청구서 줄 → [예약 취소], 또는 설정 → 발송함.</li></ol>"+
   "<p class='hl'>보낸 곳은 '보냄', 예약한 곳은 '예약'으로 표시돼요. 잘못 표시됐으면 체크 후 [선택항목 보냄 표시 지우기].</p>"},

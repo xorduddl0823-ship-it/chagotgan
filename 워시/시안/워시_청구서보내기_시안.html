@@ -1,0 +1,185 @@
+<title>청구서 보내기 배치</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 한 장에 시안 4개: 위 «무엇을 정하나요» → 시안마다 PC 그림 + 폰 그림 + 좋은 점/아쉬운 점 → 맨 아래 추천 */
+:root{
+  --bg:#f3f5f9; --card:#ffffff; --ink:#15233a; --muted:#5f6d82; --line:#dbe2ec; --soft:#eef2f8;
+  --brand:#1668c4; --brand-ink:#ffffff; --brand-soft:#e5effb; --pick:#0f7a4a; --pick-soft:#e4f4ec;
+  --kakao:#fee500; --kakao-ink:#191919; --kakao-msg:#fffbe0; --warn:#9a5a00; --warn-soft:#fdf1df;
+  --f-body:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1622; --card:#172234; --ink:#e6ecf5; --muted:#9aa7ba; --line:#2a3850; --soft:#1d2a3f;
+  --brand:#6aa8ef; --brand-ink:#0f1622; --brand-soft:#1b2f4a; --pick:#5fcf93; --pick-soft:#163327;
+  --kakao-msg:#3a3720; --kakao-ink:#f5f0c8; --warn:#f0b35a; --warn-soft:#3a2a12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1622; --card:#172234; --ink:#e6ecf5; --muted:#9aa7ba; --line:#2a3850; --soft:#1d2a3f;
+  --brand:#6aa8ef; --brand-ink:#0f1622; --brand-soft:#1b2f4a; --pick:#5fcf93; --pick-soft:#163327;
+  --kakao-msg:#3a3720; --kakao-ink:#f5f0c8; --warn:#f0b35a; --warn-soft:#3a2a12; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:1080px;margin:0 auto;padding-block:24px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px}
+h1{font-size:24px;margin:0;text-wrap:balance}
+h2{font-size:19px;margin:0;text-wrap:balance;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lead{margin:0;color:var(--muted)}
+.now{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 14px;font-size:14px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.opt.rec{border:2px solid var(--pick)}
+.badge{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;background:var(--pick-soft);color:var(--pick)}
+.letter{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-weight:800;font-size:15px}
+.one{margin:0;font-size:15px}
+.pics{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:14px;align-items:start}
+@media (max-width:720px){.pics{grid-template-columns:minmax(0,1fr)}}
+.cap{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em;margin-bottom:4px}
+/* 화면 그림 */
+.pc,.ph{border:1px solid var(--line);border-radius:12px;background:var(--soft);padding:10px;display:flex;flex-direction:column;gap:7px;font-size:12.5px;min-width:0}
+.ph{max-width:220px;border-radius:22px;padding:12px 10px;margin-inline:auto;width:100%;box-sizing:border-box}
+.row{display:flex;gap:7px;min-width:0}
+.col{display:flex;flex-direction:column;gap:7px;min-width:0;flex:1}
+.blk{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+.blk b{font-size:12px}
+.tbl{display:grid;grid-template-columns:18px 1fr 54px;gap:3px 6px;font-size:11.5px;font-variant-numeric:tabular-nums}
+.tbl .ck{width:12px;height:12px;border:1.5px solid var(--muted);border-radius:3px;margin-top:2px}
+.tbl .ck.on{background:var(--brand);border-color:var(--brand)}
+.tbl .n{text-align:right}
+.fold{border:1px dashed var(--line);border-radius:8px;padding:5px 8px;color:var(--muted);font-size:11.5px}
+.fold::before{content:"▸ "}
+.btn{border-radius:8px;padding:5px 8px;font-weight:700;font-size:11.5px;text-align:center;border:1px solid var(--line);background:var(--card)}
+.btn.main{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);font-size:13px;padding:9px 10px}
+.btn.sm{font-size:10.5px;padding:3px 6px;color:var(--muted)}
+.kk{background:var(--kakao-msg);color:var(--kakao-ink);border-radius:8px;padding:6px 8px;font-size:11px;line-height:1.45}
+.kk::before{content:"카카오 알림톡";display:block;font-weight:800;font-size:10.5px;margin-bottom:2px}
+.stick{position:relative;border-top:2px solid var(--brand);padding-top:7px;margin-top:2px}
+.stick::before{content:"화면 아래에 늘 붙어 있음";position:absolute;top:-10px;right:4px;font-size:10px;background:var(--brand-soft);color:var(--brand);border-radius:6px;padding:0 6px}
+.bar{background:var(--brand);color:var(--brand-ink);border-radius:8px;padding:6px 9px;display:flex;justify-content:space-between;gap:6px;font-weight:700;font-size:11.5px;flex-wrap:wrap}
+.steps{display:flex;gap:4px;font-size:11px;flex-wrap:wrap}
+.steps span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.steps span.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.dim{opacity:.45}
+.pc .modal{border:2px solid var(--brand);border-radius:10px;background:var(--card);padding:8px;display:flex;flex-direction:column;gap:6px}
+.pm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;font-size:14px}
+@media (max-width:560px){.pm{grid-template-columns:minmax(0,1fr)}}
+.pm div{border-radius:10px;padding:8px 12px}
+.pm .good{background:var(--pick-soft)} .pm .bad{background:var(--soft)}
+.pm b{display:block;font-size:12.5px}
+.pm ul{margin:0;padding-left:18px}
+.same{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-size:14px}
+.same ul{margin:4px 0 0;padding-left:18px}
+.pick{background:var(--pick-soft);color:var(--ink);border-radius:14px;padding:14px 18px}
+.pick b{color:var(--pick)}
+</style>
+<div class="wrap">
+  <h1>청구서 보내기 배치 — 시안 4가지</h1>
+  <p class="lead">PC 청구서 화면의 «2. 청구서 보내기»를 어떻게 바꿀지 하나만 골라 주세요. 고르시면 그 안으로 만들어요. 폰도 같은 화면 하나로 바뀌어요.</p>
+  <div class="now">지금: 왼쪽에 계좌 · 기한 · 긴 문구 · 단문 · 방식 · 형식이 길게 이어지고, «선택항목 보내기» 단추는 오른쪽 미리보기 밑에 작게 있어요. 그래서 단추를 찾기 어려워요.</div>
+
+  <section class="opt rec">
+    <h2><span class="letter">A</span>세 단계 + 아래에 붙은 큰 단추 <span class="badge">추천</span></h2>
+    <p class="one">위에서 아래로 «① 받는 곳 확인 → ② 계좌 · 기한 → ③ 보내기» 순서예요. «3곳에 청구서 보내기» 큰 단추는 화면 아래에 늘 붙어 있어요. 문구 · 보내는 방식은 접어 둬요.</p>
+    <div class="pics">
+      <div><div class="cap">PC</div>
+        <div class="pc">
+          <div class="row"><div class="col">
+            <div class="blk"><b>① 받는 곳 확인</b>
+              <div class="tbl"><span class="ck on"></span><span>가온모터스 · 6대</span><span class="n">627,000</span>
+                <span class="ck on"></span><span>한빛상사 · 3대</span><span class="n">330,000</span>
+                <span class="ck on"></span><span>뉴카 · 2대</span><span class="n">198,000</span></div></div>
+            <div class="blk"><b>② 입금 계좌 · 기한</b><br>신한 110-000-000000 · 매월 10일</div>
+            <div class="fold">문구 · 보내는 방식 바꾸기</div>
+          </div><div class="col" style="flex:.8">
+            <div class="kk">[차곳간] 10월분 청구 내역 안내 · 가온모터스 님 … 627,000원</div>
+            <div class="btn sm">내 번호로 시험 받기</div>
+          </div></div>
+          <div class="stick row"><div class="btn sm">예약 발송</div><div class="btn main" style="flex:1">③ 3곳에 청구서 보내기</div></div>
+        </div></div>
+      <div><div class="cap">폰</div>
+        <div class="ph">
+          <div class="blk"><b>① 받는 곳 3곳</b> ✓</div>
+          <div class="blk"><b>② 계좌 · 기한</b> 신한 … · 10일</div>
+          <div class="fold">미리보기 보기</div>
+          <div class="fold">문구 · 방식 바꾸기</div>
+          <div class="stick"><div class="btn main">3곳에 청구서 보내기</div></div>
+        </div></div>
+    </div>
+    <div class="pm"><div class="good"><b>좋은 점</b><ul><li>단추가 늘 같은 자리(맨 아래)에 있어요</li><li>할 일 순서가 눈에 보여요</li></ul></div>
+      <div class="bad"><b>아쉬운 점</b><ul><li>문구를 고치려면 접힌 칸을 한 번 열어야 해요</li></ul></div></div>
+  </section>
+
+  <section class="opt">
+    <h2><span class="letter">B</span>표 바로 아래에 큰 단추</h2>
+    <p class="one">청구서 표에서 체크하면, 표 바로 밑에 «체크한 3곳에 보내기» 큰 단추가 있어요. 계좌 · 문구 · 방식은 그 아래 접힌 칸이에요.</p>
+    <div class="pics">
+      <div><div class="cap">PC</div>
+        <div class="pc">
+          <div class="blk"><b>청구서 표</b>
+            <div class="tbl"><span class="ck on"></span><span>가온모터스 · 6대</span><span class="n">627,000</span>
+              <span class="ck on"></span><span>한빛상사 · 3대</span><span class="n">330,000</span>
+              <span class="ck"></span><span>뉴카 · 2대</span><span class="n">198,000</span></div></div>
+          <div class="row"><div class="btn sm">내 번호로 시험</div><div class="btn sm">예약</div><div class="btn main" style="flex:1">체크한 2곳에 보내기</div></div>
+          <div class="fold">계좌 · 기한 · 문구 · 보내는 방식 (미리보기 함께)</div>
+        </div></div>
+      <div><div class="cap">폰</div>
+        <div class="ph">
+          <div class="blk"><b>표</b> 2곳 체크</div>
+          <div class="btn main">체크한 2곳에 보내기</div>
+          <div class="fold">계좌 · 문구 · 방식</div>
+        </div></div>
+    </div>
+    <div class="pm"><div class="good"><b>좋은 점</b><ul><li>체크와 보내기가 바로 붙어 있어요</li><li>지금 화면에서 가장 적게 바뀌어요</li></ul></div>
+      <div class="bad"><b>아쉬운 점</b><ul><li>계좌를 안 넣고 보낼 수 있어요(보내기 전 확인 창에서 한 번 더 물어요)</li></ul></div></div>
+  </section>
+
+  <section class="opt">
+    <h2><span class="letter">C</span>고르면 위에 뜨는 보내기 막대</h2>
+    <p class="one">메일 앱처럼, 한 곳이라도 체크하면 화면 위에 «2곳 골랐어요 · 보내기» 파란 막대가 떠요. 아래 설정 칸은 지금처럼 펼쳐 둬요.</p>
+    <div class="pics">
+      <div><div class="cap">PC</div>
+        <div class="pc">
+          <div class="bar"><span>2곳 골랐어요 · 1,005,000원</span><span>시험 · 예약 · <u>보내기</u></span></div>
+          <div class="blk"><b>청구서 표</b>
+            <div class="tbl"><span class="ck on"></span><span>가온모터스</span><span class="n">627,000</span>
+              <span class="ck on"></span><span>한빛상사</span><span class="n">330,000</span></div></div>
+          <div class="row"><div class="blk col">계좌 · 기한 · 문구 · 방식 (지금처럼)</div><div class="kk col">미리보기</div></div>
+        </div></div>
+      <div><div class="cap">폰</div>
+        <div class="ph">
+          <div class="bar"><span>2곳</span><span><u>보내기</u></span></div>
+          <div class="blk"><b>표</b></div>
+          <div class="blk">계좌 · 문구 …</div>
+        </div></div>
+    </div>
+    <div class="pm"><div class="good"><b>좋은 점</b><ul><li>어디까지 내려가 있어도 막대가 보여요</li></ul></div>
+      <div class="bad"><b>아쉬운 점</b><ul><li>막대가 작아서 처음엔 단추인지 모를 수 있어요</li><li>왼쪽 긴 설정은 그대로예요</li></ul></div></div>
+  </section>
+
+  <section class="opt">
+    <h2><span class="letter">D</span>«청구서 보내기» 창 하나에서 차례로</h2>
+    <p class="one">화면에는 «청구서 보내기» 단추 하나만 있어요. 누르면 창이 열리고 «받는 곳 → 계좌 · 기한 → 미리보기 → 보내기»를 차례로 넘겨요.</p>
+    <div class="pics">
+      <div><div class="cap">PC</div>
+        <div class="pc">
+          <div class="blk dim"><b>청구서 표</b> (체크)</div>
+          <div class="modal">
+            <div class="steps"><span>받는 곳</span><span class="on">계좌 · 기한</span><span>미리보기</span><span>보내기</span></div>
+            <div class="blk">신한 110-000-000000 · 매월 10일</div>
+            <div class="row"><div class="btn">이전</div><div class="btn main" style="flex:1">다음</div></div>
+          </div>
+        </div></div>
+      <div><div class="cap">폰</div>
+        <div class="ph">
+          <div class="steps"><span class="on">2 / 4</span></div>
+          <div class="blk">계좌 · 기한</div>
+          <div class="btn main">다음</div>
+        </div></div>
+    </div>
+    <div class="pm"><div class="good"><b>좋은 점</b><ul><li>한 번에 하나만 보여서 헷갈리지 않아요</li></ul></div>
+      <div class="bad"><b>아쉬운 점</b><ul><li>매달 보낼 때마다 «다음»을 여러 번 눌러야 해요</li><li>만드는 일이 가장 커요</li></ul></div></div>
+  </section>
+
+  <div class="same"><b>네 안 모두 같은 것</b>
+    <ul><li>미리보기는 카카오 알림톡 모양이에요. 아래에 «알림톡이 안 되면 이 문자로 가요»가 작게 붙어요 (v127에 이미 들어갔어요).</li>
+      <li>«내 번호로 시험» · «예약 발송»은 그대로 있어요. 큰 단추 옆에 작게 둬요.</li>
+      <li>딜러에게 가는 알림톡 · 문자 글은 바뀌지 않아요.</li></ul></div>
+  <div class="pick"><b>추천은 A안이에요.</b> 순서대로 내려가면 끝나고, 보내기 단추가 늘 같은 자리에 있어서 찾을 일이 없어요.</div>
+</div>
