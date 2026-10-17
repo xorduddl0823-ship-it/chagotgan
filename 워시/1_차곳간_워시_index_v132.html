@@ -4489,8 +4489,12 @@ function wBandOf(tab){
     return {count:o.length,text:"출고했는데 아직 입금 안 된 차 "+o.length+"대 · "+won(sum(o)),
       onGo:function(){var b=Array.prototype.filter.call(document.querySelectorAll("#jLT .cgg-tabsH button"),function(x){return /입금 대기|수금 대기/.test(x.textContent);})[0];
         if(b)b.click();var t=$("jLT");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView({block:"start"});}}};}
-  if(tab==="bill"){var l=[];try{if(!B.made)B.made=buildBills();l=B.made.filter(function(x){return x.amount>0&&!billState(x.name);});}catch(e){}
-    return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+(B.unit==="company"?"곳":"명")+" · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
+  if(tab==="bill"){var l=[],nP=0,nD=0;try{if(!B.made)B.made=buildBills();
+      var un=B.made.filter(function(x){return x.amount>0&&!billState(x.name);});
+      nP=un.filter(function(x){return !x.phone;}).length;nD=un.filter(function(x){return x.phone&&x.dup&&B.unit!=="company";}).length;
+      l=un.filter(function(x){return x.phone&&!(x.dup&&B.unit!=="company");});}catch(e){}
+    var U2=(B.unit==="company")?"곳":"명",ex=[nP?"번호 없음 "+nP+U2:"",nD?"이름 겹침 · 딜러 없음 "+nD+U2+"(인쇄로)":""].filter(Boolean).join(" · ");
+    return {count:l.length+nP+nD,text:(l.length?"보낼 수 있는 청구서 "+l.length+U2+" · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)):"아직 안 보낸 청구서")+(ex?" ("+ex+")":""),
       onGo:function(){var c=$("billSendCard");if(c)try{CGG.spot(c);}catch(e){c.scrollIntoView();}}};}
   if(tab==="money"){var d=recs.filter(function(r){return statusOf(r)==="출고";});
     if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 딜러 줄의 [입금 확인]을 눌러요"};
@@ -7599,7 +7603,7 @@ var DEF_BILLTXT=
  "건별 내역이 필요하시면 말씀해 주세요.\n감사합니다.";
 var BILL_TOKENS=[["[우리 회사]",function(b){return shopLabel();}],
   ["[청구 월]",function(b){return periodLabel(b.month);}],
-  ["[받는 분]",function(b){return b.who||b.name;}],
+  ["[받는 분]",function(b){return b.to||b.who||b.name;}],
   ["[소속 상사]",function(b){return b.company||"";}],
   ["[차량 대수]",function(b){return String(b.cars);}],
   ["[작업 내역]",function(b){return b.workText;}],
@@ -7653,7 +7657,10 @@ function buildBills(){
     var G=g[gk];G.recs.push(r);G.cars++;G.amount+=r.total||0;
     (r.works||[]).forEach(function(w){G.works[w.name]=(G.works[w.name]||0)+1;});
   });
-  Object.keys(g).forEach(function(k){var G=g[k];if(B.unit!=="company"&&seen[G.who]>1){G.dup=true;G.name=G.who+" ("+(G.company||"상사 없음")+")";}});
+  Object.keys(g).forEach(function(k){var G=g[k];var nod=(B.unit!=="company"&&G.who==="(딜러 없음)");
+    G.to=nod?(G.company||"(딜러 없음)"):G.who;
+    if(nod)G.name=(G.company||"상사 없음")+" · 딜러 없음";
+    if(B.unit!=="company"&&seen[G.who]>1){G.dup=true;if(!nod)G.name=G.who+" ("+(G.company||"상사 없음")+")";}});
   var list=Object.keys(g).map(function(k){
     var G=g[k];
     G.phone=billPhoneFor(B.unit,G.who,G.recs,G.company);
@@ -7677,7 +7684,7 @@ var DEF_BILLSHORT="[{업체}] {기간} 청구서 {대수} {금액}\n입금 {계�
 function billShortText(b){
   var t=(S.cfg&&S.cfg.billShort)||DEF_BILLSHORT;
   return t.replace(/\{업체\}/g,shopLabel()).replace(/\{상사\}/g,b.name)
-    .replace(/\{받는분\}/g,b.who||b.name).replace(/\{기간\}/g,periodLabel(b.month))
+    .replace(/\{받는분\}/g,b.to||b.who||b.name).replace(/\{기간\}/g,periodLabel(b.month))
     .replace(/\{대수\}/g,b.cars+"대").replace(/\{금액\}/g,won(b.amount))
     .replace(/\{계좌\}/g,(S.cfg&&S.cfg.bank)||"")
     .replace(/\{연락처\}/g,phoneLine()).replace(/\{대표번호\}/g,phoneLine());
@@ -7726,9 +7733,9 @@ function markBilled(b,sent,sched){
 }
 function isReserved(st){return !!(st&&st.reservedAt&&!st.sentAt&&new Date(st.reservedAt)>new Date());}
 function billVars(b,code){
-  return {"기간":periodLabel(b.month),"받는곳":b.who||b.name,"업체명":shopLabel(),"건수":b.cars,"금액":comma(b.amount||0),
+  return {"기간":periodLabel(b.month),"받는곳":b.to||b.who||b.name,"업체명":shopLabel(),"건수":b.cars,"금액":comma(b.amount||0),
     "입금기한":billDue(b),"계좌":(S.cfg&&S.cfg.bank)||"","업체전화":shopTel(),"보기코드":code||"",
-    /* 예전 이름 */ "업체":shopLabel(),"청구월":periodLabel(b.month),"받는분":b.who||b.name,
+    /* 예전 이름 */ "업체":shopLabel(),"청구월":periodLabel(b.month),"받는분":b.to||b.who||b.name,
     "소속상사":b.company||"","대수":b.cars+"대","작업내역":b.workText||"","합계":wonExact(b.amount),
     "연락처":phoneLine()||((S.cfg&&S.cfg.send&&S.cfg.send.from)||"")};
 }
@@ -8027,8 +8034,9 @@ function renderBillEditor(){
 function billTargets(){
   var list=B.made||[], ids=Object.keys(B.sel||{});
   var pick=list.filter(function(b){return !ids.length||B.sel[b.name];});
-  var go=pick.filter(function(b){return b.amount>0&&b.phone;});
-  return {all:!ids.length,pick:pick,go:go,skip:pick.length-go.length,sum:go.reduce(function(t,b){return t+(b.amount||0);},0)};
+  var ok0=pick.filter(function(b){return b.amount>0&&b.phone;});
+  var go=ok0.filter(function(b){return !(b.dup&&B.unit!=="company");});   /* v132: 같은 이름 딜러는 서버 고침 전까지 빼요 */
+  return {all:!ids.length,pick:pick,go:go,skip:pick.length-ok0.length,dup:ok0.length-go.length,sum:go.reduce(function(t,b){return t+(b.amount||0);},0)};
 }
 function bmGoUpdate(){
   if(!$("bmGo"))return;
@@ -8036,7 +8044,7 @@ function bmGoUpdate(){
   var U=(B.unit==="company")?"곳":"명";
   $("bmSelCnt").textContent=(t.all?"전체 ":(U==="명"?"고른 딜러 ":"고른 곳 "))+n+U;
   $("bmSelSum").textContent="합계 "+wonExact(t.sum);
-  $("bmSelSkip").textContent=t.skip?("번호 없음 · 0원 "+t.skip+U+"은 빠져요"):"";
+  $("bmSelSkip").textContent=[t.skip?("번호 없음 · 0원 "+t.skip+U+"은 빠져요"):"",t.dup?("이름 겹침 · 딜러 없음 "+t.dup+"명은 인쇄로"):""].filter(Boolean).join(" · ");
   $("bmSend").textContent=n?("③ "+n+U+"에게 청구서 보내기").replace("곳에게","곳에"):"③ 청구서 보내기";
   $("bmSend").disabled=!n;
   var box=$("bmTo");box.textContent="";
@@ -8117,11 +8125,12 @@ function billSheet(b){
     cancelReserveByRef(billKey(b.name)).then(function(){closeSheet();renderBill();});};
   if($("blResv"))$("blResv").onclick=function(){resvSheet([b]);};
   if($("blSend"))$("blSend").onclick=function(){
+    if(b.dup&&B.unit!=="company"){sendOneBill(b).catch(function(){});return;}
     if(!confirmed(b.name+"\n"+won(b.amount)+" · "+b.cars+"대\n이 내용으로 보낼까요?",this,"네, 보내요"))return;
-    sendOneBill(b);};
+    sendOneBill(b).catch(function(){});};
 }
 function sendOneBill(b,sched){
-  if(b.dup&&B.unit!=="company"){toast(b.name+" — 같은 이름 딜러가 있어 지금은 못 보내요. 이름을 바꾸거나 인쇄로 보내 주세요",true);return Promise.reject({message:"같은 이름 딜러"});}
+  if(b.dup&&B.unit!=="company"){toast(b.name+(b.who==="(딜러 없음)"?" — 차에 딜러를 넣거나 인쇄로 보내 주세요":" — 같은 이름 딜러가 있어 지금은 못 보내요. 이름을 바꾸거나 인쇄로 보내 주세요"),true);return Promise.reject({message:"같은 이름 딜러"});}
   if(b.amount<=0){toast("금액이 0원이라 못 보내요",true);return Promise.reject({message:"0원"});}
   if(!b.phone){toast(b.name+" 번호가 없어요",true);return Promise.reject({message:"번호 없음"});}
   var c=sendCfg();

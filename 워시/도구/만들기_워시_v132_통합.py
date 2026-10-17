@@ -98,7 +98,8 @@ function wBandOf(tab){
       onGo:function(){var b=Array.prototype.filter.call(document.querySelectorAll("#jLT .cgg-tabsH button"),function(x){return /입금 대기|수금 대기/.test(x.textContent);})[0];
         if(b)b.click();var t=$("jLT");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView({block:"start"});}}};}
   if(tab==="bill"){var l=[];try{l=(B.made||buildBills()).filter(function(x){return x.amount>0&&!billState(x.name);});}catch(e){}
-    return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+(B.unit==="company"?"곳":"명")+" · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
+    var U2=(B.unit==="company")?"곳":"명",ex=[nP?"번호 없음 "+nP+U2:"",nD?"이름 겹침 · 딜러 없음 "+nD+U2+"(인쇄로)":""].filter(Boolean).join(" · ");
+    return {count:l.length+nP+nD,text:(l.length?"보낼 수 있는 청구서 "+l.length+U2+" · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)):"아직 안 보낸 청구서")+(ex?" ("+ex+")":""),
       onGo:function(){var c=$("billSendCard");if(c)try{CGG.spot(c);}catch(e){c.scrollIntoView();}}};}
   if(tab==="money"){var d=recs.filter(function(r){return statusOf(r)==="출고";});
     return {count:MNTAB==="due"?0:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",empty:"지금 처리할 일이 없어요",go:"받을 금액 보기",
@@ -387,3 +388,39 @@ rep('''toast(b.name+" — 다른 상사에 같은 이름 딜러가 있어 지금
 # 홈 — 이름 겹침을 청구서 화면과 같은 범위(그 달 차 전체)로
 rep('''  var cntH={};Object.keys(billComps).forEach(function(k){var d=billComps[k].d;cntH[d]=(cntH[d]||0)+1;});''',
     '''  var cntH={},pairH={};S.records.forEach(function(r){if((r.month||mKey(r.createdAt))!==billM)return;var dn=String(r.dealer||"").trim()||"(딜러 없음)",pk=dn+"\\u0001"+(r.company||"");if(!pairH[pk]){pairH[pk]=1;cntH[dn]=(cntH[dn]||0)+1;}});''')
+
+# ══ 올리기 전 검사(v132) — 보내기 칸 · 할 일 띠 · 딜러 없는 차 ══
+# 딜러 없는 차: 화면 이름 = «상사 · 딜러 없음», 글 속 받는 분 = 상사. 서버로 가는 이름은 «(딜러 없음)» 그대로(서버가 빈 딜러를 이 이름으로 맞춰 봐요)
+rep('''if(B.unit!=="company"&&seen[G.who]>1){G.dup=true;G.name=G.who+" ("+(G.company||"상사 없음")+")";}});''',
+    '''var nod=(B.unit!=="company"&&G.who==="(딜러 없음)");
+    G.to=nod?(G.company||"(딜러 없음)"):G.who;
+    if(nod)G.name=(G.company||"상사 없음")+" · 딜러 없음";
+    if(B.unit!=="company"&&seen[G.who]>1){G.dup=true;if(!nod)G.name=G.who+" ("+(G.company||"상사 없음")+")";}});''')
+rep('''  return {"기간":periodLabel(b.month),"받는곳":b.who||b.name,''', '''  return {"기간":periodLabel(b.month),"받는곳":b.to||b.who||b.name,''')
+rep('''"청구월":periodLabel(b.month),"받는분":b.who||b.name,''', '''"청구월":periodLabel(b.month),"받는분":b.to||b.who||b.name,''')
+rep('''  ["[받는 분]",function(b){return b.who||b.name;}],''', '''  ["[받는 분]",function(b){return b.to||b.who||b.name;}],''')
+rep('''    .replace(/\\{받는분\\}/g,b.who||b.name).replace(/\\{기간\\}/g,periodLabel(b.month))''', '''    .replace(/\\{받는분\\}/g,b.to||b.who||b.name).replace(/\\{기간\\}/g,periodLabel(b.month))''')
+rep('''toast(b.name+" — 같은 이름 딜러가 있어 지금은 못 보내요. 이름을 바꾸거나 인쇄로 보내 주세요",true);''',
+    '''toast(b.name+(b.who==="(딜러 없음)"?" — 차에 딜러를 넣거나 인쇄로 보내 주세요":" — 같은 이름 딜러가 있어 지금은 못 보내요. 이름을 바꾸거나 인쇄로 보내 주세요"),true);''')
+# 1. 보내기 칸 — 같은 이름 딜러는 빼고 세요(확인 창과 같은 수 · 합계)
+rep('''  var go=pick.filter(function(b){return b.amount>0&&b.phone;});
+  return {all:!ids.length,pick:pick,go:go,skip:pick.length-go.length,sum:go.reduce(function(t,b){return t+(b.amount||0);},0)};''',
+    '''  var ok0=pick.filter(function(b){return b.amount>0&&b.phone;});
+  var go=ok0.filter(function(b){return !(b.dup&&B.unit!=="company");});   /* v132: 같은 이름 딜러는 서버 고침 전까지 빼요 */
+  return {all:!ids.length,pick:pick,go:go,skip:pick.length-ok0.length,dup:ok0.length-go.length,sum:go.reduce(function(t,b){return t+(b.amount||0);},0)};''')
+rep('''  $("bmSelSkip").textContent=t.skip?("번호 없음 · 0원 "+t.skip+U+"은 빠져요"):"";''',
+    '''  $("bmSelSkip").textContent=[t.skip?("번호 없음 · 0원 "+t.skip+U+"은 빠져요"):"",t.dup?("이름 겹침 · 딜러 없음 "+t.dup+"명은 인쇄로"):""].filter(Boolean).join(" · ");''')
+# 3. 할 일 띠 — 보낼 수 있는 수 · 합계 + 따로 셀 것
+rep('''  if(tab==="bill"){var l=[];try{if(!B.made)B.made=buildBills();l=B.made.filter(function(x){return x.amount>0&&!billState(x.name);});}catch(e){}''',
+    '''  if(tab==="bill"){var l=[],nP=0,nD=0;try{if(!B.made)B.made=buildBills();
+      var un=B.made.filter(function(x){return x.amount>0&&!billState(x.name);});
+      nP=un.filter(function(x){return !x.phone;}).length;nD=un.filter(function(x){return x.phone&&x.dup&&B.unit!=="company";}).length;
+      l=un.filter(function(x){return x.phone&&!(x.dup&&B.unit!=="company");});}catch(e){}''')
+# 한 장 보내기 — 막힌 딜러는 확인 창 전에 알려요
+rep('''  if($("blSend"))$("blSend").onclick=function(){
+    if(!confirmed(''', '''  if($("blSend"))$("blSend").onclick=function(){
+    if(b.dup&&B.unit!=="company"){sendOneBill(b).catch(function(){});return;}
+    if(!confirmed(''')
+rep('''이 내용으로 보낼까요?",this,"네, 보내요"))return;
+    sendOneBill(b);};''', '''이 내용으로 보낼까요?",this,"네, 보내요"))return;
+    sendOneBill(b).catch(function(){});};''')
