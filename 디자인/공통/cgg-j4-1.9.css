@@ -631,3 +631,17 @@ select.cgg-hb{width:auto}
 .cgg-beta b{background:var(--beta-ink);color:var(--beta-bg);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:800;flex:none}
 .cgg-beta[hidden]{display:none}
 @media (max-width:600px){ .cgg-beta{font-size:12.5px} .cgg-beta .in{display:block;padding-block:6px} .cgg-beta b{margin-right:6px} }
+/* 기능 찾기 = 메뉴 줄 오른쪽 끝 (대표님 10/18 확정) — CGG.nav(…, {find}). 흰 바탕 칸 · 결과는 아래로 펼침
+   좁은 화면(1000 이하) · 세로 · 아이콘 배치에서는 숨고, 머리말 [찾기] 단추(.cgg-findalt)가 창으로 대신해요 */
+.cgg-nav .cgg-navfind{margin-left:auto;align-self:center;width:260px;flex:0 1 260px;min-width:170px;position:relative;z-index:var(--z-drop)}
+.cgg-nav:has(.cgg-navfind){overflow:visible}
+.cgg-navfind .in{display:flex;align-items:center;gap:7px;height:calc(var(--nav-h) - 18px);width:100%;box-sizing:border-box;border-radius:var(--r-ctl);padding:0 12px;background:var(--surface);border:1px solid var(--ln2);color:var(--muted)}
+.cgg-navfind input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:14px;color:var(--text);outline:none;box-shadow:none;height:auto;padding:0;margin:0}
+.cgg-navfind .in:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px #1668C422}
+.cgg-navfind input::placeholder{color:var(--muted)}
+.cgg-navfind .ph{display:none}
+.cgg-navfind .res{left:auto;right:0;width:340px}
+.cgg-navfind .res button{text-align:left;align-items:flex-start}
+.cgg-hb.cgg-findalt{display:none}
+@media (max-width:1000px){ .cgg-nav .cgg-navfind{display:none} .cgg-hb.cgg-findalt{display:inline-flex} .cgg-nav:has(.cgg-navfind){overflow-x:auto} }
+@media (min-width:1001px){ .lay-side .cgg-nav .cgg-navfind,.lay-icon .cgg-nav .cgg-navfind{display:none} .lay-side .cgg-hb.cgg-findalt,.lay-icon .cgg-hb.cgg-findalt{display:inline-flex} }

@@ -285,7 +285,7 @@ var CGG = (function(){
      목록 글은 모두 esc 해서 그려요. 바로가기 고정은 «이 기기에만»(localStorage) — 서버에 보내지 않아요. */
   function norm(s){ return String(s==null?"":s).toLowerCase().replace(/[\s·›>()\[\]«»,.\/_+:~-]+/g,""); }
   /* A — 큰 메뉴 + 그 아래 칸. 세로 배치(넓은 화면)에서는 아래 칸이 늘 펼쳐져 있어요. 가로 · 아이콘 배치와 폰에서는 큰 메뉴만 */
-  function nav(el, groups, cur, onPick){ if(!el) return;
+  function nav(el, groups, cur, onPick, opt){ if(!el) return; opt=opt||{};
     var cg=String(cur||"").split("/")[0];
     el.setAttribute("aria-label","메뉴");
     el.innerHTML=groups.map(function(g){ var on=g.key===cg, subs=g.subs||[];
@@ -299,6 +299,8 @@ var CGG = (function(){
     row.hidden=!row.innerHTML;
     Array.prototype.forEach.call(el.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
     Array.prototype.forEach.call(row.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
+    /* 1.9 기능 찾기 = 메뉴 줄 오른쪽 끝 (대표님 10/18 확정). opt.find = {feats, onGo}. 좁은 화면 · 세로 배치에서는 숨고 머리말 [찾기] 단추가 대신해요 */
+    if(opt.find){ var fb=document.createElement("div"); fb.className="cgg-navfind"; el.appendChild(fb); find(fb, opt.find.feats, opt.find.onGo, {ph:opt.find.ph}); }
   }
   /* 그 화면 안의 칸으로 내려가서 잠깐 빛나게 (spot: 칸의 id 또는 선택자 — 제품이 정한 고정 글자만) */
   function spot(sel){ var e=null; try{ e=typeof sel==="string"?document.querySelector(sel):sel; }catch(x){ e=null; } if(!e) return;
@@ -383,13 +385,13 @@ var CGG = (function(){
   function short(n){ n=Number(n)||0; var a=Math.abs(n); if(a>=1e8) return (Math.round(n/1e7)/10)+"억"; if(a>=1e4) return (Math.round(n/1e3)/10)+"만"; return won(n); }
   /* 머리말 윗줄 — el 은 .cgg-top. 차례는 늘 같아요: 로고 · 제품 이름 | 업체 | 찾기 · 공지사항 · 도움말 · 주소 · 새로고침 · 30초마다 · 연결됨 · 현장 화면 · 이름 ▾
      o = {product:"워시", sub:"광택 · 세차 정산", ver:"v128", biz:{name, line}, find:{feats, onGo, onPhone},
-          notice:fn, help:fn, link:fn, refresh:fn, auto:{value, options:[[값,글]], onChange}, date:"10/18", saved:true(«연결됨» — 초록 점) 또는 "연결됨 · 15:39", field:{label:"현장 화면", on:fn}, me:{name, items, onPick}}
+          notice:fn, help:fn, link:fn, refresh:fn, auto:{value, options:[[값,글]], onChange}, find:{mode:"nav", feats, onGo}, date:"10/18", saved:true(«연결됨» — 초록 점) 또는 "연결됨 · 15:39", field:{label:"현장 화면", on:fn}, me:{name, items, onPick}}
      없는 단추는 빼고 그려요(자리는 앞으로 당겨져요). 글자는 모두 esc. */
   function header(el, o){ if(!el) return {}; o=o||{};
     var B=[["notice","공지사항"],["help","도움말"],["link","주소"],["refresh","새로고침"]];   /* 1.9 «링크 복사» → «주소» (SKILL.md 머리말 차례) */
     el.innerHTML='<div class="cgg-brand"><span class="cgg-ci" aria-hidden="true">차</span><div><b>차곳간 '+esc(o.product||"")+'</b><small>'+esc([o.sub,o.ver,o.date].filter(Boolean).join(" · "))+'</small></div></div>'
       +(o.biz?'<div class="cgg-hdr-biz"><b>'+esc(o.biz.name||"")+'</b><small>'+esc(o.biz.line||"")+'</small></div>':'')
-      +'<div class="cgg-right">'+(o.find?(o.find.mode==="button"?'<button type="button" class="cgg-hb cgg-findbtn" data-hb="findbtn" aria-label="기능 찾기">'+ic("search")+'<span>찾기</span></button>':'<div class="cgg-hfind-slot"></div>'):'')
+      +'<div class="cgg-right">'+(o.find?(o.find.mode==="button"||o.find.mode==="nav"?'<button type="button" class="cgg-hb cgg-findbtn'+(o.find.mode==="nav"?' cgg-findalt':'')+'" data-hb="findbtn" aria-label="기능 찾기">'+ic("search")+'<span>찾기</span></button>':'<div class="cgg-hfind-slot"></div>'):'')
       +B.filter(function(b){ return o[b[0]]; }).map(function(b){ return '<button type="button" class="cgg-hb'+(b[0]==="refresh"?'':' cgg-wide')+'" data-hb="'+b[0]+'">'+(b[0]==="refresh"?ic("refresh"):'')+'<span>'+b[1]+'</span></button>'; }).join("")
       +(o.auto?'<select class="cgg-hb cgg-wide" data-hb="auto" aria-label="자동 새로고침">'+o.auto.options.map(function(x){ return '<option value="'+esc(x[0])+'"'+(String(x[0])===String(o.auto.value)?' selected':'')+'>'+esc(x[1])+'</option>'; }).join("")+'</select>':'')
       +(o.saved!=null?'<span class="cgg-hb cgg-saved cgg-conn cgg-wide" data-hb="saved" role="status"><i aria-hidden="true"></i><span>'+esc(o.saved===true?"연결됨":o.saved)+'</span></span>':'')
@@ -401,7 +403,8 @@ var CGG = (function(){
     var fd=el.querySelector('[data-hb="field"]'); if(fd) fd.onclick=function(){ o.field.on&&o.field.on(); };
     var me=el.querySelector('[data-hb="me"]'); if(me&&o.me.items) menu(me, {name:o.me.name, role:o.me.role}, o.me.items, o.me.onPick);
     var fs=el.querySelector(".cgg-hfind-slot"); if(fs) find(fs, o.find.feats, o.find.onGo, {phone:o.find.onPhone});
-    var fb=el.querySelector('[data-hb="findbtn"]'); if(fb) fb.onclick=function(){ findDialog(o.find.feats, o.find.onGo); };   /* 1.9 «공지 앞 돋보기 단추» (워시 시안 추천안) */
+    var fb=el.querySelector('[data-hb="findbtn"]'); if(fb) fb.onclick=function(){ findDialog(o.find.feats, o.find.onGo); };
+    /* 1.9 기능 찾기 자리 — find.mode: "nav"(대표님 10/18 확정 · 메뉴 줄 오른쪽 끝, CGG.nav(…, {find}) 와 함께. 머리말 [찾기]는 좁은 화면 · 세로 배치에서만 보여요) | "button"(늘 머리말 [찾기]) | 없음(1.8 머리말 칸) */
     /* 업체명은 절대 자르지 않아요(대표님 10/18). 자리가 모자라면 ① 기능 찾기 칸 → 돋보기 ② 단추 묶음 → «더보기 ▾» 차례로 접어요 */
     var more=el.querySelector('[data-hb="more"]');
     if(more) menu(more, null, function(){ var L=[];
