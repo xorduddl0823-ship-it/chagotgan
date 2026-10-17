@@ -121,6 +121,14 @@ function rpc(fn: string, a: any) {
     if (!r) { r = { key: a.p_key, fail_count: 0, locked_until: null }; store.check_deliv_fail.push(r); }
     return { data: bump(r), error: null };
   }
+  /* SQL 13 check_invoice_add_paid 흉내 — store.__sql13 이 있을 때만 (없으면 «함수 없음») */
+  if (fn === "check_invoice_add_paid" && (store as any).__sql13) {
+    const v = (store.check_invoice ?? []).find((x) => x.office_id === a.p_office && x.id === a.p_id);
+    if (!v) return { data: null, error: null };
+    v.paid_amount = (Number(v.paid_amount) || 0) + Number(a.p_amount);
+    v.state = v.paid_amount >= (Number(v.total_amount) || 0) ? "완료" : "수금중";
+    return { data: v.paid_amount, error: null };
+  }
   if (fn.startsWith("check_")) return { data: null, error: { message: `function ${fn} does not exist` } };
   return { data: true, error: null };
 }
