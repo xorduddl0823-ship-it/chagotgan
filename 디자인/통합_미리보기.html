@@ -64,7 +64,7 @@ tr.was-bad td.now{background:var(--bad-bg)}
   <section class="score" aria-label="다른 곳 수">
     <div class="s bad"><small>지금 — 워시 v125 ↔ 체크 v42</small><b id="nNow">12가지</b><small>29가지를 숫자로 재서 다른 것</small></div>
     <div class="arr" aria-hidden="true">→</div>
-    <div class="s ok"><small>바뀐 뒤 — 공통 부품 1.8 (아래에서 지금 다시 잼)</small><b id="nAfter">재는 중…</b><small>두 제품이 같은 뼈대 · 같은 크기 변수</small></div>
+    <div class="s ok"><small>바뀐 뒤 — 공통 부품 1.8 (아래에서 지금 다시 잼)</small><b id="nAfter">재는 중…</b><small id="nBoth">가로 · 세로 배치 모두 재요</small></div>
   </section>
 
   <section class="sec" aria-labelledby="t1">
@@ -78,7 +78,7 @@ tr.was-bad td.now{background:var(--bad-bg)}
 
   <section class="sec" aria-labelledby="t2">
     <div class="bar"><h2 id="t2">2. 바뀐 뒤 — 같은 뼈대, 글과 숫자만 달라요</h2>
-      <div class="seg" role="group" aria-label="보기 크기"><button type="button" id="vPC" aria-pressed="true">PC</button><button type="button" id="vPH" aria-pressed="false">폰</button></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><div class="seg" role="group" aria-label="메뉴 배치"><button type="button" id="lTop" aria-pressed="true">가로 (처음)</button><button type="button" id="lSide" aria-pressed="false">세로 왼쪽</button></div><div class="seg" role="group" aria-label="보기 크기"><button type="button" id="vPC" aria-pressed="true">PC</button><button type="button" id="vPH" aria-pressed="false">폰</button></div></div></div>
     <div class="pair">
       <figure><figcaption>워시 (안에서 바로 눌러 보세요)</figcaption><div class="box" id="bW"><iframe id="fW" title="바뀐 뒤 워시" src="통합_앱.html#wash"></iframe></div></figure>
       <figure><figcaption>체크</figcaption><div class="box" id="bC"><iframe id="fC" title="바뀐 뒤 체크" src="통합_앱.html#check"></iframe></div></figure>
@@ -94,12 +94,13 @@ tr.was-bad td.now{background:var(--bad-bg)}
   <section class="card" aria-labelledby="t4">
     <h2 id="t4">3. 통합 검사표 — 29가지를 숫자로</h2>
     <p class="note">«바뀐 뒤» 칸은 이 페이지가 위 두 화면을 지금 직접 재서 채워요. 판을 올릴 때마다 같은 표로 재요 (저장소 디자인/통합검사/).</p>
-    <div class="tw"><table><thead><tr><th>묶음</th><th>재는 것</th><th>지금 워시</th><th>지금 체크</th><th>바뀐 뒤 워시</th><th>바뀐 뒤 체크</th><th>같음</th></tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="tw"><table><thead><tr><th>묶음</th><th>재는 것</th><th>지금 워시</th><th>지금 체크</th><th>바뀐 뒤 워시 (가로)</th><th>바뀐 뒤 체크 (가로)</th><th>같음</th></tr></thead><tbody id="tb"></tbody></table></div>
   </section>
 </div>
+<div aria-hidden="true" style="position:absolute;left:-30000px;top:0;width:1400px;height:900px;overflow:hidden"><iframe id="sW" title="" tabindex="-1" src="통합_앱.html#wash-side" style="width:1400px;height:900px;border:0"></iframe><iframe id="sC" title="" tabindex="-1" src="통합_앱.html#check-side" style="width:1400px;height:900px;border:0"></iframe></div>
 <script src="통합검사/재는것.js"></script>
 <script>
-var NOW=null, AFTER=null, VIEW="pc";
+var NOW=null, AFTER=null, SIDE=null, VIEW="pc", LAYV="";
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 var EIGHT=[["로고 · 제목","같은 로고 · «차곳간 ○○» · 판 표시 같은 자리",["logo","logo_kind","brand_fs","brand_txt","brand_sub"]],
  ["업체명 자리","같은 자리 · 같은 크기",["biz_fs","biz_x"]],
@@ -112,23 +113,30 @@ var EIGHT=[["로고 · 제목","같은 로고 · «차곳간 ○○» · 판 표
 function fit(){ var specs=VIEW==="pc"?[1400,900]:[375,760];
   ["W","C"].forEach(function(k){ var box=document.getElementById("b"+k), f=document.getElementById("f"+k), w=box.parentElement.clientWidth, s=Math.min(1,w/specs[0]);
     f.style.width=specs[0]+"px"; f.style.height=specs[1]+"px"; f.style.transform="scale("+s+")"; box.style.height=Math.round(specs[1]*s)+"px"; box.style.width=VIEW==="pc"?"auto":Math.round(specs[0]*s)+"px"; }); }
-function measure(){ if(VIEW!=="pc") return; try{
-    var a=cggMeasure(document.getElementById("fW").contentDocument), b=cggMeasure(document.getElementById("fC").contentDocument);
-    if(!a.length||!b.length) return; AFTER=cggCompare(a,b); draw(); }catch(e){ document.getElementById("nAfter").textContent="잴 수 없어요"; } }
+function measure(){ try{
+    var a=cggMeasure(document.getElementById(LAYV?"sW":"fW").contentDocument), b=cggMeasure(document.getElementById(LAYV?"sC":"fC").contentDocument);
+    if(a.length&&b.length){ if(LAYV) SIDE=cggCompare(a,b); else if(VIEW==="pc") AFTER=cggCompare(a,b); }
+    var sa=cggMeasure(document.getElementById("sW").contentDocument), sb=cggMeasure(document.getElementById("sC").contentDocument); if(sa.length&&sb.length) SIDE=cggCompare(sa,sb);
+    draw(); }catch(e){ document.getElementById("nAfter").textContent="잴 수 없어요"; } }
 function draw(){ if(!NOW) return; var byK={}; (AFTER||[]).forEach(function(r){ byK[r.k]=r; });
   var nowBad=NOW.filter(function(r){ return !r.same; });
   document.getElementById("nNow").textContent=nowBad.length+"가지";
   document.getElementById("nowDiffs").innerHTML=nowBad.map(function(r){ return '<span>'+esc(r.label)+'</span>'; }).join("");
   if(AFTER){ var ab=AFTER.filter(function(r){ return !r.same; }).length; document.getElementById("nAfter").textContent=ab+"가지"; }
+  if(AFTER||SIDE) document.getElementById("nBoth").textContent="가로(처음) "+(AFTER?AFTER.filter(function(r){ return !r.same; }).length+"가지":"…")+" · 세로 왼쪽 "+(SIDE?SIDE.filter(function(r){ return !r.same; }).length+"가지":"…")+" — 같은 뼈대 · 같은 크기 변수";
   document.getElementById("tb").innerHTML=NOW.map(function(r){ var x=byK[r.k];
     return '<tr class="'+(r.same?'':'was-bad')+'"><td class="g">'+esc(r.group)+'</td><td>'+esc(r.label)+'</td><td class="now">'+esc(r.a)+'</td><td class="now">'+esc(r.b)+'</td><td>'+(x?esc(x.a):'…')+'</td><td>'+(x?esc(x.b):'…')+'</td><td>'+(r.same?'<span class="y">✅</span>':'<span class="n">❌</span>')+' → '+(x?(x.same?'<span class="y">✅</span>':'<span class="n">❌</span>'):'…')+'</td></tr>'; }).join("");
   document.getElementById("eight").innerHTML=EIGHT.map(function(e){ var ks=e[2], before=ks.filter(function(k){ var r=NOW.filter(function(x){return x.k===k;})[0]; return r&&!r.same; }).length, after=AFTER?ks.filter(function(k){ return byK[k]&&!byK[k].same; }).length:null;
     return '<div><b>'+esc(e[0])+'</b><small>'+esc(e[1])+'</small><span class="st"><span class="'+(before?'n':'y')+'">지금 '+(before?'다름 '+before:'같음')+'</span> → '+(after==null?'…':'<span class="'+(after?'n':'y')+'">바뀐 뒤 '+(after?'다름 '+after:'같음 ✅')+'</span>')+'</span></div>'; }).join(""); }
+function setLay(side){ LAYV=side?"-side":""; document.getElementById("lTop").setAttribute("aria-pressed",!side); document.getElementById("lSide").setAttribute("aria-pressed",!!side);
+  document.getElementById("fW").src="통합_앱.html#wash"+LAYV; document.getElementById("fC").src="통합_앱.html#check"+LAYV; }
+document.getElementById("lTop").onclick=function(){ setLay(false); };
+document.getElementById("lSide").onclick=function(){ setLay(true); };
 function setView(v){ VIEW=v; document.getElementById("vPC").setAttribute("aria-pressed",v==="pc"); document.getElementById("vPH").setAttribute("aria-pressed",v==="ph"); fit(); }
 document.getElementById("vPC").onclick=function(){ setView("pc"); };
 document.getElementById("vPH").onclick=function(){ setView("ph"); };
 window.addEventListener("resize",fit);
-var loaded=0; ["fW","fC"].forEach(function(id){ document.getElementById(id).addEventListener("load",function(){ loaded++; if(loaded>=2) setTimeout(measure,1500); }); });
+var loaded=0; ["fW","fC","sW","sC"].forEach(function(id){ document.getElementById(id).addEventListener("load",function(){ loaded++; if(loaded>=4) setTimeout(function(){ LAYV=""; measure(); },1500); }); });
 fetch("통합검사/지금_v125_v42.json").then(function(r){ return r.json(); }).then(function(j){ NOW=j; draw(); }).catch(function(){ NOW=[]; draw(); });
 fit();
 </script>
