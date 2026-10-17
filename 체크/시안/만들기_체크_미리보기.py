@@ -78,6 +78,8 @@ FAKE = r'''<script>
   }
   var STAFF=[{id:"u1",이름:"김대표",휴대폰:"010-****-0000",권한:"대표",사용:"Y",비밀번호:"정함",마지막로그인:new Date().toISOString(),나:"Y"},
              {id:"u2",이름:"이직원",휴대폰:"010-****-0001",권한:"직원",사용:"Y",비밀번호:"정함",마지막로그인:"",나:""}];
+  var PENDPV=[{tel:"010-1234-5678", names:["테스트딜러"], companies:["브라더광택"], drivers:["김기사"], n:2, first:"2026-10-17T21:10:00", last:"2026-10-17T22:40:00", match:[]},
+               {tel:"010-2222-3333", names:["김하늘","김하늘 실장"], companies:["하늘모터스"], drivers:["이기사"], n:1, first:"2026-10-17T20:00:00", last:"2026-10-17T20:00:00", match:[{id:"d0", name:"김하늘"}]}];
   var RRULE_PV={days:120, steps:[30,15,7], past:true, auto:false, ataReady:false}, RM_OFF={}, RM_SENT={};
   function remindRows(){
     var out=[], now=new Date(), P=["12가3456","34나5678","56다7890","78라1234","90마5678","11바2233","22사3344","33아4455","44자5566"],
@@ -138,6 +140,11 @@ FAKE = r'''<script>
       case "dealerSave": var ds=a[0]||{}, cc=null; if(ds.company_id){ var ci=+String(ds.company_id).slice(1); if(COMP[ci]) cc={id:ds.company_id, name:COMP[ci][0], biz_no:COMP[ci][1]}; }
         var nd={id:"d"+(DEALERS.length+100), name:ds.name, tel:ds.tel, company:cc, billTo:null, issuer_name:cc?cc.name:"", issuer_biz:cc?cc.biz_no:"", issuer_kind:cc?"company":"none", tax_issue:true};
         DEALERS.push(nd); return nd;
+      /* v44 · 서버 v34 딜러 등록 대기 (서버/설계/22) */
+      case "delivPendingDealers": return {ok:true, days:14, list:PENDPV};
+      case "delivApproveDealer": var ap=Array.isArray(a[0])?a[0]:[a[0]]; return {ok:true, results:ap.map(function(x){
+          PENDPV=PENDPV.filter(function(p){ return p.tel!==x.tel; }); return {tel:"010-****-"+String(x.tel).slice(-4), ok:true, dealerId:"dnew", sent:x.resend?1:0, failed:0}; })};
+      case "delivRejectDealer": var rj=Array.isArray(a[0])?a[0]:[a[0]]; rj.forEach(function(x){ PENDPV=PENDPV.filter(function(p){ return p.tel!==x.tel; }); }); return {ok:true, n:rj.length};
       case "dealerDel": var dd=(a[0]||{}).ids||[]; DEALERS=DEALERS.filter(function(d){ return dd.indexOf(d.id)<0; }); return {n:dd.length};
       case "remindRule": return RRULE_PV;
       case "remindRuleSave": RRULE_PV=Object.assign({}, RRULE_PV, a[0]||{}); return {ok:true};

@@ -1,0 +1,9 @@
+# 체크 사이트 머리글 — 로그인 없이 여는 보기 화면은 남기지 않고 · 주소가 새지 않고 · 검색에 안 나오게 (보안 dfcb3b9)
+/r/*
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow
+/d/*
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow

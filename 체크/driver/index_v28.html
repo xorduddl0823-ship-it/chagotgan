@@ -289,6 +289,15 @@ function niceMsg(m, formal){
 }
 /* 보낸 결과 — 방법 코드(ATA · MMS · LMS · SMS)는 우리말로, 이유가 영어 · 코드면 쉬운 말로 */
 function howKo(h){ h=String(h||'').toUpperCase(); return h==='ATA'?'알림톡':h==='MMS'?'사진 문자':(h==='LMS'||h==='SMS')?'문자':(h||'-'); }
+/* v28: 기록 상태 — 알림 기준 [보이는 말, 칩 색] (기록 저장 자체는 따로 말하지 않음) */
+function sendTag(r){
+  if(r.상태==='취소') return ['취소','p-bad'];
+  if(r.발송결과==='시험') return ['시험','p-test'];
+  if(r.발송결과==='성공') return ['알림 보냄','p-ok'];
+  if(r.발송결과==='실패') return ['못 보냄','p-bad'];
+  if(!r.딜러연락처) return ['알림 없음 (번호 없음)','p-test'];
+  return ['보내는 중','p-test'];
+}
 function whyKo(w){
   w=String(w||'');
   /* v28: 서버 까닭(짧은 말)을 기사가 할 일로 — 사무실이 고칠 것은 «사무실에 알려 주세요» */
@@ -1191,16 +1200,16 @@ function paintList(){
   });
   var P=L.slice(0, shownN);
   $('today').innerHTML = P.length ? P.map(function(r,i){
-    var cls=r.발송결과==='성공'?'p-ok':(r.발송결과==='시험'?'p-test':'p-bad');
+    var tg=sendTag(r), cls=tg[1];
     var day=String(r.도착일시).slice(5,10).replace('-','/');
     var mine=(r.기사===me.name), id=esc(r.배달ID);
     return '<div class="t" data-id="'+id+'" style="cursor:pointer">'+
       (mine?'<input type="checkbox" class="rk" data-ck="'+id+'"'+(SEL[r.배달ID]?' checked':'')+' aria-label="고르기">':'<span class="rk0"></span>')+
       '<span class="tx">'+esc(day)+' '+esc(String(r.도착일시).slice(11,16))+
       ' <b>'+esc(r.차량번호||'번호 없음')+'</b> → '+esc(r.목적지)+
-      '<br><small style="color:var(--ink-2)">'+esc((r.상사?r.상사+' ':'')+(r.딜러||'딜러 없음'))+
+      '<br><small style="color:var(--ink-2)">'+esc((r.상사?r.상사+' ':'')+(r.딜러||(r.딜러연락처?'딜러 이름 없음':'딜러 없음')))+
       (WHO==='all'?' · <b style="color:var(--ink)">'+esc(r.기사||'')+(mine?'(나)':'')+'</b>':'')+' · 눌러서 자세히</small></span>'+
-      '<span class="pill '+cls+'">'+esc(r.상태==='취소'?'취소':r.발송결과)+'</span></div>';
+      '<span class="pill '+cls+'">'+esc(tg[0])+'</span></div>';
   }).join('') : '<div class="hint">'+(base.length?'찾는 것이 없어요.':'아직 보낸 것이 없어요.')+'</div>';
   selBar();
   $('more').classList.toggle('hide', L.length<=shownN);
@@ -1223,8 +1232,9 @@ function openRec(r){
   modal('<h3>'+esc(r.차량번호)+' → '+esc(r.목적지)+'</h3>'+
     '<div id="rc-photo" style="background:#000; border-radius:10px; min-height:60px; display:flex; align-items:center; justify-content:center; color:#999; margin-bottom:12px">'+
       (r.사진ID?'사진 불러오는 중…':'사진 없음')+'</div>'+
-    '<div class="'+(ok?'good':'bad')+'" style="margin-bottom:12px">'+esc(r.도착일시)+' · '+esc(howKo(r.발송방법))+' '+esc(r.발송결과||'')+
-      (r.발송사유?'<br>'+esc(r.발송사유):'')+'</div>'+
+    '<div class="'+(ok?'good':'bad')+'" style="margin-bottom:12px">'+esc(r.도착일시)+' · '+esc(sendTag(r)[0])+
+      (r.발송결과==='성공'&&r.발송방법?' ('+esc(howKo(r.발송방법))+')':'')+
+      (r.발송결과==='실패'&&r.발송사유?'<br>'+esc(whyKo(r.발송사유)):'')+'</div>'+
     '<div class="lab">딜러</div><input class="in" id="rc-dealer" value="'+esc(r.딜러||'')+'">'+
     '<div class="lab" style="margin-top:8px">연락처</div><input class="in" id="rc-tel" inputmode="tel" value="'+esc(r.딜러연락처||'')+'">'+
     '<div class="lab" style="margin-top:8px">차량번호</div><input class="in" id="rc-plate" value="'+esc(r.차량번호||'')+'">'+

@@ -44,5 +44,28 @@ rep('''function whyKo(w){ w=String(w||''); return (!w || !/[가-힣]/.test(w)) ?
 
 for bad in ["보내는 번호 없음'"]:
     pass
+# 3) «내 기록» 상태 칩 — 알림 기준으로 (대표님 10-17: «딜러 없음 · 성공»이 헷갈림)
+rep("""    var cls=r.발송결과==='성공'?'p-ok':(r.발송결과==='시험'?'p-test':'p-bad');""",
+    """    var tg=sendTag(r), cls=tg[1];""")
+rep("""      '<br><small style="color:var(--ink-2)">'+esc((r.상사?r.상사+' ':'')+(r.딜러||'딜러 없음'))+""",
+    """      '<br><small style="color:var(--ink-2)">'+esc((r.상사?r.상사+' ':'')+(r.딜러||(r.딜러연락처?'딜러 이름 없음':'딜러 없음')))+""")
+rep("""      '<span class="pill '+cls+'">'+esc(r.상태==='취소'?'취소':r.발송결과)+'</span></div>';""",
+    """      '<span class="pill '+cls+'">'+esc(tg[0])+'</span></div>';""")
+rep("""    '<div class="'+(ok?'good':'bad')+'" style="margin-bottom:12px">'+esc(r.도착일시)+' · '+esc(howKo(r.발송방법))+' '+esc(r.발송결과||'')+
+      (r.발송사유?'<br>'+esc(r.발송사유):'')+'</div>'+""",
+    """    '<div class="'+(ok?'good':'bad')+'" style="margin-bottom:12px">'+esc(r.도착일시)+' · '+esc(sendTag(r)[0])+
+      (r.발송결과==='성공'&&r.발송방법?' ('+esc(howKo(r.발송방법))+')':'')+
+      (r.발송결과==='실패'&&r.발송사유?'<br>'+esc(whyKo(r.발송사유)):'')+'</div>'+""")
+rep("""function whyKo(w){""", """/* v28: 기록 상태 — 알림 기준 [보이는 말, 칩 색] (기록 저장 자체는 따로 말하지 않음) */
+function sendTag(r){
+  if(r.상태==='취소') return ['취소','p-bad'];
+  if(r.발송결과==='시험') return ['시험','p-test'];
+  if(r.발송결과==='성공') return ['알림 보냄','p-ok'];
+  if(r.발송결과==='실패') return ['못 보냄','p-bad'];
+  if(!r.딜러연락처) return ['알림 없음 (번호 없음)','p-test'];
+  return ['보내는 중','p-test'];
+}
+function whyKo(w){""")
+
 open(BASE + "index_v28.html", "w", encoding="utf-8").write(s)
 print("OK 기사 v28", len(s))
