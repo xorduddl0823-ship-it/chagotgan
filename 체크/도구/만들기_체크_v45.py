@@ -97,10 +97,22 @@ function goFeat(f){
   goKey(k);
 }
 function cggAll(focus){ var M=CGG_MENU_CHECK; CGG.allMenu(M.groups, nowKey(), goKey, M.feats, goFeat, focus?{focus:true}:undefined); }
+/* 배달 빨간 숫자 — 오늘 못 보낸 도착 알림 (홈은 정산만 · 배달은 메뉴 옆 숫자, 디자인 1.8 · 대표님 10/18) */
+var DELIV_BAD=0, DELIV_PEEK=false;
+function delivBad(){
+  var t=ymd(new Date());
+  return (DRIVES||[]).filter(function(d){ return d.alarm==="못 보냄" && String(d.at||"").slice(0,10)===t; }).length;
+}
+function delivPeek(){   /* 앱을 열 때 한 번 — 배달 화면에 안 가도 숫자가 보이게 */
+  if(DELIV_PEEK || LOADED.deliv) return; DELIV_PEEK=true;
+  LOADERS.deliv().then(function(){ LOADED.deliv=1; drawTabs(); }).catch(function(){});
+}
+function badged(list){ return list.map(function(g){ return g.key==="delivery" ? Object.assign({}, g, {badge:DELIV_BAD}) : g; }); }
 function drawTabs(){
   var G=groupOf(page), M=CGG_MENU_CHECK, key=nowKey(), gk=key.split("/")[0];
-  CGG.nav($("cggNav"), M.groups, key, goKey);
-  CGG.tabbar($("cggTbar"), M.tabs, M.tabs.some(function(t){ return t.key===gk; })?gk:"__all", function(k){
+  DELIV_BAD=delivBad();
+  CGG.nav($("cggNav"), badged(M.groups), key, goKey);
+  CGG.tabbar($("cggTbar"), badged(M.tabs), M.tabs.some(function(t){ return t.key===gk; })?gk:"__all", function(k){
     if(k==="__all"){ if(!CGG.closeSheet()) cggAll(false); return; }
     CGG.closeSheet(); goKey(k); });
   var subs=G[1];
@@ -174,7 +186,8 @@ rep('''function draw(){
 rep('''  $("root").innerHTML="";
   $("wrap").hidden=false;''', '''  $("root").innerHTML="";
   $("wrap").hidden=false;
-  cggHdr();   /* v45 */''')
+  cggHdr();   /* v45 */
+  setTimeout(delivPeek, 1200);   /* v45: 배달 빨간 숫자 */''')
 rep('''  $("hdVer").textContent="체크 v44 · "+(_m?("서버 "+_m[0]):"");
   $("hdVer").title=_v||"";
     $("dbState").innerHTML='연결됨 <span id="clock"></span>';''', '''  $("hdVer").textContent="체크 v45 · "+(_m?("서버 "+_m[0]):"");
@@ -340,6 +353,9 @@ s = s[:m.end()] + """
 <style id="v45-piece">
 /* v45: 공통 부품 1.8 할 일 카드는 부품 줄 높이 그대로 (체크 바탕 line-height 1.55 를 물려받지 않게) — 디자인 방에 1.8 안에서 정하자고 알림 */
 .cgg-acts .cgg-act{line-height:normal}
+.cgg-hdr{line-height:normal}   /* 머리말 · 메뉴 줄도 부품 줄 높이 그대로 (통합 검사표 «메뉴 줄» 58) */
+/* 넓은 화면에서는 1.8 이 아래 칸을 그려요(가로: .cgg-navsub · 세로: 왼쪽 늘 펼침) — 예전 아래 칸 줄은 폰에서만 */
+@media (min-width:601px){ #cggSub{display:none!important} }
 </style>""" + s[m.end():]
 
 # ── 5) 기능 찾기로 올 칸 id ──
