@@ -4088,6 +4088,7 @@ function layoutHosts(){
   applyHdrLayout();
 }
 function applyLayout(){
+  setTimeout(function(){try{if(S.mode==="pc"&&typeof wHdr==="function"){WM.sig="";wHdr();wNav();}}catch(e){}},0);
   var lm=layoutMode(), pc=(S.mode==="pc");
   var side=(lm==="side"||lm==="icon");
   var w=document.querySelector(".wrap");
@@ -4310,6 +4311,7 @@ function wFeat(f){
   var p=String(x.path||"");
   if(x.go==="sales"){x.go=W132.REC?"sales":"ledger/sales";p=W132.REC?"매출":"일감 › 매출";}
   p=p.replace(/^청구서 › .*/,"월별 청구서").replace(/^청구서$/,"월별 청구서").replace(/^입출금 ›/,"입·출금 내역 ›").replace("머리말 › 링크 복사","머리말 › 주소").replace(/^사람 버튼/,"사람 단추");
+  if(x.label==="입금 · 출금 내역")x.label="입·출금 내역";
   x.path=p;return x;
 }
 /* 배달 안쪽 작은 탭 */
@@ -7527,6 +7529,10 @@ function outLogSheet(r){
 /* v132: 확인 창 «누구에게» 줄 — 이름 셋까지 + 외 N곳 */
 function wWho(names){var u=[];(names||[]).forEach(function(n){n=String(n||"").trim();if(n&&u.indexOf(n)<0)u.push(n);});
   return u.length?(u.slice(0,3).join(", ")+(u.length>3?" 외 "+(u.length-3)+"곳":"")):"-";}
+/* 번호 → 딜러 · 상사 이름 (보낸 기록은 번호만 남아요) */
+function wNameOf(ph){var d=String(ph||"").replace(/\D/g,"");if(!d)return "";
+  var x=(S.dealers||[]).filter(function(r){return String(r.phone||"").replace(/\D/g,"")===d;})[0]||(S.comps||[]).filter(function(r){return String(r.managerPhone||r.mainPhone||"").replace(/\D/g,"")===d;})[0];
+  return x?x.name+" ("+ph+")":"";}
 function resendOut(list){
   var c=sendCfg();
   var ok=list.filter(function(r){return r.phone;});
@@ -12443,9 +12449,10 @@ gTable("obTable",OB,[
     if(!ids.length)return toast("먼저 줄을 골라 주세요",true);
     var jobs=(S.outbox||[]).filter(function(o){return ids.indexOf(o.id)>=0&&o.status!=="예약";});
     if(!jobs.length)return toast("다시 보낼 건이 없어요 (예약 건은 빼고)",true);
+    ask("받는 곳 · "+wWho(jobs.map(function(o){return wNameOf(o.to)||o.to;}))+"\n몇 건 · "+jobs.length+"건\n얼마 · 약 "+won(jobs.length*8)+" ~ "+won(jobs.length*100)+" (알림톡이면 적게 · 사진 문자면 많이)\n\n고른 알림을 다시 보내요.",function(){
     jobs.forEach(function(o){if(o.scheduledDate&&new Date(o.scheduledDate)<new Date(Date.now()+10*60000))o.scheduledDate="";});
     Promise.all(jobs.map(function(o){return sendNow(o).catch(function(){});}))
-     .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});
+     .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});},"다시 보내기");
   };
   $("obCancel").onclick=function(){
     var ids=Object.keys(OB.sel||{});
@@ -13319,8 +13326,8 @@ function matSheet(m){
   if($("mOrder"))$("mOrder").onclick=function(){
     var cur=collect();cur.vendorPhone=$("mf_vphone").value.trim();
     if(!cur.vendorPhone)return toast("도매상 번호를 먼저 넣어 주세요",true);
-    if(shortQty(cur)<=0&&!confirmed("아직 부족하지 않아요. 그래도 주문 문자를 보낼까요?",this))return;
-    orderSend([cur],cur.vendorPhone);
+    ask("도매상 · "+(cur.vendor||cur.vendorPhone)+"\n몇 건 · 문자 1통 (자재 1가지: "+(cur.name||"")+")\n얼마 · 문자 요금 약 50원"+
+        (shortQty(cur)<=0?"\n\n아직 부족하지 않아요.":"")+"\n\n주문 문자를 보내요.",function(){orderSend([cur],cur.vendorPhone);},"보내기");
   };
   if($("mRm"))$("mRm").onclick=function(){
     if(!confirmed((m.name||"이 자재")+"를 지울까요?",this))return;
@@ -13653,7 +13660,7 @@ function useSheet(m){
     saveMat(o).then(function(){return addMatLog(log);}).then(function(){
       closeSheet();toast(m.name+" "+comma(q)+" "+(m.unit||"")+" 사용 적었어요");
       if(matLow(o)&&matPhone(o))
-        ask(o.name+" 재고가 부족해요.\n도매상에 주문 문자를 보낼까요?",function(){orderSend([o],matPhone(o));},"보내기");
+        ask(o.name+" 재고가 부족해요.\n\n도매상 · "+(o.vendor||matPhone(o))+"\n몇 건 · 문자 1통 (자재 1가지)\n얼마 · 문자 요금 약 50원\n\n주문 문자를 보낼까요?",function(){orderSend([o],matPhone(o));},"보내기");
       renderAll();
     }).catch(function(e){toast(errMsg(e),true);});
   };
@@ -13773,7 +13780,7 @@ var HELP=[
   "<li><b>우리 연락처 넣기</b>: 문구에 <b>{연락처}</b> 를 넣으면 설정 → 우리 사업장에서 <b>체크한 번호(최대 2개)</b>가 들어가요. 문의가 오는 번호를 청구 문자에 같이 보낼 때 써요.</li>"+
   "<li><b>[예약 발송]</b>: 날짜·시각(오전 7시~밤 9시)을 고르면 그때 나가요. 화면·컴퓨터를 꺼도 나가요. 취소는 청구서 줄 → [예약 취소], 또는 설정 → 보낸 기록.</li></ol>"+
   "<p class='hl'>보낸 곳은 '보냄', 예약한 곳은 '예약'으로 표시돼요. 잘못 표시됐으면 체크 후 [선택항목 보냄 표시 지우기].</p>"},
- {id:"money",who:"pc",t:"PC · 입금 · 출금 내역",h:
+ {id:"money",who:"pc",t:"PC · 입·출금 내역",h:
   "<ul><li>통장에 들어오고 나간 금액을 한 표로 봐요. 먼저 통장을 연결해야 해요 — 위쪽 메뉴에서 <b>설정</b> 을 누르고, 그 아래 줄에서 <b>입금 자동 확인</b> 을 누른 뒤 통장을 연결하세요.</li>"+
   "<li><b>맨 위 「청구서와 못 맞춘 입금」</b>: 손 갈 일만 맨 위에 모아 둬요. 없으면 이 칸은 아예 보이지 않아요.</li>"+
   "<li>못 맞춘 입금을 누르면 <b>청구서에 맞추기</b> 창이 떠요. 금액이 가까운 청구서 순서로 놓아 드리니 고르기만 하면 돼요. 맞추면 그 곳의 차들이 <b>입금 완료</b>로 바뀌어요.</li>"+
@@ -15027,7 +15034,7 @@ var JHELP={
   vOutLog:"차가 어디로 갔는지, 딜러에게 알림이 나갔는지 봐요. 출고 알림 문구와 보내는 방식은 «배달 › 문구 · 발송 설정»에서 고쳐요.",
   vSms:"자주 가는 목적지를 이름 · 주소와 함께 적어 둬요. 출고할 때 목적지를 고르면 알림에 주소와 지도 링크가 붙어요.",
   vBill:"한 달치 청구서를 딜러별 · 상사별로 만들어요. 미리보기 · 인쇄 · 알림톡 보내기 · 예약 보내기를 여기서 해요.",
-  vMoney:"입금 · 출금 내역과 받을 금액을 봐요.",
+  vMoney:"입·출금 내역과 받을 금액을 봐요.",
   vTax:"한 달치 세금계산서를 모아 보고, 발급하거나 홈택스용 엑셀을 만들어요.",
   vMat:"자재 재고와 부족한 자재를 봐요. 자재를 더하고, 산 것 · 쓴 것을 적어요.",
   vSettings:"우리 사업장 · 거래처 · 직원 계정 · 작업 단가 · 알림 같은 기본 값을 정해요. 위 작은 탭에서 고르면 돼요."
