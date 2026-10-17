@@ -295,3 +295,78 @@ rep('''"\\n받는 곳 · "+wWho(targets.map(function(b){return b.name;}))+"\\n"+
     '''"\\n받는 "+(B.unit==="company"?"곳":"딜러")+" · "+wWho(targets.map(function(b){return b.name;}),B.unit==="company"?"곳":"명")+"\\n"+(tt.all?"전체 ":"고른 ")+targets.length+(B.unit==="company"?"곳":"명")+" · 합계 "''')
 rep('''function wWho(names){''', '''function wWho(names,unit){''')
 rep('''(u.length>3?" 외 "+(u.length-3)+"곳":"")''', '''(u.length>3?" 외 "+(u.length-3)+(unit||"곳"):"")''')
+
+# ══ 검사 일꾼(v132 청구 재확인) — 보냄 열쇠 = 딜러 + 상사 · 이름 겹치는 딜러는 서버 고침 전까지 보내기 막음 ══
+rep('''    if(!g[gk]){g[gk]={name:who,who:who,''', '''    if(!g[gk]){g[gk]={name:who,who:who,dup:false,''')
+rep('''if(B.unit!=="company"&&seen[G.who]>1)G.name=G.who+" ("+(G.company||"상사 없음")+")";});''',
+    '''if(B.unit!=="company"&&seen[G.who]>1){G.dup=true;G.name=G.who+" ("+(G.company||"상사 없음")+")";}});''')
+rep('''function billKey(name){return (B.month||mKey(nowIso()))+"|"+B.unit+"|"+name;}''', '''/* v132: 딜러 단위 «보냄» 열쇠 = 달|dealer|딜러|상사 (같은 이름 딜러가 생겨도 안 바뀌어요). 옛 열쇠 달|dealer|딜러 는 이름이 하나뿐일 때만 «보냄» */
+function wBillGroup(name){return (B.made||[]).filter(function(b){return b.name===name;})[0]||null;}
+function billKey(name){var mk=B.month||mKey(nowIso()),g=(B.unit!=="company")?wBillGroup(name):null;
+  if(g&&g.who)return mk+"|dealer|"+g.who+"|"+(g.company||"");
+  return mk+"|"+B.unit+"|"+name;}
+function wSent(mk,who,comp,uniq){var bs=S.bills||{},cn=comp||"(상사명 없음)";
+  return bs[mk+"|dealer|"+who+"|"+(comp||"")]||(uniq&&bs[mk+"|dealer|"+who])||bs[mk+"|company|"+cn]||bs[mk+"|"+cn]||null;}
+function wOwnSent(b){var bs=S.bills||{},mk=b.month||B.month||mKey(nowIso());   /* 딜러 열쇠로 보낸 것(지울 수 있는 것) */
+  return bs[billKey(b.name)]||(!b.dup&&b.who&&bs[mk+"|dealer|"+b.who])||null;}''')
+rep('''function billState(name){
+  var bs=S.bills||{},x=bs[billKey(name)];if(x)return x;
+  if(B.unit!=="company"){   /* v132: 이 딜러의 상사로 이미 보냈으면 «보냄» */
+    var gr=(B.made||[]).filter(function(b){return b.name===name;})[0],mk=B.month||mKey(nowIso());
+    if(gr&&gr.company)return bs[mk+"|company|"+gr.company]||bs[mk+"|"+gr.company]||null;
+  }
+  return null;}''', '''function billState(name){
+  var bs=S.bills||{};
+  if(B.unit==="company")return bs[billKey(name)]||null;
+  var g=wBillGroup(name);if(!g)return bs[billKey(name)]||null;
+  return wSent(B.month||mKey(nowIso()),g.who,g.company,!g.dup);}   /* v132: 딜러 열쇠 · (이름 하나면) 옛 열쇠 · 이 딜러의 상사로 보낸 것 */''')
+# 홈 — 같은 함수로
+rep('''  var notBilled=Object.keys(billComps).filter(function(k){var x=billComps[k];   /* v132: 딜러 단위 청구 */
+    return !bsH[billM+"|dealer|"+x.d]&&!bsH[billM+"|dealer|"+x.d+" ("+(x.c||"상사 없음")+")"]&&!bsH[billM+"|company|"+(x.c||"(상사명 없음)")]&&!bsH[billM+"|"+(x.c||"(상사명 없음)")];})''',
+    '''  var cntH={};Object.keys(billComps).forEach(function(k){var d=billComps[k].d;cntH[d]=(cntH[d]||0)+1;});
+  var notBilled=Object.keys(billComps).filter(function(k){var x=billComps[k];   /* v132: 딜러 단위 청구 — 청구서 화면과 같은 wSent */
+    return !wSent(billM,x.d,x.c,cntH[x.d]===1);})''')
+# 보냄 지우기 — 딜러 열쇠(새 · 옛)는 지우고, 상사로 보낸 것은 안내
+rep('''  var picks=(B.made||[]).filter(function(x){return ids.indexOf(x.name)>=0&&billState(x.name);});
+  if(!picks.length)return toast("보냄 표시가 있는 곳이 없어요",true);
+  ask(picks.length+"건의 '보냄' 표시를 지울까요?\\n(자료는 그대로 두고 표시만 지워요)",function(){
+    Promise.all(picks.map(function(b){return markBilled(b,false);}))''', '''  var picks0=(B.made||[]).filter(function(x){return ids.indexOf(x.name)>=0&&billState(x.name);});
+  var picks=(B.unit==="company")?picks0:picks0.filter(function(x){return wOwnSent(x);}),viaComp=picks0.length-picks.length;
+  if(!picks.length)return toast(viaComp?"상사로 보낸 기록이에요 — 위 칸을 «매매상사로 묶어 보기»로 바꾸고 지워요":"보냄 표시가 있는 곳이 없어요",true);
+  ask(picks.length+"건의 '보냄' 표시를 지울까요?\\n(자료는 그대로 두고 표시만 지워요)"+(viaComp?"\\n\\n상사로 보낸 "+viaComp+"건은 «매매상사로 묶어 보기»에서 지워요.":""),function(){
+    Promise.all(picks.map(function(b){
+      if(B.unit!=="company"&&!b.dup&&b.who){var lk=(b.month||B.month)+"|dealer|"+b.who;if((S.bills||{})[lk]){S.bills=Object.assign({},S.bills);delete S.bills[lk];if(S.db)S.db.collection("bills").doc(lk).delete();}}
+      return markBilled(b,false);}))''')
+# 1. 이름이 같은 딜러 — 서버 보기 주소가 상사를 아직 안 봐서(서버 방 요청) 보내기 · 예약을 막아요. 인쇄 · 그림 · 엑셀은 돼요
+rep('''function sendOneBill(b,sched){
+  if(b.amount<=0)''', '''function sendOneBill(b,sched){
+  if(b.dup&&B.unit!=="company"){toast(b.name+" — 다른 상사에 같은 이름 딜러가 있어 지금은 보낼 수 없어요. 딜러 이름을 «박딜러B»처럼 바꾸거나 인쇄 · 그림으로 보내 주세요",true);return Promise.reject({message:"같은 이름 딜러"});}
+  if(b.amount<=0)''')
+rep('''      (tt.skip?("\\n번호 없음 · 0원 "+tt.skip+"곳은 빠져요."):"")+
+      (already.length?("\\n\\n이미 보낸 곳 "+already.length+"건이 포함돼 있어요."):""),''', '''      (tt.skip?("\\n번호 없음 · 0원 "+tt.skip+(B.unit==="company"?"곳은":"명은")+" 빠져요."):"")+
+      (targets.some(function(b){return b.dup;})?("\\n이름이 같은 딜러 "+targets.filter(function(b){return b.dup;}).length+"명은 보내지 않아요(이름을 바꾸면 보낼 수 있어요)."):"")+
+      (already.length?("\\n\\n이미 보낸 "+(B.unit==="company"?"곳 ":"딜러 ")+already.length+(B.unit==="company"?"곳":"명")+"이 포함돼 있어요."):""),''')
+# 6. 전월 비교 — 딜러 이름(빈칸 지움) + 상사로
+rep('''    var nm=(B.unit==="company")?(r.company||"(상사명 없음)"):(r.dealer||"(딜러 없음)");
+    return nm===b.name&&(r.month||mKey(r.createdAt))===pm;})''', '''    if(B.unit!=="company")return (String(r.dealer||"").trim()||"(딜러 없음)")===(b.who||b.name)&&(r.company||"")===(b.company||"")&&(r.month||mKey(r.createdAt))===pm;
+    var nm=r.company||"(상사명 없음)";
+    return nm===b.name&&(r.month||mKey(r.createdAt))===pm;})''')
+# 7. 문자 글도 딜러 이름 그대로
+rep('''  ["[받는 분]",function(b){return b.name;}],''', '''  ["[받는 분]",function(b){return b.who||b.name;}],''')
+rep('''    .replace(/\\{받는분\\}/g,b.name).replace(/\\{기간\\}/g,periodLabel(b.month))''', '''    .replace(/\\{받는분\\}/g,b.who||b.name).replace(/\\{기간\\}/g,periodLabel(b.month))''')
+# 몇 건 보냈는지 — 실제로 보낸 수만 · 보낸 뒤 할 일 띠도 새로
+rep('''      var i=0;
+      (function next(){
+        if(i>=targets.length){toast(targets.length+"건에 보냈어요");renderBill();return;}
+        var b=targets[i++];
+        sendOneBill(b).then(next,next);''', '''      var i=0,okN=0;
+      (function next(){
+        if(i>=targets.length){toast(okN+"건에 보냈어요"+(okN<targets.length?" · "+(targets.length-okN)+"건은 못 보냈어요":""),okN<targets.length);renderBill();return;}
+        var b=targets[i++];
+        sendOneBill(b).then(function(){okN++;next();},next);''')
+# 화면을 다시 그리면 할 일 띠 · 뼈대도 같이 (jPage 는 render 때만 불려서)
+rep('''/* ══════════════ v132 — 일 화면 뼈대''', '''/* 화면만 다시 그릴 때(보내기 · 달 바꾸기 뒤)도 할 일 띠를 새로 — 이 스크립트 안 이름이라 하나씩 감싸요 */
+function wAfter(f){return function(){var r=f.apply(this,arguments);try{if(S.mode==="pc")jPage();}catch(e){}return r;};}
+renderBill=wAfter(renderBill);renderLedger=wAfter(renderLedger);renderMoney=wAfter(renderMoney);
+renderTax=wAfter(renderTax);renderOutLog=wAfter(renderOutLog);renderMat=wAfter(renderMat);
+/* ══════════════ v132 — 일 화면 뼈대''')
