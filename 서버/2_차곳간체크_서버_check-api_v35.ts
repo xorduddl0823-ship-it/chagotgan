@@ -1519,11 +1519,14 @@ async function depositMatch(ctx: Ctx) {
       (v.members ?? []).some((m: string) => norm(m) === who) ||
       norm(v.company_name) === who);
     if (!hit) continue;
-    const paid = N(hit.paid_amount) + N(dep.amount);
-    await db.from("check_deposit").update({
+    /* v35(보안 중간 2f38fbb): 두 요청이 겹쳐도 같은 입금은 한 번만 — 조건부로 먼저 잡고, 잡힌 것만 더하고 알림 */
+    const { data: got } = await db.from("check_deposit").update({
       invoice_id: hit.id, dealer_id: hit.bill_to_id, state: "자동 반영",
       kind: dep.kind === "미분류" ? "검사비" : dep.kind,
-    }).eq("id", dep.id);
+    }).eq("office_id", ctx.office.id).eq("id", dep.id).eq("state", "확인 대기").is("invoice_id", null).select("id");
+    if (!got?.length) continue;
+    const { data: cur } = await db.from("check_invoice").select("paid_amount").eq("office_id", ctx.office.id).eq("id", hit.id).maybeSingle();
+    const paid = N(cur?.paid_amount ?? hit.paid_amount) + N(dep.amount);
     await db.from("check_invoice").update({
       paid_amount: paid, state: paid >= N(hit.total_amount) ? "완료" : "수금중",
     }).eq("id", hit.id);

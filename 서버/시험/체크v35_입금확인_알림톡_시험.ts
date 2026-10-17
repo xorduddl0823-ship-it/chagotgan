@@ -58,5 +58,13 @@ check("기록 남음", store.check_log.some((l: any) => l.what === "입금확인
 sent.length = 0;
 await call("depositMatch");
 check("다시 불러도 같은 입금으로 또 안 보냄", sent.length === 0, sent);
+/* 동시에 두 번 — 새 입금 하나 */
+store.check_invoice.push({ id: "v3", office_id: "o1", ym: "2026-10", bill_to_id: "d1", bill_to_name: "홍딜러", members: [], company_name: "", total_amount: 100000, paid_amount: 0, state: "보냄" });
+store.check_invoice[0].state = "완료";
+store.check_deposit.push({ id: "p3", office_id: "o1", sender: "홍딜러", amount: 40000, tx_at: "2026-10-17T07:00:00Z", state: "확인 대기", invoice_id: null, kind: "미분류" });
+sent.length = 0;
+await Promise.all([call("depositMatch"), call("depositMatch")]);
+const v3 = store.check_invoice.find((v: any) => v.id === "v3");
+check("동시에 두 번 불러도 알림 1번 · 금액 1번만 더함", sent.length === 1 && v3.paid_amount === 40000 && v3.state === "수금중", [sent.length, v3]);
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);
