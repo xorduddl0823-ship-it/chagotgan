@@ -2149,7 +2149,7 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 
 <!-- ---- PC: 입금 · 출금 내역 ---- -->
 <section id="vMoney" hidden>
-  <div class="dashhead"><h2>입금 · 출금 내역</h2>
+  <div class="dashhead"><h2>입·출금 내역</h2>
     <div class="sub2">통장에 들어오고 나간 금액을 한 표로 봐요. 청구서와 맞은 입금은 입금 완료로 표시돼요.</div></div>
   <div class="card" style="padding:14px 16px">
     <div class="tools dtools" style="margin:0">
@@ -4355,7 +4355,7 @@ function wAllMenu(focus){
 function wNav(){
   try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}
   try{var ob=$("wNavFind");if(ob)ob.remove();
-    if(S.mode==="pc"&&CGG.find){var fb=document.createElement("div");fb.id="wNavFind";fb.className="w-navfind";$("tabs").appendChild(fb);
+    if(S.mode==="pc"&&CGG.find&&wLay()!=="icon"){var fb=document.createElement("div");fb.id="wNavFind";fb.className="w-navfind";$("tabs").appendChild(fb);
       CGG.find(fb,wFeats(),goFeat,{phone:function(){wAllMenu(true);}});}}catch(e){}
   wSubDup();
 }
@@ -4391,7 +4391,7 @@ function wHdr(){
   var fieldOn=canPC()&&$("btnMode")&&!$("btnMode").hidden;
   var o={product:"워시",sub:pc?(isManager()?"입출고 관리":"광택 · 세차 정산"):"현장 화면",ver:(APP_VER.split(" ")[1]||""),
     biz:{name:nm||appName(),line:sp.bizNo?("사업자 "+fmtBizNo(sp.bizNo)+(sp.ceo?(" · 대표 "+sp.ceo):"")):""},
-    find:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) */
+    find:(pc&&wLay()==="icon")?{mode:"button",feats:wFeats(),onGo:goFeat}:null,   /* v132: 기능 찾기는 메뉴 줄 오른쪽 끝(대표님 결정) · 아이콘 배치만 머리말 돋보기 */
     date:(APP_VER.match(/\d{4}-(\d{2})-(\d{2})/)||[]).slice(1).map(Number).join("/"),
     notice:function(){if(window.ccwNotice)window.ccwNotice();},
     help:function(){$("btnHelp").click();},
@@ -4401,7 +4401,7 @@ function wHdr(){
     saved:wSaved(),
     field:fieldOn?{label:$("btnMode").textContent,on:function(){$("btnMode").click();}}:null,
     me:{name:(S.me&&S.me.name)||"내 정보",role:roleDesc(),sub:isOwner()?"마이페이지 · 휴지통":"마이페이지",items:cggMeItems,onPick:cggMePick}};
-  var sig=[o.product,o.sub,o.ver,o.biz.name,o.biz.line,pc,fieldOn,o.me.name,o.me.role,o.find?o.find.feats.length:0,!!o.link,ps?ps.value:""].join("|");
+  var sig=[wLay(),o.product,o.sub,o.ver,o.biz.name,o.biz.line,pc,fieldOn,o.me.name,o.me.role,o.find?o.find.feats.length:0,!!o.link,ps?ps.value:""].join("|");
   if(WM.h&&WM.sig===sig&&$("hdrTop").firstChild){wHdrSync();return;}
   WM.sig=sig;
   WM.h=CGG.header($("hdrTop"),o);
@@ -4412,6 +4412,7 @@ function wHdr(){
   wHdrSync();
 }
 /* v132 저장 연결 — 잘 되면 «연결됨»(초록 점), 아니면 옛 글(저장 안 됨 · 확인 중) 그대로 */
+function wLay(){var a=$("app");return a&&a.classList.contains("lay-icon")?"icon":(a&&a.classList.contains("lay-side")?"side":"top");}
 function wSaved(){var t=$("dbState")?String($("dbState").textContent||""):"";return /저장됨|●/.test(t)?true:(t||"확인 중");}
 /* 숨긴 옛 단추에서 바뀐 것(저장 표시 · 공지 빨간 점 · 현장 화면 글 · 휴지통 개수)을 새 머리말로 */
 function wHdrSync(){
@@ -4486,15 +4487,15 @@ function wBandOf(tab){
     return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+"곳 · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
       onGo:function(){var c=$("billSendCard");if(c)try{CGG.spot(c);}catch(e){c.scrollIntoView();}}};}
   if(tab==="money"){var d=recs.filter(function(r){return statusOf(r)==="출고";});
-    return {count:MNTAB==="due"?0:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",empty:"지금 처리할 일이 없어요",go:"받을 금액 보기",
-      onGo:function(){goKey("money/due");}};}
+    if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 상사를 눌러 입금 완료를 해요"};
+    return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",go:"받을 금액 보기",onGo:function(){goKey("money/due");}};}
   if(tab==="tax"){var n=0;try{n=taxGroups().filter(function(g){var d=taxDoc(g);return g.issue&&!(d&&d.status==="발급");}).length;}catch(e){}
     return {count:n,text:"아직 발급 안 한 세금계산서 "+n+"건",onGo:function(){var t=$("tTable");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView();}}};}
   if(tab==="outlog"){var f=wDelivBad();
     return {count:(S.dSub||"outlog")==="outlog"?f:0,tone:"stop",text:"오늘 못 보낸 출고 알림 "+f+"건 — 다시 보내 주세요",
       onGo:function(){var b=$("olResend");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   if(tab==="mat"){var m=parseInt(String(($("mLow")||{}).textContent||"0").replace(/[^0-9]/g,""),10)||0;
-    return {count:m,tone:"stop",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
+    return {count:m,tone:"chk",text:"부족한 자재 "+m+"가지 — 도매상에 주문하세요",onGo:function(){var b=$("matOrder");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
   /* 매출은 지금 화면 그대로(대표님 c0f996e) — 할 일 띠 없음 */
   return null;
 }
@@ -4527,7 +4528,7 @@ function renameNote(){
     if(!S.me)return;
     if(localStorage.getItem("ccw_rn_money"))return;
     localStorage.setItem("ccw_rn_money","1");
-    setTimeout(function(){toast("「입출금 기록」이 「입금 · 출금 내역」으로 이름이 바뀌었어요");},900);
+    setTimeout(function(){toast("「입출금 기록」이 「입·출금 내역」으로 이름이 바뀌었어요");},900);
   }catch(e){}
 }
 $("btnMore").onclick=moreSheet;
@@ -6854,6 +6855,7 @@ function monthsList(){
 }
 function fillMonths(sel,cur,keepAll){
   var ks=monthsList();
+  if(cur&&ks.indexOf(cur)<0)ks=ks.concat([cur]).sort().reverse();   /* v132: 달력에서 고른 달(자료 없음)도 목록에 */
   sel.innerHTML='<option value="">전체 기간</option>'+ks.map(function(k){
     var p=k.split("-");return '<option value="'+k+'">'+p[0]+'년 '+Number(p[1])+'월</option>';}).join("");
   /* keepAll 이면 사용자가 고른 '전체 기간'을 그대로 둬요 */
@@ -6966,7 +6968,7 @@ function renderLedger(){
   renderLateTable();
   L.month=fillMonths($("lMonth"),L.month,L.monthSet);
   if($("lMonthHost")){$("lMonthHost").innerHTML=monthBtnHtml("lMonthBtn");
-    wireMonthBtn("lMonthBtn",L.month,function(k){var sl=$("lMonth");if(k&&!Array.prototype.some.call(sl.options,function(o){return o.value===k;})){var op=document.createElement("option");op.value=k;op.textContent=monthLabel(k);sl.appendChild(op);}sl.value=k||"";sl.onchange();},true);}
+    wireMonthBtn("lMonthBtn",L.month,function(k){L.month=k||"";L.monthSet=true;L.page=1;renderLedger();jPage();},true);}
   var list=ledgerRows();
   var pages=Math.max(1,Math.ceil(list.length/L.size));
   if(L.page>pages)L.page=pages;
@@ -7522,11 +7524,14 @@ function outLogSheet(r){
   $("olEdit").onclick=function(){closeSheet();setTimeout(function(){sheetEdit(r);},200);};
   if($("olAgain"))$("olAgain").onclick=function(){resendOut([r]);};
 }
+/* v132: 확인 창 «누구에게» 줄 — 이름 셋까지 + 외 N곳 */
+function wWho(names){var u=[];(names||[]).forEach(function(n){n=String(n||"").trim();if(n&&u.indexOf(n)<0)u.push(n);});
+  return u.length?(u.slice(0,3).join(", ")+(u.length>3?" 외 "+(u.length-3)+"곳":"")):"-";}
 function resendOut(list){
   var c=sendCfg();
   var ok=list.filter(function(r){return r.phone;});
   if(!ok.length)return toast("연락처가 있는 건이 없어요",true);
-  ask(ok.length+"건에 출고 알림을 다시 보내요.\n보내는 방식: "+(OUT_MODES[outMode()]||"")+
+  ask("받는 딜러 · "+wWho(ok.map(function(r){return r.dealer||r.company;}))+"\n몇 건 · "+ok.length+"건\n얼마 · 약 "+won(ok.length*8)+" (알림톡 기준 · 문자로 가면 한 통 약 20~100원)\n\n출고 알림을 다시 보내요.\n보내는 방식: "+(OUT_MODES[outMode()]||"")+
       "\n보내는 형식: "+(fmtOf("out")==="ata"?"우리 업체 카카오 채널":(HQATA.off?"문자":"알림톡 먼저 (안 되면 문자)")),function(){
     ok.forEach(function(r){sendOutMsg(r,"출고 알림(다시 보냄)",null);});
     closeSheet();toast("다시 보냈어요");setTimeout(renderOutLog,600);
@@ -7906,7 +7911,7 @@ function renderBill(){
       return '<div class="sums" style="margin-bottom:8px">'+
         '<div class="sum"><span>청구처</span><b>'+list.length+'건</b></div>'+
         '<div class="sum"><span>총 청구액</span><b>'+won(totAmt)+'</b></div>'+
-        '<div class="sum"><span>받을 금액</span><b'+(dueSum?' style="color:var(--danger)"':'')+'>'+won(dueSum)+'</b></div>'+
+        '<div class="sum"><span>받을 금액</span><b'+(dueSum?' style="color:var(--warn)"':'')+'>'+won(dueSum)+'</b></div>'+
         '<div class="sum"><span>보낸 건</span><b>'+sentTax+' / '+taxYes+'</b></div>'+
       '</div>'+
       '<div class="hint" style="margin:0 2px 12px">'+
@@ -8174,7 +8179,7 @@ $("bmSend").onclick=function(){
   if($("bmFmt"))S.cfg.billFormat=$("bmFmt").value;
   var already=targets.filter(function(b){return billState(b.name);});
   var tt=billTargets();
-  ask(periodLabel(B.month)+"\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "+wonExact(tt.sum)+"\n청구 알림을 보내요. (알림톡이 안 되면 문자로 가요)"+
+  ask(periodLabel(B.month)+"\n받는 곳 · "+wWho(targets.map(function(b){return b.name;}))+"\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "+wonExact(tt.sum)+"\n청구 알림을 보내요. (알림톡이 안 되면 문자로 가요)"+
       (tt.skip?("\n번호 없음 · 0원 "+tt.skip+"곳은 빠져요."):"")+
       (already.length?("\n\n이미 보낸 곳 "+already.length+"건이 포함돼 있어요."):""),
     function(){
@@ -11115,9 +11120,9 @@ function renderMoney(){
   }
   $("mnSums").innerHTML=
     '<div class="sum"><span>입금 금액</span><b style="color:var(--good)">'+won(inSum)+'</b></div>'+
-    '<div class="sum"><span>출금 금액</span><b style="color:var(--danger)">'+won(outSum)+'</b></div>'+
+    '<div class="sum"><span>출금 금액</span><b>'+won(outSum)+'</b></div>'+
     '<div class="sum clickable" id="mnTodoBox"><span>확인 필요</span><b style="color:'+
-      (todo.length?"var(--danger)":"var(--muted)")+'">'+todo.length+'건</b></div>'+
+      (todo.length?"var(--warn)":"var(--muted)")+'">'+todo.length+'건</b></div>'+
     '<div class="sum"><span>받을 금액</span><b style="color:var(--warn)">'+won(dueAmt)+'</b></div>';
 
   if(!on){
@@ -12023,7 +12028,7 @@ function pbFixSheet(g){
     if(pick[3]==="차액"&&!amt)return toast("바뀐 금액을 넣어 주세요",true);
     var c=pbCfg();
     if(!confirmed((c.test?"[시험 모드] 진짜 발급되지 않아요.\n\n":"국세청으로 실제 발급돼요.\n\n")+
-      pick[1]+"\n"+esc(g.issuerName)+" · "+wonExact(pick[3]==="두장"?g.amount:amt),this,"수정발행"))return;
+      pick[1]+"\n"+g.issuerName+" · "+wonExact(pick[3]==="두장"?g.amount:amt),this,"수정발행"))return;
     var b=this;b.disabled=true;b.textContent="보내는 중…";
     gsCall("pbModify",[JSON.stringify({test:c.test,corpNum:digits(supplier().bizNo),
       modifyCode:pick[0], orgNTS:d.nts, orgMgtKey:d.mgtKey, amount:amt, key:g.key, month:T.month})])
@@ -12046,7 +12051,7 @@ function pbIssueSelected(all){
   if(!go.length)return toast("발급할 수 있는 건이 없어요 (이미 발급됐거나 사업자번호 없음)",true);
   var warn=go.filter(function(g){return pbProblems(g).length;});
   ask((c.test?"[시험 모드] 진짜 발급은 되지 않아요.\n\n":"국세청으로 실제 발급해요. 되돌리려면 수정·취소 세금계산서를 따로 끊어야 해요.\n\n")+
-      go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+
+      "받는 곳 · "+wWho(go.map(function(g){return g.issuerName;}))+"\n"+go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+
       (done.length?("\n이미 발급된 "+done.length+"건은 빼요."):"")+
       (bad.length?("\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+
       (warn.length?("\n\n확인 필요 "+warn.length+"건: "+warn.map(function(g){return g.issuerName+"("+pbProblems(g).join(", ")+")";}).join(" / ")):""),
@@ -13420,7 +13425,7 @@ function orderAllLow(){
   var noPhone=g["_none"]||[];delete g["_none"];
   var keys=Object.keys(g);
   if(!keys.length)return toast("도매상 번호가 들어간 자재가 없어요",true);
-  ask(keys.length+"건에 주문 문자를 보내요.\n"+
+  ask("도매상 · "+wWho(keys.map(function(k){var m=g[k][0];return (m&&m.vendor)||k;}))+"\n몇 건 · 문자 "+keys.length+"통 (자재 "+keys.reduce(function(t,k){return t+g[k].length;},0)+"가지)\n얼마 · 문자 요금 약 "+won(keys.length*50)+"\n\n주문 문자를 보내요.\n"+
       keys.map(function(k){return g[k].map(function(m){return m.name;}).join(", ");}).join("\n")+
       (noPhone.length?("\n\n번호가 없어 빠지는 자재: "+noPhone.map(function(m){return m.name;}).join(", ")):""),
     function(){
@@ -18751,6 +18756,8 @@ body.jpay #ccwLockBar{display:none!important}
 .w-navfind input::placeholder{color:var(--muted)}
 .w-navfind .res button{text-align:left;align-items:flex-start}
 @media (max-width:1000px){.w-navfind{display:none}}
+.lay-side .w-navfind{width:auto;margin:10px 12px 0;align-self:stretch}
+.lay-icon .w-navfind{display:none}
 #wBand{margin:0 0 16px}
 .cgg-main section .sums .sum{text-align:center}
 .cgg-main section .sums .sum > span{display:block;text-align:center;justify-content:center}
