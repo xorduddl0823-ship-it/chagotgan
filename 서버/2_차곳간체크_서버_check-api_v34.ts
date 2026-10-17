@@ -17,6 +17,9 @@
 //    순서: tpl.check_arrive → tpl.release → 검사소 ata_tpl → 문자. 본문 글은 솔라피 원문 그대로, 변수만 채움
 //    (딜러명·상사명(없으면 -)·차량번호·작업내용 «성능점검 · 배달»·목적지·출고일시=도착 시각·업체전화·업체명·보기코드).
 //    버튼 https://app.cgg.co.kr/v.html?c=#{보기코드} → 보기코드는 «d» + 배달 열쇠글(18자). v.html 이 d 로 시작하면 deliv_view 로 엶.
+//    딜러 등록 대기(체크 방 설계 · 보안 의견 ①~⑨): delivPendingDealers() · delivApproveDealer({name, tel, dealerId?, companyId?, resend}|[…20줄])
+//    · delivRejectDealer({name, tel}|[…]) — 대표만 · 최근 14일 «등록된 딜러 번호가 아님» 기록에 실제로 있는 이름·번호만 ·
+//    다시 보내기는 그 번호 · 24시간 · 이미 보낸 건 건너뜀 · 하루 상한(notifyOne) · check_log 기록(번호 가림)
 //    deliv_view: «d» 붙은 열쇠도 받음 · 한 아이피 하루 상한(CHECK_VIEW_IP_MAX, 청구서 보기와 같은 값). 대체 문자는 지금 글 그대로. SQL 없음.
 //  v31 (2026-10-15): 오픈 베타 말 다듬기 (규칙 4-1) — 오류 글은 표준형, 영어·코드·데이터베이스 원문은 숨기고 기록에만(userMsg). 새 창구 없음.
 //  v30 (2026-10-15): 보안 방 관리 통합 검토 ④ — 본사가 기사 비밀번호를 임시 비밀번호로 바꾸면(check_deliv_driver.must_change)
@@ -3121,6 +3124,138 @@ async function deliv_resend(_c: Ctx, pin: string, ids: string[]) {
   return { ok: true, results: out };
 }
 
+/* ───────── v34: 딜러 등록 대기 (체크/기획/2026-10-17_딜러등록대기_설계.md · 보안 의견 ①~⑨) ─────────
+   기사가 처음 적은 번호는 보안 M2 로 안 보냄(그대로). 사무실 대표가 보고 승인하면 딜러로 넣고 못 간 알림을 다시 보냄. */
+const NOT_DEALER = "등록된 딜러 번호가 아님";
+const DEALER_REJECTED = "딜러 등록 안 함(사무실)";
+const PENDING_DAYS = 14, RESEND_HOURS = 24, APPROVE_MAX = 20;
+/** 이 검사소 최근 14일 «등록 안 된 번호» 로 못 간 기록 — 지금은 등록된 번호면 뺌 */
+async function pendingDeliv(officeId: string) {
+  const since = new Date(Date.now() - PENDING_DAYS * 864e5).toISOString();
+  const { data } = await db.from("check_deliv")
+    .select("id,tel,dealer_name,company_name,driver_name,arrived_at,state,err,trashed")
+    .eq("office_id", officeId).eq("err", NOT_DEALER).gte("arrived_at", since)
+    .order("arrived_at", { ascending: false }).limit(2000);
+  const rows = (data ?? []).filter((r: any) => r.trashed !== true && S(r.state) !== "취소" && S(r.state) !== "보냄");
+  const okTel = new Map<string, boolean>();
+  const out: any[] = [];
+  for (const r of rows) {
+    const t = onlyDigits(r.tel);
+    if (!/^01\d{8,9}$/.test(t)) continue;
+    if (!okTel.has(t)) okTel.set(t, await dealerTelOk(officeId, t));
+    if (!okTel.get(t)) out.push(r);
+  }
+  return out;
+}
+/** 대기 목록 — 대표만 · 번호로 묶음(같은 번호를 여러 이름으로 적어도 한 줄) */
+async function delivPendingDealers(ctx: Ctx) {
+  bossOnly(ctx);
+  const rows = await pendingDeliv(S(ctx.office.id));
+  const by = new Map<string, any>();
+  for (const r of rows) {
+    const t = onlyDigits(r.tel);
+    const g = by.get(t) ?? { tel: telFmt(t), names: [] as string[], companies: [] as string[], drivers: [] as string[], n: 0, first: S(r.arrived_at), last: S(r.arrived_at) };
+    const add = (arr: string[], v: unknown) => { const s = S(v).trim(); if (s && !arr.includes(s) && arr.length < 10) arr.push(s); };
+    add(g.names, r.dealer_name); add(g.companies, r.company_name); add(g.drivers, r.driver_name);
+    g.n++;
+    if (S(r.arrived_at) < g.first) g.first = S(r.arrived_at);
+    if (S(r.arrived_at) > g.last) g.last = S(r.arrived_at);
+    by.set(t, g);
+  }
+  const list = [...by.values()];
+  /* 이미 같은 이름의 딜러가 있으면 «기존 딜러에 번호 더하기» 를 먼저 보여 줄 수 있게 */
+  const names = [...new Set(list.flatMap((g) => g.names))];
+  const same = new Map<string, any[]>();
+  if (names.length) {
+    const { data: ds } = await db.from("check_dealer").select("id,name").eq("office_id", ctx.office.id).in("name", names.slice(0, 500));
+    for (const d of ds ?? []) { const k = S(d.name); same.set(k, (same.get(k) ?? []).concat([{ id: d.id, name: k }])); }
+  }
+  list.forEach((g) => { g.match = g.names.flatMap((nm: string) => same.get(nm) ?? []); });
+  list.sort((x, y) => (y.last > x.last ? 1 : -1));
+  return { ok: true, list, days: PENDING_DAYS };
+}
+/** 승인 — 대표만 · 한 번에 20줄 · 이름+번호가 대기 기록에 실제로 있어야 함(⑥) · 다시 보내기는 그 번호 · 24시간 기록만(②) */
+async function delivApproveDealer(ctx: Ctx, opt: any) {
+  bossOnly(ctx);
+  const items = (Array.isArray(opt) ? opt : [opt]).filter(Boolean);
+  if (!items.length) throw new Error("승인할 딜러를 골라 주세요.");
+  if (items.length > APPROVE_MAX) throw new Error("한 번에 " + APPROVE_MAX + "줄까지 승인할 수 있습니다.");
+  const office = ctx.office;
+  const pend = await pendingDeliv(S(office.id));
+  const conf = await delivConf(S(office.id));
+  const results: any[] = [];
+  for (const it of items) {
+    const tel = phoneNorm(it?.tel);
+    const name = S(it?.name).trim().slice(0, 40);
+    const mine = pend.filter((r: any) => onlyDigits(r.tel) === tel);
+    if (!mine.length || !mine.some((r: any) => S(r.dealer_name).trim() === name)) {
+      results.push({ tel: phoneMask(tel), ok: false, why: "대기 목록에 없는 이름·번호" }); continue;
+    }
+    /* 딜러에 번호 넣기 — 기존 딜러(이 검사소) 또는 새 딜러 */
+    let dealerId = "";
+    if (S(it?.dealerId)) {
+      const { data: d } = await db.from("check_dealer").select("id,tel,tels").eq("office_id", office.id).eq("id", S(it.dealerId)).maybeSingle();
+      if (!d) { results.push({ tel: phoneMask(tel), ok: false, why: "그 딜러를 찾지 못함" }); continue; }
+      dealerId = S(d.id);
+      if (!onlyDigits(d.tel)) await db.from("check_dealer").update({ tel: telFmt(tel) }).eq("id", d.id).eq("office_id", office.id);
+      else if (onlyDigits(d.tel) !== tel) {
+        const tels = (Array.isArray(d.tels) ? d.tels : []).slice(0, 20);
+        if (!tels.some((t: any) => onlyDigits(t?.tel ?? t) === tel)) tels.push({ tel: telFmt(tel) });
+        await db.from("check_dealer").update({ tels }).eq("id", d.id).eq("office_id", office.id);
+      }
+    } else {
+      let companyId: string | null = null;
+      if (S(it?.companyId)) {
+        const { data: c } = await db.from("check_company").select("id").eq("office_id", office.id).eq("id", S(it.companyId)).maybeSingle();
+        companyId = c ? S(c.id) : null;
+      }
+      const { data: nd, error } = await db.from("check_dealer").insert({ office_id: office.id, name, tel: telFmt(tel), tels: [],
+        company_id: companyId, issuer_kind: "company", tax_issue: true, memo: "배달 기사가 처음 적은 번호 · 사무실 승인" }).select("id").single();
+      if (error || !nd) { results.push({ tel: phoneMask(tel), ok: false, why: "딜러를 넣지 못함" }); continue; }
+      dealerId = S(nd.id);
+    }
+    const ids = mine.map((r: any) => S(r.id));
+    await db.from("check_deliv").update({ dealer_id: dealerId }).eq("office_id", office.id).in("id", ids);
+    /* 다시 보내기 — 서버가 저장된 기록으로 글을 다시 만듦(⑦ · notifyOne 안에서 cleanVars). 이미 «보냄» 은 건너뜀(③) */
+    let sent = 0, failed = 0;
+    if (it?.resend !== false) {
+      const since = Date.now() - RESEND_HOURS * 3600e3;
+      for (const r0 of mine.filter((r: any) => new Date(S(r.arrived_at)).getTime() >= since)) {
+        const { data: r } = await db.from("check_deliv").select("*").eq("office_id", office.id).eq("id", r0.id).maybeSingle();
+        if (!r || S(r.state) === "보냄" || S(r.state) === "취소" || r.trashed === true) continue;
+        const vkey = S(r.view_key) || viewKey();
+        const s = await notifyOne(office, conf, r, vkey, await photoB64(S(r.id)));
+        await db.from("check_deliv").update({
+          state: s.ok ? "보냄" : "못 보냄", how: s.how || r.how, err: s.why, view_key: vkey,
+          sent_at: s.ok ? new Date().toISOString() : r.sent_at,
+        }).eq("id", r.id);
+        if (s.ok) sent++; else failed++;
+      }
+    }
+    await log(ctx, "딜러 등록 승인", { tel: phoneMask(tel), name, dealerId, records: ids.length, sent, failed });   // ④ 감사 기록
+    results.push({ tel: phoneMask(tel), ok: true, dealerId, sent, failed });
+  }
+  return { ok: true, results };
+}
+/** 등록 안 함 — 대표만 · 기록은 그대로 두고 대기에서만 뺌 */
+async function delivRejectDealer(ctx: Ctx, opt: any) {
+  bossOnly(ctx);
+  const items = (Array.isArray(opt) ? opt : [opt]).filter(Boolean);
+  if (!items.length) throw new Error("뺄 줄을 골라 주세요.");
+  if (items.length > APPROVE_MAX) throw new Error("한 번에 " + APPROVE_MAX + "줄까지 뺄 수 있습니다.");
+  const pend = await pendingDeliv(S(ctx.office.id));
+  let n = 0;
+  for (const it of items) {
+    const tel = phoneNorm(it?.tel);
+    const ids = pend.filter((r: any) => onlyDigits(r.tel) === tel).map((r: any) => S(r.id));
+    if (!ids.length) continue;
+    await db.from("check_deliv").update({ err: DEALER_REJECTED }).eq("office_id", ctx.office.id).in("id", ids);
+    await log(ctx, "딜러 등록 안 함", { tel: phoneMask(tel), records: ids.length });
+    n += ids.length;
+  }
+  return { ok: true, n };
+}
+
 /* ───────── 목적지 · 설정 · 기사 계정 ───────── */
 async function deliv_addDest(_c: Ctx, pin: string, name: string, kind?: string) {
   const w = await delivWho(pin);
@@ -3358,6 +3493,10 @@ const FN: Record<string, (ctx: Ctx, ...a: any[]) => Promise<unknown>> = {
   deliv_fillBlanks: (c, pin) => deliv_fillBlanks(c, pin),
   deliv_ping: (c, pin) => deliv_ping(c, pin),
   deliv_view: (c, k) => deliv_view(c, k),
+  // v34: 딜러 등록 대기 (사무실 대표)
+  delivPendingDealers: (c) => delivPendingDealers(c),
+  delivApproveDealer: (c, o) => delivApproveDealer(c, o),
+  delivRejectDealer: (c, o) => delivRejectDealer(c, o),
   // 입금 (팝빌)
   bankPull: (c, opt) => bankPull(c, opt),
   depositMatch,
