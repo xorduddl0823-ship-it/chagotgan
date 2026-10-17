@@ -2231,13 +2231,41 @@ var CGG = (function(){
       +(o.auto?'<select class="cgg-hb cgg-wide" data-hb="auto" aria-label="자동 새로고침">'+o.auto.options.map(function(x){ return '<option value="'+esc(x[0])+'"'+(String(x[0])===String(o.auto.value)?' selected':'')+'>'+esc(x[1])+'</option>'; }).join("")+'</select>':'')
       +(o.saved!=null?'<span class="cgg-hb cgg-saved cgg-wide" data-hb="saved" role="status">'+esc(o.saved)+'</span>':'')
       +(o.field?'<button type="button" class="cgg-hb cgg-hb-pri cgg-wide" data-hb="field">'+esc(o.field.label||"현장 화면")+'</button>':'')
+      +'<button type="button" class="cgg-hb cgg-more" data-hb="more" aria-label="단추 더보기">더보기 ▾</button>'
       +(o.me?'<button type="button" class="cgg-hb cgg-me" data-hb="me">'+esc(o.me.name||"내 정보")+' ▾</button>':'')+'</div>';
     B.forEach(function(b){ var x=el.querySelector('[data-hb="'+b[0]+'"]'); if(x) x.onclick=function(){ o[b[0]](); }; });
     var au=el.querySelector('[data-hb="auto"]'); if(au) au.onchange=function(){ o.auto.onChange&&o.auto.onChange(au.value); };
     var fd=el.querySelector('[data-hb="field"]'); if(fd) fd.onclick=function(){ o.field.on&&o.field.on(); };
     var me=el.querySelector('[data-hb="me"]'); if(me&&o.me.items) menu(me, {name:o.me.name, role:o.me.role}, o.me.items, o.me.onPick);
     var fs=el.querySelector(".cgg-hfind-slot"); if(fs) find(fs, o.find.feats, o.find.onGo, {phone:o.find.onPhone});
-    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; }, me:me };
+    /* 업체명은 절대 자르지 않아요(대표님 10/18). 자리가 모자라면 ① 기능 찾기 칸 → 돋보기 ② 단추 묶음 → «더보기 ▾» 차례로 접어요 */
+    var more=el.querySelector('[data-hb="more"]');
+    if(more) menu(more, null, function(){ var L=[];
+        B.forEach(function(b){ if(o[b[0]]&&b[0]!=="refresh") L.push({key:b[0], icon:{notice:"bell",help:"file",link:"out"}[b[0]], label:b[1]}); });
+        if(o.auto){ L.push("-"); o.auto.options.forEach(function(x){ L.push({key:"auto:"+x[0], icon:"refresh", label:"자동 새로고침 · "+x[1], note:String(x[0])===String(o.auto.value)?"지금":""}); }); }
+        if(o.field){ L.push("-"); L.push({key:"field", icon:"pc", label:o.field.label||"현장 화면"}); }
+        return L; },
+      function(k){ if(k.indexOf("auto:")===0){ o.auto.value=k.slice(5); var a2=el.querySelector('[data-hb="auto"]'); if(a2) a2.value=o.auto.value; o.auto.onChange&&o.auto.onChange(o.auto.value); }
+        else if(k==="field") o.field.on&&o.field.on(); else if(o[k]) o[k](); });
+    function fit(){ el.classList.remove("cgg-fold1","cgg-fold2");
+      if(window.innerWidth<=600) return;
+      /* «현장 화면»(워시만) 자리를 두 제품 모두 셈에 넣어요 — 같은 폭이면 두 제품이 같은 때 접혀요 */
+      var extra=0; if(!o.field){ var tb=document.createElement("button"); tb.className="cgg-hb cgg-hb-pri"; tb.textContent="현장 화면"; tb.style.cssText="position:absolute;visibility:hidden"; el.querySelector(".cgg-right").appendChild(tb); extra=tb.offsetWidth+(parseFloat(getComputedStyle(el.querySelector(".cgg-right")).columnGap)||6); tb.remove(); }
+      function tight(){ var r=el.querySelector(".cgg-right"), b=el.querySelector(".cgg-hdr-biz b"); if(!r) return false;
+        if(el.scrollWidth>el.clientWidth+1||r.scrollWidth>r.clientWidth+1) return true;
+        if(b&&(b.scrollWidth>b.clientWidth+1||b.getBoundingClientRect().height>parseFloat(getComputedStyle(b).lineHeight)*2+2)) return true;
+        var kids=Array.prototype.filter.call(r.children,function(k){ return k.offsetWidth>0; }); if(!kids.length) return false;
+        var side=getComputedStyle(el).display==="contents", rs=getComputedStyle(r), gap=parseFloat(rs.columnGap)||6, left, right;
+        if(side){ var rr=r.getBoundingClientRect(); left=rr.left+(parseFloat(rs.paddingLeft)||0); right=rr.right-(parseFloat(rs.paddingRight)||0); }
+        else { var bz=el.querySelector(".cgg-hdr-biz")||el.querySelector(".cgg-brand"), er=el.getBoundingClientRect(), es=getComputedStyle(el);
+          left=bz.getBoundingClientRect().right+(parseFloat(es.columnGap)||16); right=er.right-(parseFloat(es.paddingRight)||0); }
+        var need=kids.reduce(function(t,k){ return t+k.getBoundingClientRect().width; },0)+gap*(kids.length-1)+extra;
+        return need>right-left+0.5; }   /* 단추 폭 합계(+«현장 화면» 자리)가 쓸 수 있는 폭보다 크면 접어요 */
+      if(tight()) el.classList.add("cgg-fold1");
+      if(tight()) el.classList.add("cgg-fold2"); }
+    fit(); if(!el.__cggFit){ el.__cggFit=1; window.addEventListener("resize",fit); }
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; fit(); }, me:me, fit:fit };
   }
   /* 할 일 3장 + 위 오른쪽 «할 일 N건 모두 보기» (두 제품 같은 자리) */
   function todoBlock(el, items, total, onPick, onAll){ if(!el) return;
@@ -8643,7 +8671,9 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
 .cgg-brand b{font-size:var(--brand-fs);font-weight:900;display:block;line-height:1.3}
 .cgg-brand small{font-size:var(--brand-sub)}
 .cgg-hdr .cgg-hdr-biz{min-width:0;flex:0 1 auto;line-height:1.35}
-.cgg-hdr .cgg-hdr-biz b{font-size:var(--biz-fs);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 업체명은 자르지 않아요 — 길면 두 줄까지 (줄임표 금지) */
+.cgg-hdr .cgg-hdr-biz{flex:0 0 auto;max-width:15em}
+.cgg-hdr .cgg-hdr-biz b{font-size:var(--biz-fs);font-weight:800;white-space:normal;overflow:visible;word-break:keep-all;overflow-wrap:anywhere;line-height:1.3}
 .cgg-hdr .cgg-hdr-biz small{display:block;font-size:var(--biz-sub);opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cgg-right{gap:var(--hb-gap);flex-wrap:nowrap}
 .cgg-hb{box-sizing:border-box;height:var(--hb-h);padding:0 12px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:var(--hb-fs);font-weight:500;line-height:1;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
@@ -8733,6 +8763,41 @@ select.cgg-hb option{color:#101828}
   .cgg-side .big{padding:8px 12px 0;font-size:21px} .cgg-side .bar{margin:8px 12px 0} .cgg-side .lgd,.cgg-side .rk{padding-left:12px;padding-right:12px} .cgg-side dl{margin:10px 12px 0} .cgg-side .sub{margin:4px 12px 0}
 }
 
+/* 1.8 보강 — 업체명 우선: 자리가 모자라면 접기 (CGG.header 가 cgg-fold1 · cgg-fold2 를 붙여요) */
+.cgg-hb.cgg-more{display:none}
+.cgg-top.cgg-fold1 .cgg-hfind .in{display:none}
+.cgg-top.cgg-fold1 .cgg-hfind .ph{display:grid;place-items:center;width:var(--hb-h);height:var(--hb-h);border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;cursor:pointer;padding:0}
+.cgg-top.cgg-fold1 .cgg-hfind .ph svg.ic{width:17px;height:17px}
+.cgg-top.cgg-fold2 .cgg-right .cgg-wide{display:none}
+.cgg-top.cgg-fold2 .cgg-hb.cgg-more{display:inline-flex}
+@media (min-width:1000px){ .lay-side .cgg-top.cgg-fold1 .cgg-hfind .ph,.lay-icon .cgg-top.cgg-fold1 .cgg-hfind .ph{border-color:var(--ln2);background:var(--surface);color:var(--btn-ink)} }
+/* 줄 높이를 뼈대가 정해요 — 제품 body 줄 높이와 상관없이 같은 크기 (워시 방 알림 10/18) */
+.cgg-top,.cgg-head,.cgg-quick,.cgg-sec,.cgg-acts,.cgg-kpis,.cgg-cal,.cgg-side,.cgg-help{line-height:1.45}
+.cgg-act .tx b,.cgg-act .tx small{line-height:1.45}
+.cgg-act .tx{min-width:0} .cgg-act .tx b,.cgg-act .tx small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* 할 일 카드 높이가 글 길이로 달라지지 않게 */
+/* 폰: 머리말에 업체명을 보여요 (제품 이름 대신) — 두 줄까지, 자르지 않음 */
+@media (max-width:600px){
+  .cgg-top .cgg-brand b,.cgg-top .cgg-brand small{display:none}
+  .cgg-hdr .cgg-top .cgg-hdr-biz{display:block;flex:1 1 auto;max-width:none;min-width:0}
+  .cgg-hdr .cgg-top .cgg-hdr-biz b{font-size:13.5px;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;overflow:visible}
+  .cgg-hdr .cgg-top .cgg-hdr-biz small{display:none}
+  .cgg-top .cgg-hb[data-hb="refresh"] span{display:none}
+  .cgg-top .cgg-hb[data-hb="refresh"]{padding:0;width:var(--hb-h);justify-content:center}
+  .cgg-top .cgg-hb.cgg-me{max-width:92px;overflow:hidden;text-overflow:ellipsis}
+}
+
+@media (min-width:1000px){
+  /* 세로 · 아이콘 배치: 단추 줄이 넘치면 오른쪽으로 넘치게 해서(접기 판단용) 왼쪽 메뉴 위로 겹치지 않게 */
+  .lay-side .cgg-right,.lay-icon .cgg-right{justify-content:flex-start;overflow:hidden}
+  .lay-side .cgg-right>:first-child,.lay-icon .cgg-right>:first-child{margin-left:auto}
+  /* 왼쪽 메뉴 안 업체명은 칸 폭을 다 써요 (두 줄까지, 자르지 않음) */
+  .lay-side .cgg-hdr .cgg-hdr-biz{max-width:none;flex:none}
+  .lay-side .cgg-hdr .cgg-hdr-biz small{white-space:normal;overflow:visible}
+}
+
+/* 기능 찾기 칸이 몰래 줄어들지 않게 (두 제품이 같은 때 접히도록) */
+.cgg-right .cgg-hfind{flex:none}
+
 </style>
 <style id="cgg-beta-piece">
 /* 오픈 베타 띠 (디자인 방 2026-10-15) */
@@ -8773,9 +8838,8 @@ select.cgg-hb option{color:#101828}
 .cgg-kpi:not(:has(svg.sp)) small{padding-right:0}
 </style>
 <style id="v45-piece">
-/* v45: 공통 부품 1.8 할 일 카드는 부품 줄 높이 그대로 (체크 바탕 line-height 1.55 를 물려받지 않게) — 디자인 방에 1.8 안에서 정하자고 알림 */
-.cgg-acts .cgg-act{line-height:normal}
-.cgg-hdr{line-height:normal}   /* 머리말 · 메뉴 줄도 부품 줄 높이 그대로 (통합 검사표 «메뉴 줄» 58) */
+/* 뼈대 부품 줄 높이는 1.8 보강(8cfa2ea)이 정해요. 메뉴 줄만 아직 빠져 있어 1.8 과 같은 값(1.45)을 임시로 — 디자인 방에 1.8 목록에 넣어 달라고 알림 */
+.cgg-nav,.cgg-navsub{line-height:1.45}
 /* 넓은 화면에서는 1.8 이 아래 칸을 그려요(가로: .cgg-navsub · 세로: 왼쪽 늘 펼침) — 예전 아래 칸 줄은 폰에서만 */
 @media (min-width:601px){ #cggSub{display:none!important} }
 </style>

@@ -351,9 +351,8 @@ rep("""input:focus,select:focus,textarea:focus{""", """input:focus,select:not(.c
 m = re.search(r'<style id="v43-piece">\n.*?</style>', s, re.S)
 s = s[:m.end()] + """
 <style id="v45-piece">
-/* v45: 공통 부품 1.8 할 일 카드는 부품 줄 높이 그대로 (체크 바탕 line-height 1.55 를 물려받지 않게) — 디자인 방에 1.8 안에서 정하자고 알림 */
-.cgg-acts .cgg-act{line-height:normal}
-.cgg-hdr{line-height:normal}   /* 머리말 · 메뉴 줄도 부품 줄 높이 그대로 (통합 검사표 «메뉴 줄» 58) */
+/* 뼈대 부품 줄 높이는 1.8 보강(8cfa2ea)이 정해요. 메뉴 줄만 아직 빠져 있어 1.8 과 같은 값(1.45)을 임시로 — 디자인 방에 1.8 목록에 넣어 달라고 알림 */
+.cgg-nav,.cgg-navsub{line-height:1.45}
 /* 넓은 화면에서는 1.8 이 아래 칸을 그려요(가로: .cgg-navsub · 세로: 왼쪽 늘 펼침) — 예전 아래 칸 줄은 폰에서만 */
 @media (min-width:601px){ #cggSub{display:none!important} }
 </style>""" + s[m.end():]
