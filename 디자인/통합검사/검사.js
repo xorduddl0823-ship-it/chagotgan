@@ -12,14 +12,15 @@ const srv=http.createServer((req,res)=>{ const p=path.join(ROOT,decodeURICompone
   if(!(p===ROOT||p.startsWith(ROOT+path.sep))||!fs.existsSync(p)||fs.statSync(p).isDirectory()){ res.writeHead(404); return res.end(); }
   let body=fs.readFileSync(p); const ext=path.extname(p);
   if(ext==='.html'){ let t=body.toString('utf8'); if(!/^\s*<!doctype/i.test(t)) t='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+t; body=Buffer.from(t); }
-  res.writeHead(200,{'content-type':{'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png'}[ext]||'application/octet-stream'}); res.end(body); }).listen(0,'127.0.0.1');   /* 이 컴퓨터 안에서만 열려요 */
-(async()=>{ const port=srv.address().port; const b=await pw.chromium.launch(); const res=[];
+  res.writeHead(200,{'content-type':{'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png'}[ext]||'application/octet-stream'}); res.end(body); });
+srv.listen(0,'127.0.0.1',run);   /* 이 컴퓨터 안에서만 열려요 */
+async function run(){ const port=srv.address().port; const b=await pw.chromium.launch(); const res=[];
   for(const f of [fa,fb]){ const pg=await b.newPage({viewport:{width:W,height:900}}); pg.on('dialog',d=>d.dismiss().catch(()=>{}));
-    await pg.goto('http://localhost:'+port+'/'+f.split('#')[0].split('/').map(encodeURIComponent).join('/')+(f.includes('#')?'#'+f.split('#')[1]:''),{waitUntil:'load'}); await pg.waitForTimeout(1600);
+    await pg.goto('http://127.0.0.1:'+port+'/'+f.split('#')[0].split('/').map(encodeURIComponent).join('/')+(f.includes('#')?'#'+f.split('#')[1]:''),{waitUntil:'load'}); await pg.waitForTimeout(1600);
     await pg.addScriptTag({content:cggMeasure.toString()}); res.push(await pg.evaluate(()=>cggMeasure(document))); await pg.close(); }
   await b.close(); srv.close();
   const rows=cggCompare(res[0],res[1]); const bad=rows.filter(r=>!r.same);
   console.log('| 묶음 | 재는 것 | '+path.basename(fa)+' | '+path.basename(fb)+' | 같음 |\n|---|---|---|---|---|');
   rows.forEach(r=>console.log('| '+r.group+' | '+r.label+' | '+r.a+' | '+r.b+' | '+(r.same?'✅':'❌')+' |'));
   console.log('\n다른 것 '+bad.length+'가지 / '+rows.length+'가지'+(process.argv.includes('--json')?'\n'+JSON.stringify(rows):''));
-  process.exit(bad.length?2:0); })();
+  process.exit(bad.length?2:0); }
