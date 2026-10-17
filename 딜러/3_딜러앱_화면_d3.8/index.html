@@ -405,6 +405,13 @@ body.shell{padding:0;background:var(--bg)}
 /* d3.6 — 로그인 · 동의 · 창 글도 낱말 단위 줄바꿈 (공통 부품 밖) */
 .phone,.sheet,.cardlg{word-break:keep-all;overflow-wrap:anywhere}
 
+
+/* d3.8 — 머리말 버튼 칸은 옛 .acts 모양을 받지 않게 + 폰에서 누르기 쉬운 크기 (높이 48 · 글자 16 · 굵게) */
+.cgg-head .acts{flex-direction:row;background:none;box-shadow:none;border-radius:0;overflow:visible}
+@media (max-width:600px){.cgg-app .cgg-head .acts .cgg-btn{flex:1;min-height:48px;height:auto;font-size:16px;font-weight:800;border-radius:12px;padding:10px 14px}}
+/* 꺼져 있어도 무슨 버튼인지 읽히게 (흐리게 하지 않고 연한 바탕 + 파란 글자) */
+.cgg-app .cgg-head .acts .cgg-btn.pri:disabled{opacity:1;background:color-mix(in srgb,var(--blue) 12%,var(--surface));color:var(--blue);border:1.5px dashed color-mix(in srgb,var(--blue) 45%,transparent);cursor:not-allowed}
+
 /* ═══════════════════════════════════════════════════════════════════
    차곳간 공통 부품 · J안 4판 · cgg-j4 1.5 (2026-10-15, 디자인 방)
    ① 메뉴 배치 셋 (가로 · 세로 · 아이콘)  ② 폰 아래 탭바  ③ 홈 할 일 카드 3장  ④ 사람 단추 ▾ 펼침 (1.1)
