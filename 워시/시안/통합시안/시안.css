@@ -1,0 +1,88 @@
+/* 워시 통합 시안 — 공통 부품 1.8 위에 새 규칙(chagotgan-builder)대로 덧칠한 것. 확정되면 디자인 방 1.9 · 워시 v132 로 옮겨요 */
+html,body{margin:0;background:var(--bg)}
+body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;color:var(--text);word-break:keep-all}
+:root{--pay:#0B2545;--pay-bg:#E3E8F0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pay:#c9d6ea;--pay-bg:#1c2a3d}}
+:root[data-theme="dark"]{--pay:#c9d6ea;--pay-bg:#1c2a3d}
+
+/* ── 시안 고르기 띠 (시안에만 있음 — 실제 화면에는 없어요) ── */
+.sz{background:var(--surface);border-bottom:1px solid var(--line);font-size:14px}
+.sz .in{max-width:1400px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-left,0px)) 10px max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.sz .tt{font-weight:900;color:var(--navy)}
+.sz .q{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sz .q > span{font-weight:700;color:var(--muted);font-size:13px}
+.sz .seg{display:inline-flex;border:1px solid var(--ln2,#D0D5DD);border-radius:10px;overflow:hidden}
+.sz .seg button{border:0;background:var(--surface);color:var(--text);font:inherit;font-size:13px;padding:7px 10px;cursor:pointer;white-space:nowrap}
+.sz .seg button+button{border-left:1px solid var(--line)}
+.sz .seg button[aria-pressed="true"]{background:var(--blue);color:#fff;font-weight:700}
+.sz .seg button i{font-style:normal;font-size:11px;font-weight:800;margin-left:4px;color:var(--chk)}
+.sz .seg button[aria-pressed="true"] i{color:#FFE2B0}
+.sz details{flex-basis:100%}
+.sz summary{cursor:pointer;color:var(--blue);font-weight:700;font-size:13px}
+.sz ol{margin:6px 0 2px;padding-left:20px;font-size:13px;color:var(--muted);columns:2 360px;column-gap:28px}
+.sz ol li{break-inside:avoid;margin-bottom:3px}
+.sz ol b{color:var(--text)}
+@media (max-width:600px){.sz .q{flex-basis:100%}.sz .seg{flex-wrap:wrap}}
+
+/* ── 머리말 (규칙 2) ── */
+.cgg-hb .ic{width:16px;height:16px}
+.cgg-hb.wz-find{gap:6px}
+.cgg-hb.wz-conn{background:transparent;border-color:transparent;cursor:default;gap:6px}
+.cgg-hb.wz-conn i{width:8px;height:8px;border-radius:50%;background:#3DD68C;box-shadow:0 0 0 3px #3DD68C33}
+.cgg-hb.cgg-me{height:auto;min-height:var(--hb-h);padding-block:3px;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.2}
+.cgg-hb.cgg-me small{font-size:10.5px;opacity:.75;font-weight:500}
+.wz-navfind{margin-left:auto;align-self:center;width:260px;flex:none}
+@media (max-width:1000px){.wz-navfind{display:none}}
+
+/* ── 화면 뼈대 (규칙 4) ── */
+.wz-band{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--chk-bg);color:var(--chk);border-radius:var(--r-card,14px);padding:12px 16px;margin:0 0 14px;font-weight:700}
+.wz-band.ok{background:var(--done-bg);color:var(--done)}
+.wz-band span{flex:1 1 240px;min-width:0}
+.wz-band .cgg-btn{flex:none}
+.wz-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.wz-tools .cgg-btn,.wz-tools .wz-q{height:43px;box-sizing:border-box}
+.wz-tools .wz-q{flex:1 1 220px;min-width:0;border:1px solid var(--ln2,#D0D5DD);border-radius:var(--r-ctl,10px);padding:0 12px;font:inherit;font-size:14px;background:var(--surface);color:var(--text)}
+.wz-tools .sp{flex:1 1 0}
+.wz-tools .wz-mon b{font-variant-numeric:tabular-nums}
+@media (max-width:600px){.wz-tools .cgg-btn,.wz-tools .wz-q{height:42px}.wz-tools .sp{display:none}}
+/* 숫자 칸 4개 — 가운데 · 자릿수 맞춤 */
+.cgg-kpi{text-align:center}
+.cgg-kpi small{justify-content:center}
+.cgg-kpi .tr{display:block}
+.cgg-kpi strong{font-variant-numeric:tabular-nums}
+.wz-gap{height:14px}
+/* 입금 = 남색 (알림 색: 입고 파랑 · 출고 초록 · 입금 남색) */
+.cgg-st.pay{background:var(--pay-bg);color:var(--pay)}
+.cgg-cal .mk .pay,.cgg-cal .lg i.pay{background:var(--pay)}
+/* 표 체크칸 크게 */
+.cgg-table input[type=checkbox],.cgg-mlist input[type=checkbox]{width:22px;height:22px;accent-color:var(--blue);cursor:pointer}
+
+/* 달 고르기 (달력식) */
+.wz-yr{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+.wz-yr b{font-size:18px;font-variant-numeric:tabular-nums}
+.wz-mg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.wz-mg button{height:52px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.wz-mg button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.wz-mg button.now:not([aria-pressed="true"]){border-color:var(--blue);color:var(--blue)}
+/* 마이페이지 */
+.wz-mp{display:grid;gap:12px}
+.wz-mp section{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.wz-mp h4{margin:0 0 8px;font-size:14px}
+.wz-mp dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:14px}
+.wz-mp dt{color:var(--muted)}
+.wz-mp dd{margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.wz-mp .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:4px;grid-column:1 / -1}
+.wz-mp .bar i{display:block;height:100%;background:var(--blue)}
+.wz-find-dlg{min-height:260px}
+/* 기능 찾기 칸 — 머리말 밖(흰 바탕)에 둘 때 */
+.wz-navfind .in,#wzFindBox .in{background:var(--surface);border-color:var(--ln2,#D0D5DD);color:var(--muted)}
+.wz-navfind input,#wzFindBox input{color:var(--text)}
+.wz-navfind input::placeholder,#wzFindBox input::placeholder{color:var(--muted)}
+#wzFindBox .in{width:100%;height:43px}
+#wzFindBox .res{position:static;width:auto;box-shadow:none;border:1px solid var(--line);margin-top:8px}
+@media (max-width:600px){.cgg-hb.cgg-me small{display:none}}
+#wzFindBox label.in{display:flex;flex-direction:row;margin:0;padding:0 12px}
+#wzFindBox label.in input{border:0;background:transparent;height:auto;padding:0;margin:0;box-shadow:none;width:auto;flex:1;min-width:0;font-size:15px}
+.cgg-nav:has(.wz-navfind){overflow:visible}
+.wz-navfind{position:relative;z-index:var(--z-drop)}
+.wz-navfind .res button{text-align:left;align-items:flex-start}
