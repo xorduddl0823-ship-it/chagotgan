@@ -13,9 +13,15 @@ mk(){ python3 - "$1" "$2" <<'P'
 import sys,os,zipfile
 src,dst=sys.argv[1],sys.argv[2]
 with zipfile.ZipFile(dst,"w",zipfile.ZIP_DEFLATED) as z:
+    files=[]
     for r,_,fs in os.walk(src):
         for f in sorted(fs):
-            p=os.path.join(r,f); z.write(p,os.path.relpath(p,src))
+            files.append(os.path.join(r,f))
+    # 만든 시각을 1980-01-01 로 고정 — 어디서 만들어도 zip 지문(sha256)이 같게 (보안 방 10/18)
+    for p in sorted(files, key=lambda x: os.path.relpath(x,src)):
+        zi=zipfile.ZipInfo(os.path.relpath(p,src), date_time=(1980,1,1,0,0,0))
+        zi.compress_type=zipfile.ZIP_DEFLATED; zi.external_attr=0o644<<16
+        z.writestr(zi, open(p,"rb").read())
 P
 }
 rm -rf out; bash 홈페이지/통합입구/도구/올림/pages_build.sh 묶음 >/dev/null
