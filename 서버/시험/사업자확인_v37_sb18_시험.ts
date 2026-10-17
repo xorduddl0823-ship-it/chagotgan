@@ -24,20 +24,23 @@ if (WHICH === "wash") {
     check_log: [], cgg_access: [], wash_sessions: [], check_rate: [], check_usage: [],
   });
 }
-let answer = "", ntsStatus: any = { b_stt_cd: "01", end_dt: "" }, ntsValid = "01", ntsDown = false;
+let answer = "", ntsStatus: any = { b_stt_cd: "01", end_dt: "" }, ntsValid = "01", ntsDown = false, ntsThrow = false, ntsBadKey = false;
+const logs: string[] = [];
 const asked: any[] = [];
 globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
   const u = String(url);
   if (u.includes("anthropic")) return Response.json({ content: [{ text: answer }], usage: {} });
   if (u.includes("odcloud.kr")) {
-    asked.push({ u, b: JSON.parse(String(init?.body)) });
+    asked.push({ u, b: JSON.parse(String(init?.body)), auth: (init?.headers as any)?.Authorization });
+    if (ntsThrow) throw new TypeError("error sending request for url (" + u + "&serviceKey=" + (init?.headers as any)?.Authorization + "): dns error");
+    if (ntsBadKey) return new Response(JSON.stringify({ code: -4, msg: "SERVICE_KEY_IS_NOT_REGISTERED_ERROR" }), { status: 401 });
     if (ntsDown) return new Response("{}", { status: 500 });
     if (u.includes("/status")) return Response.json({ status_code: "OK", data: [ntsStatus] });
     if (u.includes("/validate")) return Response.json({ status_code: "OK", data: [{ valid: ntsValid }] });
   }
   return Response.json({});
 }) as typeof fetch;
-console.error = () => {}; console.log = ((orig) => (...a: unknown[]) => { if (String(a[0]).startsWith("bizVerify")) return; orig(...a); })(console.log);
+console.error = (...a: unknown[]) => { logs.push(a.map(String).join(" ")); }; console.log = ((orig) => (...a: unknown[]) => { if (String(a[0]).startsWith("bizVerify")) return; orig(...a); })(console.log);
 const H: any[] = [];
 (Deno as any).serve = (h: any) => { H.push(h); return {}; };
 await import(Deno.env.get("SRC") ?? (WHICH === "wash" ? "../1_차곳간워시_서버_wash-api_sb18.ts" : "../2_차곳간체크_서버_check-api_v37.ts"));
@@ -76,7 +79,8 @@ Deno.env.set("NTS_API_KEY", "a+b/c==");
 check("직원은 거절", !!(await call("bizVerify", [{ bizNo: "1238145678" }], STF)).__err);
 r = await call("bizVerify", [{ bizNo: "123-81-45678" }]);
 check("계속사업자 · 번호만이면 진위는 null", r.result?.ready === true && r.result?.state === "계속" && r.result?.match === null, r);
-check("열쇠는 주소에 인코딩되어 들어감 · 번호는 숫자 10자리", asked.at(-1)?.u.includes("serviceKey=a%2Bb%2Fc%3D%3D") && asked.at(-1)?.b?.b_no?.[0] === "1238145678", asked.at(-1));
+check("열쇠는 주소가 아니라 머리글(Infuser)로 · 번호는 숫자 10자리", !asked.at(-1)?.u.includes("serviceKey") && !asked.at(-1)?.u.includes("a+b") &&
+  asked.at(-1)?.auth === "Infuser a+b/c==" && asked.at(-1)?.b?.b_no?.[0] === "1238145678", asked.at(-1));
 r = await call("bizVerify", [{ bizNo: "1238145678", ceo: "김대표", openDate: "20150302" }]);
 check("대표자·개업일이 있으면 진위 확인 → match true", r.result?.match === true && asked.at(-1)?.b?.businesses?.[0]?.p_nm === "김대표", r);
 ntsValid = "02";
@@ -88,9 +92,16 @@ check("폐업 · 폐업일", r.result?.state === "폐업" && r.result?.closedAt 
 ntsStatus = { b_stt_cd: "", tax_type: "국세청에 등록되지 않은 사업자등록번호입니다." };
 r = await call("bizVerify", [{ bizNo: "1238145678", ceo: "김", openDate: "20150302" }]);
 check("등록 안 된 번호 → 없음 · 진위는 안 물음", r.result?.state === "없음" && r.result?.match === null, r);
-ntsDown = true;
+ntsThrow = true;
 r = await call("bizVerify", [{ bizNo: "1238145678" }]);
-check("국세청이 안 되면 ready:false (오류로 막지 않음)", !r.__err && r.result?.ready === false, r);
+check("연결 오류: ready:false · 쉬운 글 · 기록·답에 열쇠가 없음", !r.__err && r.result?.ready === false && /연결하지 못했어요/.test(r.result?.why) &&
+  !logs.join("\n").includes("a+b/c==") && !JSON.stringify(r).includes("a+b/c=="), [r, logs]);
+ntsThrow = false; ntsBadKey = true;
+r = await call("bizVerify", [{ bizNo: "1238145678" }]);
+check("열쇠가 틀리면 «열쇠 확인 필요» 쉬운 글", r.result?.ready === false && /열쇠가 맞지 않아요/.test(r.result?.why), r);
+ntsBadKey = false; ntsDown = true;
+r = await call("bizVerify", [{ bizNo: "1238145678" }]);
+check("국세청이 안 되면 ready:false (오류로 막지 않음)", !r.__err && r.result?.ready === false && /500/.test(r.result?.why), r);
 r = await call("bizVerify", [{ bizNo: "12345" }]);
 check("10자리가 아니면 없음", r.result?.state === "없음", r);
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
