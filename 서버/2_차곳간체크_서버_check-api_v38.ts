@@ -3146,8 +3146,8 @@ function vres(ready: boolean, state: string, closed: string, ok: boolean | null,
 async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
   const key = env("NTS_API_KEY");
   const b = onlyDigits(bizNo);
+  if (!key) return vres(false, "", "", null, "사업자번호 확인은 아직 준비 중이에요.");   // 열쇠 먼저(약속: 열쇠 없으면 ready:false)
   if (b.length !== 10) return vres(true, "없음", "", null, "사업자번호는 숫자 10자리예요.");
-  if (!key) return vres(false, "", "", null, "사업자번호 확인은 아직 준비 중이에요.");
   const base = "https://api.odcloud.kr/api/nts-businessman/v1/";
   const q = "?returnType=JSON";   // 보안(중간): 열쇠는 주소에 넣지 않고 머리글로 (오류 글·기록에 주소가 남아도 열쇠는 안 남게)
   const post = async (path: string, body: unknown) => {

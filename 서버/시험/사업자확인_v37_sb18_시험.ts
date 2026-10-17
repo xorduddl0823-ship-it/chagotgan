@@ -73,6 +73,8 @@ if (WHICH === "check") {
   check("1588 전화도 받음", v.tel === "1588-1234", v);
 }
 console.log("② bizVerify");
+let r0 = await call("bizVerify", [{ no: "12345" }]);
+check("열쇠가 없으면 번호가 틀려도 «준비 중»(ready:false)", r0.result?.ready === false, r0);
 let r = await call("bizVerify", [{ bizNo: "123-81-45678" }]);
 check("열쇠가 없으면 «준비 중»(ready:false) · 국세청 안 부름", r.result?.ready === false && asked.length === 0 && /준비 중/.test(r.result?.why), r);
 Deno.env.set("NTS_API_KEY", "a+b/c==");
