@@ -1,0 +1,57 @@
+/* 차곳간 거래처 부품 CSS 1.1 (체크 v48.1~ · 1.1: 도구줄 칸 · 단추 높이 43px, 좁은 화면 42px — chagotgan-builder 규칙 4번)
+   (1.0: 체크 v46 · 워시가 그대로 가져다 씀)
+   시안: https://claude.ai/artifact/J6CqnRvhvefztsjWtqYH2Y — 한 화면 · [딜러 | 상사] · 세 칸 추가 · 사진으로 채우기 · 계산서는 딜러 줄을 눌러서 · 빠진 정보 알림
+   색은 제품 바탕 값(--brand · --line · --muted · --surface · --warn · --good · --danger …)을 그대로 씀 */
+.cpt{display:grid;gap:12px;min-width:0}
+.cpt-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.cpt-top h3{margin:0;font-size:17px}
+.cpt-seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cpt-seg button{font:inherit;font-size:14.5px;border:0;background:var(--surface);color:var(--text);padding:8px 18px;min-height:43px;cursor:pointer}
+.cpt-seg button[aria-pressed="true"]{background:var(--brand);color:#fff;font-weight:700}
+.cpt-alert{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--warn-soft);color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px}
+.cpt-alert b{color:var(--warn)}
+.cpt-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cpt-tools .cpt-q{flex:1 1 200px;min-width:0}
+.cpt input.cpt-q,.cpt select.cpt-per{font:inherit;font-size:14.5px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:43px;height:43px;box-sizing:border-box}
+.cpt select.cpt-per{width:auto}
+.cpt-tools .cgg-btn,.cpt-pager .cgg-btn{min-height:43px;height:43px;box-sizing:border-box}
+.cpt-tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;-webkit-overflow-scrolling:touch}
+.cpt-tbl table{border-collapse:separate;border-spacing:0;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
+.cpt-tbl th,.cpt-tbl td{padding:10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;background:var(--surface);font-size:14px;line-height:1.4}
+.cpt-tbl tbody tr:last-child td{border-bottom:0}
+.cpt-tbl th{font-size:13px;color:var(--muted);font-weight:700;cursor:pointer;user-select:none}
+.cpt-tbl tbody tr[data-id]{cursor:pointer}
+.cpt-tbl tbody tr[data-id]:hover td{background:var(--surface2)}
+.cpt-tbl th.ck,.cpt-tbl td.ck{width:52px;min-width:52px;text-align:center;cursor:default;position:sticky;left:0;z-index:1}
+.cpt-tbl .nm{position:sticky;left:52px;z-index:1;box-shadow:1px 0 0 var(--line);font-weight:700}
+.cpt-tbl input[type=checkbox]{width:24px;height:24px;accent-color:var(--brand);cursor:pointer;margin:0;vertical-align:middle}
+.cpt-tbl .em{text-align:center;color:var(--muted);cursor:default;white-space:normal}
+.cpt-chip{display:inline-block;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--brand-soft);color:var(--brand)}
+.cpt-chip.need{background:var(--warn-soft);color:var(--warn)}
+.cpt-chip.no{background:var(--surface2);color:var(--muted)}
+.cpt-chip.ok{background:var(--good-soft);color:var(--good)}
+.cpt-bad{color:var(--danger)}
+.cpt-dim{color:var(--muted)}
+.cpt-pager{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.cpt-pager span.b{display:inline-flex;gap:6px;align-items:center}
+.cpt-note{margin:0;font-size:13px;color:var(--muted)}
+/* 창 안 (CGG.dialog body) */
+.cpt-f{display:grid;gap:12px}
+.cpt-f h4{margin:4px 0 0;font-size:14.5px;color:var(--brand)}
+.cpt-f label.l{font-size:13px;font-weight:700;display:grid;gap:4px;color:var(--text)}
+.cpt-f input[type=text],.cpt-f input[type=tel],.cpt-f select{font:inherit;font-size:15px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;min-height:43px;box-sizing:border-box}
+.cpt-f input:disabled,.cpt-f select:disabled{background:var(--surface2);color:var(--muted)}
+.cpt-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cpt-g2 .full{grid-column:1/-1}
+.cpt-radios{display:grid;gap:6px}
+.cpt-f .cpt-radios label{display:flex;flex-direction:row;gap:9px;align-items:center;justify-content:flex-start;text-align:left;font-size:14.5px;font-weight:500;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin:0;cursor:pointer}
+.cpt-f .cpt-radios input[type=radio]{width:20px;height:20px;min-height:0;flex:none;accent-color:var(--brand);margin:0;padding:0}
+.cpt-f .cpt-radios label:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+.cpt-box{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px;background:var(--surface2)}
+.cpt-box b.t{font-size:14px}
+.cpt-msg{font-size:13px}
+.cpt-msg.ok{color:var(--good)} .cpt-msg.bad{color:var(--danger)}
+.cpt-err{background:var(--danger-soft);color:var(--danger);border-radius:10px;padding:9px 11px;font-size:13.5px}
+.cpt-sm{justify-self:start}
+@media (max-width:600px){ .cpt-g2{grid-template-columns:1fr} .cpt-seg button{padding:8px 14px}
+  .cpt input.cpt-q,.cpt select.cpt-per,.cpt-tools .cgg-btn,.cpt-pager .cgg-btn{min-height:42px;height:42px} }
