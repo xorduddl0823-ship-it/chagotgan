@@ -15,11 +15,13 @@
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
 //  v34 (2026-10-17): 대표님 결정(운영/06 M) — 차량 도착 알림은 이미 승인된 «차곳간_출고안내»(관리 설정 tpl.release) 템플릿으로.
 //    순서: tpl.check_arrive → tpl.release → 검사소 ata_tpl → 문자. 본문 글은 솔라피 원문 그대로, 변수만 채움
-//    (딜러명·상사명(없으면 -)·차량번호·작업내용 «성능점검 · 배달»·목적지·출고일시=도착 시각·업체전화·업체명·보기코드).
+//    (딜러명·상사명(없으면 개인)·차량번호·작업내용 «성능점검 · 배달»·목적지·출고일시=도착 시각·업체전화·업체명·보기코드).
 //    버튼 https://app.cgg.co.kr/v.html?c=#{보기코드} → 보기코드는 «d» + 배달 열쇠글(18자). v.html 이 d 로 시작하면 deliv_view 로 엶.
 //    딜러 등록 대기(체크 방 설계 · 보안 의견 ①~⑨): delivPendingDealers() · delivApproveDealer({name, tel, dealerId?, companyId?, resend}|[…20줄])
 //    · delivRejectDealer({name, tel}|[…]) — 대표만 · 최근 14일 «등록된 딜러 번호가 아님» 기록에 실제로 있는 이름·번호만 ·
 //    다시 보내기는 그 번호 · 24시간 · 이미 보낸 건 건너뜀 · 하루 상한(notifyOne) · check_log 기록(번호 가림)
+//    거래처(운영/06 N · 체크 v44 약속): companies() · companySave · companyDel · dealerDel(active=false) 새로, dealerSave 는 대표만 ·
+//    상사·청구처는 이 검사소 것만 · 휴대폰 010 모양 · 추가 번호는 보냈을 때만 고침 · 감사 기록. dealers()·dealerTelOk 는 지운 딜러 뺌.
 //    대체 문자의 [사진 주소]도 https://app.cgg.co.kr/v.html?c=d+열쇠 (운영 체크 사이트 /d/ 화면에 기대지 않음).
 //    deliv_view: «d» 붙은 열쇠도 받음 · 한 아이피 하루 상한(CHECK_VIEW_IP_MAX, 청구서 보기와 같은 값). 대체 문자 글은 그대로(사진 주소만 바뀜). SQL 없음.
 //  v31 (2026-10-15): 오픈 베타 말 다듬기 (규칙 4-1) — 오류 글은 표준형, 영어·코드·데이터베이스 원문은 숨기고 기록에만(userMsg). 새 창구 없음.
@@ -349,41 +351,129 @@ async function whoIs(shop: string, token: string) {
    1. 거래처 · 딜러 · 청구처(묶음)
    ============================================================ */
 
-/** 딜러 목록 — 청구처(묶음)까지 같이 돌려줍니다 */
+/** 딜러 목록 — 청구처(묶음)까지 같이 돌려줍니다 · v34: 지운 딜러(active=false)는 빼고 */
 async function dealers(ctx: Ctx) {
   const { data } = await db.from("check_dealer")
     .select("*, company:check_company(id,name,biz_no), billTo:bill_to_id(id,name)")
     .eq("office_id", ctx.office.id).order("name");
-  return data ?? [];
+  return (data ?? []).filter((d: any) => d.active !== false);
 }
 
-/** 딜러 한 명 저장 (청구처 · 발행처 포함) */
+/** v34(운영/06 N · 체크 v44 약속): 딜러 넣기·고치기 — 대표만 · 상사·청구처는 이 검사소 것만 · 휴대폰 010 모양 · 감사 기록 */
 async function dealerSave(ctx: Ctx, row: Record<string, unknown>) {
-  const body = {
-    office_id: ctx.office.id,
-    name: S(row.name),
-    company_id: row.company_id ?? null,
-    tel: S(row.tel),
-    tels: row.tels ?? [],
-    bill_to_id: row.bill_to_id ?? null,          // ← 청구처 (비우면 자기 자신)
+  bossOnly(ctx);
+  row = row ?? {};
+  const oid = ctx.office.id;
+  const name = S(row.name).trim().slice(0, 20);
+  if (!name) throw new Error("딜러 이름을 넣어 주세요.");
+  const tel = onlyDigits(row.tel);
+  if (tel && !/^01\d{8,9}$/.test(tel)) throw new Error("딜러 휴대폰 번호(010…)를 다시 확인해 주세요.");
+  const companyId = S(row.company_id) || null;
+  if (companyId) {
+    const { data: c } = await db.from("check_company").select("id").eq("office_id", oid).eq("id", companyId).maybeSingle();
+    if (!c) throw new Error("이 검사소의 매매상사가 아닙니다. 상사를 다시 골라 주세요.");
+  }
+  const billTo = S(row.bill_to_id) || null;
+  if (billTo) {
+    const { data: b } = await db.from("check_dealer").select("id").eq("office_id", oid).eq("id", billTo).maybeSingle();
+    if (!b) throw new Error("청구처로 고른 딜러를 찾지 못했습니다.");
+  }
+  const body: Record<string, unknown> = {
+    office_id: oid, name, company_id: companyId, tel,
+    bill_to_id: billTo,                                // ← 청구처 (비우면 자기 자신)
     issuer_kind: S(row.issuer_kind) || "company",
-    issuer_name: S(row.issuer_name),
-    issuer_biz: S(row.issuer_biz),
-    issuer_ceo: S(row.issuer_ceo),
-    issuer_addr: S(row.issuer_addr),
+    issuer_name: S(row.issuer_name).slice(0, 60),
+    issuer_biz: onlyDigits(row.issuer_biz).slice(0, 10),
+    issuer_ceo: S(row.issuer_ceo).slice(0, 40),
+    issuer_addr: S(row.issuer_addr).slice(0, 200),
     tax_issue: row.tax_issue !== false,
-    memo: S(row.memo),
+    memo: S(row.memo).slice(0, 500),
   };
-  if (!body.name) throw new Error("딜러 이름을 넣어 주세요.");
+  if (Array.isArray(row.tels)) {                       // 추가 번호는 보냈을 때만 고침(빼먹으면 지우지 않음)
+    body.tels = (row.tels as any[]).slice(0, 20).map((t) => onlyDigits(t?.tel ?? t))
+      .filter((t) => /^01\d{8,9}$/.test(t)).map((t) => ({ tel: telFmt(t) }));
+  } else if (!row.id) body.tels = [];
   if (row.id) {
+    const { data: mine } = await db.from("check_dealer").select("id").eq("office_id", oid).eq("id", S(row.id)).maybeSingle();
+    if (!mine) throw new Error("이 검사소 딜러가 아닙니다.");
     const { data, error } = await db.from("check_dealer").update(body).eq("id", row.id)
-      .eq("office_id", ctx.office.id).select().single();
-    if (error) throw new Error(error.message);
+      .eq("office_id", oid).select().single();
+    if (error || !data) throw new Error("딜러를 고치지 못했습니다.");
+    await log(ctx, "딜러 고침", { id: S(row.id), name, tel: tel ? phoneMask(tel) : "" });
     return data;
   }
+  body.active = true;
   const { data, error } = await db.from("check_dealer").insert(body).select().single();
-  if (error) throw new Error(error.message);
+  if (error || !data) throw new Error("딜러를 넣지 못했습니다. 같은 이름의 딜러가 이미 있는지 확인해 주세요.");
+  await log(ctx, "딜러 넣음", { id: S(data.id), name, tel: tel ? phoneMask(tel) : "" });
   return data;
+}
+/** 딜러 지우기 — 대표만 · 이 검사소 것만(섞이면 전체 거절) · 실제로 지우지 않고 active=false (지난 청구서·배달 기록 보존) */
+async function dealerDel(ctx: Ctx, opt: any) {
+  bossOnly(ctx);
+  const ids = [...new Set(((Array.isArray(opt) ? opt : opt?.ids) ?? []).map(S).filter(Boolean))].slice(0, 500) as string[];
+  if (!ids.length) throw new Error("지울 딜러를 골라 주세요.");
+  const { data } = await db.from("check_dealer").select("id").eq("office_id", ctx.office.id).in("id", ids);
+  if ((data ?? []).length !== ids.length) throw new Error("이 검사소 딜러가 아닌 줄이 섞여 있습니다. 다시 골라 주세요.");
+  await db.from("check_dealer").update({ active: false }).eq("office_id", ctx.office.id).in("id", ids);
+  await log(ctx, "딜러 지움", { ids, n: ids.length });
+  return { n: ids.length };
+}
+/** 매매상사 목록 — 로그인한 누구나 · 이 검사소만 · dealerN = 쓰는 딜러 수 */
+async function companies(ctx: Ctx) {
+  const { data: cs } = await db.from("check_company").select("id,name,biz_no,ceo,tel").eq("office_id", ctx.office.id).order("name");
+  const { data: ds } = await db.from("check_dealer").select("company_id,active").eq("office_id", ctx.office.id).limit(10000);
+  const cnt = new Map<string, number>();
+  for (const d of ds ?? []) if (d.active !== false && d.company_id) cnt.set(S(d.company_id), (cnt.get(S(d.company_id)) ?? 0) + 1);
+  return (cs ?? []).map((c: any) => ({ id: c.id, name: S(c.name), biz_no: S(c.biz_no), ceo: S(c.ceo), tel: S(c.tel), dealerN: cnt.get(S(c.id)) ?? 0 }));
+}
+/** 매매상사 넣기·고치기 — 대표만 · 이름 40자 · 같은 이름이면 그 상사를 돌려줌 · 사업자번호 10자리 또는 빈 값 */
+async function companySave(ctx: Ctx, row: any) {
+  bossOnly(ctx);
+  row = row ?? {};
+  const oid = ctx.office.id;
+  const name = S(row.name).trim().slice(0, 40);
+  if (!name) throw new Error("매매상사 이름을 넣어 주세요.");
+  const biz = onlyDigits(row.biz_no);
+  if (biz && biz.length !== 10) throw new Error("사업자등록번호는 숫자 10자리로 넣어 주세요.");
+  const body: any = { name, biz_no: biz, ceo: S(row.ceo).trim().slice(0, 40), tel: onlyDigits(row.tel).slice(0, 12) };
+  if (S(row.id)) {
+    const { data: mine } = await db.from("check_company").select("id").eq("office_id", oid).eq("id", S(row.id)).maybeSingle();
+    if (!mine) throw new Error("이 검사소 매매상사가 아닙니다.");
+    const { data, error } = await db.from("check_company").update(body).eq("office_id", oid).eq("id", S(row.id)).select("id,name").single();
+    if (error || !data) throw new Error("매매상사를 고치지 못했습니다. 같은 이름의 상사가 이미 있는지 확인해 주세요.");
+    await log(ctx, "상사 고침", { id: S(row.id), name });
+    return { id: data.id, name: S(data.name) };
+  }
+  const { data: same } = await db.from("check_company").select("id,name").eq("office_id", oid).eq("name", name).maybeSingle();
+  if (same) return { id: same.id, name: S(same.name) };
+  const { data, error } = await db.from("check_company").insert(Object.assign({ office_id: oid }, body)).select("id,name").single();
+  if (error || !data) throw new Error("매매상사를 넣지 못했습니다.");
+  await log(ctx, "상사 넣음", { id: S(data.id), name });
+  return { id: data.id, name: S(data.name) };
+}
+/** 매매상사 지우기 — 대표만 · 이 검사소 것만(섞이면 전체 거절) · 쓰는 딜러가 있으면 지우지 않고 kept 로.
+    지운(쉬는) 딜러만 남은 상사는 그 딜러들의 상사 칸을 비우고 지움 (지난 청구서는 상사 이름을 따로 갖고 있어 그대로) */
+async function companyDel(ctx: Ctx, opt: any) {
+  bossOnly(ctx);
+  const oid = ctx.office.id;
+  const ids = [...new Set(((Array.isArray(opt) ? opt : opt?.ids) ?? []).map(S).filter(Boolean))].slice(0, 500) as string[];
+  if (!ids.length) throw new Error("지울 매매상사를 골라 주세요.");
+  const { data: cs } = await db.from("check_company").select("id,name").eq("office_id", oid).in("id", ids);
+  if ((cs ?? []).length !== ids.length) throw new Error("이 검사소 매매상사가 아닌 줄이 섞여 있습니다. 다시 골라 주세요.");
+  const { data: ds } = await db.from("check_dealer").select("id,company_id,active").eq("office_id", oid).in("company_id", ids);
+  const live = new Map<string, number>();
+  for (const d of ds ?? []) if (d.active !== false) live.set(S(d.company_id), (live.get(S(d.company_id)) ?? 0) + 1);
+  const kept = (cs ?? []).filter((c: any) => live.has(S(c.id))).map((c: any) => ({ id: c.id, name: S(c.name), dealerN: live.get(S(c.id)) }));
+  const go = ids.filter((id) => !live.has(id));
+  if (go.length) {
+    const idle = (ds ?? []).filter((d: any) => d.active === false && go.includes(S(d.company_id))).map((d: any) => S(d.id));
+    if (idle.length) await db.from("check_dealer").update({ company_id: null }).eq("office_id", oid).in("id", idle);
+    const { error } = await db.from("check_company").delete().eq("office_id", oid).in("id", go);
+    if (error) throw new Error("매매상사를 지우지 못했습니다.");
+    await log(ctx, "상사 지움", { ids: go, n: go.length });
+  }
+  return { n: go.length, kept };
 }
 
 /** 여러 딜러를 한 청구처로 묶기 / 풀기
@@ -530,7 +620,7 @@ async function invoiceBuild(ctx: Ctx, ym: string, opt: Record<string, unknown> =
     if (!total && !keepZero) continue;
     if (lockedTo.has(S(g.head.id))) continue;                 // v32: 발급·입금된 청구서는 그대로
     const comp = g.head.company_id ? (await db.from("check_company").select("name,biz_no")
-      .eq("id", g.head.company_id).maybeSingle()).data : null;
+      .eq("office_id", ctx.office.id).eq("id", g.head.company_id).maybeSingle()).data : null;   // v34(보안 3bf8d9b ②): 이 검사소 상사만
     const issuerKind = S(g.head.issuer_kind) || "company";
     const inv = {
       office_id: ctx.office.id, ym,
@@ -2846,8 +2936,9 @@ function officeFroms(office: any) {
 }
 /** v32(보안 M2): 받는 번호가 이 검사소에 등록된 딜러(대표 번호·추가 번호) 것인지 */
 async function dealerTelOk(officeId: string, to: string) {
-  const { data } = await db.from("check_dealer").select("tel,tels").eq("office_id", officeId).limit(5000);
+  const { data } = await db.from("check_dealer").select("tel,tels,active").eq("office_id", officeId).limit(5000);
   for (const d of data ?? []) {
+    if (d.active === false) continue;                       // v34(운영/06 N): 지운(쉬는) 딜러에게는 안 보냄
     if (onlyDigits(d.tel) === to) return true;
     for (const t of (Array.isArray(d.tels) ? d.tels : [])) if (onlyDigits(t?.tel ?? t) === to) return true;
   }
@@ -2891,7 +2982,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
           "#{업체전화}": S(office.tel) || "-", "#{업체명}": S(office.name) || "-" } }
       : (ha.tpl.release && ha.pf)   // v34(운영/06 M): 승인된 «차곳간_출고안내» 템플릿 — 변수만 채움 (본문은 솔라피 원문)
       ? { pf: ha.pf, tpl: ha.tpl.release, vars: {
-          "#{딜러명}": S(row.dealer_name) || "-", "#{상사명}": S(row.company_name) || "-",
+          "#{딜러명}": S(row.dealer_name) || "-", "#{상사명}": S(row.company_name) || "개인",   // 알림톡 방: 상사가 없으면 «개인»
           "#{차량번호}": S(row.plate) || "-", "#{작업내용}": "성능점검 · 배달",
           "#{목적지}": S(row.dest_name) || "-", "#{출고일시}": arrive,
           "#{업체전화}": S(office.tel) || "-", "#{업체명}": S(office.name) || "-",
@@ -3435,6 +3526,9 @@ const OPEN = new Set(["ping", "login", "loginCode", "invoiceView", "remindView",
 const FN: Record<string, (ctx: Ctx, ...a: any[]) => Promise<unknown>> = {
   // 거래처 · 청구처
   dealers, dealerSave,
+  // v34(운영/06 N · 체크 v44): 거래처 넣기·지우기
+  dealerDel: (c, o) => dealerDel(c, o), companies: (c) => companies(c),
+  companySave: (c, o) => companySave(c, o), companyDel: (c, o) => companyDel(c, o),
   billGroupSet: (c, ids, to, scope, ym) => billGroupSet(c, ids, to, scope, ym),
   billGroupHints,
   // 청구서

@@ -33,7 +33,7 @@ FAKE = r'''<script>
               ["새날모터스","000-00-00005"],["별빛오토","000-00-00006"]];
   var DLR = [["김하늘",0],["이푸름",1],["박바름",2],["최다온",3],["정새날",4],["한별빛",5],["오하늘",0],["윤푸름",1]];
   var DEALERS = DLR.map(function(d,i){ var c=COMP[d[1]];
-    return {id:"d"+i, name:d[0], tel:"010-0000-00"+(10+i), company:{name:c[0], biz_no:c[1]}, billTo:null,
+    return {id:"d"+i, name:d[0], tel:"010-0000-00"+(10+i), company:{id:"c"+d[1], name:c[0], biz_no:c[1]}, billTo:null,
             issuer_name:c[0], issuer_biz:c[1], issuer_kind:"company", tax_issue:true}; });
   function ymAdd(ym, k){ var y=+ym.slice(0,4), m=+ym.slice(5,7)+k; while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+"-"+(m<10?"0":"")+m; }
   function seedN(str){ var h=7; for(var i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))%9973; return h; }
@@ -127,6 +127,18 @@ FAKE = r'''<script>
         if(a[2]&&a[2].test) return {id:id, name:"김대표 (내 번호)", ok:true, how:"ata", why:""};
         return i===2 ? {id:id, name:iv.bill_to_name||"", ok:false, how:"", why:"카카오톡을 쓰지 않는 번호"} : {id:id, name:iv.bill_to_name||"", ok:true, how:i%3===1?"lms":"ata", why:""}; })};
       case "invoiceRekey": return {ok:true};
+      /* v44 · 서버 v34 거래처 창구 (체크/기획/2026-10-17_v44_거래처_창구_약속.md) */
+      case "companies": return COMP.map(function(c,i){ return {id:"c"+i, name:c[0], biz_no:c[1], ceo:"", tel:"",
+          dealerN:DEALERS.filter(function(d){ return d.company && d.company.id==="c"+i; }).length}; });
+      case "companySave": var cs=a[0]||{}; COMP.push([cs.name||"", cs.biz_no||""]); return {id:"c"+(COMP.length-1), name:cs.name};
+      case "companyDel": var cd=(a[0]||{}).ids||[], kept=[], n=0;
+        cd.forEach(function(id){ var k=+String(id).slice(1); var dn=DEALERS.filter(function(d){ return d.company && d.company.id===id; }).length;
+          if(dn) kept.push({id:id, name:(COMP[k]||[])[0], dealerN:dn}); else if(COMP[k]){ COMP[k]=["(지움)",""]; n++; } });
+        COMP=COMP.filter(function(c){ return c[0]!=="(지움)"; }); return {n:n, kept:kept};
+      case "dealerSave": var ds=a[0]||{}, cc=null; if(ds.company_id){ var ci=+String(ds.company_id).slice(1); if(COMP[ci]) cc={id:ds.company_id, name:COMP[ci][0], biz_no:COMP[ci][1]}; }
+        var nd={id:"d"+(DEALERS.length+100), name:ds.name, tel:ds.tel, company:cc, billTo:null, issuer_name:cc?cc.name:"", issuer_biz:cc?cc.biz_no:"", issuer_kind:cc?"company":"none", tax_issue:true};
+        DEALERS.push(nd); return nd;
+      case "dealerDel": var dd=(a[0]||{}).ids||[]; DEALERS=DEALERS.filter(function(d){ return dd.indexOf(d.id)<0; }); return {n:dd.length};
       case "remindRule": return RRULE_PV;
       case "remindRuleSave": RRULE_PV=Object.assign({}, RRULE_PV, a[0]||{}); return {ok:true};
       case "remindList": return {days:RRULE_PV.days, rows:remindRows().filter(function(r){ return !RM_OFF[r.carId]; })};
