@@ -3229,7 +3229,9 @@ async function delivApproveDealer(ctx: Ctx, opt: any) {
           .eq("office_id", office.id).eq("id", r.id).neq("state", "보냄").neq("state", "취소").neq("state", "보내는 중").select("id");
         if (!got || !got.length) continue;
         const vkey = S(r.view_key) || viewKey();
-        const s = await notifyOne(office, conf, r, vkey, await photoB64(S(r.id)));
+        /* 사진 읽기·보내기에서 오류가 나도 «보내는 중» 에 남지 않게 «못 보냄» 으로 (보안 참고 ②) */
+        const s = await (async () => notifyOne(office, conf, r, vkey, await photoB64(S(r.id))))()
+          .catch((e) => ({ ok: false, why: e instanceof Error ? e.message : String(e), how: "" }));
         await db.from("check_deliv").update({
           state: s.ok ? "보냄" : "못 보냄", how: s.how || r.how, err: s.why, view_key: vkey,
           sent_at: s.ok ? new Date().toISOString() : r.sent_at,
