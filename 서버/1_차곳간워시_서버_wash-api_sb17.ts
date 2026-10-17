@@ -13,6 +13,7 @@
 // sb17 (2026-10-17) 설계 21 — 청구서 입금 상태를 그때그때 (보안 미리 보기 1~4 반영 · SQL 없음)
 //   · viewBill: 줄마다 일감 id 를 받아, 이 업체의 실제 일감(intakes · demo=false)이고 이 청구서의 받는 곳·달에 맞을 때만 저장
 //     (중복은 하나로 · 40자 · 300줄). 버린 id 수는 서버 기록에만
+//   · sendMsg: 본사 안내(ataKey · 서버 확정본 글)는 업체 발신번호가 비어도 SMS_FROM 으로 보냄 (운영/06 I · 워시 v127). 일반 문자는 그대로 업체 번호 필수
 //   · viewCar(청구서): 열 때마다 그 id 들의 장부를 다시 읽어 입금 완료·남은 금액·상태를 셈 (billLive). 줄마다 입금 여부만 더함
 //     id 가 없는 옛 청구서 · 지워진 일감이 있는 청구서는 찍어 둔 값 그대로. 일감 id·메모·전화는 내보내지 않음
 // sb14 (2026-10-15) 오픈 베타 말 다듬기 (규칙 4-1) — 오류 글은 표준형(~습니다)·「무엇이 안 됐고 어떻게 하면 되는지」,
@@ -1320,7 +1321,9 @@ async function sendMsg(shop: string, json: string) {
       && !(o.ataKey && ATA_TPL[String(o.ataKey)] && SCREEN_ATA.indexOf(String(o.ataKey)) >= 0)) {
     delete o.variables; o.kind = "AUTO";
   }
+  let serverAta = false;     // sb17(운영/06 I): 서버가 확정본으로 글을 만든 본사 안내(ataKey)인지
   if (String(o.kind || "").toUpperCase() === "ATA") {
+    serverAta = true;
     const k = String(o.ataKey);
     const v: Record<string, unknown> = Object.assign({}, (o.variables || {}) as Record<string, unknown>);
     await ataServerVars(shop, k, v, String(o.rec || ""));
@@ -1344,7 +1347,9 @@ async function sendMsg(shop: string, json: string) {
   }
   try {
     if (!o.to) throw new Error("받는 번호가 없습니다");
-    if (!o.from) throw new Error("발신번호가 없습니다");
+    /* sb17(운영/06 I · 워시 v127): 본사 안내(ataKey)는 업체 발신번호가 비어도 차곳간 대표번호(SMS_FROM)로 — 글은 서버 확정본만.
+       일반 문자 · ataKey 없는 글은 지금처럼 업체 발신번호가 꼭 있어야 함. SMS_FROM 도 없으면 거절(화면이 문자 앱으로 이어 줌) */
+    if (!o.from && !(serverAta && digits(env("SMS_FROM", "")))) throw new Error("발신번호가 없습니다");
     /* 발신번호 —
        ① Secrets 에 SMS_FROM(차곳간 대표번호)이 있으면 모든 업체가 그 번호로 나갑니다.
           업체마다 통신서류를 낼 필요가 없어집니다. 받는 분께는 문자 맨 앞의 [업체이름]으로 어디서 온 것인지 보입니다.
