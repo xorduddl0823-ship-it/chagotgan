@@ -2751,7 +2751,10 @@ var TB_WID={name:180,id:130,text:0,date:96,money:130,state:104,time:84,act:150};
 var TB_RANK={name:0,id:1,text:2,date:3,time:3,money:4,state:5};
 var TB_IDK=/^(plate|tel|biz|acctNo|bankCode|code|no|corpNum)$/;
 function tbPlain(h){   /* 글자만 — template 안에서 읽어 그림 · 스크립트가 움직이지 않음 */
-  var t=document.createElement("template"); t.innerHTML=String(h==null?"":h); return (t.content.textContent||"").replace(/\s+/g," ").trim(); }
+  var t=document.createElement("template"); t.innerHTML=String(h==null?"":h);
+  /* v42: 두 줄 칸(.a/.b)이 한 덩어리로 붙지 않게 — 「하늘모터스 · 000-00-00001」 (빈 .b 는 그대로) */
+  t.content.querySelectorAll(".b").forEach(function(b){ if(b.previousSibling && b.textContent.trim()) b.before(/^\s*\+/.test(b.textContent)?" ":" · "); });
+  return (t.content.textContent||"").replace(/\s+/g," ").trim(); }
 /* 체크 꼬리표(.tag 색) → 공통 상태 칩 네 가지 색 */
 function tbChip(h){
   return String(h).replace(/<span class="tag" style="background:var\(--(good|warn|danger|brand|chip)(?:-soft)?\);?\s*color:var\(--[a-z-]+\)"([^>]*)>/g,
@@ -7850,6 +7853,9 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
   .cal .d .memo.done{background:var(--line2,#c9d1dc);text-decoration:none}
 }
 @media (max-width:370px){ .cal .d .amt{font-size:10px} .cal .d .n{font-size:11px} }
+/* v42: 폰 목록 오른쪽 금액 두 줄 — 합계 / 공급가액 · 세액 (디자인 체크-1) */
+.cgg-mrow .r b .a,.cgg-mrow .r b .b{display:block;text-align:right}
+.cgg-mrow .r b .b{font-size:11.5px;font-weight:600;color:var(--muted)}
 </style>
 <!-- ===== 체크 붙임 몫 — 옛 .wrap 틀과 공통 부품이 맞물리게 (머리말 버튼 모양은 디자인/공통/예시.html 그대로) ===== -->
 <style id="chk-glue">

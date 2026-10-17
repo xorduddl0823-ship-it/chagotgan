@@ -25,7 +25,16 @@ def newest(pattern, rx):
     return max(c, key=lambda x: ver_key(x[0]))
 
 a = sys.argv[1:]
-WV, WP = (a[0], os.path.join(ROOT, "워시", "시안", "워시_%s_미리보기.html" % a[0])) if len(a) > 0 else newest("워시/시안/워시_v*_미리보기.html", r"워시_(v\d+)_미리보기")
+# 판@커밋 (예: v125@80ad4e5) — 그 커밋에 있던 미리보기 사본을 씀 (같은 이름 파일이 나중에 바뀌어도 동결 판 그대로)
+def pinned(rel, ver):
+    if "@" not in ver: return ver, os.path.join(ROOT, rel % ver)
+    v, c = ver.split("@", 1)
+    assert re.fullmatch(r"[0-9a-f]{7,40}", c), "커밋 번호 모양이 아님: " + c
+    import subprocess
+    t = subprocess.check_output(["git", "-C", ROOT, "show", "%s:%s" % (c, rel % v)])
+    out = os.path.join(HERE, ".고정_" + os.path.basename(rel % v))
+    io.open(out, "wb").write(t); return ver, out
+WV, WP = pinned("워시/시안/워시_%s_미리보기.html", a[0]) if len(a) > 0 else newest("워시/시안/워시_v*_미리보기.html", r"워시_(v\d+)_미리보기")
 CV, CP = (a[1], os.path.join(ROOT, "체크", "시안", "체크_%s_미리보기.html" % a[1])) if len(a) > 1 else newest("체크/시안/체크_v*_미리보기.html", r"체크_(v\d+)_미리보기")
 DV, DP = (a[2], os.path.join(ROOT, "딜러", "3_딜러앱_화면_%s" % a[2], "index.html")) if len(a) > 2 else newest("딜러/3_딜러앱_화면_d*/index.html", r"화면_(d[\d.]+)")
 

@@ -631,6 +631,12 @@ async function fileBytes(id: string, shop?: string): Promise<Uint8Array> {
 }
 
 /* ---------- AI 사진 읽기 ---------- */
+/* sb16(10/17 시험에서 찾음): 비밀값 ANTHROPIC_MODEL 을 «claude-haiku-5.5» 처럼 점으로 적으면 404 →
+   체크 서버 aiModel() 과 같게 숫자 사이 점을 하이픈으로 고쳐 씀 · 기본값도 실제 있는 이름 */
+function aiModel() {
+  const m = env("ANTHROPIC_MODEL", "claude-haiku-5-5").trim() || "claude-haiku-5-5";
+  return m.replace(/(\d)\.(\d)/g, "$1-$2");
+}
 async function aiJson(shop: string, prompt: string, b64: string) {
   const key = env("ANTHROPIC_KEY");
   if (!key) throw new Error("번호판 자동 읽기를 지금은 쓸 수 없습니다. 번호를 직접 적어 주세요.");
@@ -641,7 +647,7 @@ async function aiJson(shop: string, prompt: string, b64: string) {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
-      model: env("ANTHROPIC_MODEL", "claude-sonnet-5"),
+      model: aiModel(),
       max_tokens: 500,
       messages: [{ role: "user", content: [
         { type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64 } },

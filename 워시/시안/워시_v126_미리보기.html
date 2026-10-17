@@ -8101,7 +8101,6 @@ function sendInMsg(r,type,openFallback){
   var hq=HQATA.off?null:{key:HQKEY.intake,vars:hqVars(inVars(r))};
   return sendOrOpen({type:type||"입고 알림",to:r.phone,text:inText(r),kind:"AUTO",hq:hq,ref:r.id},openFallback);
 }
-window.__t={out:function(i){return sendOutMsg(S.records[i],'시험');},bill:function(b){return sendOneBill(b);},recs:function(){return S.records;},bills:function(m){B.month=m;return buildBills();},hq:function(){return HQATA;},autoIn:function(v){S.cfg=Object.assign({},S.cfg);S.cfg.send=Object.assign({},(S.cfg.send||{}),{autoIn:v});},works:function(w){S.works=w;},cfg:function(k,v){S.cfg=Object.assign({},S.cfg);S.cfg[k]=v;}};
 function sendOutMsg(r,type,openFallback){
   var p=outPlan(r);
   var useAta=(fmtOf("out")==="ata");
@@ -11622,8 +11621,9 @@ function jKpis(monthAmt){
 function calShort(n){
   n=Number(n)||0; if(!n)return "";
   function d1(x){var t=Math.round(x*10)/10;return (t%1===0?String(t):t.toFixed(1));}
-  if(n>=100000000)return d1(n/100000000)+"억";
-  if(n>=100000)return Math.round(n/10000)+"만";
+  var m=Math.round(n/10000);
+  if(n>=100000000||m>=10000)return d1(n/100000000)+"억";
+  if(n>=100000)return m+"만";
   return d1(n/10000)+"만";
 }
 function renderHome(){
@@ -13226,7 +13226,6 @@ function dAgo(days,hour){
   var d=new Date();d.setDate(d.getDate()-days);d.setHours(hour||10,Math.floor(Math.random()*59),0,0);
   return d.toISOString();
 }
-window.__seed=function(){GS.demo=true;seedDemo();setTimeout(function(){GS.demo=false;},4000);};
 function seedDemo(){
   if(!GS.demo)return toast("샘플 자료는 시연 관리자 계정(시연 모드)에서만 넣을 수 있어요",true);
   var comps=[

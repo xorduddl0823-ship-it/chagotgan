@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>메뉴 찾기 앱 미리보기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+html,body{margin:0;background:var(--bg)}
+body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;color:var(--text)}
+.cgg-right .hb{height:32px;padding:0 11px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+@media (min-width:1000px){ .lay-side .cgg-right .hb,.lay-icon .cgg-right .hb{height:40px;border-color:var(--ln2);background:var(--surface);color:var(--btn-ink)} }
+.demo{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px;margin:0 0 16px;display:flex;flex-direction:column;gap:10px}
+.demo h3{margin:0;font-size:15px}
+.demo i{display:block;height:10px;border-radius:5px;background:var(--line)} .demo i:nth-of-type(2){width:72%} .demo i:nth-of-type(3){width:48%}
+.spotcard{border:1px dashed var(--ln2)}
+.spotcard p{margin:0;font-size:13px;color:var(--muted)}
+.gap{height:220px}
+</style>
+<link rel="stylesheet" href="공통/cgg-j4-1.7.css">
+</head><body>
+<div class="cgg-app" id="app">
+  <header class="cgg-hdr">
+    <div class="cgg-top">
+      <div class="cgg-brand"><span class="cgg-ci">차</span><div><b id="brand">차곳간 워시</b><small id="brandSub">광택 · 세차 정산</small></div></div>
+      <div class="cgg-hdr-biz"><b id="biz">예시 광택</b><small>000-00-00000 · 대표 김대표</small></div>
+      <div class="cgg-right"><div id="find"></div><button class="hb" id="btnMe">김대표 ▾</button></div>
+    </div>
+    <nav class="cgg-nav" id="nav"></nav>
+  </header>
+  <main class="cgg-main" id="main"></main>
+  <nav class="cgg-tbar" id="tbar"></nav>
+</div>
+<script src="공통/cgg-j4-1.7.js"></script>
+<script src="메뉴지도/워시_메뉴.js"></script>
+<script src="메뉴지도/체크_메뉴.js"></script>
+<script>
+/* 미리보기 전용 — 지어낸 화면이에요. 주소 끝 #wash · #check 로 제품을 바꿔요 */
+var P=/check/.test(location.hash)?"check":"wash";
+var D=P==="check"?CGG_MENU_CHECK:CGG_MENU_WASH;
+document.getElementById("brand").textContent=P==="check"?"차곳간 체크":"차곳간 워시";
+document.getElementById("brandSub").textContent=P==="check"?"성능점검 정산":"광택 · 세차 정산";
+document.getElementById("biz").textContent=P==="check"?"예시 검사소":"예시 광택";
+var cur="home";
+function grp(k){ return D.groups.filter(function(g){ return g.key===k.split("/")[0]; })[0]; }
+function norm(k){ var g=grp(k); if(!g) return "home"; if(g.subs&&g.subs.length&&k.indexOf("/")<0) return g.key+"/"+g.subs[0].key; return k; }
+function go(k){ cur=norm(k); draw(); window.scrollTo(0,0); }
+function goFeat(f){
+  if(/^me\//.test(f.go)){ CGG.toast("사람 버튼 ▾ 안의 «"+f.label+"»을(를) 열어요 (미리보기)"); return; }
+  if(/^field\//.test(f.go)){ CGG.toast("현장 화면 «입고»로 가요 (미리보기)"); return; }
+  go(f.go);
+}
+function tabKey(){ var g=cur.split("/")[0]; return D.tabs.some(function(t){ return t.key===g; })?g:"__all"; }
+function draw(){
+  CGG.nav(document.getElementById("nav"), D.groups, cur, go);
+  CGG.tabbar(document.getElementById("tbar"), D.tabs, tabKey(), function(k){
+    if(k==="__all"){ if(!CGG.closeSheet()) CGG.allMenu(D.groups, cur, go, D.feats, goFeat); return; }
+    CGG.closeSheet(); go(k); });
+  var main=document.getElementById("main"), g=grp(cur)||D.groups[0];
+  var sub=(g.subs||[]).filter(function(s){ return g.key+"/"+s.key===cur; })[0];
+  if(cur==="home"){
+    main.innerHTML=CGG.head({crumb:"홈 · 10월 18일 토요일", title:P==="check"?'청구서 보낼 곳 <em>4곳</em>, 오늘 배달 <em>12대</em>가 있어요':'받을 금액 <em>730,000원</em>, 오늘 배달 <em>12대</em>가 있어요', desc:"자주 쓰는 기능은 아래 바로가기에서 바로 가요."})
+      +'<div id="quick"></div><div class="cgg-acts" id="acts"></div><div id="kp"></div><div class="demo"><h3>이번 달 일정</h3><i></i><i></i><i></i></div>';
+    CGG.quick(document.getElementById("quick"), D.feats, D.quickKey+"_preview", D.quickDefault, goFeat);
+    CGG.todos(document.getElementById("acts"),[
+      {tone:"chk",icon:"truck",title:"오늘 배달 12대 · 못 보낸 것 1대",sub:"누르면 배달 기록으로 가요"},
+      {tone:"run",icon:"file",title:"아직 안 보낸 청구서 4곳",sub:"10월분"},
+      {tone:"stop",icon:"wallet",title:"받아야 할 금액 4건",sub:"730,000원"}], function(i){ go(["delivery","bill","money"][i]==="money"&&P==="check"?"deposit":["delivery","bill","money"][i]); });
+    CGG.kpis(document.getElementById("kp"),[{label:"오늘 들어온 차",value:"9",unit:"대"},{label:"오늘 배달",value:"12",unit:"대"},{label:"받을 금액",value:"730,000",unit:"원"},{label:"이번 달 매출",value:"4,820,000",unit:"원"}]);
+  } else {
+    var here=D.feats.filter(function(f){ return norm(f.go)===cur && f.spot; });
+    main.innerHTML=CGG.head({crumb:g.label+(sub&&g.subs.length>1?" › "+sub.label:""), title:CGG.esc(sub&&g.subs.length>1?sub.label:g.label), desc:"미리보기 화면이에요. 기능 찾기 · 바로가기로 오면 그 칸이 잠깐 빛나요."})
+      +'<div class="demo"><h3>'+CGG.esc(sub?sub.label:g.label)+'</h3><i></i><i></i><i></i></div><div class="demo"><i></i><i></i><i></i></div>'
+      +(here.length?'<div class="gap"></div>':'')
+      +here.map(function(f){ return '<div class="demo spotcard" id="'+CGG.esc(f.spot.replace(/^#/,""))+'"><h3>'+CGG.esc(f.label)+'</h3><p>기능 찾기 · 바로가기로 «'+CGG.esc(f.label)+'»을(를) 고르면 이 칸으로 내려와요.</p><i></i><i></i></div>'; }).join("")
+      +CGG.help("왼쪽 메뉴에서 아래 칸까지 늘 보여요. 위 «기능 찾기»에 하고 싶은 일을 쳐도 바로 와요.");
+  }
+}
+CGG.layout.init(document.getElementById("app"), "cgg_menu_preview_layout");
+CGG.find(document.getElementById("find"), D.feats, goFeat, {phone:function(){ CGG.allMenu(D.groups, cur, go, D.feats, goFeat, {focus:true}); }});
+CGG.menu(document.getElementById("btnMe"), {name:"김대표", role:"대표"}, [{key:"me",icon:"user",label:"마이페이지"},{key:"plan",icon:"wallet",label:"요금제"},{key:"trash",icon:"trash",label:"휴지통"},"-",{key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()},"-",{key:"out",icon:"out",label:"로그아웃"}], function(k){ CGG.toast("미리보기예요"); });
+window.addEventListener("hashchange",function(){ location.reload(); });
+draw();
+</script>
+</body></html>
