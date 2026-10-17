@@ -60,7 +60,7 @@ var CGG = (function(){
   var LAYS=[["top","가로 메뉴","메뉴가 화면 위에 가로로 놓여요. 지금까지 쓰던 모습이에요."],
             ["side","세로 메뉴","메뉴가 왼쪽에 세로로 놓여요. 메뉴 이름이 다 보여서 찾기 쉬워요."],
             ["icon","아이콘 메뉴","왼쪽에 아이콘만 놓여요. 화면을 가장 넓게 쓸 수 있어요."]];
-  var layout = { app:null, key:"cgg_layout", def:"side",   /* 1.7: 처음은 세로(왼쪽 메뉴 늘 펼침). 3번째 값으로 바꿀 수 있어요 */
+  var layout = { app:null, key:"cgg_layout", def:"top",   /* 처음은 가로(위) — 10/15 결정. 세로(왼쪽) · 아이콘은 화면 설정에서 골라요 */
     init:function(app,key,def){ this.app=app; if(key) this.key=key; if(def==='top'||def==='side'||def==='icon') this.def=def; this.apply(this.get()); },
     get:function(){ var v=store(this.key); return (v==="top"||v==="side"||v==="icon")?v:this.def; },
     set:function(v){ store(this.key,v); this.apply(v); },
@@ -281,7 +281,14 @@ var CGG = (function(){
     el.innerHTML=groups.map(function(g){ var on=g.key===cg, subs=g.subs||[];
       return '<div class="cgg-ngrp'+(on?' on':'')+(subs.length>1?' has':'')+'"><button type="button" data-nk="'+esc(g.key+(subs.length?"/"+subs[0].key:""))+'" aria-selected="'+on+'">'+ic(g.icon||"file")+'<span class="lbl">'+esc(g.label)+'</span>'+(g.isNew?'<i class="cgg-new">새</i>':'')+(g.badge>0?'<i class="cgg-nbadge" aria-label="'+esc(g.badge)+'건">'+esc(g.badge>99?"99+":g.badge)+'</i>':'')+'</button>'
         +(subs.length>1?'<div class="cgg-nsubs">'+subs.map(function(s){ var k=g.key+"/"+s.key; return '<button type="button" class="cgg-nsub" data-nk="'+esc(k)+'"'+(k===cur?' aria-current="page"':'')+'>'+esc(s.label)+'</button>'; }).join("")+'</div>':'')+'</div>'; }).join("");
+    /* 가로 배치(넓은 화면): 지금 큰 메뉴의 아래 칸을 메뉴 바로 밑 줄(.cgg-navsub)에 늘 보여 줘요 — 세로 배치의 «늘 펼침»과 같은 뜻 */
+    var cgp=groups.filter(function(g){ return g.key===cg; })[0], row=el.nextElementSibling;
+    if(!row||!row.classList.contains("cgg-navsub")){ row=document.createElement("div"); row.className="cgg-navsub"; el.parentNode.insertBefore(row, el.nextSibling); }
+    row.setAttribute("aria-label","아래 칸");
+    row.innerHTML=(cgp&&cgp.subs&&cgp.subs.length>1)?cgp.subs.map(function(s){ var k=cgp.key+"/"+s.key; return '<button type="button" data-nk="'+esc(k)+'"'+(k===cur?' aria-current="page"':'')+'>'+esc(s.label)+'</button>'; }).join(""):"";
+    row.hidden=!row.innerHTML;
     Array.prototype.forEach.call(el.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
+    Array.prototype.forEach.call(row.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
   }
   /* 그 화면 안의 칸으로 내려가서 잠깐 빛나게 (spot: 칸의 id 또는 선택자 — 제품이 정한 고정 글자만) */
   function spot(sel){ var e=null; try{ e=typeof sel==="string"?document.querySelector(sel):sel; }catch(x){ e=null; } if(!e) return;

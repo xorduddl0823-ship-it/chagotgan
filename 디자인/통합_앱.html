@@ -25,8 +25,8 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 <script src="메뉴지도/워시_메뉴.js"></script>
 <script src="메뉴지도/체크_메뉴.js"></script>
 <script>
-/* 미리보기 전용 — 지어낸 자료. 주소 끝 #wash · #check (뒤에 -top 을 붙이면 가로 메뉴 배치) */
-var P=/check/.test(location.hash)?"check":"wash", LAY=/-top/.test(location.hash)?"top":null;
+/* 미리보기 전용 — 지어낸 자료. 주소 끝 #wash · #check (뒤에 -side 를 붙이면 세로(왼쪽) 메뉴 배치) */
+var P=/check/.test(location.hash)?"check":"wash", LAY=/-side/.test(location.hash)?"side":(/-top/.test(location.hash)?"top":null);   /* 처음은 가로(위). #wash-side 는 세로(왼쪽) 보기 */
 var D=P==="check"?CGG_MENU_CHECK:CGG_MENU_WASH, cur="home";
 /* 배달은 홈에 두지 않아요 (대표님 10/18 — 홈은 정산만). 못 보낸 도착 알림은 «배달» 메뉴 옆 빨간 숫자로만 */
 D.groups.forEach(function(g){ if(g.key==="delivery") g.badge=1; }); D.tabs.forEach(function(t){ if(t.key==="delivery") t.badge=1; });

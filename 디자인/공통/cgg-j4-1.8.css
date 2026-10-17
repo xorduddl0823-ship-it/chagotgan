@@ -311,6 +311,14 @@
 /* A: 큰 메뉴 묶음. 가로 배치에서는 지금처럼 한 줄, 세로 배치(넓은 화면)에서는 아래 칸이 늘 펼쳐져 있어요 */
 .cgg-nav .cgg-ngrp{display:contents}
 .cgg-nsubs{display:none}
+/* 가로 배치: 지금 큰 메뉴의 아래 칸 줄 (세로 · 아이콘 배치와 폰에서는 숨김 — 세로는 왼쪽에 늘 펼침, 폰은 화면 안 탭 · «전체») */
+.cgg-navsub{display:flex;gap:6px;padding:8px 18px;background:var(--surface);box-shadow:0 1px 0 var(--line);overflow-x:auto;scrollbar-width:none}
+.cgg-navsub[hidden]{display:none}
+.cgg-navsub button{flex:none;height:32px;padding:0 13px;border-radius:999px;border:1px solid var(--ln2);background:var(--surface);color:var(--btn-ink);font:inherit;font-size:13.5px;cursor:pointer}
+.cgg-navsub button[aria-current="page"]{background:var(--tabon);color:var(--blue);border-color:transparent;font-weight:700}
+.lay-side .cgg-navsub,.lay-icon .cgg-navsub{display:none}
+@media (max-width:1000px){ .cgg-navsub{padding:8px 12px} }
+@media (max-width:600px){ .cgg-navsub{display:none} }
 .cgg-new{font-style:normal;font-size:10.5px;font-weight:900;color:var(--blue);margin-left:2px}
 @media (min-width:1000px){
   .lay-side .cgg-nav .cgg-ngrp{display:flex;flex-direction:column;gap:1px}
