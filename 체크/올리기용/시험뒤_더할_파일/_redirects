@@ -1,0 +1,5 @@
+# 체크 사이트 주소 넘기기 (check.cgg.co.kr · Cloudflare Pages) — 체크 방 2026-10-17
+# 옛 차량 도착 사진 주소(/d/열쇠) → 새 보기 화면 (서버 v34 · 워시 v.html d 갈래와 같이 올려요)
+/d/:key  https://app.cgg.co.kr/v.html?c=d:key  302
+# 재검사 차량 목록 (/r/열쇠) → r/index.html 이 열쇠를 읽어요
+/r/*  /r/index.html  200

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>성능점검 유효기간 안내</title>
+<!-- 차곳간 체크 · 재검사 알림 «차량 목록 보기» 화면 (check.cgg.co.kr/r/보기코드) · v1 2026-10-16 체크 방
+     서버: check-api v33 remindView(보기코드) — 로그인 없이 그 딜러의 차만, 30일 뒤 «만료».
+     비밀 열쇠 없음. 화면에 넣는 글은 모두 esc. 차대번호 · 전화번호 원문은 서버가 보내지 않음. -->
+<style>
+:root{--bg:#F4F6F9;--card:#fff;--ink:#111827;--muted:#5B6472;--line:#E3E7EE;--brand:#1668C4;--bad:#C5221F;--bad-soft:#FDECEC;--warn:#9A5B00;--warn-soft:#FFF4E0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F141B;--card:#18202A;--ink:#E8EDF3;--muted:#9AA6B5;--line:#2A3441;--brand:#5AA2F0;--bad:#FF8A80;--bad-soft:#3A1F1F;--warn:#F2C26B;--warn-soft:#3A2E17}}
+:root[data-theme="dark"]{--bg:#0F141B;--card:#18202A;--ink:#E8EDF3;--muted:#9AA6B5;--line:#2A3441;--brand:#5AA2F0;--bad:#FF8A80;--bad-soft:#3A1F1F;--warn:#F2C26B;--warn-soft:#3A2E17}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Pretendard","Noto Sans KR",system-ui,sans-serif;word-break:keep-all}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+.brand{font-size:12.5px;font-weight:800;color:var(--brand);letter-spacing:.02em}
+h1{font-size:21px;margin:4px 0 2px;line-height:1.35}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:14px}
+.kv span{color:var(--muted)} .kv b{text-align:right}
+.car{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.car:first-child{border-top:0}
+.car .p{font-size:16px;font-weight:800}
+.car .m{font-size:12.5px;color:var(--muted)}
+.car .r{text-align:right;flex:none}
+.car .e{font-size:13px;color:var(--muted)}
+.tag{display:inline-block;border-radius:6px;padding:1px 8px;font-size:12.5px;font-weight:800;background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.note{font-size:12.5px;color:var(--muted);margin:14px 2px 0}
+.msg{text-align:center;padding:40px 10px;color:var(--muted)}
+.msg b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px}
+a.tel{color:var(--brand);font-weight:800;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="msg">불러오는 중이에요…</div></div>
+<script>
+(function(){
+  var API = "https://ybfpxmmjofyvfprtvmhj.supabase.co/functions/v1/check-api";
+  var app = document.getElementById("app");
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function md(d){ var m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? (+m[2])+"월 "+(+m[3])+"일" : esc(d); }
+  function telHref(t){ var d=String(t||"").replace(/[^0-9]/g,""); return d.length>=8 ? "tel:"+d : ""; }
+  /* 보기코드: /r/코드 · ?c=코드 · #코드 (영문 · 숫자 · _ - 만, 8~40자) */
+  function keyOf(){
+    var k = (location.pathname.match(/\/r\/([A-Za-z0-9_-]+)/)||[])[1]
+         || (location.search.match(/[?&]c=([A-Za-z0-9_-]+)/)||[])[1]
+         || location.hash.replace(/^#/,"");
+    k = String(k||"").replace(/[^A-Za-z0-9_-]/g,"");
+    return (k.length>=8 && k.length<=40) ? k : "";
+  }
+  function stop(title, text){
+    app.innerHTML = '<div class="msg"><b>'+esc(title)+'</b>'+esc(text)+'</div>';
+  }
+  function show(d){
+    d = d || {};
+    var off = d.office || {}, cars = Array.isArray(d.cars) ? d.cars : [];
+    if(d.expired){ stop("기한이 지난 주소예요", "이 안내는 받은 날부터 30일 동안만 볼 수 있어요. "+(off.name?off.name+"에 ":"")+"문의해 주세요."); return; }
+    var th = telHref(off.tel);
+    var list = cars.map(function(c){
+      var left = Number(c.left), tg = left<0 ? '<span class="tag bad">지남</span>'
+        : '<span class="tag">'+(left===0 ? "오늘" : esc(left)+"일 남음")+'</span>';
+      return '<div class="car"><div><div class="p">'+esc(c.plate||"-")+'</div><div class="m">'+esc(c.car||"")+
+        (c.date?' · 검사 '+md(c.date):'')+'</div></div><div class="r">'+tg+'<div class="e">만료 '+md(c.exp)+'</div></div></div>';
+    }).join("");
+    app.innerHTML =
+      '<div class="brand">차곳간 · 성능점검 유효기간 안내</div>'+
+      '<h1>'+esc(d.dealer||"")+' 님 차량 '+esc(cars.length)+'대</h1>'+
+      '<p class="sub">'+esc(off.name||"")+'에서 성능점검을 받은 차량이에요. 유효기간은 검사일로부터 '+esc(d.days||"")+'일이에요.</p>'+
+      '<div class="card">'+(list || '<div class="msg" style="padding:16px 0">지금 안내할 차량이 없어요.</div>')+'</div>'+
+      '<div class="card"><div class="kv"><span>검사소</span><b>'+esc(off.name||"-")+'</b></div>'+
+        '<div class="kv"><span>문의</span><b>'+(th?'<a class="tel" href="'+esc(th)+'">'+esc(off.tel)+'</a>':esc(off.tel||"-"))+'</b></div></div>'+
+      '<p class="note">이미 판매된 차량은 신경 쓰지 않으셔도 돼요. 이 화면은 받은 날부터 30일 동안 열려요.</p>';
+  }
+  /* 미리보기 (?pv=1) — 서버에 묻지 않고 지어낸 자료로 */
+  if(/[?&]pv=1/.test(location.search)){
+    var t=new Date(); function f(n){ var x=new Date(t.getTime()+n*86400000); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+    show({office:{name:"예시 성능검사소", tel:"031-000-0000"}, dealer:"홍길동", days:120,
+      cars:[{plate:"12가3456",car:"그랜저 IG",date:f(-123),exp:f(-3),left:-3},{plate:"34나5678",car:"쏘나타 DN8",date:f(-113),exp:f(7),left:7},
+            {plate:"56다7890",car:"K5 <b>굵게</b>",date:f(-100),exp:f(20),left:20}]});
+    return;
+  }
+  var key = keyOf();
+  if(!key){ stop("주소가 올바르지 않아요", "알림톡의 «차량 목록 보기» 버튼으로 다시 열어 주세요."); return; }
+  fetch(API, { method:"POST", headers:{"Content-Type":"application/json"}, referrerPolicy:"no-referrer", cache:"no-store",
+    body: JSON.stringify({ shop:"", token:"", fn:"remindView", args:[key] }) })
+  .then(function(r){ return r.json(); })
+  .then(function(j){
+    if(j && j.__err){ stop("안내를 찾지 못했어요", "주소를 다시 확인하시거나, 검사소에 문의해 주세요."); return; }
+    show(j && j.result);
+  })
+  .catch(function(){ stop("연결이 잠시 끊겼어요", "잠시 뒤 다시 열어 주세요."); });
+})();
+</script>
+</body>
+</html>

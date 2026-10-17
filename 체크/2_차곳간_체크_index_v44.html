@@ -2488,10 +2488,23 @@ function mapDrive(r){
     memo:r.메모||"", why:r.발송사유||"", view:r._view||"", seen:r._viewAt||"",
     _q:[r.딜러,r.상사,r.차량번호,r.차명,r.목적지,r.기사,r.딜러연락처].join(" ") };
 }
+var PEND=null;   /* v44: 딜러 등록 대기 — null 이면 서버 v34 전이거나 대표가 아님 */
+function loadPend(){
+  if(!isOwner()){ PEND=null; return Promise.resolve(); }
+  return call("delivPendingDealers",[]).then(function(r){
+    PEND=((r&&r.list)||[]).map(function(x,i){
+      var names=(x.names||[]).map(String), comps=(x.companies||[]).map(String), drv=(x.drivers||[]).map(String);
+      return { id:"p"+i, tel:String(x.tel||""), names:names, name:names[0]||"", comps:comps, drivers:drv,
+        n:Number(x.n)||0, first:shortTs(x.first), last:shortTs(x.last),
+        match:(x.match||[]).map(function(m){ return {id:String(m.id), name:String(m.name||"")}; }),
+        _q:[x.tel].concat(names, comps, drv).join(" ") };
+    });
+  }).catch(function(){ PEND=null; });
+}
 function loadDeliv(){
   var g=delivRange();
   return Promise.all([ call("deliv_list",[ST.key,g[0],g[1],false]),
-                       call("deliv_accounts",[ST.key]) ])
+                       call("deliv_accounts",[ST.key]), loadPend() ])   /* v44: 딜러 등록 대기도 같이 */
   .then(function(r){
     var d=r[0]||{};
     DRIVES=(d.rows||[]).map(mapDrive);
@@ -4758,6 +4771,85 @@ function delivHead(){
     "기사가 폰으로 차 사진을 찍고 목적지를 누르면, 번호판을 읽어 딜러에게 도착 알림을 보내요. "+
     "");
 }
+/* ═══ v44: 딜러 등록 대기 — 기사가 처음 적은 딜러 번호(보안 M2로 못 간 알림)를 대표가 보고 승인 ═══
+   기사가 적은 글(이름 · 상사 · 기사)은 모두 esc (보안 ⑧) · 승인 창에 «본인 번호 확인» 체크 (⑨) · 한 번에 20줄 */
+var PEND_MAX=20;
+function pendCard(){
+  if(!PEND || !PEND.length) return "";
+  return card('딜러 등록 대기 <span class="rt">'+won(PEND.length)+'건</span>',
+    "기사가 처음 적은 딜러 번호예요. 아직 딜러 목록에 없어서 도착 알림이 가지 않았어요. 맞는 번호면 등록하고 다시 보내요.",
+    tableBlock("pnd",[
+      {k:"name",t:"딜러 (기사가 적은 이름)",name:true,fmt:function(v,r){
+        return r.names.length>1
+          ? '<select class="pnName" data-p="'+esc(r.id)+'">'+r.names.map(function(x){ return '<option'+(x===r.name?' selected':'')+'>'+esc(x)+'</option>'; }).join("")+'</select>'
+          : '<b>'+esc(v)+'</b>';}},
+      {k:"tel",t:"휴대폰",kind:"id"},
+      {k:"comps",t:"상사",fmt:function(v){ return esc((v||[]).join(", ")); }},
+      {k:"match",t:"같은 이름 딜러",fmt:function(v,r){
+        if(!v.length) return '<span style="color:var(--muted)">새 딜러로</span>';
+        return '<select class="pnMatch" data-p="'+esc(r.id)+'"><option value="">새 딜러로 넣기</option>'+
+          v.map(function(m){ return '<option value="'+esc(m.id)+'"'+(r.dealerId===m.id?' selected':'')+'>'+esc(m.name)+' 님에게 번호 더하기</option>'; }).join("")+'</select>';}},
+      {k:"n",t:"못 간 알림",num:true,fmt:function(v){ return won(v)+"건"; }},
+      {k:"drivers",t:"적은 기사",fmt:function(v){ return esc((v||[]).join(", ")); }},
+      {k:"last",t:"마지막",kind:"date"}
+    ], PEND, {pick:true,
+      tools:'<button class="btn primary" id="pnOk">고른 줄 등록하고 다시 보내기</button><button class="btn" id="pnNo">고른 줄 등록 안 함</button>'}));
+}
+function pendWire(){
+  if(!$("pnd-blk")) return;
+  wireTable("pnd",function(){ draw(); });
+  document.querySelectorAll(".pnName").forEach(function(sel){ sel.onchange=function(){
+    var r=PEND.filter(function(x){ return x.id===sel.getAttribute("data-p"); })[0]; if(r) r.name=sel.value; }; });
+  document.querySelectorAll(".pnMatch").forEach(function(sel){ sel.onchange=function(){
+    var r=PEND.filter(function(x){ return x.id===sel.getAttribute("data-p"); })[0]; if(r) r.dealerId=sel.value||""; }; });
+  function picks(){ var ids=picked("pnd"); return PEND.filter(function(r){ return ids.indexOf(r.id)>=0; }); }
+  var ok=$("pnOk");
+  if(ok) ok.onclick=function(){
+    var L=picks();
+    if(!L.length){ tell("고른 줄이 없어요","왼쪽 네모로 등록할 딜러를 먼저 골라 주세요."); return; }
+    if(L.length>PEND_MAX){ tell("너무 많이 골랐어요","한 번에 "+PEND_MAX+"줄까지 등록할 수 있어요."); return; }
+    var sh=$("sheet"); if(!sh) return;
+    var tot=0; L.forEach(function(r){ tot+=r.n; });
+    sh.innerHTML='<h3 style="margin:0 0 2px">딜러 '+won(L.length)+'명을 등록하고 알림을 다시 보낼까요?</h3>'+
+      '<div style="color:var(--muted);font-size:12.5px;margin-bottom:12px">등록하면 이 번호로 앞으로도 차량 도착 알림이 가요. 못 간 알림 '+won(tot)+'건 중 24시간 안 것만 다시 보내요.</div>'+
+      '<div class="dlg-who">'+L.map(function(r){ var m=r.dealerId?r.match.filter(function(x){return x.id===r.dealerId;})[0]:null;
+        return '<div><b>'+esc(r.name)+'</b><span style="color:var(--muted);font-weight:700">'+esc(r.tel)+(m?' · '+esc(m.name)+' 님에게 더하기':' · 새 딜러')+'</span></div>'; }).join("")+'</div>'+
+      '<label class="chip" style="margin:12px 0 4px;display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="pnSure"> '+
+        '<span>이 번호가 <b>그 딜러 본인 번호</b>인지 확인했어요 (전화 · 명함 등)</span></label>'+
+      '<label class="chip" style="margin:0 0 10px;display:flex;gap:8px"><input type="checkbox" id="pnResend" checked> <span>못 간 알림 다시 보내기 (24시간 안 것만)</span></label>'+
+      '<div class="msg err" id="pnErr" hidden style="margin:0 0 10px"></div>'+
+      '<div class="sheetbtns"><button class="btn" id="pnClose">닫기</button><button class="btn primary" id="pnGo">등록하기</button></div>';
+    openSheet();
+    $("pnClose").onclick=closeSheet;
+    $("pnGo").onclick=function(){
+      if(!$("pnSure").checked){ var e=$("pnErr"); e.hidden=false; e.textContent="본인 번호인지 확인했다고 체크해 주세요."; return; }
+      var resend=!!$("pnResend").checked;
+      var body=L.map(function(r){ var o={name:r.name, tel:r.tel, resend:resend}; if(r.dealerId) o.dealerId=r.dealerId; return o; });
+      busy(true);
+      call("delivApproveDealer",[body]).then(function(res){
+        busy(false); closeSheet(); clearPick("pnd");
+        var R=(res&&res.results)||[], okN=R.filter(function(x){return x.ok;}).length, sent=0, failN=0;
+        R.forEach(function(x){ sent+=Number(x.sent)||0; failN+=Number(x.failed)||0; });
+        var bad=R.filter(function(x){return !x.ok;});
+        bar(won(okN)+"명을 등록했어요."+(resend?" 알림 "+won(sent)+"건을 다시 보냈어요."+(failN?" "+won(failN)+"건은 못 보냈어요.":""):"")+
+          (bad.length?" 등록 못 한 "+won(bad.length)+"줄 — "+bad.slice(0,2).map(function(x){ return String(x.why||""); }).join(" / "):""),
+          (bad.length||failN)?"err":"ok");
+        DEALERS=[]; refresh(["deliv","set"]);
+      }).catch(function(e){ busy(false); var b=$("pnErr"); if(b){ b.hidden=false; b.textContent=String((e&&e.message)||"처리하지 못했어요. 다시 시도해 주세요."); } });
+    };
+  };
+  var no=$("pnNo");
+  if(no) no.onclick=function(){
+    var L=picks();
+    if(!L.length){ tell("고른 줄이 없어요","왼쪽 네모로 뺄 줄을 먼저 골라 주세요."); return; }
+    askPicked("고른 "+won(L.length)+"줄을 등록하지 않을까요?", L.map(function(r){ return [r.name, r.tel]; }), "등록 안 함", function(){
+      busy(true);
+      call("delivRejectDealer",[L.map(function(r){ return {name:r.name, tel:r.tel}; })]).then(function(res){
+        busy(false); clearPick("pnd"); bar(won((res&&res.n)||L.length)+"줄을 대기에서 뺐어요. 알림은 가지 않아요.","ok"); refresh(["deliv"]);
+      }).catch(fail);
+    }, "대기 목록에서만 빠지고, 배달 기록은 그대로 남아요. 이 번호로는 알림이 가지 않아요.");
+  };
+}
 PAGE.deliv=function(){
   var n=DRIVES.length;
   var sent=DRIVES.filter(function(d){return d.alarm==="보냄";}).length;
@@ -4765,7 +4857,7 @@ PAGE.deliv=function(){
   var test=DRIVES.filter(function(d){return d.alarm==="안 보냄";}).length;
   var dest={}; DRIVES.forEach(function(d){ dest[d.dest]=1; });
   var cancel=DRIVES.filter(function(d){return d.alarm==="취소";}).length;
-  return delivHead()+delivTabs("deliv")+
+  return delivHead()+delivTabs("deliv")+pendCard()+
   card("기간","최근 30일을 보고 있어요.",
     '<div class="tools">'+
       '<button class="btn primary" id="dRe">새로고침</button>'+
@@ -4802,7 +4894,7 @@ PAGE.deliv=function(){
     delivDetail());
 };
 AFTER.deliv=function(){
-  wireTable("drv",function(){ draw(); }); wireSub();
+  wireTable("drv",function(){ draw(); }); wireSub(); pendWire();
   var re=$("dRe"); if(re) re.onclick=function(){ refresh(["deliv"]); };
   document.querySelectorAll("[data-dact]").forEach(function(b){
     b.onclick=function(){ delivAct(b.getAttribute("data-dact")); };
