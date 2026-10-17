@@ -2684,7 +2684,7 @@ var CGG = (function(){
   var LAYS=[["top","가로 메뉴","메뉴가 화면 위에 가로로 놓여요. 지금까지 쓰던 모습이에요."],
             ["side","세로 메뉴","메뉴가 왼쪽에 세로로 놓여요. 메뉴 이름이 다 보여서 찾기 쉬워요."],
             ["icon","아이콘 메뉴","왼쪽에 아이콘만 놓여요. 화면을 가장 넓게 쓸 수 있어요."]];
-  var layout = { app:null, key:"cgg_layout", def:"side",   /* 1.7: 처음은 세로(왼쪽 메뉴 늘 펼침). 3번째 값으로 바꿀 수 있어요 */
+  var layout = { app:null, key:"cgg_layout", def:"top",   /* 처음은 가로(위) — 10/15 결정. 세로(왼쪽) · 아이콘은 화면 설정에서 골라요 */
     init:function(app,key,def){ this.app=app; if(key) this.key=key; if(def==='top'||def==='side'||def==='icon') this.def=def; this.apply(this.get()); },
     get:function(){ var v=store(this.key); return (v==="top"||v==="side"||v==="icon")?v:this.def; },
     set:function(v){ store(this.key,v); this.apply(v); },
@@ -2703,7 +2703,7 @@ var CGG = (function(){
   function tabbar(el, items, current, onPick){
     if(!el) return;
     el.setAttribute("aria-label","아래 메뉴");
-    el.innerHTML=items.map(function(t){ return '<button type="button" data-tb="'+esc(t.key)+'"'+(t.key===current?' class="on" aria-current="page"':'')+'>'+ic(t.icon)+'<span>'+esc(t.label)+'</span></button>'; }).join("");
+    el.innerHTML=items.map(function(t){ return '<button type="button" data-tb="'+esc(t.key)+'"'+(t.key===current?' class="on" aria-current="page"':'')+'>'+ic(t.icon)+'<span>'+esc(t.label)+'</span>'+(t.badge>0?'<i class="cgg-nbadge" aria-label="'+esc(t.badge)+'건">'+esc(t.badge>99?"99+":t.badge)+'</i>':'')+'</button>'; }).join("");   /* 1.8: badge = 빨간 숫자 (예: 못 보낸 도착 알림) */
     Array.prototype.forEach.call(el.children,function(b){ b.onclick=function(){ onPick && onPick(b.getAttribute("data-tb")); }; });
   }
 
@@ -2903,9 +2903,16 @@ var CGG = (function(){
     var cg=String(cur||"").split("/")[0];
     el.setAttribute("aria-label","메뉴");
     el.innerHTML=groups.map(function(g){ var on=g.key===cg, subs=g.subs||[];
-      return '<div class="cgg-ngrp'+(on?' on':'')+(subs.length>1?' has':'')+'"><button type="button" data-nk="'+esc(g.key+(subs.length?"/"+subs[0].key:""))+'" aria-selected="'+on+'">'+ic(g.icon||"file")+'<span class="lbl">'+esc(g.label)+'</span>'+(g.isNew?'<i class="cgg-new">새</i>':'')+'</button>'
+      return '<div class="cgg-ngrp'+(on?' on':'')+(subs.length>1?' has':'')+'"><button type="button" data-nk="'+esc(g.key+(subs.length?"/"+subs[0].key:""))+'" aria-selected="'+on+'">'+ic(g.icon||"file")+'<span class="lbl">'+esc(g.label)+'</span>'+(g.isNew?'<i class="cgg-new">새</i>':'')+(g.badge>0?'<i class="cgg-nbadge" aria-label="'+esc(g.badge)+'건">'+esc(g.badge>99?"99+":g.badge)+'</i>':'')+'</button>'
         +(subs.length>1?'<div class="cgg-nsubs">'+subs.map(function(s){ var k=g.key+"/"+s.key; return '<button type="button" class="cgg-nsub" data-nk="'+esc(k)+'"'+(k===cur?' aria-current="page"':'')+'>'+esc(s.label)+'</button>'; }).join("")+'</div>':'')+'</div>'; }).join("");
+    /* 가로 배치(넓은 화면): 지금 큰 메뉴의 아래 칸을 메뉴 바로 밑 줄(.cgg-navsub)에 늘 보여 줘요 — 세로 배치의 «늘 펼침»과 같은 뜻 */
+    var cgp=groups.filter(function(g){ return g.key===cg; })[0], row=el.nextElementSibling;
+    if(!row||!row.classList.contains("cgg-navsub")){ row=document.createElement("div"); row.className="cgg-navsub"; el.parentNode.insertBefore(row, el.nextSibling); }
+    row.setAttribute("aria-label","아래 칸");
+    row.innerHTML=(cgp&&cgp.subs&&cgp.subs.length>1)?cgp.subs.map(function(s){ var k=cgp.key+"/"+s.key; return '<button type="button" data-nk="'+esc(k)+'"'+(k===cur?' aria-current="page"':'')+'>'+esc(s.label)+'</button>'; }).join(""):"";
+    row.hidden=!row.innerHTML;
     Array.prototype.forEach.call(el.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
+    Array.prototype.forEach.call(row.querySelectorAll("[data-nk]"),function(b){ b.onclick=function(){ onPick&&onPick(b.getAttribute("data-nk")); }; });
   }
   /* 그 화면 안의 칸으로 내려가서 잠깐 빛나게 (spot: 칸의 id 또는 선택자 — 제품이 정한 고정 글자만) */
   function spot(sel){ var e=null; try{ e=typeof sel==="string"?document.querySelector(sel):sel; }catch(x){ e=null; } if(!e) return;
@@ -2962,7 +2969,7 @@ var CGG = (function(){
   }
   document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeSheet(); });
   /* D — 홈 바로가기: 사용자가 고른 기능 id 를 이 기기에만 저장 (알 수 없는 id 는 버리고, 최대 max 개) */
-  function quick(el, feats, key, defs, onGo, o){ if(!el) return; o=o||{}; var max=o.max||8, by=Object.create(null);
+  function quick(el, feats, key, defs, onGo, o){ if(!el) return; o=o||{}; var max=o.max||4, by=Object.create(null);   /* 1.8: 바로가기는 4개까지 (대표님 10/18) */
     feats.forEach(function(f){ by[f.id]=f; });
     function clean(v){ var seen=Object.create(null); return (Array.isArray(v)?v:[]).filter(function(id){ if(typeof id!=="string"||!by[id]||seen[id]) return false; seen[id]=1; return true; }).slice(0,max); }
     function load(){ var v=null; try{ v=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){ v=null; } return clean(Array.isArray(v)?v:(defs||[])); }
@@ -2978,9 +2985,11 @@ var CGG = (function(){
       dialog({size:"form", title:"홈 바로가기 고르기", desc:"최대 "+max+"개까지 골라요. 이 기기에만 저장돼요.",
         body:'<div class="cgg-qpick">'+feats.map(function(f){ return '<label><input type="checkbox" value="'+esc(f.id)+'"'+(l.indexOf(f.id)>=0?' checked':'')+'><span><b>'+esc(f.label)+'</b><small>'+esc(f.path)+'</small></span></label>'; }).join("")+'</div>',
         ok:"저장", onOk:function(d){ var v=Array.prototype.map.call(d.querySelectorAll(".cgg-qpick input:checked"),function(i){ return i.value; });
-          if(v.length>max){ toast("최대 "+max+"개까지 고를 수 있어요"); return false; }
+          if(v.length>max){ toast(max+"개까지예요. 하나를 빼고 넣어 주세요"); return false; }
           v.sort(function(a,b){ var A=l.indexOf(a),B=l.indexOf(b); return (A<0?99:A)-(B<0?99:B); });
-          save(v); draw(); toast("바로가기를 저장했어요"); } }); }
+          save(v); draw(); toast("바로가기를 저장했어요"); } });
+      var dl=document.querySelector(".cgg-dlg .cgg-qpick");
+      if(dl) Array.prototype.forEach.call(dl.querySelectorAll("input"),function(c){ c.onchange=function(){ if(c.checked&&dl.querySelectorAll("input:checked").length>max){ c.checked=false; toast(max+"개까지예요. 하나를 빼고 넣어 주세요"); } }; }); }
     draw(); return { redraw:draw, list:load };
   }
 
@@ -2999,13 +3008,41 @@ var CGG = (function(){
       +(o.auto?'<select class="cgg-hb cgg-wide" data-hb="auto" aria-label="자동 새로고침">'+o.auto.options.map(function(x){ return '<option value="'+esc(x[0])+'"'+(String(x[0])===String(o.auto.value)?' selected':'')+'>'+esc(x[1])+'</option>'; }).join("")+'</select>':'')
       +(o.saved!=null?'<span class="cgg-hb cgg-saved cgg-wide" data-hb="saved" role="status">'+esc(o.saved)+'</span>':'')
       +(o.field?'<button type="button" class="cgg-hb cgg-hb-pri cgg-wide" data-hb="field">'+esc(o.field.label||"현장 화면")+'</button>':'')
+      +'<button type="button" class="cgg-hb cgg-more" data-hb="more" aria-label="단추 더보기">더보기 ▾</button>'
       +(o.me?'<button type="button" class="cgg-hb cgg-me" data-hb="me">'+esc(o.me.name||"내 정보")+' ▾</button>':'')+'</div>';
     B.forEach(function(b){ var x=el.querySelector('[data-hb="'+b[0]+'"]'); if(x) x.onclick=function(){ o[b[0]](); }; });
     var au=el.querySelector('[data-hb="auto"]'); if(au) au.onchange=function(){ o.auto.onChange&&o.auto.onChange(au.value); };
     var fd=el.querySelector('[data-hb="field"]'); if(fd) fd.onclick=function(){ o.field.on&&o.field.on(); };
     var me=el.querySelector('[data-hb="me"]'); if(me&&o.me.items) menu(me, {name:o.me.name, role:o.me.role}, o.me.items, o.me.onPick);
     var fs=el.querySelector(".cgg-hfind-slot"); if(fs) find(fs, o.find.feats, o.find.onGo, {phone:o.find.onPhone});
-    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; }, me:me };
+    /* 업체명은 절대 자르지 않아요(대표님 10/18). 자리가 모자라면 ① 기능 찾기 칸 → 돋보기 ② 단추 묶음 → «더보기 ▾» 차례로 접어요 */
+    var more=el.querySelector('[data-hb="more"]');
+    if(more) menu(more, null, function(){ var L=[];
+        B.forEach(function(b){ if(o[b[0]]&&b[0]!=="refresh") L.push({key:b[0], icon:{notice:"bell",help:"file",link:"out"}[b[0]], label:b[1]}); });
+        if(o.auto){ L.push("-"); o.auto.options.forEach(function(x){ L.push({key:"auto:"+x[0], icon:"refresh", label:"자동 새로고침 · "+x[1], note:String(x[0])===String(o.auto.value)?"지금":""}); }); }
+        if(o.field){ L.push("-"); L.push({key:"field", icon:"pc", label:o.field.label||"현장 화면"}); }
+        return L; },
+      function(k){ if(k.indexOf("auto:")===0){ o.auto.value=k.slice(5); var a2=el.querySelector('[data-hb="auto"]'); if(a2) a2.value=o.auto.value; o.auto.onChange&&o.auto.onChange(o.auto.value); }
+        else if(k==="field") o.field.on&&o.field.on(); else if(o[k]) o[k](); });
+    function fit(){ el.classList.remove("cgg-fold1","cgg-fold2");
+      if(window.innerWidth<=600) return;
+      /* «현장 화면»(워시만) 자리를 두 제품 모두 셈에 넣어요 — 같은 폭이면 두 제품이 같은 때 접혀요 */
+      var extra=0; if(!o.field){ var tb=document.createElement("button"); tb.className="cgg-hb cgg-hb-pri"; tb.textContent="현장 화면"; tb.style.cssText="position:absolute;visibility:hidden"; el.querySelector(".cgg-right").appendChild(tb); extra=tb.offsetWidth+(parseFloat(getComputedStyle(el.querySelector(".cgg-right")).columnGap)||6); tb.remove(); }
+      function tight(){ var r=el.querySelector(".cgg-right"), b=el.querySelector(".cgg-hdr-biz b"); if(!r) return false;
+        if(el.scrollWidth>el.clientWidth+1||r.scrollWidth>r.clientWidth+1) return true;
+        if(b&&(b.scrollWidth>b.clientWidth+1||b.getBoundingClientRect().height>parseFloat(getComputedStyle(b).lineHeight)*2+2)) return true;
+        var kids=Array.prototype.filter.call(r.children,function(k){ return k.offsetWidth>0; }); if(!kids.length) return false;
+        var side=getComputedStyle(el).display==="contents", rs=getComputedStyle(r), gap=parseFloat(rs.columnGap)||6, left, right;
+        if(side){ var rr=r.getBoundingClientRect(); left=rr.left+(parseFloat(rs.paddingLeft)||0); right=rr.right-(parseFloat(rs.paddingRight)||0); }
+        else { var bz=el.querySelector(".cgg-hdr-biz")||el.querySelector(".cgg-brand"), er=el.getBoundingClientRect(), es=getComputedStyle(el);
+          left=bz.getBoundingClientRect().right+(parseFloat(es.columnGap)||16); right=er.right-(parseFloat(es.paddingRight)||0); }
+        var need=kids.reduce(function(t,k){ return t+k.getBoundingClientRect().width; },0)+gap*(kids.length-1)+extra;
+        return need>right-left+0.5; }   /* 단추 폭 합계(+«현장 화면» 자리)가 쓸 수 있는 폭보다 크면 접어요 */
+      if(tight()) el.classList.add("cgg-fold1");
+      if(tight()) el.classList.add("cgg-fold2"); }
+    fit(); if(!el.__cggFit){ el.__cggFit=1; window.addEventListener("resize",fit); }
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; fit(); }, me:me, fit:fit };
   }
   /* 할 일 3장 + 위 오른쪽 «할 일 N건 모두 보기» (두 제품 같은 자리) */
   function todoBlock(el, items, total, onPick, onAll){ if(!el) return;
@@ -3017,7 +3054,7 @@ var CGG = (function(){
   }
   /* 일정 달력 — o = {y, m, today, days:{일:{amt, marks:[[종류,개수]], tone}}, legend:[[종류,이름,색(run|done|chk|stop)]], onMove(-1|0|1), onDay(일)} */
   function calendar(el, o){ if(!el) return; o=o||{};
-    var y=o.y, m=o.m, first=new Date(y,m-1,1).getDay(), last=new Date(y,m,0).getDate(), lg={};
+    var y=Math.floor(Number(o.y))||2000, m=Math.min(12,Math.max(1,Math.floor(Number(o.m))||1)), first=new Date(y,m-1,1).getDay(), last=new Date(y,m,0).getDate(), lg={};
     (o.legend||[]).forEach(function(l){ lg[l[0]]=l; });
     var cells=[]; for(var i=0;i<first;i++) cells.push('<span class="d e" aria-hidden="true"></span>');
     for(var d=1; d<=last; d++){ var x=(o.days||{})[d]||{}, wd=(first+d-1)%7;
@@ -3092,11 +3129,12 @@ var CGG_MENU_WASH = {
   tabs: [{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"delivery",icon:"truck",label:"배달"},{key:"money",icon:"wallet",label:"입출금"},{key:"__all",icon:"more",label:"전체"}],
   /* C · D — 기능 목록 (label 은 화면에 보이는 이름, words 는 사람들이 칠 만한 쉬운 말 · 비슷한 말) */
   feats: [
-    {id:"in",          label:"입고 등록",            path:"현장 화면 › 입고",                 go:"field/in",          words:"입고하기 차 들어옴 차량 등록 사진 번호판 차번호"},
-    {id:"ledger",      label:"입출고 내역",          path:"일감 › 입출고 내역",               go:"ledger/list",       words:"차 목록 작업 중 일감 장부 입고 출고 내역 수금 대기"},
-    {id:"pay-done",    label:"입금 완료 표시",       path:"일감 › 입출고 내역",               go:"ledger/list",       words:"수금 완료 돈 받음 입금 처리", spot:"#wkBulkPaid"},
+    {id:"in",          label:"입고 등록",            path:"현장 화면 › 입고",                 go:"field/in",          words:"입고하기 입고차량 들어온 차 차 들어옴 차량 등록 사진 번호판 차번호"},
+    {id:"out",         label:"출고 등록",            path:"현장 화면 › 출고",                 go:"field/out",         words:"출고하기 출고차량 나간 차 차 나감 내보내기 배달 보내기"},
+    {id:"ledger",      label:"입출고 내역",          path:"일감 › 입출고 내역",               go:"ledger/list",       words:"차 목록 작업 중 일감 장부 입고 출고 내역 수금 대기 입고차량 오늘 입고 들어온 차"},
+    {id:"pay-done",    label:"입금 확인",       path:"일감 › 입출고 내역",               go:"ledger/list",       words:"수금 완료 돈 받음 입금 처리 입금 완료 표시 입금 확인 수금 확인", spot:"#wkBulkPaid"},
     {id:"extra-ok",    label:"추가 작업 확인 · 입금 확인", path:"일감 › 입출고 내역 › 차 줄 누르기", go:"ledger/list",     words:"추가 작업 확인 요청 추가 작업 승인 입금 확인 차 자세히"},
-    {id:"outlog",      label:"출고 기록",            path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"배달 기록 출고 내역 나간 차 배송 이동 확인 탁송"},
+    {id:"outlog",      label:"출고 기록",            path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"배달 기록 출고 내역 나간 차 배송 이동 확인 탁송 출고차량 오늘 출고 오늘 배달 나간 차"},
     {id:"out-resend",  label:"출고 알림 다시 보내기", path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"재발송 다시 보내기 못 보낸 실패 문자"},
     {id:"dest",        label:"도착지 추가",          path:"배달 › 도착지",                    go:"delivery/dest",     words:"목적지 배달 도착지 주소 자주 가는 곳"},
     {id:"out-msg",     label:"출고 알림 문구",       path:"배달 › 문구 · 발송 설정",           go:"delivery/msg",      words:"출고 문자 문구 알림 내용 바꾸기 메시지"},
@@ -3129,9 +3167,9 @@ var CGG_MENU_WASH = {
     {id:"plan",        label:"요금제 · 결제",        path:"사람 버튼 ▾ › 요금제",             go:"me/plan",           words:"요금제 결제 구독 이용료 카드 캐시 지갑 잔액 남은돈 충전 이용요금 만료 기한 체험 연장 잠금 잠김 차단 막힘"},
     {id:"me",          label:"마이페이지",           path:"사람 버튼 ▾ › 마이페이지",         go:"me/me",             words:"내 정보 비밀번호 내 계정 로그아웃"}
   ],
-  /* D — 홈 바로가기 처음 6개 (사용자가 바꾸면 이 기기에만 저장) */
-  quickDefault: ["outlog","bill-make","due","tax","dealer-add","in"],
-  quickKey: "cgg_wash_quick"
+  /* D — 홈 바로가기 처음 4개 (사용자가 바꾸면 이 기기에만 저장) */
+  quickDefault: ["in","out","bill-send","pay-done"],   /* 4개까지 (대표님 10/18) — 입고 · 출고 · 청구서 보내기 · 입금 확인 */
+  quickKey: "cgg_wash_quick"   /* 실제 저장 이름은 "cgg_wash_quick:"+업체id+":"+사람id (한 PC에 여러 사람이 로그인할 수 있어서) */
 };
 
 </script>
@@ -3945,6 +3983,7 @@ function wGroups(){
   var setK=setSubFor().map(function(t){return t[0];}).filter(function(k){return k!=="trash"&&k!=="sms";});
   return M.groups.filter(function(g){return allow.indexOf(tabOf[g.key])>=0;}).map(function(g){
     var o={key:g.key,label:g.label,icon:g.icon,isNew:g.isNew};
+    if(g.key==="delivery")o.badge=wDelivBad();
     if(g.subs){
       var subs=g.subs.filter(function(x){
         if(g.key==="settings")return setK.indexOf(x.key)>=0;
@@ -3955,6 +3994,16 @@ function wGroups(){
       o.subs=subs.map(function(x){return {key:x.key,label:x.label};});
     }
     return o;});
+}
+/* 배달 옆 빨간 숫자 — 오늘 못 보낸 출고(도착) 알림 (1.8 보강: 배달은 홈에 두지 않아요) */
+function wDelivBad(){
+  var tk=dayKey(nowIso());
+  return (S.outbox||[]).filter(function(o){return o.status==="실패"&&/출고/.test(String(o.type||""))&&dayKey(o.createdAt||o.sentAt||o.at||nowIso())===tk;}).length;
+}
+/* 바로가기 저장 이름 — 한 PC 에 여러 사람이 로그인할 수 있어서 업체 · 사람마다 (메뉴 지도 README) */
+function wQuickKey(){
+  var sh="";try{sh=(typeof SUPA!=="undefined"&&SUPA&&SUPA.shop)||localStorage.getItem("ccw_shop")||"";}catch(e){}
+  return CGG_MENU_WASH.quickKey+":"+sh+":"+((S.me&&S.me.id)||"");
 }
 /* 기능 찾기 · 바로가기 목록 — 쓸 수 없는 메뉴로 가는 줄은 빼요 */
 function wFeats(){
@@ -4006,7 +4055,7 @@ function goFeat(f){
   if(go==="hdr/link"){$("btnLink").click();return;}
   if(go==="hdr/help"){$("btnHelp").click();return;}
   if(go==="hdr/notice"){if(window.ccwNotice)window.ccwNotice();return;}
-  if(go==="field/in"){if(S.mode==="pc"&&canPC())$("btnMode").click();S.tab="in";decideMode(false);window.scrollTo(0,0);return;}
+  if(go==="field/in"||go==="field/out"){if(S.mode==="pc"&&canPC())$("btnMode").click();S.tab=go.slice(6);decideMode(false);window.scrollTo(0,0);return;}
   if(f&&f.id==="dealer-add")P.sub="roster";
   if(f&&f.id==="company-add")P.sub="comp";
   goKey(go);
@@ -4016,10 +4065,19 @@ function wAllMenu(focus){
 }
 function wNav(){
   try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}
+  wSubDup();
 }
+/* 아래 칸이 공통 메뉴에 이미 보이면(가로: 메뉴 밑 줄 · 세로: 왼쪽 펼침) 화면 안 작은 탭은 숨겨요 — 폰은 그대로 */
+function wSubDup(){
+  var a=$("app");if(!a)return;
+  var r=document.querySelector(".cgg-navsub"),ns=document.querySelector("#tabs .cgg-ngrp.on .cgg-nsubs");
+  var vis=(S.mode==="pc")&&((r&&!r.hidden&&r.offsetParent!==null)||(ns&&getComputedStyle(ns).display!=="none"));
+  a.classList.toggle("wsubdup",!!vis);
+}
+window.addEventListener("resize",function(){clearTimeout(WM.rt);WM.rt=setTimeout(wSubDup,120);});
 function wTabbar(){
   var M=window.CGG_MENU_WASH,gs=wGroups(),has=function(k){return gs.some(function(g){return g.key===k;});};
-  var items=M.tabs.filter(function(t){return t.key==="__all"||has(t.key);});
+  var items=M.tabs.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){var x={key:t.key,icon:t.icon,label:t.label};if(t.key==="delivery")x.badge=wDelivBad();return x;});
   /* 매니저처럼 칸이 빠지면 자재 · 설정으로 채워 늘 다섯 칸 */
   ["mat","settings"].forEach(function(k){
     if(items.length<5&&has(k)&&!items.some(function(t){return t.key===k;})){
@@ -4091,23 +4149,18 @@ function wHome(c){
   Object.keys(c.memoBy).forEach(function(k){if(k.indexOf(pre)!==0)return;var d=Number(k.slice(8,10));
     var open=c.memoBy[k].filter(function(m){return !m.done;}).length;if(!open)return;
     days[d]=days[d]||{marks:[]};days[d].marks=(days[d].marks||[]).concat([["memo",open]]);});
-  /* 할 일: 급한 것 두 장 + «오늘 배달 · 못 보낸 것» 한 장 */
+  /* 할 일 3장 — 홈은 정산만 (배달은 메뉴 옆 빨간 숫자, 1.8 보강) */
   var strip=function(v){return String(v==null?"":v).replace(/<[^>]*>/g,"");};
   var pk=(c.pick||[]).filter(function(t){return typeof t[0]==="string"||Number(t[0])>0;});
-  var items=pk.slice(0,2).map(function(t){var memo=typeof t[0]==="string";
+  var items=pk.slice(0,3).map(function(t){var memo=typeof t[0]==="string";
     return {tone:t[4]==="imp"?"stop":(memo?"chk":"run"),icon:memo?"file":"car",title:strip(t[1])+(memo?"":" "+t[0]+"건"),sub:strip(t[2])};});
-  var tk=dayKey(nowIso());
-  var outN=S.records.filter(function(r){return r.outAt&&dayKey(r.outAt)===tk;}).length;
-  var failN=(S.outbox||[]).filter(function(o){return o.status==="실패"&&/출고/.test(String(o.type||""));}).length;
-  var dIdx=items.length;
-  items.push({tone:failN?"chk":"run",icon:"truck",title:"오늘 배달 "+outN+"대 · 못 보낸 것 "+failN+"대",sub:failN?"누르면 배달 기록으로 가요 · 다시 보낼 수 있어요":"누르면 배달 기록으로 가요"});
   var ri=c.works.slice(0,5),mx=ri.length?ri[0].amt||1:1;
   var mgr=isManager();
   CGG.home(host,{date:(now.getMonth()+1)+"월 "+now.getDate()+"일 "+"일월화수목금토".charAt(now.getDay())+"요일",
     title:($("dhSay")?$("dhSay").innerHTML:""),desc:($("dhSub")?$("dhSub").textContent:""),
-    quick:{feats:wFeats(),key:CGG_MENU_WASH.quickKey,defs:CGG_MENU_WASH.quickDefault,onGo:goFeat},
-    todo:{items:items,total:c.todos.length+1,
-      onPick:function(i){if(i===dIdx){goKey("delivery/outlog");return;}var t=pk[i];if(t){t[3]();window.scrollTo(0,0);}},
+    quick:{feats:wFeats(),key:wQuickKey(),defs:CGG_MENU_WASH.quickDefault,onGo:goFeat},
+    todo:{items:items,total:c.todos.length,
+      onPick:function(i){var t=pk[i];if(t){t[3]();window.scrollTo(0,0);}},
       onAll:function(){todoSheet(c.todos,c.todoBtn);}},
     kpis:jKpiItems(c.rows.reduce(function(t,r){return t+(r.total||0);},0)),
     cal:{y:c.Y,m:c.M,today:isNow?now.getDate():0,days:days,amtLabel:"그날 들어온 차 금액",
@@ -12139,9 +12192,9 @@ function jKpiItems(monthAmt){
     var pv=amM[5],nw=Number(monthAmt||0),pc4=pv?Math.round((nw-pv)/pv*100):0;
     L4={label:"이번 달 청구 금액",value:nw.toLocaleString("ko-KR"),unit:"원",delta:pv?((pc4>0?"+":pc4<0?"−":"±")+Math.abs(pc4)+"%"):"",down:pc4<0,vs:pv?"지난달보다":"지난달 자료 없음",spark:amM,color:"#0B2545"};}
   return [
-    {label:"오늘 입고",vs:"지난주보다",value:String(ins[tk]||0),unit:"대",delta:a1.delta,down:a1.down,spark:D7.map(function(k){return ins[k]||0;}),color:"#1668C4"},
+    {label:"오늘 입고차량",vs:"지난주보다",value:String(ins[tk]||0),unit:"대",delta:a1.delta,down:a1.down,spark:D7.map(function(k){return ins[k]||0;}),color:"#1668C4"},
     {label:"작업 중",vs:"지난주보다",value:String(busyNow),unit:"대",delta:a2.delta,down:a2.down,spark:D7.map(function(k){return k===tk?busyNow:busyAt(end(k));}),color:"#B26B00"},
-    {label:"오늘 출고",vs:"지난주보다",value:String(outs[tk]||0),unit:"대",delta:a3.delta,down:a3.down,spark:D7.map(function(k){return outs[k]||0;}),color:"#1E9E5A"},
+    {label:"오늘 출고차량",vs:"지난주보다",value:String(outs[tk]||0),unit:"대",delta:a3.delta,down:a3.down,spark:D7.map(function(k){return outs[k]||0;}),color:"#1E9E5A"},
     L4];
 }
 function jKpis(monthAmt){
@@ -17501,6 +17554,14 @@ body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflo
 /* A: 큰 메뉴 묶음. 가로 배치에서는 지금처럼 한 줄, 세로 배치(넓은 화면)에서는 아래 칸이 늘 펼쳐져 있어요 */
 .cgg-nav .cgg-ngrp{display:contents}
 .cgg-nsubs{display:none}
+/* 가로 배치: 지금 큰 메뉴의 아래 칸 줄 (세로 · 아이콘 배치와 폰에서는 숨김 — 세로는 왼쪽에 늘 펼침, 폰은 화면 안 탭 · «전체») */
+.cgg-navsub{display:flex;gap:6px;padding:8px 18px;background:var(--surface);box-shadow:0 1px 0 var(--line);overflow-x:auto;scrollbar-width:none}
+.cgg-navsub[hidden]{display:none}
+.cgg-navsub button{flex:none;height:32px;padding:0 13px;border-radius:999px;border:1px solid var(--ln2);background:var(--surface);color:var(--btn-ink);font:inherit;font-size:13.5px;cursor:pointer}
+.cgg-navsub button[aria-current="page"]{background:var(--tabon);color:var(--blue);border-color:transparent;font-weight:700}
+.lay-side .cgg-navsub,.lay-icon .cgg-navsub{display:none}
+@media (max-width:1000px){ .cgg-navsub{padding:8px 12px} }
+@media (max-width:600px){ .cgg-navsub{display:none} }
 .cgg-new{font-style:normal;font-size:10.5px;font-weight:900;color:var(--blue);margin-left:2px}
 @media (min-width:1000px){
   .lay-side .cgg-nav .cgg-ngrp{display:flex;flex-direction:column;gap:1px}
@@ -17557,6 +17618,10 @@ body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflo
 .cgg-quick .qt:hover{border-color:var(--blue)}
 .cgg-quick .qt b{font-size:14px} .cgg-quick .qt small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cgg-quick .none{grid-column:1/-1;margin:0;color:var(--muted);font-size:13px}
+/* 빨간 숫자 (메뉴 · 아래 탭) — 예: 못 보낸 도착 알림 */
+.cgg-nbadge{font-style:normal;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--stop);color:#fff;font-size:11px;font-weight:800;display:inline-grid;place-items:center;line-height:1;margin-left:4px;box-sizing:border-box}
+.cgg-tbar button{position:relative}
+.cgg-tbar .cgg-nbadge{position:absolute;top:5px;left:calc(50% + 6px);margin:0;min-width:16px;height:16px;font-size:10px}
 .cgg-qpick{display:flex;flex-direction:column;max-height:52vh;overflow:auto;margin:0 -4px}
 .cgg-dlg .cgg-qpick label{flex-direction:row;align-items:center;gap:12px;padding:9px 4px;border-bottom:1px solid var(--line);color:var(--text);font-weight:500;font-size:14px;cursor:pointer}
 .cgg-qpick span{display:flex;flex-direction:column;min-width:0} .cgg-qpick small{color:var(--muted);font-size:12px;font-weight:400}
@@ -17564,7 +17629,6 @@ body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflo
 @keyframes cggSpot{0%,55%{box-shadow:0 0 0 4px var(--sky)}100%{box-shadow:0 0 0 0 transparent}}
 .cgg-spot{animation:cggSpot 2.1s ease-out}
 @media (prefers-reduced-motion:reduce){ .cgg-spot{animation:none;outline:3px solid var(--sky);outline-offset:2px} }
-@media (max-width:1100px){ .cgg-quick .qg{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:600px){
   .cgg-hdr .cgg-hfind .in{display:none}
   .cgg-hdr .cgg-hfind .ph{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;cursor:pointer;padding:0}
@@ -17579,7 +17643,9 @@ body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflo
 .cgg-brand b{font-size:var(--brand-fs);font-weight:900;display:block;line-height:1.3}
 .cgg-brand small{font-size:var(--brand-sub)}
 .cgg-hdr .cgg-hdr-biz{min-width:0;flex:0 1 auto;line-height:1.35}
-.cgg-hdr .cgg-hdr-biz b{font-size:var(--biz-fs);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 업체명은 자르지 않아요 — 길면 두 줄까지 (줄임표 금지) */
+.cgg-hdr .cgg-hdr-biz{flex:0 0 auto;max-width:15em}
+.cgg-hdr .cgg-hdr-biz b{font-size:var(--biz-fs);font-weight:800;white-space:normal;overflow:visible;word-break:keep-all;overflow-wrap:anywhere;line-height:1.3}
 .cgg-hdr .cgg-hdr-biz small{display:block;font-size:var(--biz-sub);opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cgg-right{gap:var(--hb-gap);flex-wrap:nowrap}
 .cgg-hb{box-sizing:border-box;height:var(--hb-h);padding:0 12px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;font:inherit;font-size:var(--hb-fs);font-weight:500;line-height:1;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
@@ -17668,6 +17734,41 @@ select.cgg-hb option{color:#101828}
   .cgg-cal .d .mk span{font-size:9.5px;padding:0 3px;line-height:13px} .cgg-cal .lg{padding:10px 12px 12px;font-size:11.5px}
   .cgg-side .big{padding:8px 12px 0;font-size:21px} .cgg-side .bar{margin:8px 12px 0} .cgg-side .lgd,.cgg-side .rk{padding-left:12px;padding-right:12px} .cgg-side dl{margin:10px 12px 0} .cgg-side .sub{margin:4px 12px 0}
 }
+
+/* 1.8 보강 — 업체명 우선: 자리가 모자라면 접기 (CGG.header 가 cgg-fold1 · cgg-fold2 를 붙여요) */
+.cgg-hb.cgg-more{display:none}
+.cgg-top.cgg-fold1 .cgg-hfind .in{display:none}
+.cgg-top.cgg-fold1 .cgg-hfind .ph{display:grid;place-items:center;width:var(--hb-h);height:var(--hb-h);border-radius:10px;border:1px solid #ffffff30;background:#ffffff12;color:#fff;cursor:pointer;padding:0}
+.cgg-top.cgg-fold1 .cgg-hfind .ph svg.ic{width:17px;height:17px}
+.cgg-top.cgg-fold2 .cgg-right .cgg-wide{display:none}
+.cgg-top.cgg-fold2 .cgg-hb.cgg-more{display:inline-flex}
+@media (min-width:1000px){ .lay-side .cgg-top.cgg-fold1 .cgg-hfind .ph,.lay-icon .cgg-top.cgg-fold1 .cgg-hfind .ph{border-color:var(--ln2);background:var(--surface);color:var(--btn-ink)} }
+/* 줄 높이를 뼈대가 정해요 — 제품 body 줄 높이와 상관없이 같은 크기 (워시 방 알림 10/18) */
+.cgg-top,.cgg-head,.cgg-quick,.cgg-sec,.cgg-acts,.cgg-kpis,.cgg-cal,.cgg-side,.cgg-help{line-height:1.45}
+.cgg-act .tx b,.cgg-act .tx small{line-height:1.45}
+.cgg-act .tx{min-width:0} .cgg-act .tx b,.cgg-act .tx small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* 할 일 카드 높이가 글 길이로 달라지지 않게 */
+/* 폰: 머리말에 업체명을 보여요 (제품 이름 대신) — 두 줄까지, 자르지 않음 */
+@media (max-width:600px){
+  .cgg-top .cgg-brand b,.cgg-top .cgg-brand small{display:none}
+  .cgg-hdr .cgg-top .cgg-hdr-biz{display:block;flex:1 1 auto;max-width:none;min-width:0}
+  .cgg-hdr .cgg-top .cgg-hdr-biz b{font-size:13.5px;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;overflow:visible}
+  .cgg-hdr .cgg-top .cgg-hdr-biz small{display:none}
+  .cgg-top .cgg-hb[data-hb="refresh"] span{display:none}
+  .cgg-top .cgg-hb[data-hb="refresh"]{padding:0;width:var(--hb-h);justify-content:center}
+  .cgg-top .cgg-hb.cgg-me{max-width:92px;overflow:hidden;text-overflow:ellipsis}
+}
+
+@media (min-width:1000px){
+  /* 세로 · 아이콘 배치: 단추 줄이 넘치면 오른쪽으로 넘치게 해서(접기 판단용) 왼쪽 메뉴 위로 겹치지 않게 */
+  .lay-side .cgg-right,.lay-icon .cgg-right{justify-content:flex-start;overflow:hidden}
+  .lay-side .cgg-right>:first-child,.lay-icon .cgg-right>:first-child{margin-left:auto}
+  /* 왼쪽 메뉴 안 업체명은 칸 폭을 다 써요 (두 줄까지, 자르지 않음) */
+  .lay-side .cgg-hdr .cgg-hdr-biz{max-width:none;flex:none}
+  .lay-side .cgg-hdr .cgg-hdr-biz small{white-space:normal;overflow:visible}
+}
+
+/* 기능 찾기 칸이 몰래 줄어들지 않게 (두 제품이 같은 때 접히도록) */
+.cgg-right .cgg-hfind{flex:none}
 
 </style>
 <!-- ===== 워시 이음 (공통 부품 위에 워시 머리말 단추 모양만) ===== -->
@@ -17998,6 +18099,7 @@ body.jpay #ccwLockBar{display:none!important}
 
 /* ── v129 공통 부품 1.8 뼈대 — 숨긴 옛 머리말 · 옛 홈, 배달 안쪽 칸 ── */
 #hdrOld,#homeOld{display:none!important}
+.wsubdup #setSub,.wsubdup #mnTabs{display:none!important}
 #vOutLog.d-log #olMsgCard{display:none}
 #vOutLog.d-msg > :not(#olMsgCard):not(#jHelp){display:none}
 #vOutLog.d-msg #olMsgCard{margin-top:0!important}

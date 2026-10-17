@@ -140,8 +140,8 @@ rep('''  if(isManager()){var cs={};S.records.forEach(function(r){if(r.company)cs
     var amM=M7.map(function(k){return S.records.filter(function(r){return mOf(r)===k;}).reduce(function(t,r){return t+(Number(r.total)||0);},0);});
     var pv=amM[5],nw=Number(monthAmt||0),pc4=pv?Math.round((nw-pv)/pv*100):0;
     L4={label:"이번 달 청구 금액",value:nw.toLocaleString("ko-KR"),unit:"원",delta:pv?((pc4>0?"+":pc4<0?"−":"±")+Math.abs(pc4)+"%"):"",down:pc4<0,vs:pv?"지난달보다":"지난달 자료 없음",spark:amM,color:"#0B2545"};}''')
-for lab in ['{label:"오늘 입고",', '{label:"작업 중",', '{label:"오늘 출고",']:
-    rep(lab, lab + 'vs:"지난주보다",')
+for lab, nl in [('{label:"오늘 입고",', '{label:"오늘 입고차량",'), ('{label:"작업 중",', '{label:"작업 중",'), ('{label:"오늘 출고",', '{label:"오늘 출고차량",')]:
+    rep(lab, nl + 'vs:"지난주보다",')   # 1.8 보강: «오늘 입고차량 · 오늘 출고차량» (두 제품 같은 말)
 
 # 6) 옛 홈 그리기 끝에서 새 홈(CGG.home)을 그려요 — 숫자는 위에서 이미 구한 값 그대로
 rep('''    : '<div class="hint">아직 자료가 없어요.</div>';
@@ -163,6 +163,7 @@ function wGroups(){
   var setK=setSubFor().map(function(t){return t[0];}).filter(function(k){return k!=="trash"&&k!=="sms";});
   return M.groups.filter(function(g){return allow.indexOf(tabOf[g.key])>=0;}).map(function(g){
     var o={key:g.key,label:g.label,icon:g.icon,isNew:g.isNew};
+    if(g.key==="delivery")o.badge=wDelivBad();
     if(g.subs){
       var subs=g.subs.filter(function(x){
         if(g.key==="settings")return setK.indexOf(x.key)>=0;
@@ -173,6 +174,16 @@ function wGroups(){
       o.subs=subs.map(function(x){return {key:x.key,label:x.label};});
     }
     return o;});
+}
+/* 배달 옆 빨간 숫자 — 오늘 못 보낸 출고(도착) 알림 (1.8 보강: 배달은 홈에 두지 않아요) */
+function wDelivBad(){
+  var tk=dayKey(nowIso());
+  return (S.outbox||[]).filter(function(o){return o.status==="실패"&&/출고/.test(String(o.type||""))&&dayKey(o.createdAt||o.sentAt||o.at||nowIso())===tk;}).length;
+}
+/* 바로가기 저장 이름 — 한 PC 에 여러 사람이 로그인할 수 있어서 업체 · 사람마다 (메뉴 지도 README) */
+function wQuickKey(){
+  var sh="";try{sh=(typeof SUPA!=="undefined"&&SUPA&&SUPA.shop)||localStorage.getItem("ccw_shop")||"";}catch(e){}
+  return CGG_MENU_WASH.quickKey+":"+sh+":"+((S.me&&S.me.id)||"");
 }
 /* 기능 찾기 · 바로가기 목록 — 쓸 수 없는 메뉴로 가는 줄은 빼요 */
 function wFeats(){
@@ -224,7 +235,7 @@ function goFeat(f){
   if(go==="hdr/link"){$("btnLink").click();return;}
   if(go==="hdr/help"){$("btnHelp").click();return;}
   if(go==="hdr/notice"){if(window.ccwNotice)window.ccwNotice();return;}
-  if(go==="field/in"){if(S.mode==="pc"&&canPC())$("btnMode").click();S.tab="in";decideMode(false);window.scrollTo(0,0);return;}
+  if(go==="field/in"||go==="field/out"){if(S.mode==="pc"&&canPC())$("btnMode").click();S.tab=go.slice(6);decideMode(false);window.scrollTo(0,0);return;}
   if(f&&f.id==="dealer-add")P.sub="roster";
   if(f&&f.id==="company-add")P.sub="comp";
   goKey(go);
@@ -234,10 +245,19 @@ function wAllMenu(focus){
 }
 function wNav(){
   try{CGG.nav($("tabs"),wGroups(),wCur(),goKey);}catch(e){}
+  wSubDup();
 }
+/* 아래 칸이 공통 메뉴에 이미 보이면(가로: 메뉴 밑 줄 · 세로: 왼쪽 펼침) 화면 안 작은 탭은 숨겨요 — 폰은 그대로 */
+function wSubDup(){
+  var a=$("app");if(!a)return;
+  var r=document.querySelector(".cgg-navsub"),ns=document.querySelector("#tabs .cgg-ngrp.on .cgg-nsubs");
+  var vis=(S.mode==="pc")&&((r&&!r.hidden&&r.offsetParent!==null)||(ns&&getComputedStyle(ns).display!=="none"));
+  a.classList.toggle("wsubdup",!!vis);
+}
+window.addEventListener("resize",function(){clearTimeout(WM.rt);WM.rt=setTimeout(wSubDup,120);});
 function wTabbar(){
   var M=window.CGG_MENU_WASH,gs=wGroups(),has=function(k){return gs.some(function(g){return g.key===k;});};
-  var items=M.tabs.filter(function(t){return t.key==="__all"||has(t.key);});
+  var items=M.tabs.filter(function(t){return t.key==="__all"||has(t.key);}).map(function(t){var x={key:t.key,icon:t.icon,label:t.label};if(t.key==="delivery")x.badge=wDelivBad();return x;});
   /* 매니저처럼 칸이 빠지면 자재 · 설정으로 채워 늘 다섯 칸 */
   ["mat","settings"].forEach(function(k){
     if(items.length<5&&has(k)&&!items.some(function(t){return t.key===k;})){
@@ -309,23 +329,18 @@ function wHome(c){
   Object.keys(c.memoBy).forEach(function(k){if(k.indexOf(pre)!==0)return;var d=Number(k.slice(8,10));
     var open=c.memoBy[k].filter(function(m){return !m.done;}).length;if(!open)return;
     days[d]=days[d]||{marks:[]};days[d].marks=(days[d].marks||[]).concat([["memo",open]]);});
-  /* 할 일: 급한 것 두 장 + «오늘 배달 · 못 보낸 것» 한 장 */
+  /* 할 일 3장 — 홈은 정산만 (배달은 메뉴 옆 빨간 숫자, 1.8 보강) */
   var strip=function(v){return String(v==null?"":v).replace(/<[^>]*>/g,"");};
   var pk=(c.pick||[]).filter(function(t){return typeof t[0]==="string"||Number(t[0])>0;});
-  var items=pk.slice(0,2).map(function(t){var memo=typeof t[0]==="string";
+  var items=pk.slice(0,3).map(function(t){var memo=typeof t[0]==="string";
     return {tone:t[4]==="imp"?"stop":(memo?"chk":"run"),icon:memo?"file":"car",title:strip(t[1])+(memo?"":" "+t[0]+"건"),sub:strip(t[2])};});
-  var tk=dayKey(nowIso());
-  var outN=S.records.filter(function(r){return r.outAt&&dayKey(r.outAt)===tk;}).length;
-  var failN=(S.outbox||[]).filter(function(o){return o.status==="실패"&&/출고/.test(String(o.type||""));}).length;
-  var dIdx=items.length;
-  items.push({tone:failN?"chk":"run",icon:"truck",title:"오늘 배달 "+outN+"대 · 못 보낸 것 "+failN+"대",sub:failN?"누르면 배달 기록으로 가요 · 다시 보낼 수 있어요":"누르면 배달 기록으로 가요"});
   var ri=c.works.slice(0,5),mx=ri.length?ri[0].amt||1:1;
   var mgr=isManager();
   CGG.home(host,{date:(now.getMonth()+1)+"월 "+now.getDate()+"일 "+"일월화수목금토".charAt(now.getDay())+"요일",
     title:($("dhSay")?$("dhSay").innerHTML:""),desc:($("dhSub")?$("dhSub").textContent:""),
-    quick:{feats:wFeats(),key:CGG_MENU_WASH.quickKey,defs:CGG_MENU_WASH.quickDefault,onGo:goFeat},
-    todo:{items:items,total:c.todos.length+1,
-      onPick:function(i){if(i===dIdx){goKey("delivery/outlog");return;}var t=pk[i];if(t){t[3]();window.scrollTo(0,0);}},
+    quick:{feats:wFeats(),key:wQuickKey(),defs:CGG_MENU_WASH.quickDefault,onGo:goFeat},
+    todo:{items:items,total:c.todos.length,
+      onPick:function(i){var t=pk[i];if(t){t[3]();window.scrollTo(0,0);}},
       onAll:function(){todoSheet(c.todos,c.todoBtn);}},
     kpis:jKpiItems(c.rows.reduce(function(t,r){return t+(r.total||0);},0)),
     cal:{y:c.Y,m:c.M,today:isNow?now.getDate():0,days:days,amtLabel:"그날 들어온 차 금액",
@@ -366,6 +381,7 @@ rep('''  vOutLog:"차가 어디로 갔는지, 딜러에게 알림이 나갔는�
 V129_CSS = """
 /* ── v129 공통 부품 1.8 뼈대 — 숨긴 옛 머리말 · 옛 홈, 배달 안쪽 칸 ── */
 #hdrOld,#homeOld{display:none!important}
+.wsubdup #setSub,.wsubdup #mnTabs{display:none!important}
 #vOutLog.d-log #olMsgCard{display:none}
 #vOutLog.d-msg > :not(#olMsgCard):not(#jHelp){display:none}
 #vOutLog.d-msg #olMsgCard{margin-top:0!important}
