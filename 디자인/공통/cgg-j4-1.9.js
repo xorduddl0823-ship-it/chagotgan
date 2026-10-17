@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    차곳간 공통 부품 · J안 4판 · cgg-j4 1.9 (2026-10-18, 디자인 방 · 초안)
    1.9 바뀐 것: ⑨ 새 규칙(.claude/skills/chagotgan-builder/SKILL.md) 맞춤 — 대표님 10/18 «화면 통합은 출시 전에»
-     머리말 작은 줄에 날짜(o.date) · 단추 이름 «주소» · 저장 표시 글 «연결됨» · CGG.todoBand(할 일 띠 + [해결하러 가기]) · CGG.monthPick(달력식 달 고르기)
+     머리말 작은 줄에 날짜(o.date) · 단추 이름 «주소» · «연결됨»(초록 점) · 사람 단추 두 줄 · find.mode:"button"(찾기 단추 → 창)
+     CGG.todoBand(할 일 띠 + [해결하러 가기]) · CGG.monthPick(달력식 달 고르기 창) · CGG.findDialog · CGG.myPage(요금제 · 사용량 · 내 계정) — 모양은 워시 통합 시안 v132 와 같게
      CSS: 숫자 칸 가운데 정렬 · 도구줄 칸 · 단추 43px(폰 42px) · 표 체크칸 크게
    1.8 바뀐 것: ⑧ 페이지 뼈대 — 대표님 지적(10/18) «워시 · 체크가 너무 다르다» → 두 제품이 같은 뼈대 · 같은 크기(CSS 변수 한 벌)
      CGG.header(머리말 윗줄) · CGG.home(홈 차례) · CGG.todoBlock(할 일 3장 + 모두 보기) · CGG.calendar(일정 달력) · CGG.moneyCard(이번 달 입금) · CGG.rankCard(이번 달 일감)
@@ -159,7 +160,7 @@ var CGG = (function(){
 
   /* ═════════ ⑥ 본문 (1.3) — 화면 일곱 칸의 ②⑤⑥⑦ + 창 3종 + 알림 글 ═════════ */
   function won(n){ return (Number(n)||0).toLocaleString("ko-KR"); }
-  var ST={"진행 중":"run","완료":"done","확인 필요":"chk","보류":"stop"};
+  var ST={"진행 중":"run","완료":"done","확인 필요":"chk","보류":"stop","입금 완료":"pay"};   /* 1.9 입금 = 남색 */
   /* 상태 칩 — map 을 주면 제품 고유 단계(예: 딜러 입고 · 작업 중 · 출고 · 도착)도 공통 네 가지 색으로 */
   function status(v, map){ var k=(map&&map[v])||ST[v]||"run"; return '<span class="cgg-st '+k+'">'+esc(v)+'</span>'; }
   /* ② 화면 머리: {crumb, title(HTML 허용 — 숫자는 <em>), desc, acts:[{label,icon,pri,id,disabled}]} */
@@ -214,7 +215,7 @@ var CGG = (function(){
     function draw(){
       var r=list(), pages=Math.max(1,Math.ceil(r.length/T.size)); if(T.page>pages) T.page=pages;
       var v=r.slice((T.page-1)*T.size, T.page*T.size); v.forEach(function(w){ w.k=kid(w.x,w.i); }); var all=v.length&&v.every(function(w){ return T.sel[w.k]; });
-      var tabs=o.tabs||[["","전체"],["진행 중","진행 중"],["확인 필요","확인 필요"],["보류","보류"],["완료","완료"]];
+      var tabs=o.tabs||[["","전체"],["진행 중","진행 중"],["확인 필요","확인 필요"],["보류","보류"],["완료","완료"]].concat(o.rows.some(function(x){ return x[si]==="입금 완료"; })?[["입금 완료","입금 완료"]]:[]);
       el.className="cgg-card";
       el.innerHTML=(si>=0?'<div class="cgg-tabsH" role="tablist">'+tabs.map(function(t){ return '<button type="button" role="tab" data-f="'+esc(t[0])+'" aria-selected="'+(T.f===t[0])+'">'+esc(t[1])+'<b>'+cnt(t[0])+'</b></button>'; }).join("")+'</div>':'')
         +'<div class="cgg-filters">'+(o.filters||[]).map(function(f,i){ return '<button type="button" class="cgg-fp'+(i?'':' on')+'">'+esc(f)+'</button>'; }).join("")+'<span class="sp"></span>'
@@ -382,24 +383,25 @@ var CGG = (function(){
   function short(n){ n=Number(n)||0; var a=Math.abs(n); if(a>=1e8) return (Math.round(n/1e7)/10)+"억"; if(a>=1e4) return (Math.round(n/1e3)/10)+"만"; return won(n); }
   /* 머리말 윗줄 — el 은 .cgg-top. 차례는 늘 같아요: 로고 · 제품 이름 | 업체 | 찾기 · 공지사항 · 도움말 · 주소 · 새로고침 · 30초마다 · 연결됨 · 현장 화면 · 이름 ▾
      o = {product:"워시", sub:"광택 · 세차 정산", ver:"v128", biz:{name, line}, find:{feats, onGo, onPhone},
-          notice:fn, help:fn, link:fn, refresh:fn, auto:{value, options:[[값,글]], onChange}, date:"10/18", saved:true(«연결됨») 또는 "연결됨 · 15:39", field:{label:"현장 화면", on:fn}, me:{name, items, onPick}}
+          notice:fn, help:fn, link:fn, refresh:fn, auto:{value, options:[[값,글]], onChange}, date:"10/18", saved:true(«연결됨» — 초록 점) 또는 "연결됨 · 15:39", field:{label:"현장 화면", on:fn}, me:{name, items, onPick}}
      없는 단추는 빼고 그려요(자리는 앞으로 당겨져요). 글자는 모두 esc. */
   function header(el, o){ if(!el) return {}; o=o||{};
     var B=[["notice","공지사항"],["help","도움말"],["link","주소"],["refresh","새로고침"]];   /* 1.9 «링크 복사» → «주소» (SKILL.md 머리말 차례) */
     el.innerHTML='<div class="cgg-brand"><span class="cgg-ci" aria-hidden="true">차</span><div><b>차곳간 '+esc(o.product||"")+'</b><small>'+esc([o.sub,o.ver,o.date].filter(Boolean).join(" · "))+'</small></div></div>'
       +(o.biz?'<div class="cgg-hdr-biz"><b>'+esc(o.biz.name||"")+'</b><small>'+esc(o.biz.line||"")+'</small></div>':'')
-      +'<div class="cgg-right">'+(o.find?'<div class="cgg-hfind-slot"></div>':'')
+      +'<div class="cgg-right">'+(o.find?(o.find.mode==="button"?'<button type="button" class="cgg-hb cgg-findbtn" data-hb="findbtn" aria-label="기능 찾기">'+ic("search")+'<span>찾기</span></button>':'<div class="cgg-hfind-slot"></div>'):'')
       +B.filter(function(b){ return o[b[0]]; }).map(function(b){ return '<button type="button" class="cgg-hb'+(b[0]==="refresh"?'':' cgg-wide')+'" data-hb="'+b[0]+'">'+(b[0]==="refresh"?ic("refresh"):'')+'<span>'+b[1]+'</span></button>'; }).join("")
       +(o.auto?'<select class="cgg-hb cgg-wide" data-hb="auto" aria-label="자동 새로고침">'+o.auto.options.map(function(x){ return '<option value="'+esc(x[0])+'"'+(String(x[0])===String(o.auto.value)?' selected':'')+'>'+esc(x[1])+'</option>'; }).join("")+'</select>':'')
-      +(o.saved!=null?'<span class="cgg-hb cgg-saved cgg-wide" data-hb="saved" role="status">'+esc(o.saved===true?"연결됨":o.saved)+'</span>':'')
+      +(o.saved!=null?'<span class="cgg-hb cgg-saved cgg-conn cgg-wide" data-hb="saved" role="status"><i aria-hidden="true"></i><span>'+esc(o.saved===true?"연결됨":o.saved)+'</span></span>':'')
       +(o.field?'<button type="button" class="cgg-hb cgg-hb-pri cgg-wide" data-hb="field">'+esc(o.field.label||"현장 화면")+'</button>':'')
       +'<button type="button" class="cgg-hb cgg-more" data-hb="more" aria-label="단추 더보기">더보기 ▾</button>'
-      +(o.me?'<button type="button" class="cgg-hb cgg-me" data-hb="me">'+esc(o.me.name||"내 정보")+' ▾</button>':'')+'</div>';
+      +(o.me?'<button type="button" class="cgg-hb cgg-me" data-hb="me"><span>'+esc(o.me.name||"내 정보")+' ▾</span>'+(o.me.sub!==""?'<small>'+esc(o.me.sub||"마이페이지 · 휴지통")+'</small>':'')+'</button>':'')+'</div>';
     B.forEach(function(b){ var x=el.querySelector('[data-hb="'+b[0]+'"]'); if(x) x.onclick=function(){ o[b[0]](); }; });
     var au=el.querySelector('[data-hb="auto"]'); if(au) au.onchange=function(){ o.auto.onChange&&o.auto.onChange(au.value); };
     var fd=el.querySelector('[data-hb="field"]'); if(fd) fd.onclick=function(){ o.field.on&&o.field.on(); };
     var me=el.querySelector('[data-hb="me"]'); if(me&&o.me.items) menu(me, {name:o.me.name, role:o.me.role}, o.me.items, o.me.onPick);
     var fs=el.querySelector(".cgg-hfind-slot"); if(fs) find(fs, o.find.feats, o.find.onGo, {phone:o.find.onPhone});
+    var fb=el.querySelector('[data-hb="findbtn"]'); if(fb) fb.onclick=function(){ findDialog(o.find.feats, o.find.onGo); };   /* 1.9 «공지 앞 돋보기 단추» (워시 시안 추천안) */
     /* 업체명은 절대 자르지 않아요(대표님 10/18). 자리가 모자라면 ① 기능 찾기 칸 → 돋보기 ② 단추 묶음 → «더보기 ▾» 차례로 접어요 */
     var more=el.querySelector('[data-hb="more"]');
     if(more) menu(more, null, function(){ var L=[];
@@ -428,7 +430,7 @@ var CGG = (function(){
       if(getComputedStyle(el).display!=="contents"&&el.scrollWidth>el.clientWidth+1) el.classList.add("cgg-fold3"); }   /* 그래도 넘치면(좁은 PC) 제품 이름 글자를 숨겨요 */
     fit(); if(!el.__cggFit){ el.__cggFit=1; window.addEventListener("resize",fit); }
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
-    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"]'); if(s) s.textContent=t; fit(); }, me:me, fit:fit };
+    return { saved:function(t){ var s=el.querySelector('[data-hb="saved"] span'); if(s) s.textContent=t; fit(); }, me:me, fit:fit };
   }
   /* 할 일 3장 + 위 오른쪽 «할 일 N건 모두 보기» (두 제품 같은 자리) */
   function todoBlock(el, items, total, onPick, onAll){ if(!el) return;
@@ -487,36 +489,53 @@ var CGG = (function(){
   }
 
   /* ═════════ ⑨ 1.9 — 새 규칙 부품 ═════════ */
-  /* 할 일 띠 + [해결하러 가기] — 일 화면 «제목 + 설명» 바로 아래 (SKILL.md 4. 화면 뼈대)
-     o = {count:3, text:"출고 확인이 필요한 차가 있어요", tone:"chk"(주황 · 확인 필요) | "stop"(빨강 · 막힘) | "run"(파랑), go:"해결하러 가기", onGo:fn}
-     count 가 0이면 초록 «할 일이 없어요» 띠(단추 없음) */
-  function todoBand(el, o){ if(!el) return; o=o||{}; var n=Number(o.count)||0, t=n?(["chk","stop","run"].indexOf(o.tone)>=0?o.tone:"chk"):"done";
+  /* 할 일 띠 + [해결하러 가기] — 일 화면 «제목 + 설명» 바로 아래 (SKILL.md 4. 화면 뼈대 · 워시 시안 v132 모양)
+     o = {text:"출고했는데 아직 입금 안 된 차 6대 · 510,000원", count:6, tone:"chk"(주황 · 확인 필요) | "stop"(빨강 · 막힘) | "run"(파랑), go:"해결하러 가기", onGo:fn}
+     count 가 0이면 초록 띠에 o.empty(없으면 «지금 처리할 일이 없어요»), 단추 없음. 글은 한 줄 */
+  function todoBand(el, o){ if(!el) return; o=o||{}; var n=o.count==null?1:(Number(o.count)||0), t=n?(["chk","stop","run"].indexOf(o.tone)>=0?o.tone:"chk"):"done";
     el.className="cgg-band "+t; el.setAttribute("role","status");
-    el.innerHTML='<span class="ico" aria-hidden="true">'+(n?"!":"✓")+'</span><span class="tx">'+(n?'<b>할 일 '+n+'건</b>'+esc(o.text||""):'<b>할 일이 없어요</b>'+esc(o.empty||"지금 처리할 것이 없어요"))+'</span>'
-      +(n&&o.onGo?'<button type="button" class="cgg-btn pri" data-go="1">'+esc(o.go||"해결하러 가기")+' ›</button>':'');
+    el.innerHTML='<span class="tx">'+esc(n?(o.text||""):(o.empty||"지금 처리할 일이 없어요"))+'</span>'
+      +(n&&o.onGo?'<button type="button" class="cgg-btn pri" data-go="1">'+esc(o.go||"해결하러 가기")+'</button>':'');
     var b=el.querySelector("[data-go]"); if(b) b.onclick=function(){ o.onGo(); }; }
-  /* 달력식 달 고르기 — 선택 상자 대신 (SKILL.md 5. 날짜 · 달 고르기)
-     el 은 빈 칸. o = {y:2026, m:10, min:"2024-01", max:"2026-12", onPick:function(y,m){}}
-     단추 «2026년 10월 ▾»를 누르면 아래에 해 ‹ › + 열두 달 판이 열려요. 바깥 누르기 · Esc 로 닫혀요 */
-  function monthPick(el, o){ if(!el) return {}; o=o||{}; var now=new Date(), y=Number(o.y)||now.getFullYear(), m=Number(o.m)||now.getMonth()+1, vy=y;
+  /* 달력식 달 고르기 — 선택 상자 대신 (SKILL.md 5. 날짜 · 달 고르기 · 워시 시안 v132 모양)
+     el 은 빈 칸. o = {y:2026, m:10, min:"2024-01", max:"2026-12", today:{y,m}(없으면 오늘), onPick:function(y,m){}}
+     단추 «2026년 10월 ▾»를 누르면 가운데 창(form)에 «‹ 2025 | 2026년 | 2027 ›» + 4×3 달 칸. 고른 달 = 파랑 채움, 오늘 달 = 파란 테두리 */
+  function monthPick(el, o){ if(!el) return {}; o=o||{}; var now=new Date(), y=Number(o.y)||now.getFullYear(), m=Number(o.m)||now.getMonth()+1;
+    var ty=o.today?Number(o.today.y):now.getFullYear(), tm=o.today?Number(o.today.m):now.getMonth()+1;
     function key(a,b){ return a*100+b; } function lim(s2){ if(!s2) return null; var p=String(s2).split("-"); return key(Number(p[0]),Number(p[1])); }
     var lo=lim(o.min), hi=lim(o.max);
     el.classList.add("cgg-mpick");
-    el.innerHTML='<button type="button" class="cgg-btn cgg-mbtn" aria-haspopup="dialog" aria-expanded="false">'+ic("today")+'<span></span> ▾</button><div class="cgg-mpop" role="dialog" aria-label="달 고르기" hidden></div>';
-    var btn=el.querySelector(".cgg-mbtn"), pop=el.querySelector(".cgg-mpop");
-    function label(){ btn.querySelector("span").textContent=y+"년 "+m+"월"; }
-    function draw(){ var h='<div class="hd"><button type="button" data-y="-1" aria-label="앞 해"'+(lo&&key(vy-1,12)<lo?' disabled':'')+'>‹</button><b>'+vy+'년</b><button type="button" data-y="1" aria-label="다음 해"'+(hi&&key(vy+1,1)>hi?' disabled':'')+'>›</button></div><div class="gr">';
-      for(var i=1;i<=12;i++){ var k=key(vy,i), off=(lo&&k<lo)||(hi&&k>hi); h+='<button type="button" data-m="'+i+'"'+(vy===y&&i===m?' aria-current="true"':'')+(off?' disabled':'')+'>'+i+'월</button>'; }
-      pop.innerHTML=h+'</div>';
-      Array.prototype.forEach.call(pop.querySelectorAll("[data-y]"),function(b){ b.onclick=function(e){ e.stopPropagation(); vy+=Number(b.getAttribute("data-y")); draw(); }; });
-      Array.prototype.forEach.call(pop.querySelectorAll("[data-m]"),function(b){ b.onclick=function(){ y=vy; m=Number(b.getAttribute("data-m")); label(); close(); o.onPick&&o.onPick(y,m); }; }); }
-    function outside(e){ if(!el.contains(e.target)) close(); } function keyd(e){ if(e.key==="Escape"){ close(); btn.focus(); } }
-    function close(){ pop.hidden=true; btn.setAttribute("aria-expanded","false"); document.removeEventListener("click",outside,true); document.removeEventListener("keydown",keyd); }
-    btn.onclick=function(){ if(!pop.hidden){ close(); return; } vy=y; draw(); pop.hidden=false; btn.setAttribute("aria-expanded","true");
-      document.addEventListener("click",outside,true); document.addEventListener("keydown",keyd); var c=pop.querySelector('[aria-current]')||pop.querySelector("[data-m]:not([disabled])"); if(c) c.focus(); };
+    el.innerHTML='<button type="button" class="cgg-btn cgg-mbtn" aria-haspopup="dialog">'+ic("today")+'<b></b> ▾</button>';
+    var btn=el.querySelector(".cgg-mbtn");
+    function label(){ btn.querySelector("b").textContent=y+"년 "+m+"월"; }
+    function body(vy){ var h='<div class="cgg-myr"><button type="button" class="cgg-btn sm" data-y="-1"'+(lo&&key(vy-1,12)<lo?' disabled':'')+'>‹ '+(vy-1)+'</button><b>'+vy+'년</b><button type="button" class="cgg-btn sm" data-y="1"'+(hi&&key(vy+1,1)>hi?' disabled':'')+'>'+(vy+1)+' ›</button></div><div class="cgg-mgrid">';
+      for(var i=1;i<=12;i++){ var k=key(vy,i), off=(lo&&k<lo)||(hi&&k>hi); h+='<button type="button" data-m="'+i+'" aria-pressed="'+(vy===y&&i===m)+'"'+(vy===ty&&i===tm?' class="now"':'')+(off?' disabled':'')+'>'+i+'월</button>'; }
+      return h+'</div>'; }
+    btn.onclick=function(){ var vy=y;
+      dialog({size:"form", title:"달 고르기", desc:"볼 달을 눌러요. 오늘이 있는 달은 파란 테두리예요.", body:'<div class="cgg-mpbox"></div>'});
+      var box=document.querySelector(".cgg-dialog .cgg-mpbox"); if(!box) return;
+      function bind(){ box.innerHTML=body(vy);
+        Array.prototype.forEach.call(box.querySelectorAll("[data-y]"),function(x){ x.onclick=function(){ vy+=Number(x.getAttribute("data-y")); bind(); }; });
+        Array.prototype.forEach.call(box.querySelectorAll("[data-m]"),function(x){ x.onclick=function(){ y=vy; m=Number(x.getAttribute("data-m")); label(); closeDialog(); o.onPick&&o.onPick(y,m); }; }); }
+      bind(); var c=box.querySelector('[aria-pressed="true"]'); if(c) c.focus(); };
     label();
-    return { set:function(a,b){ y=Number(a)||y; m=Number(b)||m; label(); }, get:function(){ return {y:y,m:m}; }, close:close }; }
+    return { set:function(a,b){ y=Number(a)||y; m=Number(b)||m; label(); }, get:function(){ return {y:y,m:m}; } }; }
+  /* 기능 찾기 창 — 머리말 [찾기] 단추(find.mode:"button")가 열어요. 가운데 창 안에 찾기 칸(43px) + 결과 목록 */
+  function findDialog(feats, onGo){
+    dialog({size:"form", title:"기능 찾기", desc:"하고 싶은 일을 쉬운 말로 쳐 보세요. 예) 입금 완료, 청구서 보내기, 딜러 추가", body:'<div class="cgg-finddlg"></div>'});
+    var b=document.querySelector(".cgg-dialog .cgg-finddlg"); if(!b) return;
+    find(b, feats, function(f){ closeDialog(); onGo&&onGo(f); }, {});
+    setTimeout(function(){ var i=b.querySelector("input"); if(i) i.focus(); },60); }
+  /* 마이페이지 창 — 사람 단추 › 마이페이지 (SKILL.md: 요금제 · 사용량은 여기서)
+     o = {who:"김대표 · 대표 · 예시 광택", plan:[[이름,값]…], usage:[[이름, 쓴 것, 한도(없으면 막대 없음), 단위]…], account:[[이름,값]…], ok:"요금제 바꾸기", onOk:fn} */
+  function myPage(o){ o=o||{};
+    function dl(rows){ return '<dl>'+(rows||[]).map(function(r){ return '<dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd>'; }).join("")+'</dl>'; }
+    var use='<dl>'+(o.usage||[]).map(function(u){ var unit=u[3]||"", lim=Number(u[2])||0, v=Number(u[1])||0;
+      return '<dt>'+esc(u[0])+'</dt><dd>'+won(v)+(lim?' / '+won(lim):'')+esc(unit)+'</dd>'+(lim?'<span class="bar"><i style="width:'+Math.min(100,Math.round(v/lim*100))+'%"></i></span>':''); }).join("")+'</dl>';
+    dialog({size:"detail", title:"마이페이지", desc:o.who||"",
+      body:'<div class="cgg-mypage">'+(o.plan?'<section><h4>요금제</h4>'+dl(o.plan)+'</section>':'')+(o.usage?'<section><h4>이번 달 사용량</h4>'+use+'</section>':'')+(o.account?'<section><h4>내 계정</h4>'+dl(o.account)+'</section>':'')+'</div>',
+      ok:o.ok, cancel:"닫기", onOk:o.onOk}); }
 
-  return { todoBand:todoBand, monthPick:monthPick, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
+  return { todoBand:todoBand, monthPick:monthPick, findDialog:findDialog, myPage:myPage, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
            status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.9" };
 })();
