@@ -163,7 +163,7 @@ FAKE = r'''<script>
         if(bv.length!==10) return {ready:true, state:"없음", closedAt:"", match:null};
         if(bv==="0000000112") return {ready:true, state:"휴업", closedAt:"2026-08-01", match:null};
         if(bv==="0000000126") return {ready:true, state:"폐업", closedAt:"2025-12-31", match:null};
-        if(bv==="0000000131") return {ready:true, state:"계속", closedAt:"", match:false};
+        if(bv==="0000000131") return {ready:true, state:"계속", since:"", closedAt:"", match:{ceo:false, start:false}, ok:false};   /* 서버 v38 최신 모양 */
         return {ready:true, state:"계속", closedAt:"", match:(bq.openDate&&bq.ceo)?true:null};
       case "companyDel": var cd=(a[0]||{}).ids||[], kept=[], n=0;
         cd.forEach(function(id){ var k=+String(id).slice(1); var dn=DEALERS.filter(function(d){ return d.company && d.company.id===id; }).length;

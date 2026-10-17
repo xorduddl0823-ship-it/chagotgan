@@ -6250,8 +6250,9 @@ function ptMount(){
       /* v47: 국세청 확인 — 서버 v37 bizVerify({bizNo, ceo, openDate}) → {ready, state, closedAt, match:true|false|null}
          부품 모양 {no, ceo, start} → {ready, state, since, match:{ceo, start}} 으로 이음 (보안 v47 덧붙임) */
       verifyBiz:function(q){ return call("bizVerify",[{bizNo:q.no, ceo:q.ceo||"", openDate:String(q.start||"").replace(/\D/g,"")}]).then(function(r){
-          r=r||{}; var m=(r.match===true||r.match===false)?r.match:null;
-          return {ready:r.ready!==false, state:r.state||"", since:r.closedAt||"", match:{ceo:m, start:m}}; })
+          r=r||{}; var mo=(r.match&&typeof r.match==="object")?r.match:null, m=(r.match===true||r.match===false)?r.match:null;   /* 서버 v38 두 모양 다 받음 */
+          return {ready:r.ready!==false, state:r.state||"", since:r.since||r.closedAt||"",
+                  match:mo?{ceo:mo.ceo, start:mo.start}:{ceo:m, start:m}}; })
         .catch(function(e){ if(/지원하지 않는 기능/.test(String(e&&e.message))) return {ready:false}; throw e; }); } },
     done:function(msg){ bar(msg,"ok",true); DEALERS=[]; refresh(["set","bill"]); },
     fail:function(e){ return niceMsg(e&&e.message); }
