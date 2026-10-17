@@ -16,6 +16,9 @@
 //  v37 (2026-10-18): 10/18 시험 — 비스듬히 찍은 법인 사업자등록증(업태·종목 7줄 · 긴 주소)이 «읽지 못했습니다»
 //    → 명함·사업자등록증 읽기는 답 길이를 넉넉히(1500 · 번호판은 500 그대로) · 답에서 { … } 만 잘라 읽음 ·
 //    읽는 글에 «업태·종목이 여러 줄이면 첫 줄만 · 주소는 한 줄로» 더함. SQL 없음.
+//    · 사업자등록증에서 openDate(개업일 YYYYMMDD)·tel(지역번호·1588 도)·email(모양으로 다시 골라냄) 도 읽음 · 명함 이메일도 같은 규칙
+//    · 새 창구 bizVerify({bizNo, ceo?, openDate?}) — 국세청 상태(계속·휴업·폐업·없음)·폐업일·진위(match) · 대표만 · 하루 100 ·
+//      열쇠 NTS_API_KEY 가 없거나 국세청이 안 되면 ready:false(«확인 준비 중») — 저장은 막지 않음
 //  v36 (2026-10-18): 체크 v46 «거래처 한 화면» 약속(체크/기획/2026-10-18_v46_거래처_한화면_창구_약속.md) · 먼저 서버/sql/13
 //    · partnerCaps() → {later, more, last} · issuer_kind «later»(나중에) 받음 — 청구서 만들기는 지금처럼 company 로 셈, 홈택스는 «정보 없음»
 //    · more: 상사 addr·email·upte·jongmok / 딜러 issuer_email·issuer_upte·issuer_jongmok (보냈을 때만 저장) → 홈택스 받는 쪽 이메일·업태·종목
@@ -2891,7 +2894,9 @@ const CARD_PROMPT =
 
 const BIZ_PROMPT =
   "사업자등록증(또는 홈택스 출력물) 사진입니다. 적힌 내용을 읽어 JSON 하나로만 답하세요. 다른 말은 쓰지 마세요.\n" +
-  '형식: {"bizNo":"000-00-00000","bizName":"상호","ceo":"대표자","addr":"사업장 주소","upte":"업태","jongmok":"종목"}\n' +
+  '형식: {"bizNo":"000-00-00000","bizName":"상호","ceo":"대표자","addr":"사업장 주소","upte":"업태","jongmok":"종목","openDate":"YYYYMMDD","tel":"","email":""}\n' +
+  "- 개업연월일은 openDate 에 숫자 8자리(YYYYMMDD)로 적으세요.\n" +
+  "- 종이 여백에 손글씨나 도장으로 적힌 전화번호(팩스 말고)와 이메일(전자세금계산서용)이 있으면 tel·email 에 적으세요.\n" +
   "- 없는 값은 빈 문자열로 두세요.\n" +
   "- 업태·종목이 여러 줄이면 첫 줄만 적으세요.\n" +
   "- 주소는 한 줄로 적으세요(사업장 주소만, 본점 주소는 빼세요).";
@@ -2899,7 +2904,22 @@ const BIZ_PROMPT =
 /* v35(요청서 C): 거래처 사진 읽기 — 대표만 · 검사소당 하루 한도 따로 · 정해진 칸만 돌려줌 */
 const DOC_FAIL = "사진을 읽지 못했습니다. 직접 적어 주세요.";
 const CARD_KEYS: Record<string, number> = { name: 20, phone: 20, company: 40, bizName: 40, bizNo: 20, email: 80, addr: 200 };
-const BIZ_KEYS: Record<string, number> = { bizNo: 20, bizName: 40, ceo: 40, addr: 200, upte: 60, jongmok: 60 };
+const BIZ_KEYS: Record<string, number> = { bizNo: 20, bizName: 40, ceo: 40, addr: 200, upte: 60, jongmok: 60, openDate: 20, tel: 20, email: 80 };
+/** v37: 이메일은 모델 답을 믿지 않고 모양으로 다시 골라냄 — 첫 번째 것만 · 소문자 · 틀리면 "" */
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/;
+function emailPick(...src: string[]) {
+  for (const t of src) { const m = EMAIL_RE.exec(S(t)); if (m) return m[0].toLowerCase().slice(0, 80); }
+  return "";
+}
+/** v37: 전화 — 휴대폰·지역번호(02·031 …)·070·1588 류 · 모양이 아니면 "" */
+function telAny(v: unknown) {
+  const d = onlyDigits(v);
+  if (/^01\d{8,9}$/.test(d)) return telFmt(d);
+  if (/^02\d{7,8}$/.test(d)) return d.length === 9 ? d.replace(/(\d{2})(\d{3})(\d{4})/, "$1-$2-$3") : d.replace(/(\d{2})(\d{4})(\d{4})/, "$1-$2-$3");
+  if (/^0[3-7]\d\d{7,8}$/.test(d)) return d.length === 10 ? d.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3") : d.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+  if (/^1[5-9]\d{6}$/.test(d)) return d.replace(/(\d{4})(\d{4})/, "$1-$2");
+  return "";
+}
 async function aiDoc(c: Ctx, kind: "card" | "biz", b64: string) {
   bossOnly(c);
   const shop = aiShop(c);
@@ -2923,8 +2943,53 @@ async function aiDoc(c: Ctx, kind: "card" | "biz", b64: string) {
   for (const k of Object.keys(keys)) out[k] = S(v?.[k]).replace(/[\u0000-\u001f<>]/g, " ").trim().slice(0, keys[k]);
   if (out.bizNo) { const d = onlyDigits(out.bizNo); out.bizNo = d.length === 10 ? d.slice(0, 3) + "-" + d.slice(3, 5) + "-" + d.slice(5) : ""; }
   if (out.phone) { const d = onlyDigits(out.phone); out.phone = /^01\d{8,9}$/.test(d) ? telFmt(d) : ""; }
+  if ("email" in out) out.email = emailPick(S(v?.email), text);            // v37: 모양으로 다시 골라냄
+  if ("tel" in out) out.tel = telAny(out.tel);
+  if ("openDate" in out) { const d = onlyDigits(out.openDate); out.openDate = /^(19|20)\d{6}$/.test(d) ? d : ""; }
   await log(c, kind === "card" ? "명함 사진 읽기" : "사업자등록증 사진 읽기", { ok: true });
   return JSON.stringify(out);      // 답 모양은 v34 와 같게 JSON 글자 하나
+}
+
+/* v37(대표님 10/18): 사업자번호 진위·상태 확인 — 국세청 사업자등록정보 진위확인 및 상태조회(공공데이터포털 · 무료)
+   열쇠 이름 NTS_API_KEY (값은 Secrets 에만). 없으면 «확인 준비 중»(ready:false)으로 조용히 넘어감 · 저장은 막지 않음 · 대표만 · 하루 한도 */
+async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
+  const key = env("NTS_API_KEY");
+  const b = onlyDigits(bizNo);
+  if (b.length !== 10) return { ready: true, state: "없음", closedAt: "", match: null as boolean | null, why: "사업자번호는 숫자 10자리예요." };
+  if (!key) return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "사업자번호 확인은 아직 준비 중이에요." };
+  const base = "https://api.odcloud.kr/api/nts-businessman/v1/";
+  const q = "?serviceKey=" + encodeURIComponent(key) + "&returnType=JSON";
+  const post = async (path: string, body: unknown) => {
+    const r = await fetch(base + path + q, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(body) });
+    const j: any = await r.json().catch(() => ({}));
+    if (!r.ok || !Array.isArray(j?.data)) throw new Error("nts " + r.status + " " + S(j?.msg || j?.status_code).slice(0, 80));
+    return j.data[0] || {};
+  };
+  try {
+    const st = await post("status", { b_no: [b] });
+    const cd = S(st.b_stt_cd);
+    const state = cd === "01" ? "계속" : cd === "02" ? "휴업" : cd === "03" ? "폐업" : "없음";
+    const end = onlyDigits(st.end_dt);
+    let match: boolean | null = null;
+    const od = onlyDigits(openDate), nm = S(ceo).trim();
+    if (state !== "없음" && od.length === 8 && nm) {
+      const va = await post("validate", { businesses: [{ b_no: b, start_dt: od, p_nm: nm.slice(0, 40) }] });
+      match = S(va.valid) === "01";
+    }
+    return { ready: true, state, closedAt: end.length === 8 ? end.slice(0, 4) + "-" + end.slice(4, 6) + "-" + end.slice(6) : "", match, why: "" };
+  } catch (e) {
+    console.error("bizVerify", e instanceof Error ? e.message : String(e));
+    return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "지금은 국세청 확인이 안 돼요. 잠시 뒤 다시 해 주세요." };
+  }
+}
+async function bizVerify(c: Ctx, opt: any) {
+  bossOnly(c);
+  const o = (opt && typeof opt === "object") ? opt : { bizNo: opt };
+  if (!await rateOk("bizv:" + S(c.office.id) + ":" + ymdK(kstNow()), Number(env("CHECK_BIZV_DAY", "100"))))
+    throw new Error("오늘 사업자번호 확인 한도를 다 썼습니다. 내일 다시 해 주세요.");
+  const r = await ntsVerify(S(o.bizNo), S(o.ceo), S(o.openDate));
+  await log(c, "사업자번호 확인", { biz: onlyDigits(o.bizNo).slice(0, 3) + "-**-*****", state: r.state, match: r.match, ready: r.ready });
+  return r;
 }
 
 /** 기사앱이 부르는 번호판 읽기 — 화면 코드를 그대로 두려고 모양을 맞춰 돌려줍니다 */
@@ -3720,6 +3785,7 @@ const FN: Record<string, (ctx: Ctx, ...a: any[]) => Promise<unknown>> = {
   aiPlate: (c, b64) => aiJson(aiShop(c), PLATE_PROMPT, S(b64)),
   aiCard: (c, b64) => aiDoc(c, "card", S(b64)),     // v35(요청서 C): 대표만 · 한도 따로 · 칸 거르기
   aiBiz: (c, b64) => aiDoc(c, "biz", S(b64)),
+  bizVerify: (c, o) => bizVerify(c, o),             // v37: 국세청 사업자 상태·진위 (대표만)
   /* ── 차량 배달 알림 (모듈 2) ── */
   deliv_login: (c, n, p, oc) => deliv_login(c, n, p, oc),
   deliv_signup: (c, k, n, p) => deliv_signup(c, k, n, p),

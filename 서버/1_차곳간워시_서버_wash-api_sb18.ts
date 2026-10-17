@@ -10,6 +10,7 @@
 //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
 //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
 // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
+// sb18 (2026-10-18) 새 창구 bizVerify({bizNo, ceo?, openDate?}) — 국세청 사업자 상태·진위(대표만 · 하루 100 · 열쇠 NTS_API_KEY 없으면 ready:false)
 // sb18 (2026-10-18) 사진 읽기(aiJson) — 답 길이를 넉넉히(1500)·답에서 { … } 만 잘라 읽음 (체크 v37 과 같게 · 긴 사업자등록증·명함). SQL 없음
 // sb17 (2026-10-17) 설계 21 — 청구서 입금 상태를 그때그때 (보안 미리 보기 1~4 반영 · SQL 없음)
 //   · viewBill: 줄마다 일감 id 를 받아, 이 업체의 실제 일감(intakes · demo=false)이고 이 청구서의 받는 곳·달에 맞을 때만 저장
@@ -2141,6 +2142,38 @@ async function billLive(shop: string, b: any) {
   return { paid, due, full: amount > 0 && due === 0, paidAt: amount > 0 && due === 0 ? last : "", paidRow };
 }
 
+/* sb18: 국세청 사업자등록정보 진위확인 및 상태조회(공공데이터포털) — 체크 v37 ntsVerify 와 같음 · 열쇠 NTS_API_KEY(Secrets) */
+async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
+  const key = env("NTS_API_KEY");
+  const b = digits(bizNo);
+  if (b.length !== 10) return { ready: true, state: "없음", closedAt: "", match: null as boolean | null, why: "사업자번호는 숫자 10자리예요." };
+  if (!key) return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "사업자번호 확인은 아직 준비 중이에요." };
+  const base = "https://api.odcloud.kr/api/nts-businessman/v1/";
+  const q = "?serviceKey=" + encodeURIComponent(key) + "&returnType=JSON";
+  const post = async (path: string, body: unknown) => {
+    const r = await fetch(base + path + q, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(body) });
+    const j: any = await r.json().catch(() => ({}));
+    if (!r.ok || !Array.isArray(j?.data)) throw new Error("nts " + r.status);
+    return j.data[0] || {};
+  };
+  try {
+    const st = await post("status", { b_no: [b] });
+    const cd = String(st.b_stt_cd || "");
+    const state = cd === "01" ? "계속" : cd === "02" ? "휴업" : cd === "03" ? "폐업" : "없음";
+    const end = digits(st.end_dt);
+    let match: boolean | null = null;
+    const od = digits(openDate), nm = String(ceo || "").trim();
+    if (state !== "없음" && od.length === 8 && nm) {
+      const va = await post("validate", { businesses: [{ b_no: b, start_dt: od, p_nm: nm.slice(0, 40) }] });
+      match = String(va.valid || "") === "01";
+    }
+    return { ready: true, state, closedAt: end.length === 8 ? end.slice(0, 4) + "-" + end.slice(4, 6) + "-" + end.slice(6) : "", match, why: "" };
+  } catch (e) {
+    console.error("bizVerify", e instanceof Error ? e.message : String(e));
+    return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "지금은 국세청 확인이 안 돼요. 잠시 뒤 다시 해 주세요." };
+  }
+}
+
 /* ---------- 팝빌 (세금계산서) ---------- */
 async function pbToken(corpNum: string, test: boolean) {
   const linkId = env("POPBILL_LINKID"), secret = env("POPBILL_SECRET");
@@ -2552,6 +2585,17 @@ const FN: Record<string, Fn> = {
     if (dropped) console.warn("viewBill: 이 업체·받는 곳·달에 맞지 않는 일감 id " + dropped + "개를 버림 (" + s2 + ")");
     const key = "bill:" + snap.month + "|" + snap.unit + "|" + snap.name;
     return await viewCodeOf(s2, key, "bill", snap);
+  },
+
+  /* sb18(대표님 10/18): 거래처 사업자번호 진위·상태 확인 — 체크 v37 bizVerify 와 같은 모양 · 대표만 · 하루 100 */
+  bizVerify: async (s2, a, ss) => {
+    ownerOnly(ss);
+    const o: any = (a[0] && typeof a[0] === "object") ? a[0] : { bizNo: a[0], ceo: a[1], openDate: a[2] };
+    if (!await rateOk("bizv:" + s2 + ":" + kstYmd(), Number(env("WASH_BIZV_DAY", "100"))))
+      throw new Error("오늘 사업자번호 확인 한도를 다 썼습니다. 내일 다시 해 주세요.");
+    const r = await ntsVerify(String(o.bizNo || ""), String(o.ceo || ""), String(o.openDate || ""));
+    console.log("bizVerify", s2, digits(o.bizNo).slice(0, 3) + "-**-*****", r.state, r.match, r.ready);
+    return r;
   },
 
   /* 우리 사업장을 팝빌에 넣기 — 대표만 */
