@@ -4632,11 +4632,11 @@ function wBandOf(tab){
     return {count:o.length,text:"출고했는데 아직 입금 안 된 차 "+o.length+"대 · "+won(sum(o)),
       onGo:function(){var b=Array.prototype.filter.call(document.querySelectorAll("#jLT .cgg-tabsH button"),function(x){return /입금 대기|수금 대기/.test(x.textContent);})[0];
         if(b)b.click();var t=$("jLT");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView({block:"start"});}}};}
-  if(tab==="bill"){var l=[];try{l=(B.made||buildBills()).filter(function(x){return x.amount>0&&!billState(x.name);});}catch(e){}
+  if(tab==="bill"){var l=[];try{if(!B.made)B.made=buildBills();l=B.made.filter(function(x){return x.amount>0&&!billState(x.name);});}catch(e){}
     return {count:l.length,text:"아직 안 보낸 청구서 "+l.length+(B.unit==="company"?"곳":"명")+" · "+won(l.reduce(function(t,x){return t+(x.amount||0);},0)),
       onGo:function(){var c=$("billSendCard");if(c)try{CGG.spot(c);}catch(e){c.scrollIntoView();}}};}
   if(tab==="money"){var d=recs.filter(function(r){return statusOf(r)==="출고";});
-    if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 상사를 눌러 입금 완료를 해요"};
+    if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 딜러 줄의 [입금 확인]을 눌러요"};
     return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",go:"받을 금액 보기",onGo:function(){goKey("money/due");}};}
   if(tab==="tax"){var n=0;try{n=taxGroups().filter(function(g){var d=taxDoc(g);return g.issue&&!(d&&d.status==="발급");}).length;}catch(e){}
     return {count:n,text:"아직 발급 안 한 세금계산서 "+n+"건",onGo:function(){var t=$("tTable");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView();}}};}
@@ -7674,8 +7674,8 @@ function outLogSheet(r){
   if($("olAgain"))$("olAgain").onclick=function(){resendOut([r]);};
 }
 /* v132: 확인 창 «누구에게» 줄 — 이름 셋까지 + 외 N곳 */
-function wWho(names){var u=[];(names||[]).forEach(function(n){n=String(n||"").trim();if(n&&u.indexOf(n)<0)u.push(n);});
-  return u.length?(u.slice(0,3).join(", ")+(u.length>3?" 외 "+(u.length-3)+"곳":"")):"-";}
+function wWho(names,unit){var u=[];(names||[]).forEach(function(n){n=String(n||"").trim();if(n&&u.indexOf(n)<0)u.push(n);});
+  return u.length?(u.slice(0,3).join(", ")+(u.length>3?" 외 "+(u.length-3)+(unit||"곳"):"")):"-";}
 /* 번호 → 딜러 · 상사 이름 (보낸 기록은 번호만 남아요) */
 function wNameOf(ph){var d=String(ph||"").replace(/\D/g,"");if(!d)return "";
   var x=(S.dealers||[]).filter(function(r){return String(r.phone||"").replace(/\D/g,"")===d;})[0]||(S.comps||[]).filter(function(r){return String(r.managerPhone||r.mainPhone||"").replace(/\D/g,"")===d;})[0];
@@ -7754,13 +7754,22 @@ function periodLabel(mk){var p=(mk||"").split("-");return p[0]+"년 "+Number(p[1
 function prevMonth(mk){var p=(mk||"").split("-");var d=new Date(Number(p[0]),Number(p[1])-2,1);
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function billKey(name){return (B.month||mKey(nowIso()))+"|"+B.unit+"|"+name;}
-function billState(name){return (S.bills||{})[billKey(name)]||null;}
-function billPhoneFor(kind,name,recs){
+function billState(name){
+  var bs=S.bills||{},x=bs[billKey(name)];if(x)return x;
+  if(B.unit!=="company"){   /* v132: 이 딜러의 상사로 이미 보냈으면 «보냄» */
+    var gr=(B.made||[]).filter(function(b){return b.name===name;})[0],mk=B.month||mKey(nowIso());
+    if(gr&&gr.company)return bs[mk+"|company|"+gr.company]||bs[mk+"|"+gr.company]||null;
+  }
+  return null;}
+function billPhoneFor(kind,name,recs,comp){
   if(kind==="company"){
     var c=S.comps.filter(function(x){return x.name===name;})[0];
     if(c&&(c.managerPhone||c.mainPhone))return c.managerPhone||c.mainPhone;
   }else{
-    var d=S.dealers.filter(function(x){return x.name===name;})[0];
+    /* v132: 같은 이름이면 그 상사 소속 딜러 먼저 · 차에 적힌 번호가 그다음 */
+    var dl=S.dealers.filter(function(x){return x.name===name;});
+    var d=dl.filter(function(x){return comp&&x.company===comp;})[0]||(dl.length===1?dl[0]:null);
+    if(!d){for(var j=0;j<recs.length;j++)if(recs[j].phone)return recs[j].phone;}
     if(d&&d.phone)return d.phone;
   }
   for(var i=0;i<recs.length;i++)if(recs[i].phone)return recs[i].phone;
@@ -7773,22 +7782,24 @@ function buildBills(){
     if(B.scope==="out")return statusOf(r)!=="입고";
     return true;
   });
-  var g={};
+  var g={},seen={};
   rows.forEach(function(r){
-    var name=(B.unit==="company")?(r.company||"(상사명 없음)"):(r.dealer||"(딜러 없음)");
-    if(!g[name])g[name]={name:name,month:mk,unit:B.unit,recs:[],cars:0,amount:0,works:{},company:r.company||""};
-    var G=g[name];G.recs.push(r);G.cars++;G.amount+=r.total||0;
+    var who=(B.unit==="company")?(r.company||"(상사명 없음)"):(String(r.dealer||"").trim()||"(딜러 없음)");
+    var gk=(B.unit==="company")?who:(who+"\u0001"+(r.company||""));   /* v132: 딜러 = 딜러 + 소속 상사 */
+    if(!g[gk]){g[gk]={name:who,who:who,month:mk,unit:B.unit,recs:[],cars:0,amount:0,works:{},company:r.company||""};seen[who]=(seen[who]||0)+1;}
+    var G=g[gk];G.recs.push(r);G.cars++;G.amount+=r.total||0;
     (r.works||[]).forEach(function(w){G.works[w.name]=(G.works[w.name]||0)+1;});
   });
+  Object.keys(g).forEach(function(k){var G=g[k];if(B.unit!=="company"&&seen[G.who]>1)G.name=G.who+" ("+(G.company||"상사 없음")+")";});
   var list=Object.keys(g).map(function(k){
     var G=g[k];
-    G.phone=billPhoneFor(B.unit,G.name,G.recs);
+    G.phone=billPhoneFor(B.unit,G.who,G.recs,G.company);
     G.workText=Object.keys(G.works).map(function(n){return n+" "+G.works[n]+"대";}).join(", ");
     G.paid=G.recs.filter(function(r){return statusOf(r)==="수금완료";}).reduce(function(s,r){return s+(r.total||0);},0);
     /* 세금계산서를 끊는 상대인지 보고 부가세를 붙이거나 빼요 */
     var who = (B.unit==="company")
       ? S.comps.filter(function(x){return x.name===G.name;})[0]
-      : S.dealers.filter(function(x){return x.name===G.name;})[0];
+      : (S.dealers.filter(function(x){return x.name===G.who&&(!G.company||x.company===G.company);})[0]||S.dealers.filter(function(x){return x.name===G.who;})[0]);
     G.taxOn = taxIssues(who);
     var a = billAmt(G.amount, G.taxOn);
     G.base = a.base; G.supply = a.supply; G.vat = a.vat; G.amount = a.charge;
@@ -7852,9 +7863,9 @@ function markBilled(b,sent,sched){
 }
 function isReserved(st){return !!(st&&st.reservedAt&&!st.sentAt&&new Date(st.reservedAt)>new Date());}
 function billVars(b,code){
-  return {"기간":periodLabel(b.month),"받는곳":b.name,"업체명":shopLabel(),"건수":b.cars,"금액":comma(b.amount||0),
+  return {"기간":periodLabel(b.month),"받는곳":b.who||b.name,"업체명":shopLabel(),"건수":b.cars,"금액":comma(b.amount||0),
     "입금기한":billDue(b),"계좌":(S.cfg&&S.cfg.bank)||"","업체전화":shopTel(),"보기코드":code||"",
-    /* 예전 이름 */ "업체":shopLabel(),"청구월":periodLabel(b.month),"받는분":b.name,
+    /* 예전 이름 */ "업체":shopLabel(),"청구월":periodLabel(b.month),"받는분":b.who||b.name,
     "소속상사":b.company||"","대수":b.cars+"대","작업내역":b.workText||"","합계":wonExact(b.amount),
     "연락처":phoneLine()||((S.cfg&&S.cfg.send&&S.cfg.send.from)||"")};
 }
@@ -8158,10 +8169,11 @@ function billTargets(){
 function bmGoUpdate(){
   if(!$("bmGo"))return;
   var t=billTargets(), n=t.go.length;
-  $("bmSelCnt").textContent=(t.all?"전체 ":"고른 곳 ")+n+"곳";
+  var U=(B.unit==="company")?"곳":"명";
+  $("bmSelCnt").textContent=(t.all?"전체 ":(U==="명"?"고른 딜러 ":"고른 곳 "))+n+U;
   $("bmSelSum").textContent="합계 "+wonExact(t.sum);
-  $("bmSelSkip").textContent=t.skip?("번호 없음 · 0원 "+t.skip+"곳은 빠져요"):"";
-  $("bmSend").textContent=n?("③ "+n+"곳에 청구서 보내기"):"③ 청구서 보내기";
+  $("bmSelSkip").textContent=t.skip?("번호 없음 · 0원 "+t.skip+U+"은 빠져요"):"";
+  $("bmSend").textContent=n?("③ "+n+U+"에게 청구서 보내기").replace("곳에게","곳에"):"③ 청구서 보내기";
   $("bmSend").disabled=!n;
   var box=$("bmTo");box.textContent="";
   if(!(B.made||[]).length){box.appendChild(Object.assign(document.createElement("div"),{className:"more",textContent:"먼저 위에서 «청구서 만들기»를 눌러 주세요."}));return;}
@@ -8170,8 +8182,8 @@ function bmGoUpdate(){
     var a=document.createElement("span");a.textContent=b.name+" · "+b.cars+"대";
     var m=document.createElement("span");m.textContent=wonExact(b.amount);
     r.appendChild(a);r.appendChild(m);box.appendChild(r);});
-  if(n>5)box.appendChild(Object.assign(document.createElement("div"),{className:"more",textContent:"외 "+(n-5)+"곳"}));
-  if(t.skip)box.appendChild(Object.assign(document.createElement("div"),{className:"skip",textContent:"번호가 없거나 0원인 "+t.skip+"곳은 보내지 않아요"}));
+  if(n>5)box.appendChild(Object.assign(document.createElement("div"),{className:"more",textContent:"외 "+(n-5)+(B.unit==="company"?"곳":"명")}));
+  if(t.skip)box.appendChild(Object.assign(document.createElement("div"),{className:"skip",textContent:"번호가 없거나 0원인 "+t.skip+(B.unit==="company"?"곳은":"명은")+" 보내지 않아요"}));
 }
 function renderBillPreview(){
   bmGoUpdate();
@@ -8228,7 +8240,7 @@ function billSheet(b){
    '<button class="btn" id="blView">청구서 보기 주소</button>'+
    (st&&isReserved(st)?'<button class="btn danger" id="blCancel">예약 취소</button>':"")+
    (st&&!isReserved(st)?'<button class="btn danger" id="blUndo">보냄 표시 지우기</button>':"")+
-   (!st?'<button class="btn" id="blResv">예약</button><button class="btn primary" id="blSend" style="flex:2">이 곳에 보내기</button>':"")+'</div>';
+   (!st?'<button class="btn" id="blResv">예약</button><button class="btn primary" id="blSend" style="flex:2">'+(B.unit==="company"?"이 상사에 보내기":"이 딜러에게 보내기")+'</button>':"")+'</div>';
   openSheet();
   $("blClose").onclick=function(){closeSheet();
     if(B.queue&&B.queue.length)setTimeout(function(){billSheet(B.queue.shift());},250);};
@@ -8332,7 +8344,7 @@ $("bmSend").onclick=function(){
   if($("bmFmt"))S.cfg.billFormat=$("bmFmt").value;
   var already=targets.filter(function(b){return billState(b.name);});
   var tt=billTargets();
-  ask(periodLabel(B.month)+"\n받는 곳 · "+wWho(targets.map(function(b){return b.name;}))+"\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "+wonExact(tt.sum)+"\n청구 알림을 보내요. (알림톡이 안 되면 문자로 가요)"+
+  ask(periodLabel(B.month)+"\n받는 "+(B.unit==="company"?"곳":"딜러")+" · "+wWho(targets.map(function(b){return b.name;}),B.unit==="company"?"곳":"명")+"\n"+(tt.all?"전체 ":"고른 ")+targets.length+(B.unit==="company"?"곳":"명")+" · 합계 "+wonExact(tt.sum)+"\n청구 알림을 보내요. (알림톡이 안 되면 문자로 가요)"+
       (tt.skip?("\n번호 없음 · 0원 "+tt.skip+"곳은 빠져요."):"")+
       (already.length?("\n\n이미 보낸 곳 "+already.length+"건이 포함돼 있어요."):""),
     function(){
@@ -11922,7 +11934,7 @@ function adwSendSheet(r,w,j){
    청구서 보기 주소 — 받는 분이 로그인 없이 세부 내역을 봅니다
    ════════════════════════════════════════════════════════ */
 function billPayload(b){
-  return {month:b.month,unit:b.unit||B.unit,name:b.name,company:b.company||"",
+  return {month:b.month,unit:b.unit||B.unit,name:b.who||b.name,company:b.company||"",
     cars:b.cars,base:b.base||0,supply:b.supply||0,vat:b.vat||0,
     amount:b.amount||0,paid:b.paid||0,due:b.due||0,
     taxOn:!!b.taxOn,workText:b.workText||"",bank:(S.cfg&&S.cfg.bank)||"",
@@ -12928,9 +12940,11 @@ function renderHome(){
   var billM=billableMonth(D.month)?D.month:prevMonth(D.month);
   var billRows=S.records.filter(function(r){
     return (r.month||mKey(r.createdAt))===billM&&statusOf(r)==="출고";});
-  var billComps={};billRows.forEach(function(r){billComps[r.company||"(상사명 없음)"]=1;});
-  var notBilled=Object.keys(billComps).filter(function(c){
-    return !(S.bills||{})[billM+"|company|"+c]&&!(S.bills||{})[billM+"|"+c];});
+  var billComps={};billRows.forEach(function(r){var dn=String(r.dealer||"").trim()||"(딜러 없음)",cn=r.company||"";billComps[dn+"\u0001"+cn]={d:dn,c:cn};});
+  var bsH=S.bills||{};
+  var notBilled=Object.keys(billComps).filter(function(k){var x=billComps[k];   /* v132: 딜러 단위 청구 */
+    return !bsH[billM+"|dealer|"+x.d]&&!bsH[billM+"|dealer|"+x.d+" ("+(x.c||"상사 없음")+")"]&&!bsH[billM+"|company|"+(x.c||"(상사명 없음)")]&&!bsH[billM+"|"+(x.c||"(상사명 없음)")];})
+    .map(function(k){return billComps[k].d;});
   var noBiz=Object.keys(comps).filter(function(c){
     var x=S.comps.filter(function(y){return y.name===c;})[0];return !x||!x.bizNo||!bizNoOk(x.bizNo);});
   var failed=(S.outbox||[]).filter(function(o){return o.status==="실패";});

@@ -227,3 +227,71 @@ rep('''var B={q:"",size:20,page:1,key:"amount",dir:"desc",month:"",sel:{},unit:"
 rep('''        <option value="dealer">딜러별로 청구</option>
         <option value="company" selected>매매상사별로 청구</option>''', '''        <option value="dealer" selected>딜러별로 청구 (기본)</option>
         <option value="company">매매상사로 묶어 보기</option>''')
+
+# ══ 검사 일꾼(v132 마지막) — 딜러 단위 청구 안전하게 ══
+# 2. 같은 이름 딜러 · 딜러 없는 차를 상사마다 따로 묶어요 (이름이 겹칠 때만 «이름 (상사)»로 보여요. 서버로 가는 이름은 딜러 이름 그대로 — b.who)
+rep('''  var g={};
+  rows.forEach(function(r){
+    var name=(B.unit==="company")?(r.company||"(상사명 없음)"):(r.dealer||"(딜러 없음)");
+    if(!g[name])g[name]={name:name,month:mk,unit:B.unit,recs:[],cars:0,amount:0,works:{},company:r.company||""};
+    var G=g[name];G.recs.push(r);G.cars++;G.amount+=r.total||0;
+    (r.works||[]).forEach(function(w){G.works[w.name]=(G.works[w.name]||0)+1;});
+  });''', '''  var g={},seen={};
+  rows.forEach(function(r){
+    var who=(B.unit==="company")?(r.company||"(상사명 없음)"):(String(r.dealer||"").trim()||"(딜러 없음)");
+    var gk=(B.unit==="company")?who:(who+"\\u0001"+(r.company||""));   /* v132: 딜러 = 딜러 + 소속 상사 */
+    if(!g[gk]){g[gk]={name:who,who:who,month:mk,unit:B.unit,recs:[],cars:0,amount:0,works:{},company:r.company||""};seen[who]=(seen[who]||0)+1;}
+    var G=g[gk];G.recs.push(r);G.cars++;G.amount+=r.total||0;
+    (r.works||[]).forEach(function(w){G.works[w.name]=(G.works[w.name]||0)+1;});
+  });
+  Object.keys(g).forEach(function(k){var G=g[k];if(B.unit!=="company"&&seen[G.who]>1)G.name=G.who+" ("+(G.company||"상사 없음")+")";});''')
+rep('''    G.phone=billPhoneFor(B.unit,G.name,G.recs);''', '''    G.phone=billPhoneFor(B.unit,G.who,G.recs,G.company);''')
+rep('''function billPhoneFor(kind,name,recs){
+  if(kind==="company"){
+    var c=S.comps.filter(function(x){return x.name===name;})[0];
+    if(c&&(c.managerPhone||c.mainPhone))return c.managerPhone||c.mainPhone;
+  }else{
+    var d=S.dealers.filter(function(x){return x.name===name;})[0];''', '''function billPhoneFor(kind,name,recs,comp){
+  if(kind==="company"){
+    var c=S.comps.filter(function(x){return x.name===name;})[0];
+    if(c&&(c.managerPhone||c.mainPhone))return c.managerPhone||c.mainPhone;
+  }else{
+    /* v132: 같은 이름이면 그 상사 소속 딜러 먼저 · 차에 적힌 번호가 그다음 */
+    var dl=S.dealers.filter(function(x){return x.name===name;});
+    var d=dl.filter(function(x){return comp&&x.company===comp;})[0]||(dl.length===1?dl[0]:null);
+    if(!d){for(var j=0;j<recs.length;j++)if(recs[j].phone)return recs[j].phone;}''')
+rep('''      : S.dealers.filter(function(x){return x.name===G.name;})[0];''', '''      : (S.dealers.filter(function(x){return x.name===G.who&&(!G.company||x.company===G.company);})[0]||S.dealers.filter(function(x){return x.name===G.who;})[0]);''')
+rep('''  return {month:b.month,unit:b.unit||B.unit,name:b.name,company:b.company||"",''', '''  return {month:b.month,unit:b.unit||B.unit,name:b.who||b.name,company:b.company||"",''')
+rep('''  return {"기간":periodLabel(b.month),"받는곳":b.name,''', '''  return {"기간":periodLabel(b.month),"받는곳":b.who||b.name,''')
+rep('''"청구월":periodLabel(b.month),"받는분":b.name,''', '''"청구월":periodLabel(b.month),"받는분":b.who||b.name,''')
+# 1. 예전에 상사로 보낸 청구서도 «보냄»으로 — 딜러 화면에서 같은 상사 열쇠도 봐요 (두 번 보내지 않게)
+rep('''function billState(name){return (S.bills||{})[billKey(name)]||null;}''', '''function billState(name){
+  var bs=S.bills||{},x=bs[billKey(name)];if(x)return x;
+  if(B.unit!=="company"){   /* v132: 이 딜러의 상사로 이미 보냈으면 «보냄» */
+    var gr=(B.made||[]).filter(function(b){return b.name===name;})[0],mk=B.month||mKey(nowIso());
+    if(gr&&gr.company)return bs[mk+"|company|"+gr.company]||bs[mk+"|"+gr.company]||null;
+  }
+  return null;}''')
+rep('''  if(tab==="bill"){var l=[];try{l=(B.made||buildBills()).filter(''', '''  if(tab==="bill"){var l=[];try{if(!B.made)B.made=buildBills();l=B.made.filter(''')
+# 홈 «청구서 아직 안 보냄» — 딜러 기준 (딜러 열쇠 · 상사 열쇠 어느 쪽이든 있으면 보냄)
+rep('''  var billComps={};billRows.forEach(function(r){billComps[r.company||"(상사명 없음)"]=1;});
+  var notBilled=Object.keys(billComps).filter(function(c){
+    return !(S.bills||{})[billM+"|company|"+c]&&!(S.bills||{})[billM+"|"+c];});''', '''  var billComps={};billRows.forEach(function(r){var dn=String(r.dealer||"").trim()||"(딜러 없음)",cn=r.company||"";billComps[dn+"\\u0001"+cn]={d:dn,c:cn};});
+  var bsH=S.bills||{};
+  var notBilled=Object.keys(billComps).filter(function(k){var x=billComps[k];   /* v132: 딜러 단위 청구 */
+    return !bsH[billM+"|dealer|"+x.d]&&!bsH[billM+"|dealer|"+x.d+" ("+(x.c||"상사 없음")+")"]&&!bsH[billM+"|company|"+(x.c||"(상사명 없음)")]&&!bsH[billM+"|"+(x.c||"(상사명 없음)")];})
+    .map(function(k){return billComps[k].d;});''')
+# 3 · 4. 글 — 받을 금액 띠 · 단위(명/곳)
+rep('''— 상사를 눌러 입금 완료를 해요"};''', '''— 딜러 줄의 [입금 확인]을 눌러요"};''')
+rep('''  $("bmSelCnt").textContent=(t.all?"전체 ":"고른 곳 ")+n+"곳";''', '''  var U=(B.unit==="company")?"곳":"명";
+  $("bmSelCnt").textContent=(t.all?"전체 ":(U==="명"?"고른 딜러 ":"고른 곳 "))+n+U;''')
+rep('''  $("bmSelSkip").textContent=t.skip?("번호 없음 · 0원 "+t.skip+"곳은 빠져요"):"";
+  $("bmSend").textContent=n?("③ "+n+"곳에 청구서 보내기"):"③ 청구서 보내기";''', '''  $("bmSelSkip").textContent=t.skip?("번호 없음 · 0원 "+t.skip+U+"은 빠져요"):"";
+  $("bmSend").textContent=n?("③ "+n+U+"에게 청구서 보내기").replace("곳에게","곳에"):"③ 청구서 보내기";''')
+rep('''textContent:"외 "+(n-5)+"곳"}));''', '''textContent:"외 "+(n-5)+(B.unit==="company"?"곳":"명")}));''')
+rep('''textContent:"번호가 없거나 0원인 "+t.skip+"곳은 보내지 않아요"}));''', '''textContent:"번호가 없거나 0원인 "+t.skip+(B.unit==="company"?"곳은":"명은")+" 보내지 않아요"}));''')
+rep('''id="blSend" style="flex:2">이 곳에 보내기</button>''', '''id="blSend" style="flex:2">'+(B.unit==="company"?"이 상사에 보내기":"이 딜러에게 보내기")+'</button>''')
+rep('''"\\n받는 곳 · "+wWho(targets.map(function(b){return b.name;}))+"\\n"+(tt.all?"전체 ":"고른 곳 ")+targets.length+"곳 · 합계 "''',
+    '''"\\n받는 "+(B.unit==="company"?"곳":"딜러")+" · "+wWho(targets.map(function(b){return b.name;}),B.unit==="company"?"곳":"명")+"\\n"+(tt.all?"전체 ":"고른 ")+targets.length+(B.unit==="company"?"곳":"명")+" · 합계 "''')
+rep('''function wWho(names){''', '''function wWho(names,unit){''')
+rep('''(u.length>3?" 외 "+(u.length-3)+"곳":"")''', '''(u.length>3?" 외 "+(u.length-3)+(unit||"곳"):"")''')
