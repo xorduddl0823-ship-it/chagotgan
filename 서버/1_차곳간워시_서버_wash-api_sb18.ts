@@ -10,6 +10,7 @@
 //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
 //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
 // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
+// sb18 (2026-10-18) 거래처(companies·dealers): 직원은 새로 넣기만 · 고치기·지우기는 매니저 이상 (보안 낮음 · guardPartners)
 // sb18 (2026-10-18) 새 창구 bizVerify({bizNo, ceo?, openDate?}) — 국세청 사업자 상태·진위(대표만 · 하루 100 · 열쇠 NTS_API_KEY 없으면 ready:false)
 // sb18 (2026-10-18) 사진 읽기(aiJson) — 답 길이를 넉넉히(1500)·답에서 { … } 만 잘라 읽음 (체크 v37 과 같게 · 긴 사업자등록증·명함). SQL 없음
 // sb17 (2026-10-17) 설계 21 — 청구서 입금 상태를 그때그때 (보안 미리 보기 1~4 반영 · SQL 없음)
@@ -2143,11 +2144,16 @@ async function billLive(shop: string, b: any) {
 }
 
 /* sb18: 국세청 사업자등록정보 진위확인 및 상태조회(공공데이터포털) — 체크 v37 ntsVerify 와 같음 · 열쇠 NTS_API_KEY(Secrets) */
+/** 답 모양 — 체크 v47 약속(state · since · match:{ceo, start}) + 총괄 모양(closedAt · ok) 을 함께.
+    국세청 진위확인은 대표자·개업일을 한 번에 맞춰 보므로 둘이 같은 값이에요(안 물었으면 null) */
+function vres(ready: boolean, state: string, closed: string, ok: boolean | null, why: string) {
+  return { ready, state, since: closed, closedAt: closed, match: { ceo: ok, start: ok }, ok, why };
+}
 async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
   const key = env("NTS_API_KEY");
   const b = digits(bizNo);
-  if (b.length !== 10) return { ready: true, state: "없음", closedAt: "", match: null as boolean | null, why: "사업자번호는 숫자 10자리예요." };
-  if (!key) return { ready: false, state: "", closedAt: "", match: null as boolean | null, why: "사업자번호 확인은 아직 준비 중이에요." };
+  if (!key) return vres(false, "", "", null, "사업자번호 확인은 아직 준비 중이에요.");   // 열쇠 먼저(약속: 열쇠 없으면 ready:false)
+  if (b.length !== 10) return vres(true, "없음", "", null, "사업자번호는 숫자 10자리예요.");
   const base = "https://api.odcloud.kr/api/nts-businessman/v1/";
   const q = "?returnType=JSON";   // 보안(중간): 열쇠는 주소에 넣지 않고 머리글로 (오류 글·기록에 주소가 남아도 열쇠는 안 남게)
   const post = async (path: string, body: unknown) => {
@@ -2174,7 +2180,7 @@ async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
       const va = await post("validate", { businesses: [{ b_no: b, start_dt: od, p_nm: nm.slice(0, 40) }] });
       match = String(va.valid || "") === "01";
     }
-    return { ready: true, state, closedAt: end.length === 8 ? end.slice(0, 4) + "-" + end.slice(4, 6) + "-" + end.slice(6) : "", match, why: "" };
+    return vres(true, state, end.length === 8 ? end.slice(0, 4) + "-" + end.slice(4, 6) + "-" + end.slice(6) : "", match, "");
   } catch (e) {
     /* 기록·답에는 정해진 글만 (열쇠·주소·원문 오류는 남기지 않음) */
     const m = e instanceof Error ? e.message : "";
@@ -2185,7 +2191,7 @@ async function ntsVerify(bizNo: string, ceo: string, openDate: string) {
       : code === "net" ? "국세청에 연결하지 못했어요. 잠시 뒤 다시 해 주세요."
       : code === "429" ? "국세청 확인이 잠시 몰려 있어요. 잠시 뒤 다시 해 주세요."
       : "지금은 국세청 확인이 안 돼요(" + code + "). 잠시 뒤 다시 해 주세요.";
-    return { ready: false, state: "", closedAt: "", match: null as boolean | null, why };
+    return vres(false, "", "", null, why);
   }
 }
 
@@ -2466,6 +2472,7 @@ const FN: Record<string, Fn> = {
     guardCols(ss, [String(a[0] || "")]);
     const one = [{ col: a[0], id: a[1], data: a[2] }];
     await guardIntakes(s, ss, !!a[3], one);                  // (날짜 없는 새 줄은 여기서 날짜가 채워짐)
+    await guardPartners(s, ss, !!a[3], one);                 // sb18(보안 낮음)
     return { ok: true, rev: await write(s, !!a[3], one) };
   },
   apiSetMany: async (s, a, ss) => {
@@ -2473,11 +2480,13 @@ const FN: Record<string, Fn> = {
     if (!rows || !rows.length) return { ok: true, rev: await revGet(s, !!a[1]) };
     guardCols(ss, rows.map((r: any) => String((r && r.col) || "")));
     await guardIntakes(s, ss, !!a[1], rows);
+    await guardPartners(s, ss, !!a[1], rows);
     return { ok: true, rev: await write(s, !!a[1], rows) };
   },
   apiDel: async (s, a, ss) => {
     guardCols(ss, [String(a[0] || "")]);
     await guardIntakes(s, ss, !!a[2], [{ col: a[0], id: a[1], data: null }]);
+    await guardPartners(s, ss, !!a[2], [{ col: a[0], id: a[1], data: null }]);
     return { ok: true, rev: await write(s, !!a[2], [{ col: a[0], id: a[1], data: null }]) };
   },
   apiWipeDemo: async (s, _a, ss) => {
@@ -2605,11 +2614,12 @@ const FN: Record<string, Fn> = {
   /* sb18(대표님 10/18): 거래처 사업자번호 진위·상태 확인 — 체크 v37 bizVerify 와 같은 모양 · 대표만 · 하루 100 */
   bizVerify: async (s2, a, ss) => {
     ownerOnly(ss);
-    const o: any = (a[0] && typeof a[0] === "object") ? a[0] : { bizNo: a[0], ceo: a[1], openDate: a[2] };
+    const o0: any = (a[0] && typeof a[0] === "object") ? a[0] : { bizNo: a[0], ceo: a[1], openDate: a[2] };
+    const o: any = { bizNo: o0.no ?? o0.bizNo, ceo: o0.ceo, openDate: o0.start ?? o0.openDate };   // 체크 v47 약속({no, ceo, start})도 받음
     if (!await rateOk("bizv:" + s2 + ":" + kstYmd(), Number(env("WASH_BIZV_DAY", "100"))))
       throw new Error("오늘 사업자번호 확인 한도를 다 썼습니다. 내일 다시 해 주세요.");
     const r = await ntsVerify(String(o.bizNo || ""), String(o.ceo || ""), String(o.openDate || ""));
-    console.log("bizVerify", s2, digits(o.bizNo).slice(0, 3) + "-**-*****", r.state, r.match, r.ready);
+    console.log("bizVerify", s2, digits(o.bizNo).slice(0, 3) + "-**-*****", r.state, r.ok, r.ready);
     return r;
   },
 
@@ -4002,6 +4012,23 @@ function guardCols(ss: any, cols: string[]) {
    · 입고 기록은 출고 처리(작업·금액 정리 포함)가 됨 — 밤새 둔 차도 내보낼 수 있게
    · 새 기록은 오늘 날짜만 · 지우기는 오늘 들어와 아직 «입고» 인 기록만
    시연(demo) 자료는 막지 않습니다. */
+/* sb18(보안 낮음 · 2026-10-16 기록): 거래처(상사 companies · 딜러 dealers) — 직원은 «새로 넣기»만(입고 중 새 딜러),
+   고치기·지우기는 매니저 이상. 시연(demo) 자료는 막지 않음 */
+async function guardPartners(shop: string, ss: any, demo: boolean, rows: any[]) {
+  const role = String((ss && ss.role) || "");
+  if (demo || role === "owner" || role === "admin" || role === "manager") return;
+  const list = (rows || []).filter((r: any) => r && (String(r.col) === "companies" || String(r.col) === "dealers") && r.id !== undefined && r.id !== null && r.id !== "");
+  if (!list.length) return;
+  const NO = "거래처 고치기·지우기는 매니저 이상만 할 수 있습니다. 새로 넣기는 됩니다.";
+  for (const r of list) if (r.data === null || r.data === undefined) throw new Error(NO);
+  for (const col of ["companies", "dealers"]) {
+    const ids = list.filter((r: any) => String(r.col) === col).map((r: any) => String(r.id));
+    if (!ids.length) continue;
+    const { data: cur, error } = await sb.from("wash_docs").select("id").eq("shop", shop).eq("demo", false).eq("col", col).in("id", ids);
+    if (error) throw new Error("거래처를 확인하지 못했습니다. 잠시 뒤 다시 해 주세요.");
+    if ((cur || []).length) throw new Error(NO);
+  }
+}
 async function guardIntakes(shop: string, ss: any, demo: boolean, rows: any[]) {
   const role = String((ss && ss.role) || "");
   if (demo || role === "owner" || role === "admin") return;
