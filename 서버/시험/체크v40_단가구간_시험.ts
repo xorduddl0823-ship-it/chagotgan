@@ -60,7 +60,7 @@ check("하나 지움 → {n:1} · 남의 검사소 구간은 그대로", r.resul
 check("기록 남음", store.check_log.some((l: any) => l.what === "단가 구간 저장") && store.check_log.some((l: any) => l.what === "단가 구간 지움"));
 console.log("④ 범위 확인 (체크 방 지적)");
 r = await call("invoiceRows", ["vx"]);
-check("남의 검사소 청구서 줄은 안 줌", Array.isArray(r.result) && r.result.length === 0, r);
+check("다른 검사소 세션으로 남의 청구서 줄을 부르면 거절", !!r.__err && !JSON.stringify(r).includes("남의 줄"), r);
 const own = store.check_invoice.find((v: any) => v.office_id === "o1");
 r = await call("invoiceRows", [own.id]);
 check("우리 청구서 줄은 줌", Array.isArray(r.result) && r.result.length >= 1, r);

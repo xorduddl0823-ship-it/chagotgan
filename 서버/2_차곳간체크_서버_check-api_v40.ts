@@ -750,7 +750,7 @@ async function billState(ctx: Ctx, ym: string) {
 async function invoiceRows(ctx: Ctx, invoiceId: string) {
   /* v40(체크 방 지적): 이 검사소 청구서인지 먼저 확인 — 남의 청구서 줄을 id 로 못 읽게 */
   const { data: inv } = await db.from("check_invoice").select("id").eq("office_id", ctx.office.id).eq("id", S(invoiceId)).maybeSingle();
-  if (!inv) return [];
+  if (!inv) throw new Error("이 검사소 청구서가 아닙니다.");          // 보안(중간 · v25부터 있던 것): 남의 청구서는 거절
   const { data } = await db.from("check_invoice_row").select("*").eq("invoice_id", inv.id);
   return data ?? [];
 }
