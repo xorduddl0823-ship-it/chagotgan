@@ -209,7 +209,7 @@ var CGG = (function(){
           mobileFields:[2,[4,"청구액"],…]   // 폰 한 줄에 «이름표: 값»으로 보일 칸(열 번호, 또는 [열 번호, 이름표]). 안 주면 금액 · 날짜 · 상태 칸을 모두 열 이름과 함께 보여요
           // tabs 를 안 주면 상태 칩은 «전체» + 실제 줄에 있는 상태값만(0건 칩 없음). sorts 를 안 주면 폰 정렬 고르기를 열마다 저절로 만들어요
         } */
-  var WID={name:180,id:130,text:0,date:96,money:130,state:104,time:84,act:150};
+  var WID={name:180,id:130,text:0,date:96,money:130,state:104,time:110,act:150};
   function table(el, o){ if(!el) return;
     var T=o.state||{}; if(T.q==null){ T.f=""; T.q=""; T.k=0; T.dir=1; T.size=o.size||20; T.page=1; T.sel={}; }
     var si=o.kinds.indexOf("state"), mi=o.kinds.indexOf("money");
@@ -231,8 +231,10 @@ var CGG = (function(){
       return a.slice(0,2).map(function(b){ return '<button type="button" class="cgg-btn sm'+(b.danger?' danger':'')+'" data-act="'+esc(b.key)+'" data-ai="'+i+'"'+(b.disabled?' disabled':'')+'>'+esc(b.label)+'</button>'; }).join(""); }
     /* 1.13 R02~R05 — 폰 목록 칸: 화면이 mobileFields 를 주면 그대로, 아니면 금액 · 날짜 · 상태 칸을 열 이름과 함께 */
     var MF=[], MFL={};
-    (o.mobileFields||o.kinds.map(function(k,i){ return (i>0&&(k==="money"||k==="state"||k==="date"))?i:-1; }).filter(function(i){ return i>0; })).forEach(function(f){
+    (o.mobileFields||o.kinds.map(function(k,i){ return (i>0&&(k==="money"||k==="state"||k==="date"||k==="time"))?i:-1; }).filter(function(i){ return i>0; })).forEach(function(f){
       var k=Array.isArray(f)?+f[0]:+f; if(k>0&&k<o.cols.length&&MF.indexOf(k)<0){ MF.push(k); MFL[k]=Array.isArray(f)&&f[1]!=null?String(f[1]):String(o.cols[k]); } });
+    /* mline · mobileFields 를 둘 다 안 주면 1.12 처럼 셋째 칸부터 글자 칸(금액 · 날짜 · 시각 · 상태 빼고)을 둘째 줄에 이어 보여요 */
+    var MT=o.cols.map(function(c,k){ return k; }).filter(function(k){ return k>1&&MF.indexOf(k)<0; });
     /* 폰 정렬 고르기 — 안 주면 열마다: 금액 «큰 순» · 날짜 · 시각 «최근 순» · 그 밖 «가나다 순» */
     var SORTS=o.sorts||o.cols.reduce(function(a,c,k){ var kd=o.kinds[k];
       if(kd==="money") a.push([k,-1,c+" 큰 순"]); else if(kd==="date"||kd==="time") a.push([k,-1,c+" 최근 순"]); else if(kd!=="state") a.push([k,1,c+" 가나다 순"]); return a; },[]);
@@ -241,7 +243,7 @@ var CGG = (function(){
       var v=r.slice((T.page-1)*T.size, T.page*T.size); v.forEach(function(w){ w.k=kid(w.x,w.i); }); var all=v.length&&v.every(function(w){ return T.sel[w.k]; });
       /* 1.13 R08 — 상태 칩은 화면이 tabs 를 주지 않으면 실제 줄의 상태값으로 만들어요(나온 차례대로, 0건 칩은 없어요) */
       var tabs=o.tabs||[["","전체"]].concat(o.rows.reduce(function(a,x){ var v=x[si]; if(v!=null&&v!==""&&a.indexOf(v)<0) a.push(v); return a; },[]).map(function(v){ return [v,String(v)]; }));
-      tabs=tabs.filter(function(t){ return !t[0]||cnt(t[0])>0; });
+      if(!o.tabs) tabs=tabs.filter(function(t){ return !t[0]||t[0]===T.f||cnt(t[0])>0; });   /* 화면이 준 tabs 는 그대로(0건이어도) */
       el.className="cgg-tblock";   /* 1.12 흰 카드는 표만 감싸요 — 찾기 줄 · 쪽 넘김 · 할 일 단추는 카드 밖 (워시 모양) */
       /* 1.12 표 위 한 줄 (워시 모양): 넓은 찾기 칸 · 거르기 칩(상태 · filters) · «20개씩» · 빨간 «선택한 줄 지우기». 나머지 일괄 단추는 표 아래 줄 */
       var n=selList().length, dels=(o.bulk||[]).filter(function(b){ return b.danger||b.key==="del"; }), rest=(o.bulk||[]).filter(function(b){ return !(b.danger||b.key==="del"); });
@@ -260,7 +262,7 @@ var CGG = (function(){
         +'<div class="cgg-mlist"><div class="cgg-mhead"><input type="checkbox" data-all="1" aria-label="전체 선택"'+(all?' checked':'')+'>전체 선택'
         +(SORTS.length?'<select data-sort="1" aria-label="정렬">'+SORTS.map(function(s2){ return '<option value="'+s2[0]+','+s2[1]+'"'+(T.k===s2[0]&&T.dir===s2[1]?' selected':'')+'>'+esc(s2[2])+'</option>'; }).join("")+'</select>':'')+'</div>'
         +(v.length?v.map(function(w){ var x=w.x; return '<div class="cgg-mrow"><input type="checkbox" data-i="'+esc(w.k)+'"'+(T.sel[w.k]?' checked':'')+' aria-label="'+esc(x[0])+' 선택">'
-          +'<span class="t"><b>'+(o.onName?'<button type="button" class="nm" data-nm="'+w.i+'" style="border:0;background:none;font:inherit;font-weight:700;color:inherit;padding:0;cursor:pointer">'+esc(x[0])+'</button>':esc(x[0]))+(MF.indexOf(1)<0&&x[1]!=null?'<span>'+esc(x[1])+'</span>':'')+'</b>'+(o.mline?'<small>'+esc(o.mline(x))+'</small>':'')
+          +'<span class="t"><b>'+(o.onName?'<button type="button" class="nm" data-nm="'+w.i+'" style="border:0;background:none;font:inherit;font-weight:700;color:inherit;padding:0;cursor:pointer">'+esc(x[0])+'</button>':esc(x[0]))+(MF.indexOf(1)<0&&x[1]!=null?'<span>'+esc(x[1])+'</span>':'')+'</b>'+(o.mline?'<small>'+esc(o.mline(x))+'</small>':(!o.mobileFields&&MT.length?'<small>'+esc(MT.map(function(k){ return x[k]; }).filter(function(v){ return v!=null&&v!==""; }).join(" · "))+'</small>':''))
           +'<span class="cgg-mf">'+MF.map(function(k){ return '<span class="'+(o.kinds[k]==="money"?'n':'')+'"><i>'+esc(MFL[k])+'</i>'+cell(x,k)+'</span>'; }).join("")+'</span></span>'+(o.actions&&acts(x,w.i)?'<span class="ra">'+acts(x,w.i)+'</span>':'')+'</div>'; }).join(""):'<div class="cgg-empty">조건에 맞는 자료가 없어요.</div>')+'</div>'
         +'</div><div class="cgg-pager"><button type="button" class="cgg-btn" data-p="1"'+(T.page<=1?' disabled':'')+'>처음</button><button type="button" class="cgg-btn" data-p="'+(T.page-1)+'"'+(T.page<=1?' disabled':'')+'>이전</button><span>'+T.page+' / '+pages+' · 모두 '+r.length+'줄</span><button type="button" class="cgg-btn" data-p="'+(T.page+1)+'"'+(T.page>=pages?' disabled':'')+'>다음</button><button type="button" class="cgg-btn" data-p="'+pages+'"'+(T.page>=pages?' disabled':'')+'>맨뒤</button></div>'
         +(rest.length?'<div class="cgg-tacts">'+rest.map(function(b){ return bbtn(b,""); }).join("")+'</div>':'');   /* 1.12 할 일 단추는 표 아래 줄 */
