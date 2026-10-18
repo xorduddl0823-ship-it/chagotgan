@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.13.1 (2026-10-18, 디자인 방 · 초안)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.13 (2026-10-18, 디자인 방 · 초안)
    1.8 바뀐 것: ⑧ 페이지 뼈대 — 크기는 모두 아래 «뼈대 치수» 변수 한 벌. 제품 CSS 에서 이 변수와 뼈대 부품의 크기를 덮어쓰지 않아요 (통합 검사표로 숫자 확인)
    1.7 바뀐 것:
    1.7 바뀐 것: ⑦ 메뉴 찾기 — 왼쪽 메뉴 늘 펼침(.cgg-nsubs) · 기능 찾기(.cgg-hfind) · 전체 메뉴 판(.cgg-sheet) · 홈 바로가기(.cgg-quick)
@@ -28,7 +28,7 @@
   --bg:#F3F5F8; --surface:#FFFFFF; --surface2:#F7F9FC; --text:#101828; --muted:#667085;
   --line:#EAECF0; --ln2:#E3E8EE; --hov:#F7F9FC; --tabon:#E8F1FC;
   --run:#1668C4; --run-bg:#E6F0FB; --done:#1E9E5A; --done-bg:#E4F5EC;
-  --run-ink:#12599F; --done-ink:#157A45; --chk-ink:#8A5200; --stop-ink:#B42828; --due-ink:var(--chk-ink);   /* 1.13.1 받을 돈 글자색(공통 이름) */   /* 1.13 R11 — 작은 글자용 진한 색(배경은 그대로, 4.5:1 이상) */
+  --run-ink:#12599F; --done-ink:#157A45; --chk-ink:#8A5200; --stop-ink:#B42828;   /* 1.13 R11 — 작은 글자용 진한 색(배경은 그대로, 4.5:1 이상) */
   --chk:#B26B00; --chk-bg:#FFF2DD; --stop:#D64545; --stop-bg:#FDE8E8;
   --btn-ink:#344054; --r-card:18px; --r-ctl:12px; --ctl:43px;
   --sh:0 1px 2px #1018280d,0 12px 32px -20px #0B254540;
@@ -42,12 +42,12 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;
   --hov:#1d2733;--tabon:#102B47;--blue:#5FA8E8;
-  --run:#5FA8E8;--run-bg:#102B47;--done:#4ad48f;--done-bg:#12312a;--chk:#f0a95e;--chk-bg:#332412;--stop:#ff8b82;--stop-bg:#331614;--run-ink:#5FA8E8;--done-ink:#4ad48f;--chk-ink:#f0a95e;--stop-ink:#ff8b82;--due-ink:var(--chk-ink);
+  --run:#5FA8E8;--run-bg:#102B47;--done:#4ad48f;--done-bg:#12312a;--chk:#f0a95e;--chk-bg:#332412;--stop:#ff8b82;--stop-bg:#331614;--run-ink:#5FA8E8;--done-ink:#4ad48f;--chk-ink:#f0a95e;--stop-ink:#ff8b82;
   --sh:0 2px 10px rgba(0,0,0,.4);--btn-ink:#d0d8e2;color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e141c;--surface:#161e28;--surface2:#1d2733;--text:#e8edf4;--muted:#95a3b6;--line:#2b3644;--ln2:#334052;
   --hov:#1d2733;--tabon:#102B47;--blue:#5FA8E8;
-  --run:#5FA8E8;--run-bg:#102B47;--done:#4ad48f;--done-bg:#12312a;--chk:#f0a95e;--chk-bg:#332412;--stop:#ff8b82;--stop-bg:#331614;--run-ink:#5FA8E8;--done-ink:#4ad48f;--chk-ink:#f0a95e;--stop-ink:#ff8b82;--due-ink:var(--chk-ink);
+  --run:#5FA8E8;--run-bg:#102B47;--done:#4ad48f;--done-bg:#12312a;--chk:#f0a95e;--chk-bg:#332412;--stop:#ff8b82;--stop-bg:#331614;--run-ink:#5FA8E8;--done-ink:#4ad48f;--chk-ink:#f0a95e;--stop-ink:#ff8b82;
   --sh:0 2px 10px rgba(0,0,0,.4);--btn-ink:#d0d8e2;color-scheme:dark}
 
 /* 한국어 줄바꿈은 낱말 단위로 («받을 금/액»처럼 끊기지 않게) */
@@ -744,7 +744,7 @@ select.cgg-hb{width:auto}
 .cgg-bbrow{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;box-sizing:border-box;cursor:pointer}
 .cgg-bbrow input{width:22px;height:22px;flex:none}
 .cgg-bbrow>span{flex:1;min-width:0} .cgg-bbrow small{display:block;color:var(--muted);font-size:12.5px}
-.cgg-bbrow .amt{flex:none;color:var(--due-ink)}
+.cgg-bbrow .amt{flex:none;color:var(--chk-ink)}
 .cgg-bbdue{display:block;margin:12px 0 4px;font-size:13px;color:var(--muted)}
 .cgg-in{width:100%;height:var(--ctl);box-sizing:border-box;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:0 12px;font:inherit;background:var(--surface);color:var(--text)}
 /* 1.13 R11 이어서 — 할 일 띠 글자 · 메뉴 숫자 배지도 진한 색 */
@@ -762,16 +762,5 @@ select.cgg-hb{width:auto}
 }
 /* 1.13 손질 ③ (워시 · 체크 방 알림) — 창 안 label 은 세로(이름 위 · 칸 아래)인데, 밀린 달 줄(label.cgg-bbrow)까지 세로로 쌓이던 것 → 가로 한 줄로 */
 .cgg-dlg label.cgg-bbrow{flex-direction:row;align-items:center;text-align:left;gap:10px;font-size:14px;font-weight:400;color:var(--text)}
-.cgg-dlg label.cgg-bbrow b{color:var(--text)} .cgg-dlg label.cgg-bbrow .amt{color:var(--due-ink);font-weight:800}
+.cgg-dlg label.cgg-bbrow b{color:var(--text)} .cgg-dlg label.cgg-bbrow .amt{color:var(--chk-ink);font-weight:800}
 .cgg-dlg label.cgg-bbdue{display:block}
-/* 1.13.1 — 받는 사람 이름 펼쳐 보기 · 진행 칸(CGG.steps) */
-.cgg-who{margin-top:10px;font-size:14px} .cgg-who summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center;gap:8px} .cgg-who summary::before{content:"＋";color:var(--muted)} .cgg-who[open] summary::before{content:"－"}
-.cgg-steps{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:16px 18px;margin:0 0 var(--sec-gap)}
-.cgg-stepsh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:10px} .cgg-stepsh b{font-size:16px;font-weight:800} .cgg-stepsh small{color:var(--muted);font-size:13px}
-.cgg-steps ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.cgg-steps li{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;background:var(--surface)}
-.cgg-steps li i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px;background:var(--bg);color:var(--muted)}
-.cgg-steps li span{min-width:0} .cgg-steps li b{display:block;font-size:14px} .cgg-steps li small{display:block;font-size:12.5px;color:var(--muted)}
-.cgg-steps li.done i{background:var(--done-bg);color:var(--done-ink)}
-.cgg-steps li.now{border-color:var(--blue);box-shadow:0 0 0 2px var(--tabon)} .cgg-steps li.now i{background:var(--blue);color:#fff} .cgg-steps li.now small{color:var(--run-ink);font-weight:700}
-@media (max-width:760px){ .cgg-steps ol{grid-template-columns:1fr} }

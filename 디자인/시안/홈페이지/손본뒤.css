@@ -82,9 +82,22 @@ nav.mn a{min-height:44px;display:inline-flex;align-items:center;padding:0 12px}
 .flow4 li::before{color:var(--navy)} @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .flow4 li::before{color:var(--brand)}}
 #start .steps3{margin-bottom:12px}
 .pdesc{color:var(--muted);font-size:14px;margin-top:-4px}
-.pickh{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px;width:max-content;max-width:100%}
+.pickh{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px;justify-self:start;max-width:100%;min-width:0}
 .pickh b{font-size:13.5px;color:var(--muted);margin-right:4px}
 .pickh button{min-height:44px;padding:0 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:700;font-size:14px;border-radius:999px;cursor:pointer}
 .pickh button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--navy-ink)}
 .pickh .bor-tag{display:none}
 #start .steps3 li::before{background:var(--navy);color:var(--navy-ink)}
+/* 시안 3 — 첫 화면은 남색 띠, 아래 구역은 밝은 바탕 + 흰 카드 (지금 배치 · 구역 차례 · 링크는 그대로) */
+section.hero{background:var(--navy);color:var(--navy-ink)}
+section.hero h1{color:#fff}
+section.hero p{color:#c9d6ea}
+section.hero .eyebrow{color:#9ec9f5!important}
+section.hero .btn.g{background:transparent;color:#fff;border-color:#ffffff66}
+section.hero .pick{border-color:transparent}
+section.hero .pickh{background:#ffffff14;border-color:#ffffff33}
+section.hero .pickh b{color:#c9d6ea}
+section.hero .pickh button{background:transparent;color:#fff;border-color:#ffffff55}
+section.hero .pickh button[aria-pressed="true"]{background:#fff;color:var(--navy);border-color:#fff}
+section.alt{background:var(--bg)}
+section.hero .pick p{color:var(--muted)} section.hero .pick h3{color:var(--ink)}
