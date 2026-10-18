@@ -80,7 +80,7 @@ rep('''  var gs=all.filter(function(g){return T.sel[g.key];});
   var done=gs.filter(function(g){var d=taxDoc(g);return d&&d.status==="발급"&&!d.test;});''')
 rep('''    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key)};''', '''    if(g.unpaid){ return next(); }   /* v135 한 번 더 — 입금 전은 보내지 않아요(앞에서 이미 빠져 거의 없음) */
     var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key)};''')
-# 3-1) 서버 sb23: 청구서 보기코드(bill.code)를 꼭 넣어요 — 먼저 그 묶음의 월별 청구서를 찾아 billCode 로 받고 보내요
+# 3-1) 서버 sb23: req.bill(recIds · 금액) — 맞는 월별 청구서가 있으면 billCode 로 보기코드도 붙여요(없으면 빈칸)
 rep('''    gsCall("pbIssue",[JSON.stringify(req)])
       .then(function(t){return typeof t==="string"?JSON.parse(t):t;},function(e){return {ok:false,error:errMsg(e)};})''',
 '''    taxBillCode(g).then(function(code){ req.bill=taxBillOf(g,code);
