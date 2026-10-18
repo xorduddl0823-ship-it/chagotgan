@@ -2169,7 +2169,8 @@ async function taxBillGate(shop: string, json: unknown): Promise<{ why: string; 
   let req: any = {};
   const no = (why: string) => ({ why });
   try { req = typeof json === "string" ? JSON.parse(json) : (json || {}); } catch { return no("요청을 읽지 못했습니다"); }
-  const code = String(req.bill || "").trim().toUpperCase();
+  /* 워시 v135 모양({month, key, recIds, …, code}) 도 받음 — 판단은 늘 보기코드(code)로 서버 장부를 다시 읽어서 */
+  const code = String((req.bill && typeof req.bill === "object" ? req.bill.code : req.bill) || "").trim().toUpperCase();
   if (!/^[A-F0-9]{24}$/.test(code)) return no("어느 청구서의 계산서인지 알 수 없습니다. 청구서에서 «세금계산서»를 눌러 주세요");
   const { data: vc } = await sb.from("wash_viewcode").select("shop,kind,data").eq("code", code).maybeSingle();
   if (!vc || String(vc.shop) !== shop || String(vc.kind) !== "bill" || !vc.data) return no("이 업체 청구서가 아닙니다");

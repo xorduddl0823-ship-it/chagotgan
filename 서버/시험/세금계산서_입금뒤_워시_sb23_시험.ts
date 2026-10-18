@@ -71,7 +71,9 @@ r = await issue({ bill: BILL_BIG, doc: doc(220000) });
 check("(보안 낮음 1) 화면이 부풀린 청구서 금액으로는 거절 — 기준은 장부 줄 합계", r.ok === false && /110,000원/.test(r.error) && pop.length === 0, r);
 r = await issue({ bill: BILL, doc: doc(110000) });
 check("다 입금 + 금액 같음 → 발행 · 비고 앞에 «청구서 코드»", r.ok === true && pop.length === 1 && pop[0].remark1.startsWith("청구서 " + BILL + " · 홍딜러"), [r, pop[0]?.remark1]);
-r = await issue({ bill: BILL, doc: doc(110000), force: true });
+r = await issue({ bill: { month: "2026-10", recIds: ["j1", "j2"], amount: 110000, left: 0, code: "" }, doc: doc(110000) });
+check("v135 모양인데 code 가 비면 거절", r.ok === false && /어느 청구서/.test(r.error) && pop.length === 1, r);
+r = await issue({ bill: { month: "2026-10", recIds: ["j1", "j2"], amount: 110000, left: 0, code: BILL }, doc: doc(110000), force: true });
 check("(보안 낮음 2) 같은 청구서로 두 번째는 거절(«다시 보내기»도)", r.ok === false && /이미/.test(r.error) && pop.length === 1, r);
 
 console.log("■ 본사 → 업체 (hqTaxIssue)");
