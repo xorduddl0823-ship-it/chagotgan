@@ -184,6 +184,11 @@ if N:
     rep('  card("달마다 장부","달을 누르면 그 달 청구서로 가요.', '  card("월별 장부","달을 누르면 그 달 청구서로 가요.')
     rep('      {k:"left",t:"입금 대기",num:true,fmt:function(v){return v>0?', '      {k:"left",t:"받을 금액",num:true,fmt:function(v){return v>0?')
 
+# v56.2: 상태 거르기 칩은 상태 이름만(상태 칸 아래 작은 글 .b — 보낸 기록 까닭 등 — 은 칩에 안 들어가게)
+if V == "v56.2":
+    rep('  function stateOf(r){ return si<0?"":tbPlain(cellHtml(cols[si],r)); }',
+        '  function stateOf(r){ return si<0?"":tbPlain(String(cellHtml(cols[si],r)).replace(/<span class="b"[^>]*>[\\s\\S]*?<\\/span>/g,"")); }   /* v56.2 */')
+
 #@@끝
 
 open(OUT, "w", encoding="utf-8").write(s)
