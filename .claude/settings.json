@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Artifact",
+      "Bash",
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Agent",
+      "Skill",
+      "mcp__claude-code-remote__send_message",
+      "mcp__claude-code-remote__send_later",
+      "mcp__claude-code-remote__get_session",
+      "mcp__claude-code-remote__list_sessions",
+      "mcp__claude-code-remote__list_events"
+    ]
+  }
+}
