@@ -11,7 +11,7 @@
 import os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); CHK = os.path.dirname(HERE); ROOT = os.path.dirname(CHK)
 V = sys.argv[1] if len(sys.argv) > 1 else "v56"; N = V != "v56"   # N: v56.1 (공통 1.13)
-assert V in ("v56", "v56.1")
+assert V in ("v56", "v56.1", "v56.2")   # v56.2: 공통 1.13.1(CGG.steps)
 SRC = os.path.join(CHK, "2_차곳간_체크_index_v55.1.html"); OUT = os.path.join(CHK, "2_차곳간_체크_index_%s.html" % V)
 def rd(*p): return open(os.path.join(ROOT, *p), encoding="utf-8").read()
 s = open(SRC, encoding="utf-8").read()
@@ -29,7 +29,7 @@ def cut(start, end):
 
 # ═══ ① 공통 부품 1.10 → 1.12 · 메뉴 지도 ═══
 J110, C110 = rd("디자인", "공통", "cgg-j4-1.10.js"), rd("디자인", "공통", "cgg-j4-1.10.css")
-CV = "1.13" if N else "1.12"
+CV = {"v56": "1.12", "v56.1": "1.13", "v56.2": "1.13.1"}[V]
 J112, C112 = rd("디자인", "공통", "cgg-j4-%s.js" % CV), rd("디자인", "공통", "cgg-j4-%s.css" % CV)
 MENU = rd("디자인", "메뉴지도", "체크_메뉴.js")
 rep(J110, J112 + "\n" + MENU)
@@ -39,7 +39,7 @@ assert ('version:"cgg-j4 %s"' % CV) in s
 # 판 이름
 rep('ver:"체크 v55.1", date:"10/18"', 'ver:"체크 %s", date:"10/18"' % V)
 rep('$("hdVer").textContent="체크 v55.1 · "', '$("hdVer").textContent="체크 %s · "' % V)
-rep('<!-- 체크 v55.1 (', '<!-- ' + ('체크 v56.1 (v56 + 공통 부품 1.13 바꿔 끼우기) · ' if N else '') + '체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (')
+rep('<!-- 체크 v55.1 (', '<!-- ' + ({'v56.1': '체크 v56.1 (v56 + 공통 부품 1.13 바꿔 끼우기) · ', 'v56.2': '체크 v56.2 (v56.1 + 공통 부품 1.13.1 · 어디까지 왔나 = CGG.steps) · 체크 v56.1 (v56 + 공통 부품 1.13) · '}.get(V, '')) + '체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (')
 
 # ═══ ③-A3 표 = 공통 1.12 모양(워시 표) — 위 «넓은 찾기 · 상태 칩 · 20개씩 · 빨간 지우기», 칸 머리 ↕, 아래 «처음 · 이전 · 1 / N · 모두 N줄 · 다음 · 맨뒤», 할 일 단추는 표 아래 줄
 #    표 안 동작(wireTable · picked · data-* 이름)은 그대로 — 모양만 바꿔요
@@ -83,6 +83,9 @@ if N:   # 1.13 공통으로 옮겨 간 몫은 뺌
     for a_, b_ in (("/* 결과 목록 창 · 얇은 진행 줄", "@media (prefers-reduced-motion:reduce){ body.chk-loading::before{animation:none;width:100%;opacity:.6} }\n"),
                    ("/* 밀린 달 한꺼번에 — 달 고르기 줄 */", ".cgg-dlg label.chk-bb input{flex:none;width:20px;height:20px;margin:0}\n")):
         i_ = CSSV.index(a_); j_ = CSSV.index(b_, i_) + len(b_); CSSV = CSSV[:i_] + CSSV[j_:]
+    if V == "v56.2":   # .chk-steps 임시 줄 → 공통 CGG.steps
+        i_ = CSSV.index(".chk-steps{"); j_ = CSSV.index("@media (max-width:800px){ .chk-steps{grid-template-columns:repeat(2,minmax(0,1fr))} }\n", i_)
+        CSSV = CSSV[:i_] + CSSV[j_ + len("@media (max-width:800px){ .chk-steps{grid-template-columns:repeat(2,minmax(0,1fr))} }\n"):]
     CSSV = CSSV.replace('<style id="chk-v56">', '<style id="chk-v56">\n/* v56.1: 결과 목록 · 진행 줄 · 밀린 달 줄은 공통 1.13(.cgg-list · .cgg-prog · .cgg-bb) */')
 # ═══ ② 덧댄 조각 걷어내기 → 체크 전용 몫 한 곳(chk-v56, 공통 부품 앞) ═══
 cut('<style id="chk-j4">', '</style>')
@@ -123,7 +126,7 @@ k = s.index('<div class="phone-from">차곳간 카카오 채널에서</div>', k)
 s = s[:k] + '<div class="phone-from">검사소 번호로</div>' + s[k+len('<div class="phone-from">차곳간 카카오 채널에서</div>'):]
 # 알림톡 문구 부품 ata 1.1 + v56 덧붙임 — 마지막 «공통 부품 부르기» 앞
 rep("""<script>
-/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", "<script>\n" + (rd("디자인", "공통", "cgg-ata-1.1.js") if N else rd("체크", "부품", "알림톡문구_부품_1.1.js")) + "\n</script>\n" + open(os.path.join(HERE, "v56.1_통합.js" if N else "v56_통합.js"), encoding="utf-8").read() + """<script>
+/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", "<script>\n" + (rd("디자인", "공통", "cgg-ata-1.1.js") if N else rd("체크", "부품", "알림톡문구_부품_1.1.js")) + "\n</script>\n" + open(os.path.join(HERE, {"v56": "v56_통합.js", "v56.1": "v56.1_통합.js", "v56.2": "v56.2_통합.js"}[V]), encoding="utf-8").read() + """<script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */""")
 
 rep('  home:["bill","dep"], sales:["sales"],', '  home:["bill","dep","sales"], sales:["sales"],   /* v56: 홈 숫자 칸 작은 그래프 · 지난달 비교 */')
@@ -180,6 +183,11 @@ if N:
 if N:
     rep('  card("달마다 장부","달을 누르면 그 달 청구서로 가요.', '  card("월별 장부","달을 누르면 그 달 청구서로 가요.')
     rep('      {k:"left",t:"입금 대기",num:true,fmt:function(v){return v>0?', '      {k:"left",t:"받을 금액",num:true,fmt:function(v){return v>0?')
+
+# v56.2: 상태 거르기 칩은 상태 이름만(상태 칸 아래 작은 글 .b — 보낸 기록 까닭 등 — 은 칩에 안 들어가게)
+if V == "v56.2":
+    rep('  function stateOf(r){ return si<0?"":tbPlain(cellHtml(cols[si],r)); }',
+        '  function stateOf(r){ return si<0?"":tbPlain(String(cellHtml(cols[si],r)).replace(/<span class="b"[^>]*>[\\s\\S]*?<\\/span>/g,"")); }   /* v56.2 */')
 
 #@@끝
 
