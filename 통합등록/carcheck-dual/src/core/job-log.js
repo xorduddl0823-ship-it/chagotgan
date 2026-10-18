@@ -220,6 +220,7 @@ function createJobLog(file, opts = {}) {
         const s = site(j, e.site);
         s.history.push(e);
         s.stage = e.stage;
+        s.lastReason = e.reason || (e.stage === 'submitReady' ? s.lastReason : '');
         if (e.checkNo) s.checkNo = e.checkNo;
         if (e.stage === 'numberChecked' && e.checkNo) s.checked = true;
       } else if (e.type === 'resolve') {
@@ -235,7 +236,9 @@ function createJobLog(file, opts = {}) {
         j.closed = true;
         j.forced = !!e.forced;
       } else if (e.type === 'meta') {
-        j.meta = Object.assign(j.meta || {}, e.meta || {});
+        const prev = j.meta || {};
+        j.meta = Object.assign({}, prev, e.meta || {});
+        if (prev.oldBySite || (e.meta && e.meta.oldBySite)) j.meta.oldBySite = Object.assign({}, prev.oldBySite || {}, (e.meta && e.meta.oldBySite) || {});
       } else if (e.type === 'release') {
         j.released = true;
         j.release = { method: e.method, by: e.by, reason: e.reason, checkedAt: e.checkedAt, at: e.at };
@@ -349,6 +352,13 @@ function createJobLog(file, opts = {}) {
     setMeta(jobId, meta) {
       const m = {};
       if (Array.isArray(meta && meta.oldNos)) m.oldNos = meta.oldNos.map((x) => String(x).slice(0, 40)).slice(0, 200);
+      //  전산별 «이 차 예전 번호들» (카모두·엔트리 — 저장 전 목록)
+      if (meta && meta.oldBySite && typeof meta.oldBySite === 'object') {
+        m.oldBySite = {};
+        Object.keys(meta.oldBySite).slice(0, 5).forEach((k) => {
+          if (Array.isArray(meta.oldBySite[k])) m.oldBySite[String(k).slice(0, 20)] = meta.oldBySite[k].map((x) => String(x).slice(0, 40)).slice(0, 200);
+        });
+      }
       ['startDate', 'entryNext', 'carinfoLast'].forEach((k) => { if (meta && meta[k] != null) m[k] = String(meta[k]).slice(0, 40); });
       withLock(() => {
         const j = getJob(load().jobs, jobId);
@@ -504,7 +514,7 @@ function createJobLog(file, opts = {}) {
       const j = load().jobs.get(jobId);
       if (!j) return null;
       const sites = {};
-      Object.keys(j.sites).forEach((s) => { sites[s] = { state: siteState(j, s), checkNo: j.sites[s].checkNo || null }; });
+      Object.keys(j.sites).forEach((s) => { sites[s] = { state: siteState(j, s), checkNo: j.sites[s].checkNo || null, lastReason: j.sites[s].lastReason || '' }; });
       return { jobId: j.jobId, office: j.office, pc: j.pc, carNo: j.carNo, vin: j.vin, closed: j.closed,
                forced: j.forced, released: j.released, release: j.release || null, meta: j.meta || {}, sites };
     },

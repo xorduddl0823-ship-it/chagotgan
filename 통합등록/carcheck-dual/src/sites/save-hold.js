@@ -29,8 +29,8 @@ function attachSaveHold(win, guard, opts = {}) {
   const attached = [];
   let seq = 0;
 
-  function hookContents(wc, id) {
-    guard.registerWindow(id);
+  function hookContents(wc, id, kind) {
+    guard.registerWindow(id, kind);
     const dbg = wc.debugger;
     let mine = false;
     try {
@@ -67,12 +67,12 @@ function attachSaveHold(win, guard, opts = {}) {
     ]).then(() => { guard.attachWindow(id); return true; }).catch(() => false);
   }
 
-  const ready = hookContents(win.webContents, opts.name || 'main');
+  const ready = hookContents(win.webContents, opts.name || 'main', 'main');
 
   //  팝업 — 생기는 즉시 붙인다(첫 요청 전에 붙도록 did-create-window 에서)
   const onChild = (child) => {
     const cid = 'popup-' + (++seq);
-    hookContents(child.webContents, cid);
+    hookContents(child.webContents, cid, 'popup');
     child.once('closed', () => guard.onWindowClosed());
   };
   win.webContents.on('did-create-window', onChild);

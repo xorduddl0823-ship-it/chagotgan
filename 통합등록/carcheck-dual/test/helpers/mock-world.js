@@ -7,8 +7,8 @@ const { createSaveGuard } = require('../../src/core/save-guard');
 function createWorld(opts = {}) {
   const w = {
     carinfo: { rows: (opts.carinfoRows || []).slice(), seq: opts.carinfoSeq || 100 },
-    carmodoo: { rows: [], form: { autoAssignOn: true, numberValue: '' } },
-    entry: { rows: [], loggedIn: opts.entryLoggedIn !== false, next: null, loaded: null },
+    carmodoo: { rows: (opts.carmodooRows || []).slice(), form: { autoAssignOn: true, numberValue: '' } },
+    entry: { rows: (opts.entryRows || []).slice(), loggedIn: opts.entryLoggedIn !== false, next: null, loaded: null },
     faults: {},                         // 사이트별 고장 흉내: { carinfo: 'serverErrorButSaved' | 'networkLost' | 'foreignPopup' | 'vinPartial' | 'wrongNumber' }
     calls: [],
   };
@@ -35,6 +35,7 @@ function createWorld(opts = {}) {
     if (site === 'carmodoo') {
       const no = w.faults.carmodoo === 'wrongNumber' ? 'T-9999' : w.carmodoo.form.numberValue;
       w.carmodoo.rows.unshift({ checkNo: no, carNo: ctx.carNo });
+      if (w.faults.carmodoo === 'doubleRow') w.carmodoo.rows.unshift({ checkNo: no + '-2', carNo: ctx.carNo });
       return no;
     }
     const no = w.entry.loaded && w.entry.loaded.entryNo;
@@ -48,6 +49,9 @@ function createWorld(opts = {}) {
   function clickSave(site) {
     const g = guards[site];
     const id = 'r' + (++rid);
+    if (w.faults[site] === 'popupSave') {                         // 저장 단계에서 팝업이 열리고 그 팝업으로 저장
+      g.registerWindow('popup-' + id, 'popup'); g.attachWindow('popup-' + id);
+    }
     if (w.faults[site] === 'foreignPopup') {
       g.onRequest({ id, url: 'https://upload.other.example/save', method: 'POST', kind: 'popup' });
       return 'hold';
@@ -65,10 +69,11 @@ function createWorld(opts = {}) {
     carinfo: {
       async readList(car) { return car ? w.carinfo.rows.filter((r) => r.carNo === car.carNo) : w.carinfo.rows.slice(); },
       async fill(data) { ctx.carNo = data.carNo; ctx.vin = data.vin; w.calls.push('carinfo.fill'); return { filled: ['차량번호'], missing: [] }; },
-      async armGuard() { newGuard('carinfo'); },
-      async unlockSave() { guards.carinfo.unlock(); },
+      async armGuard() { if (w.faults.armFail === 'carinfo') throw new Error('개발자 연결 실패(흉내)'); newGuard('carinfo'); },
+      async unlockSave() { return guards.carinfo.unlock(); },
       async saveOutcome() { return guards.carinfo.outcome(); },
-      async coverage() { return guards.carinfo ? guards.carinfo.coverage() : { unattachedWindows: [] }; },
+      async coverage() { return guards.carinfo ? guards.carinfo.coverage() : { windows: 0, unattachedWindows: [] }; },
+      async seal() { guards.carinfo.seal(); },
     },
     carmodoo: {
       async fill(data, extra) {
@@ -80,9 +85,11 @@ function createWorld(opts = {}) {
       async readForm() { return { ...w.carmodoo.form }; },
       async readSaved(car) { const r = w.carmodoo.rows.find((x) => x.carNo === car.carNo); return r ? { checkNo: r.checkNo } : null; },
       async armGuard() { newGuard('carmodoo'); },
-      async unlockSave() { guards.carmodoo.unlock(); },
+      async unlockSave() { return guards.carmodoo.unlock(); },
       async saveOutcome() { return guards.carmodoo.outcome(); },
-      async coverage() { return guards.carmodoo ? guards.carmodoo.coverage() : { unattachedWindows: [] }; },
+      async coverage() { return guards.carmodoo ? guards.carmodoo.coverage() : { windows: 0, unattachedWindows: [] }; },
+      async seal() { guards.carmodoo.seal(); },
+      async readList(car) { return w.carmodoo.rows.filter((x) => !car || x.carNo === car.carNo); },
     },
     entry: {
       async loginState() { return { loggedIn: w.entry.loggedIn, canRead: w.entry.loggedIn }; },
@@ -99,9 +106,11 @@ function createWorld(opts = {}) {
       async readLoaded() { return { ...w.entry.loaded }; },
       async readSaved(car) { const r = w.entry.rows.find((x) => x.carNo === car.carNo); return r ? { checkNo: r.checkNo } : null; },
       async armGuard() { newGuard('entry'); },
-      async unlockSave() { guards.entry.unlock(); },
+      async unlockSave() { return guards.entry.unlock(); },
       async saveOutcome() { return guards.entry.outcome(); },
-      async coverage() { return guards.entry ? guards.entry.coverage() : { unattachedWindows: [] }; },
+      async coverage() { return guards.entry ? guards.entry.coverage() : { windows: 0, unattachedWindows: [] }; },
+      async seal() { guards.entry.seal(); },
+      async readList(car) { return w.entry.rows.filter((x) => !car || x.carNo === car.carNo); },
     },
   };
 

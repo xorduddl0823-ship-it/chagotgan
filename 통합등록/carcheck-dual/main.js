@@ -394,7 +394,11 @@ async function ensureCarinfoDetail(win) {
   return { ok: false, error: '[성능점검] 을 눌렀지만 상세 화면이 나타나지 않았습니다.\n카인포 창 상태를 확인해 주세요.' };
 }
 
-ipcMain.handle('site:send', async (_e, { id, data }) => sendToSite(id, data));
+ipcMain.handle('site:send', async (_e, { id, data }) => {
+  const b = legacyBlock(id);
+  if (b) return { ok: false, error: b };
+  return sendToSite(id, data);
+});
 
 /**
  * 사이트에 값 넣기(전송) — [카인포만]/[경기조합만]/[두 곳 동시 전송] 과 등록 흐름(flow:fill)이 함께 쓴다.
@@ -564,6 +568,7 @@ async function ensureCarinfoReady(win) {
 
 /** 카인포: 신규등록 → 차량번호 → 딜러 검색·선택 → 확인 까지 자동 진행 */
 ipcMain.handle('carinfo:prepare', async (_e, opts) => {
+  { const b = legacyBlock('carinfo'); if (b) return { ok: false, error: b }; }   // 흐름 중 우회 막기
   const win = siteWindow('carinfo', 'auto');
 
   const ready = await ensureCarinfoReady(win);
@@ -583,6 +588,7 @@ ipcMain.handle('carinfo:prepare', async (_e, opts) => {
  *  반면 경기조합은 차량번호로 [검색] 하면 전체를 끌어온다. 그 값을 옮겨 담는다.
  */
 ipcMain.handle('vin:sync', async (_e, { carNo }) => {
+  { const b = legacyBlock('carmodoo') || legacyBlock('carinfo'); if (b) return { ok: false, error: b }; }   // 흐름 중 우회 막기
   const cfg = loadConfig();
   const tailLen = cfg.vinTail || 6;
 
@@ -1640,6 +1646,7 @@ async function sendCarinfoPhotos(win, data) {
  *  바뀐 값(매매상사·연락처)은 앱으로 돌려주어 경기조합에도 같은 값이 쓰이게 한다.
  */
 ipcMain.handle('dealer:carinfo', async (_e, arg) => {
+  { const b = legacyBlock('carinfo'); if (b) return { ok: false, error: b }; }   // 흐름 중 우회 막기
   const name = String((arg && arg.name) || '').trim();
   const chosen = arg && arg.row;
   if (!name) return { ok: false, error: '딜러명을 먼저 입력해 주세요.' };
@@ -1839,6 +1846,7 @@ ipcMain.handle('popup:diag', async (_e, id0) => {
 
 /*  딜러만 따로 골라 보기 — 전체 전송을 다시 돌리지 않고 이 단계만 시험할 수 있게 */
 ipcMain.handle('dealer:pick', async (_e, arg) => {
+  { const b = legacyBlock('carmodoo'); if (b) return { ok: false, error: b }; }   // 흐름 중 우회 막기
   const name = typeof arg === 'string' ? arg : (arg && arg.name);
   const chosen = arg && typeof arg === 'object' ? arg.row : undefined;
   const win = windows.carmodoo;
@@ -1855,6 +1863,7 @@ ipcMain.handle('dealer:pick', async (_e, arg) => {
 });
 
 ipcMain.handle('photo:send', async (_e, { id, data }) => {
+  { const b = legacyBlock(id); if (b) return { ok: false, error: b }; }   // 흐름 중 우회 막기
   const site = SITES[id];
   if (!site) return { ok: false, error: '알 수 없는 사이트입니다.' };
   const win = siteWindow(id, 'auto');
@@ -2134,6 +2143,20 @@ const { createElectronAdapters } = require('./src/sites/flow-adapters');
 const siteConfig = require('./src/sites/site-config');
 
 let flowCtx = null;
+
+/** 사진 칸(photo1~8) 뺀 값 */
+function noPhotos(data) {
+  const out = {};
+  Object.keys(data || {}).forEach((k) => { if (!/^photo\d+$/.test(k)) out[k] = data[k]; });
+  return out;
+}
+
+/** 흐름 작업이 그 전산을 쓰는 중이면 기존 단추를 막는다(통제기 우회 방지) — 흐름이 꺼져 있으면 언제나 null */
+function legacyBlock(site) {
+  if (loadConfig().flow !== true) return null;
+  try { return flow().flow.legacyBlocked(site); } catch { return null; }
+}
+
 function flow() {
   if (loadConfig().flow !== true) throw new Error('등록 흐름이 꺼져 있습니다(설정 flow).');
   if (flowCtx) return flowCtx;
@@ -2145,8 +2168,10 @@ function flow() {
     config: C,
     getWindow: (s) => (s === 'entry' ? null : siteWindow(s, 'auto')),
     fillFns: {
-      carinfo: async (data) => { const r = await sendToSite('carinfo', data); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
-      carmodoo: async (data) => { const r = await sendToSite('carmodoo', data); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
+      //  흐름에서는 사진을 같이 보내지 않는다 — 통제기가 먼저 걸려 있어 사진 올리기(쓰기 요청)도 막히기 때문.
+      //  사진은 저장 경로 설정(site-config)이 확정된 뒤 «사진 올리기 허락» 단계로 따로 넣는다.
+      carinfo: async (data) => { const r = await sendToSite('carinfo', noPhotos(data)); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
+      carmodoo: async (data) => { const r = await sendToSite('carmodoo', noPhotos(data)); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
       entry: async () => ({ filled: [], missing: ['엔트리 연결 모듈이 아직 없습니다(10/19 화면 확인 뒤)'] }),
     },
   });

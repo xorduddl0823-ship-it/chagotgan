@@ -89,7 +89,7 @@ app.whenReady().then(async () => {
     const r2 = await siteRound(t, jobId, 'carmodoo');
     assert.deepStrictEqual(r2, { ok: true, checkNo: 'T-0201' });
     assert.strictEqual(await t.js('carmodoo', 'autoNo.checked'), false, '«자동 부여» 꺼짐');
-    await t.wins.entry.reload(); await sleep(300); await t.adapters.entry.armGuard();
+    await t.wins.entry.reload(); await sleep(300);
     const r3 = await siteRound(t, jobId, 'entry');
     assert.deepStrictEqual(r3, { ok: true, checkNo: 'T-0201' });
     assert.ok(t.flow.finish(jobId).ok);
@@ -172,6 +172,48 @@ app.whenReady().then(async () => {
     await t.wins.entry.reload(); await sleep(300);
     const f = await t.flow.fill(jobId, 'entry', CAR);
     assert.strictEqual(f.needLogin, true);
+    await t.done();
+  });
+
+  await scenario('끝난 뒤 봉인: 카인포 저장이 끝난 창에서 다시 [저장]을 눌러도 서버에 닿지 않음 (중복 저장 막기)', async () => {
+    const t = await setup();
+    const { jobId } = await t.flow.start(CAR);
+    const r = await siteRound(t, jobId, 'carinfo');
+    assert.strictEqual(r.ok, true, JSON.stringify(r));
+    await t.clickSave('carinfo');
+    await sleep(400);
+    assert.strictEqual(t.M.S.saves.carinfo, 1, '두 번째 저장이 서버에 닿으면 안 됨');
+    assert.strictEqual(await t.js('carinfo', 'msg.textContent'), 'blocked');
+    await t.done();
+  });
+
+  await scenario('통제기를 먼저 걸고 값 넣기: 값 넣는 중 [저장] 클릭도 막힘', async () => {
+    const t = await setup();
+    const { jobId } = await t.flow.start(CAR);
+    const orig = t.adapters.carinfo.fill;
+    t.adapters.carinfo.fill = async (d, e) => { await t.clickSave('carinfo'); await sleep(300); return orig(d, e); };
+    await t.flow.fill(jobId, 'carinfo', CAR);
+    assert.strictEqual(t.M.S.saves.carinfo, 0);
+    await t.done();
+  });
+
+  await scenario('팝업의 «첫 요청»이 저장(POST)인 경우: 잠긴 동안 서버에 닿지 않는지 + 저장 단계면 사람 확인으로', async () => {
+    const t = await setup();
+    const { jobId } = await t.flow.start(CAR);
+    await t.flow.fill(jobId, 'carinfo', CAR);
+    //  ① 잠긴 동안(허락 전) 팝업으로 바로 저장 시도
+    await t.js('carinfo', 'document.getElementById("btnPopupPost").click();1');
+    await sleep(900);
+    const leakedLocked = t.M.S.saves.carinfo;
+    //  ② 허락 뒤 팝업으로 바로 저장
+    await t.flow.allowSave(jobId, 'carinfo');
+    await t.js('carinfo', 'document.getElementById("btnPopupPost").click();1');
+    await sleep(900);
+    await t.settle('carinfo');
+    const r = await t.flow.afterSave(jobId, 'carinfo');
+    console.log('INFO 팝업 첫 요청: 잠긴 동안 서버 도착 ' + leakedLocked + '건 · 허락 뒤 결과 ' + JSON.stringify({ manual: r.manual, saves: t.M.S.saves.carinfo }));
+    assert.strictEqual(leakedLocked, 0, '잠긴 동안 팝업 첫 요청이 새어 나감');
+    assert.strictEqual(r.manual, true, '팝업 저장은 자동으로 끝내지 않고 사람 확인: ' + JSON.stringify(r));
     await t.done();
   });
 

@@ -50,6 +50,8 @@ function createMockSites() {
     if (u.pathname === '/carinfo') {
       return send(200, 'text/html', page('카인포 흉내',
         '<input id=carNo><input id=vin><button id=btnSave>저장</button><button id=btnPopup>사진 팝업</button>' +
+        '<form id=popForm method=post action="/api/save" target="_blank"><input name=site value=carinfo><input name=carNo id=pfCar><input name=vin id=pfVin></form>' +
+        '<button id=btnPopupPost>팝업으로 바로 저장</button>' +
         '<table id=list><tbody></tbody></table><div id=msg></div>',
         LIST_JS + `
         loadList('carinfo');
@@ -61,6 +63,7 @@ function createMockSites() {
           loadList('carinfo');
         };
         document.getElementById('btnPopup').onclick = () => { window.open('${'FOREIGN'}/upload', '_blank'); };
+        document.getElementById('btnPopupPost').onclick = () => { pfCar.value = carNo.value; pfVin.value = vin.value; popForm.submit(); };
         window.addEventListener('keydown', (e) => { window.__key = { key: e.key, trusted: e.isTrusted }; });`));
     }
     if (u.pathname === '/carmodoo') {

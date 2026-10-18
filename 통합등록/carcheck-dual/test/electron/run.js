@@ -21,7 +21,7 @@ if (process.platform === 'linux') {
 }
 const r = spawnSync(cmd, full, { encoding: 'utf8', timeout: 180000 });
 const out = String(r.stdout || '');
-process.stdout.write(out.split('\n').filter((l) => /^(ok|not ok|#|  error)/.test(l)).join('\n') + '\n');
+process.stdout.write(out.split('\n').filter((l) => /^(ok|not ok|#|  error|INFO)/.test(l)).join('\n') + '\n');
 
 //  실제 프로그램(main.js)이 바뀐 코드로 뜨는지 — 임시 기록 폴더로 띄워 입력 화면이 뜨면 바로 끝냄(사이트 접속 없음)
 const root = path.join(__dirname, '..', '..');

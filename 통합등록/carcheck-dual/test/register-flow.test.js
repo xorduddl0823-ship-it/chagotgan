@@ -210,3 +210,107 @@ test('저장 경로 설정이 확정되지 않은 실제 환경(mock 아님)에�
   assert.strictEqual(a.ok, false);
   assert.match(a.reason, /확인되지 않아/);
 });
+
+/* ── 검수 4차 반영 ───────────────────────────────────────────── */
+
+test('저장 통제기 설치에 실패하면 값을 넣지 않고 저장도 하지 않는다 (통제기 먼저)', async () => {
+  const t = setup();
+  t.W.world.faults.armFail = 'carinfo';
+  const { jobId } = await t.flow.start(CAR);
+  const f = await t.flow.fill(jobId, 'carinfo', CAR);
+  assert.strictEqual(f.ok, false);
+  assert.match(f.reason, /통제기를 걸지 못했습니다/);
+  assert.ok(!t.W.world.calls.includes('carinfo.fill'), '값 넣기를 하지 않음');
+  assert.strictEqual(t.jobLog.get(jobId).sites.carinfo, undefined);
+});
+
+test('통제기는 값 넣기 «전»에 걸린다 — 값 넣는 도중 사람이 저장을 눌러도 막힘', async () => {
+  const t = setup();
+  const { jobId } = await t.flow.start(CAR);
+  const origFill = t.W.adapters.carinfo.fill;
+  let during = null;
+  t.W.adapters.carinfo.fill = async (d, e) => { during = t.W.human.clickSave('carinfo'); return origFill(d, e); };
+  await t.flow.fill(jobId, 'carinfo', CAR);
+  assert.strictEqual(during, 'hold');
+  assert.strictEqual(t.W.world.carinfo.rows.length, 0);
+});
+
+test('끝난 전산은 봉인 — 같은 창에서 다시 [저장]을 눌러도 막히고, 허락도 받지 않는다', async () => {
+  const t = setup();
+  const { jobId } = await t.flow.start(CAR);
+  await doSite(t, jobId, 'carinfo');
+  assert.strictEqual(t.W.human.clickSave('carinfo'), 'hold', '끝난 뒤 저장 클릭 막힘');
+  assert.strictEqual(t.W.world.carinfo.rows.length, 1);
+  assert.strictEqual(t.W.guards.carinfo.unlock(), false, '봉인된 통제기는 허락을 받지 않음');
+});
+
+test('흐름 중에는 그 전산의 기존 단추(개별 전송 등)를 막는다 — 통제기 우회 방지', async () => {
+  const t = setup();
+  assert.strictEqual(t.flow.legacyBlocked('carinfo'), null, '작업이 없으면 기존 단추 그대로');
+  const { jobId } = await t.flow.start(CAR);
+  await t.flow.fill(jobId, 'carinfo', CAR);
+  assert.match(t.flow.legacyBlocked('carinfo'), /등록 흐름 작업/);
+  assert.strictEqual(t.flow.legacyBlocked('carmodoo'), null, '아직 안 쓰는 전산은 막지 않음');
+});
+
+test('카모두 저장 확인: 같은 차의 예전 점검·지운 줄을 «이번 저장»으로 잡지 않는다 (첫 줄 고르기 금지)', async () => {
+  const t = setup({ world: { carmodooRows: [
+    { checkNo: 'T-0010', carNo: CAR.carNo },                         // 작년 점검
+    { checkNo: 'T-0020', carNo: CAR.carNo, status: '삭제' },          // 지운 재등록
+  ] } });
+  const { jobId } = await t.flow.start(CAR);
+  await doSite(t, jobId, 'carinfo');
+  const r = await doSite(t, jobId, 'carmodoo');
+  assert.deepStrictEqual(r, { ok: true, checkNo: 'T-0101' });
+});
+
+test('카모두에 이번 저장 줄이 둘이면(두 번 저장 의심) 멈춘다', async () => {
+  const t = setup();
+  const { jobId } = await t.flow.start(CAR);
+  await doSite(t, jobId, 'carinfo');
+  t.W.world.faults.carmodoo = 'doubleRow';
+  const r = await doSite(t, jobId, 'carmodoo');
+  assert.strictEqual(r.stopped, true);
+  assert.match(r.reason, /2개/);
+});
+
+test('저장 단계에서 팝업이 열리면 자동으로 끝내지 않고 사람 확인 → 사람 표시가 있어야 이어 간다', async () => {
+  const t = setup();
+  t.W.world.faults.carinfo = 'popupSave';
+  const { jobId } = await t.flow.start(CAR);
+  const r = await doSite(t, jobId, 'carinfo');
+  assert.strictEqual(r.manual, true);
+  assert.strictEqual(t.jobLog.get(jobId).sites.carinfo.state, 'uncertain');
+  const c1 = await t.flow.confirmFromList(jobId, 'carinfo');
+  assert.strictEqual(c1.ok, false);
+  assert.strictEqual(c1.manual, true);
+  const c2 = await t.flow.confirmFromList(jobId, 'carinfo', { manualChecked: '대표님' });
+  assert.strictEqual(c2.ok, true);
+});
+
+test('값 넣기 중(딜러 고르기 등) 열린 팝업은 «저장 단계 팝업»으로 세지 않는다', () => {
+  const { createSaveGuard } = require('../src/core/save-guard');
+  const g = createSaveGuard({ siteHosts: ['x.mock'] });
+  g.registerWindow('main', 'main'); g.attachWindow('main');
+  g.registerWindow('p1', 'popup'); g.attachWindow('p1');             // 값 넣기 중 팝업
+  assert.strictEqual(g.outcome().result, 'notSent');
+  g.unlock();
+  g.registerWindow('p2', 'popup'); g.attachWindow('p2');             // 저장 단계 팝업
+  assert.strictEqual(g.outcome().result, 'manualCheck');
+});
+
+test('연결 모듈이 없는 전산(엔트리)은 «미구현»으로 멈추고, 작업이 끝난 것처럼 닫히지 않는다', async () => {
+  const t = setup();
+  t.W.adapters.entry.implemented = false;
+  const { jobId } = await t.flow.start(CAR);
+  assert.strictEqual((await t.flow.entryPrecheck(jobId)).notImplemented, true);
+  await doSite(t, jobId, 'carinfo');
+  await doSite(t, jobId, 'carmodoo');
+  const f = await t.flow.fill(jobId, 'entry', CAR);
+  assert.strictEqual(f.notImplemented, true);
+  assert.match(f.reason, /끝난 것으로 표시하지 않습니다/);
+  const fin = t.flow.finish(jobId);
+  assert.strictEqual(fin.ok, false);
+  assert.deepStrictEqual(fin.notImplemented, ['entry']);
+  assert.strictEqual(t.jobLog.get(jobId).closed, false);
+});

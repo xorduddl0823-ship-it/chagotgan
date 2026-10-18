@@ -64,15 +64,20 @@ function createElectronAdapters(o) {
       async armGuard() {
         if (ctl[site]) { try { await ctl[site].hold.detach(); } catch {} }
         const cfg = C[site];
+        const win = o.getWindow(site);
+        if (!win) throw new Error(site + ' 창이 없습니다.');
         const guard = createSaveGuard({ siteHosts: cfg.hosts, savePatterns: cfg.savePatterns, saveGetPatterns: cfg.saveGetPatterns,
-                                        readAllow: cfg.readAllow, confirmed: cfg.confirmed });
-        const hold = attachSaveHold(o.getWindow(site), guard, { name: site });
+                                        readAllow: cfg.readAllow, confirmed: cfg.confirmed, popupAuto: cfg.popupAuto === true });
+        const hold = attachSaveHold(win, guard, { name: site });
         ctl[site] = { guard, hold };
-        await hold.ready;                                 // 붙이기가 끝난 뒤에 돌려준다(그 전 저장 요청이 새지 않게)
+        const ok = await hold.ready;                      // 붙이기가 끝난 뒤에 돌려준다(그 전 저장 요청이 새지 않게)
+        if (!ok) throw new Error('개발자 연결(저장 붙잡기)을 켜지 못했습니다.');
       },
-      async unlockSave() { ctl[site].guard.unlock(); },
+      async unlockSave() { return ctl[site] ? ctl[site].guard.unlock() : false; },
+      async seal() { if (ctl[site]) ctl[site].guard.seal(); },
+      async readList(car) { return rowsOf(site, car); },
       async saveOutcome() { return ctl[site] ? ctl[site].guard.outcome() : { result: 'unknownPath', reasons: ['저장 통제기가 걸려 있지 않음'] }; },
-      async coverage() { return ctl[site] ? ctl[site].guard.coverage() : { unattachedWindows: ['(통제기 없음)'] }; },
+      async coverage() { return ctl[site] ? ctl[site].guard.coverage() : { windows: 0, unattachedWindows: ['(통제기 없음)'] }; },
       async release() { if (ctl[site]) { await ctl[site].hold.detach(); delete ctl[site]; } },
     };
   }
@@ -102,7 +107,6 @@ function createElectronAdapters(o) {
         'var n=document.querySelector(' + JSON.stringify(cfg.numberField) + ');if(!a||!n)return null;return {autoAssignOn:!!a.checked,numberValue:n.value};})()');
       return v || { autoAssignOn: undefined, numberValue: '' };
     },
-    async readSaved(car) { const r = await rowsOf('carmodoo', car); return r[0] ? { checkNo: r[0].checkNo } : null; },
   });
 
   const entry = Object.assign(common('entry'), {
@@ -129,8 +133,9 @@ function createElectronAdapters(o) {
       const w = o.getWindow('entry');
       return { entryNo: await inAnyFrame(w, textExpr(L.entryNo)), carNo: await inAnyFrame(w, textExpr(L.carNo)), vin: await inAnyFrame(w, textExpr(L.vin)) };
     },
-    async readSaved(car) { const r = await rowsOf('entry', car); return r[0] ? { checkNo: r[0].checkNo } : null; },
   });
+  //  실제 엔트리 화면 설정이 없으면 «미구현» — 흐름이 끝난 것처럼 보이지 않게(검수 4차)
+  entry.implemented = !!(C.entry && C.entry.loggedIn && C.entry.nextNumber && C.entry.loadButton && C.entry.list && C.entry.list.cols);
 
   return { carinfo, carmodoo, entry };
 }

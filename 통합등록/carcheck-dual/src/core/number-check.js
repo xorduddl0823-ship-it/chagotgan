@@ -110,6 +110,30 @@ function findNewNumber(rows, car, oldNos, since, opts) {
   return { ok: true, checkNo: no, ...(v.partial ? { partial: true, confirmedBy: v.confirmedBy } : {}) };
 }
 
+/**
+ * 카모두·엔트리: 저장 뒤 목록에서 «이번 작업에서 새로 저장된 우리 차 줄»을 찾는다 (검수 4차 — 첫 줄 고르기 금지)
+ *  · 저장 전에 찍어 둔 이 전산의 «이 차 예전 번호들»(oldNos)에 없는 줄만
+ *  · 지운·취소된 줄 제외 · 차량번호 같음 · 목록에 차대번호가 있으면 17자리 전체 같아야(일부만이면 확인 필요)
+ *  · 정확히 한 줄일 때만 ok. 없거나 여럿이면 멈춤
+ */
+function findNewSavedRow(rows, car, oldNos, label) {
+  const name = label || '목록';
+  if (!(oldNos instanceof Set)) return { ok: false, reason: name + ': 저장 전 목록을 찍어 두지 않아 이번 저장 줄을 구분할 수 없습니다.' };
+  const fresh = (rows || []).filter((r) => normCar(r.carNo) === normCar(car.carNo) && normNo(r.checkNo) &&
+                                         !oldNos.has(normNo(r.checkNo)) && !isDeleted(r));
+  if (!fresh.length) return { ok: false, reason: name + '에서 이번에 저장된 이 차 줄을 찾지 못했습니다.' };
+  if (fresh.length > 1) {
+    return { ok: false, reason: name + '에 이번에 저장된 것으로 보이는 이 차 줄이 ' + fresh.length + '개입니다(' +
+             fresh.map((r) => normNo(r.checkNo)).join(', ') + '). 두 번 저장됐을 수 있어 멈춥니다.', multiple: true };
+  }
+  const row = fresh[0];
+  if (normVin(row.vin)) {
+    const v = vinVerdict(vinMatchLevel(row.vin, car.vin), name + ' 줄의');
+    if (!v.ok) return { ...v, checkNo: normNo(row.checkNo) };
+  }
+  return { ok: true, checkNo: normNo(row.checkNo) };
+}
+
 /** 두 번호가 같은가 (빈 값이면 통과 아님) */
 function sameNumber(label, expected, actual) {
   const a = normNo(expected);
@@ -161,7 +185,7 @@ function previewNext(lastCarinfoNo, entryNextNo) {
 
 module.exports = {
   normCar, normVin, normNo, vinMatchLevel, vinMatches, isOurCar, isDeleted,
-  snapshotOldNumbers, findNewNumber,
+  snapshotOldNumbers, findNewNumber, findNewSavedRow,
   checkCarmodooBeforeSave, checkCarmodooAfterSave, checkEntryBeforeSave,
   previewNext,
 };

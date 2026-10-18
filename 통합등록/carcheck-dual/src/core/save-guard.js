@@ -19,6 +19,11 @@
  *    reached      나간 요청이 2xx·3xx 응답을 받음 → 목록에서 저장 확인하러 감
  *    uncertain    응답 모름(끊김·창 닫힘·시간 초과·응답 0) 또는 서버 오류(4xx·5xx) → 다시 저장 금지, 목록 확인
  *    unknownPath  알 수 없는 저장 경로(다른 주소 쓰기 요청 · 통제기가 안 붙은 창) → 중단, 사람이 확인
+ *    manualCheck  팝업 창이 생김 — 팝업의 «첫 요청 전»에 통제기가 붙는다고 보장할 수 없으므로(검수 4차)
+ *                 자동으로 끝내지 않고 사람이 목록에서 확인. (popupAuto:true 는 실제 화면에서 확인된 전산만)
+ *
+ *  봉인(seal): 그 전산 저장이 끝난 뒤 — 같은 창에서 더는 저장이 나가지 않게 모든 쓰기 요청을 막고 허락도 받지 않는다.
+ *              다음 차 작업이 새 통제기를 걸 때까지 유지(검수 4차: 끝난 뒤 중복 저장·기존 단추 우회 막기).
  *
  *  ⚠ 실제 전산의 요청 구조(저장 주소·조회 주소·쓰는 도메인)는 아직 모른다 → coverage() 로 통제 범위를 드러내고,
  *     confirmed:false 이면 흐름(register-flow)은 이 결과만 믿고 넘어가지 않는다.
@@ -28,7 +33,7 @@ function compile(list) {
   return (list || []).map((p) => (p instanceof RegExp ? p : new RegExp(String(p), 'i')));
 }
 
-function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, readAllow, confirmed } = {}) {
+function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, readAllow, confirmed, popupAuto } = {}) {
   const hosts = new Set([].concat(siteHosts || [], siteHost || []).map((h) => String(h).toLowerCase()).filter(Boolean));
   const saveRe = compile(savePatterns);
   const saveGetRe = compile(saveGetPatterns);
@@ -41,6 +46,9 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
   const unknownHosts = new Set();   // 다른 주소로 가려던 쓰기 요청
   const windows = new Map();        // 창 id → { attached }
   let windowClosed = false;
+  let sealed = false;
+  let popupSeen = 0;            // 저장 허락 뒤(저장 단계)에 열린 팝업 수
+  let savePhase = false;        // 한 번이라도 허락했으면 저장 단계 — 값 넣기 중 팝업(딜러 고르기 등)은 세지 않음
   const log = [];
 
   function note(t) { if (log.length < 50) log.push(t); }
@@ -62,12 +70,22 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
 
   return {
     /** 창(본 창·팝업)이 생기면 등록 — 붙이기(attachWindow) 전까지는 «통제 밖 창» */
-    registerWindow(id) { if (!windows.has(id)) windows.set(id, { attached: false }); },
+    registerWindow(id, kind) {
+      if (!windows.has(id)) windows.set(id, { attached: false });
+      if (kind === 'popup' && savePhase) popupSeen++;
+    },
     attachWindow(id) { windows.set(id, { attached: true }); },
     detachWindow(id) { windows.delete(id); },
 
     /** [저장해도 돼요] (job-log.beginSubmit 이 ok 일 때만) — 저장 요청 «하나»만 허락 */
-    unlock() { unlocked = true; note('허락'); },
+    unlock() {
+      if (sealed) { note('봉인 — 허락 거절'); return false; }
+      unlocked = true; savePhase = true; note('허락'); return true;
+    },
+
+    /** 봉인 — 이 창에서 더는 저장이 나가지 않게(끝난 뒤) */
+    seal() { sealed = true; unlocked = false; note('봉인'); },
+    get sealed() { return sealed; },
 
     /**
      * 요청이 나가려 할 때 — 'pass'(내보냄) | 'hold'(붙잡음) | 'ignore'(저장과 무관)
@@ -83,6 +101,7 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
         note('알 수 없는 저장 경로 막음 ' + h);
         return 'hold';
       }
+      if (sealed) { blocked++; note('봉인 — 막음 ' + (req.kind || '')); return 'hold'; }
       if (windowClosed) { blocked++; note('창 닫힌 뒤 요청 막음'); return 'hold'; }
       if (!unlocked) { blocked++; note('잠김 — 막음 ' + (req.kind || '')); return 'hold'; }
       unlocked = false;                                   // 한 번 허락에 한 요청
@@ -120,6 +139,9 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
         windows: reg.length,
         unattachedWindows: reg.filter(([, w]) => !w.attached).map(([id]) => id),
         unknownHosts: [...unknownHosts],
+        popups: popupSeen,
+        popupAuto: !!popupAuto,
+        sealed,
       };
     },
 
@@ -129,6 +151,7 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
       if (cov.unknownHosts.length) reasons.push('다른 주소로 가는 쓰기 요청: ' + cov.unknownHosts.join(', '));
       if (cov.unattachedWindows.length) reasons.push('통제기가 붙지 않은 창 ' + cov.unattachedWindows.length + '개');
       if (reasons.length) return { result: 'unknownPath', sent, blocked, reasons };
+      if (popupSeen && !popupAuto) return { result: 'manualCheck', sent, blocked, reasons: ['팝업 창이 열림 — 첫 요청 전 통제를 보장할 수 없어 사람이 목록에서 확인'] };
       if (sent === 0) return { result: 'notSent', sent, blocked };
       const vals = [...pending.values()];
       if (vals.some((v) => v === 'waiting')) return { result: 'waiting', sent, blocked };
