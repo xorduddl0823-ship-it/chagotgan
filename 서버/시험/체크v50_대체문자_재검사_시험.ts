@@ -58,7 +58,7 @@ const m = sent[0] || {};
 check("자동: 건너뛰지 않고 딜러에게 한 통", r.skipped === undefined && r.n === 1 && sent.length === 1 && m.to === "01033334444", [r, sent]);
 check("알림톡 아니고 문자", !m.kakaoOptions, m);
 check("문구 = ⑦ 확정본 «[차곳간] 업체명 성능점검 만료 N대 · 가장 빠른 만료 … · 문의 …»",
-  /^\[차곳간\] 시험검사소 성능점검 만료 2대 · 가장 빠른 만료 .+ · 문의 031-000-0000$/.test(String(m.text)), m.text);
+  /^\[차곳간\] 시험검사소 성능점검 만료 2대 · 가장 빠른 만료 .+ · 문의 031-000-0000\n차량 목록 https:\/\/check\.cgg\.co\.kr\/r\/\?c=[0-9a-z]{24}$/.test(String(m.text)), m.text);   // + v49.2 목록 주소
 check("보낸 기록: 문자 대체로 남음(tpl check_remind_sms)", store.cgg_sendlog.some((x: any) => x.tpl === "check_remind_sms"), store.cgg_sendlog);
 sent.length = 0;
 r = await call("remindCron", ["CRONKEY-0123456789"]);

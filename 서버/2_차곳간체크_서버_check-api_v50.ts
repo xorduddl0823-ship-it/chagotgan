@@ -13,6 +13,7 @@
 //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
 //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
+//  v50 은 v49.2(재검사 대체 문자에 «차량 목록 https://check.cgg.co.kr/r/?c=열쇠») 를 품음.
 //  v50 (2026-10-18): 총괄 «대체 문자 전부» — 재검사 대체 문구를 알림톡/12 ⑦ 확정본으로(«만료» · 87바이트 단문) ·
 //    재검사 «매일 자동»을 알림톡 승인 전에도 켜고 돌림(그동안은 대체 문구 문자 · 문자 비용 늚). 다른 알림은 이미 늘 문자 대체. SQL 없음.
 //  v49.1 (2026-10-18): 핵심 흐름 다시 검토(대표님 «배달·청구서·입금 오류 나면 안 됨») — 팝빌 계좌조회(bankPull)가
@@ -1184,11 +1185,13 @@ async function billSend(ctx: Ctx, a0: any, a1?: any, a2?: any) {
    v33. 재검사 알림 — 만료(검사일 + 유효일수) 30·15·7·3일 전 가운데 검사소가 고른 날
    · 딜러 한 명에 한 통 (차 여러 대 묶음) · 같은 차·같은 단계는 한 번만 (check_remind_log 고유)
    · 템플릿 «check_remind» 승인 전에는 문자 · v50: 매일 자동도 승인 전에 켤 수 있음(그동안은 대체 문구 문자)
-   · 보기 주소 https://check.cgg.co.kr/r/<보기코드> — 딜러별 30일 · 그 검사소+딜러 차만
+   · 보기 주소 https://check.cgg.co.kr/r/?c=<보기코드> (v49.2) — 딜러별 30일 · 그 검사소+딜러 차만
    ============================================================ */
 const REMIND_STEPS = [30, 15, 7, 3];
 const REMIND_DAY_MAX = () => Number(env("CHECK_REMIND_DAY_MAX", "500"));
-const REMIND_SMS = "[차곳간] #{업체명} 성능점검 만료 #{대수}대 · 가장 빠른 만료 #{빠른만료일} · 문의 #{업체전화}";   // v50: 알림톡/12 ⑦ 확정 문구(87바이트 · 단문)
+const REMIND_URL = "https://check.cgg.co.kr/r/?c=";   // v49.2: 체크 사이트에 _redirects 를 못 둬서 «/r/열쇠» 대신 «/r/?c=열쇠» (알림톡 버튼과 같은 모양)
+const REMIND_SMS = "[차곳간] #{업체명} 성능점검 만료 #{대수}대 · 가장 빠른 만료 #{빠른만료일} · 문의 #{업체전화}\n" +
+  "차량 목록 " + REMIND_URL + "#{보기코드}";   // v50: ⑦ 확정 문구 + v49.2 목록 주소
 async function remindRuleOf(officeId: string) {
   const { data } = await db.from("check_remind_rule").select("steps,auto,past").eq("office_id", officeId).maybeSingle();
   const steps = (Array.isArray(data?.steps) ? data.steps : [30, 15, 7]).map(N).filter((x: number) => REMIND_STEPS.includes(x));
