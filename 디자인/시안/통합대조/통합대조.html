@@ -1,0 +1,117 @@
+<meta charset="utf-8">
+<title>워시 · 체크 통합 대조표</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 판: 위에 «추천 그대로 한 번에 정하기», 화면마다 같은 크기 사진 두 장 나란히 → 아래 줄마다 워시 / 체크 / 둘 합침 고르기 */
+:root{
+  --bg:#EEF2F7; --ink:#0B2545; --muted:#5B6B80; --card:#FFFFFF; --line:#D9E1EC; --accent:#1668C4; --accent-ink:#FFFFFF;
+  --w:#1668C4; --w-bg:#E6F0FB; --c:#1E9E5A; --c-bg:#E7F6EE; --m:#7A4FC2; --m-bg:#F1EAFB; --rec:#B26B00; --rec-bg:#FFF4E0;
+  --f:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141c;--ink:#e8eef6;--muted:#9fb0c4;--card:#161e28;--line:#2a3646;--accent:#5FA8E8;--accent-ink:#0b1220;--w:#7fb8f0;--w-bg:#16283d;--c:#5fd39a;--c-bg:#123326;--m:#c3a3f5;--m-bg:#2a1f3d;--rec:#f0b45a;--rec-bg:#3a2a12;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141c;--ink:#e8eef6;--muted:#9fb0c4;--card:#161e28;--line:#2a3646;--accent:#5FA8E8;--accent-ink:#0b1220;--w:#7fb8f0;--w-bg:#16283d;--c:#5fd39a;--c-bg:#123326;--m:#c3a3f5;--m-bg:#2a1f3d;--rec:#f0b45a;--rec-bg:#3a2a12;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.55;word-break:keep-all}
+.wrap{max-width:1360px;margin:0 auto;padding-block:24px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-size:26px;font-weight:900;margin:0 0 6px;text-wrap:balance}
+.lead{margin:0;color:var(--muted);max-width:76ch}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin:16px 0 8px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;box-shadow:0 8px 20px -14px #0B254555}
+.bar .count{font-size:14px;font-variant-numeric:tabular-nums}
+.bar .count b{font-size:16px}
+.bar .sp{flex:1}
+.bar .st{font-size:13px;color:var(--muted)}
+.btn{height:42px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:focus-visible,.seg button:focus-visible,.jump a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:13px;color:var(--muted);margin:6px 0 0}
+.k{display:inline-block;font-size:11.5px;font-weight:800;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.kw{background:var(--w-bg);color:var(--w)} .kc{background:var(--c-bg);color:var(--c)} .km{background:var(--m-bg);color:var(--m)} .kr{background:var(--rec-bg);color:var(--rec)}
+.jump{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.jump a{display:inline-flex;align-items:center;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;font-size:13px;font-weight:700}
+section{margin-top:28px;border-top:2px solid var(--line);padding-top:16px}
+h2{font-size:21px;font-weight:900;margin:0 0 10px}
+h2 small{font-size:13px;font-weight:700;color:var(--muted);margin-left:8px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+figure{margin:0;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+figcaption{padding:7px 12px;font-size:12.5px;font-weight:800;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.shot{height:360px;overflow:auto;background:var(--bg)}
+.shot img{display:block;width:100%;height:auto}
+.none{height:360px;display:grid;place-items:center;color:var(--muted);font-size:14px;padding:16px;text-align:center}
+.tw{overflow-x:auto;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:980px}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:800}
+tr:last-child td{border-bottom:0}
+td.it{font-weight:800;width:130px}
+td.why{width:240px;font-size:13px}
+td.why .k{margin-bottom:4px}
+td.pick{width:230px}
+tr.changed td.pick{background:var(--rec-bg)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:700;padding:7px 10px;cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"][data-v="w"]{background:var(--w);color:#fff}
+.seg button[aria-pressed="true"][data-v="c"]{background:var(--c);color:#fff}
+.seg button[aria-pressed="true"][data-v="m"]{background:var(--m);color:#fff}
+.note{font-size:12px;color:var(--muted);margin-top:4px}
+.end{margin-top:32px;padding:14px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:14px}
+@media (max-width:760px){ .pair{grid-template-columns:1fr} .shot,.none{height:260px} }
+@media (prefers-reduced-motion:reduce){ *{scroll-behavior:auto} }
+</style>
+
+<div class="wrap">
+  <h1>워시 · 체크 통합 대조표</h1>
+  <p class="lead">체크 방 대조표(체크/대조)와 같은 내용이에요. 한쪽으로 덮어쓰지 않고, 항목마다 더 좋은 쪽을 골라 하나로 합쳐요. 화면마다 워시 v136 · 체크 v55를 같은 크기(가로 1280)로 찍어 나란히 두었어요(미리보기의 지어낸 자료예요). 줄마다 <b>추천</b>이 먼저 골라져 있고, 바꾸고 싶은 줄만 눌러 바꾸시면 돼요. 고른 것은 바로 저장돼요.</p>
+  <div class="legend"><span><span class="k kw">워시 쪽</span> 워시 모양으로</span><span><span class="k kc">체크 쪽</span> 체크 모양으로</span><span><span class="k km">둘 합침</span> 둘의 좋은 점을 함께</span><span><span class="k kr">추천</span> 디자인 방 추천</span></div>
+  <div class="bar" role="region" aria-label="고르기 현황">
+    <span class="count">모두 <b id="nAll">0</b>줄 · 추천에서 바꾼 줄 <b id="nChg">0</b></span>
+    <button type="button" class="btn pri" id="btnAll">추천 그대로 한 번에 정하기</button>
+    <span class="sp"></span>
+    <span class="st" id="st" role="status">불러오는 중…</span>
+  </div>
+  <nav class="jump" id="jump" aria-label="화면 바로 가기"></nav>
+  <div id="list"></div>
+  <p class="end"><b>정한 뒤</b> — 고른 결과를 디자인 방이 공통 부품으로 만들고, 체크 방 · 워시 방이 같은 날 반영해요. 화면 파일은 이 시안에서 바꾸지 않았어요.</p>
+</div>
+
+<script>
+/* 줄 자료: id · 항목 · 워시 · 체크 · 추천(w 워시 쪽 / c 체크 쪽 / m 둘 합침) · 이유 한 줄 */
+var S=[{"id": "all", "t": "모든 화면 공통", "w": null, "c": null, "rows": [["g-kpi", "숫자 칸 모양", "이름 위 · 단위 붙인 큰 숫자 한 크기 · 점 없음 (작은 그래프는 홈에만)", "이름 앞 파란 점 · 숫자 크고 단위 작게", "w", "두 제품이 같은 숫자 칸 부품을 써요. 대표님이 짚은 곳이에요."], ["g-kpi-color", "숫자 칸 색", "뜻 색: 입금 초록 · 받을 금액 주황 · 0은 회색", "거의 파랑 · «입금 대기»만 빨강", "w", "규칙에서 빨강은 «막힘», 주황은 «확인 필요»예요. 입금 대기는 주황이 맞아요."], ["g-width", "본문 폭", "넓은 PC에서도 화면을 넉넉히 씀", "넓은 PC에서 본문이 가운데로 좁게 몰림", "w", "대표님 화면(넓은 PC)에서 표가 잘리지 않아요."], ["g-title", "제목 위 작은 글 · 제목", "«메뉴 › 칸 · 10월 18일 일요일» + 제목", "«메뉴 › 칸»만 + 제목 · 설명 한 줄", "m", "워시처럼 오늘 날짜를 붙이고, 체크의 설명 한 줄은 남겨요."], ["g-table", "표 모양", "위에 넓은 검색 줄 · «20개씩» · 빨간 «선택한 줄 지우기» · 정렬 표시 · 아래 «처음 · 이전 · 1/1 · 다음 · 맨뒤» · 할 일 단추는 표 아래 줄", "표 위 안쪽 탭 · 작은 검색 · 단추가 표 위 · «10개씩 보기» · 정렬 없음", "m", "워시 표 모양으로 하고, 체크의 상태 거르기는 검색 줄 옆 칩으로 남겨요."], ["g-band", "할 일 띠 (할 일 없을 때)", "초록 «지금 처리할 일이 없어요»", "화면마다 다른 글", "w", "같은 상황엔 같은 글이 보여야 헷갈리지 않아요."], ["g-month", "달 고르기", "[2026년 10월] 달력 단추", "«2026년 10월 ▾» 목록 상자", "w", "규칙상 목록 상자 대신 달력으로 골라요."], ["g-header", "머리말", "«오픈 베타» 띠가 맨 위 · 업체명 아래 «사업자 번호 · 대표»", "«미리보기» 띠가 맨 위 · 업체명 아래 «검사소 DEMO · 대표»(사업자번호 빠짐)", "w", "띠 차례와 업체명 아래 줄(사업자번호 · 대표)을 워시처럼 같게."], ["g-help", "이 화면 사용법", "모든 화면 맨 아래 접힘 + «자세한 도움말 보기»", "일부 화면만", "w", "어느 화면에서든 같은 자리에서 도움을 찾을 수 있어요."], ["g-trial", "맨 위 알림 띠", "«샘플 자료 지우기» 띠", "«미리 써 보기» 체험 띠", "m", "둘 다 필요해요. 체험할 땐 체험 띠, 샘플이 남았을 땐 지우기 띠."], ["g-setorder", "설정 안쪽 칸 차례", "우리 사업장 · QR 코드 · 백업 · 기기 · 출고 지연 기준 · 거래처 … (전용 칸이 중간에)", "우리 사업장 · 백업 · 기기 · 거래처 … · 체크 전용 맨 끝", "m", "공통 칸 차례는 같게, 워시의 QR · 출고 지연 기준은 맨 끝 «워시 전용»으로 옮겨요(공통 부품 1.11)."], ["g-setmenu", "설정 목록 모양", "메뉴 모양(가로 · 세로)을 따라감", "같음(1.11)", "m", "10/18 결정대로 이미 맞췄어요. 가로 메뉴면 설정 목록도 가로, 세로면 세로."]]}, {"id": "home", "t": "홈", "w": "wash|홈|", "c": "check|홈|", "rows": [["home-quick", "자주 쓰는 기능", "바로가기 4칸 (고를 수 있음)", "없음", "w", "자주 하는 일을 한 번에 눌러요. 체크에도 붙여요."], ["home-todo", "오늘 할 일", "3장 + 위 오른쪽 «할 일 9건 모두 보기 ›»", "3장 + 아래 넓은 줄 «할 일 4건 모두 보기»", "w", "두 제품의 «모두 보기» 자리가 같아야 헷갈리지 않아요."], ["home-kpi", "숫자 칸 4개", "오늘 입고차량 · 작업 중 · 오늘 출고차량 · 이번 달 청구 금액", "이번 달 검사 건수 · 청구 합계 · 입금 · 입금 대기", "m", "모양은 같게(그래프 + 비교 줄), 숫자 이름은 제품 일에 맞게 따로."], ["home-cal", "일정 달력", "날마다 금액 + 입고 · 출고 수", "«33만»처럼 짧은 금액 + 갈래 막대", "w", "홈 뼈대는 워시 그대로(체크 방 대조표). 체크는 숫자 이름만 체크 일에 맞게."], ["home-right", "오른쪽 칸", "이번 달 입금(막대) · 이번 달 일감(막대 목록)", "이번 달 입금(막대) · 이번 달 일감(숫자 4줄)", "w", "막대 목록이 많고 적음을 바로 보여 줘요."], ["home-steps", "«이번 달 어디까지 왔나»", "없음", "4단계(자료 올리기 → 청구서 만들기 → 보내기 → 입금 확인)", "c", "체크 전용 칸으로 사용법 위에 남겨요."], ["home-late", "많이 밀린 곳 표", "없음 (오른쪽 칸만)", "청구처 · 잔액 · 상태 표", "c", "체크 전용 칸으로 남겨요. 단위는 딜러 한 명씩."], ["home-ins", "성능보증보험료 카드", "없음", "«성능보증보험료 — 준비 중» 카드", "c", "체크 전용 칸으로 남기되, 10/17 결정대로 «준비 중» 글 없이 실제로 되게 해요."]]}, {"id": "work", "t": "일감", "w": "wash|일감|", "c": null, "rows": [["only-work", "일감 탭", "입고 · 출고 내역", "없음", "w", "규칙상 둘째 공통 탭이에요. 체크엔 검사 차 목록으로 붙여요(대표님 확인)."]]}, {"id": "sales", "t": "매출", "w": "wash|매출|", "c": "check|매출|", "rows": [["sales-kpi", "숫자 칸", "들어온 차 · 매출 · 입금 · 받을 금액 · 지난해 대비", "검사 · 검사비 · 정비비 · 합계 · 지난해 대비", "m", "모양은 같고 이름만 제품 일에 맞게."], ["sales-table", "표", "워시 표 모양(월별 · 년별)", "체크 표 모양 + 나스 안내 띠", "m", "표는 워시 모양으로, 나스 안내 띠는 체크 전용으로 남겨요."], ["sales-help", "사용법 · 제목", "제목 없음 · 사용법 있음", "제목 + 설명 · 사용법 없음", "m", "체크의 제목 · 설명 + 워시의 사용법."]]}, {"id": "bill", "t": "월별 청구서", "w": "wash|월별 청구서|", "c": "check|월별 청구서|월별 청구서", "rows": [["bill-band", "할 일 띠", "«보낼 수 있는 청구서 5명 · 1,023,000원 [해결하러 가기]»", "«안 보낸 곳 4곳 · 입금 대기 5곳 [해결하러 가기]»", "w", "딜러 한 명씩 · 금액이 보여 무엇을 할지 분명해요."], ["bill-kpi", "숫자 칸", "청구처 · 총 청구액 · 받을 금액 · 보낸 건", "청구처 · 검사 건수 · 총 청구액 · 보낸 곳", "w", "«받을 금액»이 있어야 돈 흐름이 이어져요."], ["bill-table", "표 칸", "딜러(받는 분) · 소속 상사 · 대수 · 작업 내역 · 세금계산서 · 총금액 · 입금 기한 · 받을 금액 · 보낼 번호 · 발송", "청구처 · 보낼 번호 · 검사 건수 · 검사비 · 정비 건수 · 정비비 · 총금액 · 입금 대기 · 발송", "m", "워시 차례(딜러 한 명 = 한 줄) + 체크의 검사비 · 정비비 나눔은 체크 칸으로."], ["bill-tabs", "상태 거르기", "없음", "전체 · 열어봄 · 안 보냄 · 보냄", "m", "워시 표 모양으로 하고, 이 거르기는 검색 줄 옆 칩으로 남겨요(열어봤는지 알 수 있어 좋아요)."], ["bill-btns", "아래 단추", "미리보기 · 인쇄 / JPG로 받기 / 엑셀(요약 · 명세) / 보냄 표시 지우기", "미리보기 · 인쇄 / 그림으로 받기 / 엑셀 / 다른 청구처로 옮기기 / 보냄 표시 지우기", "m", "이름은 워시 쪽, 체크의 «다른 청구처로 옮기기»는 남겨요."], ["bill-send", "«2. 청구서 보내기» 상자", "왼쪽 목록 · 계좌 · 기한 · 오른쪽 알림톡 미리보기 · 문구 · 보내는 방식 바꾸기 · [내 번호로 시험 · 예약 발송 · N명에게 보내기]", "오른쪽 미리보기 · 아래 [내 번호로 시험 · 선택한 곳에 보내기 · 주소 새로 만들기] · «청구 내역 보기» 화면", "m", "워시 상자 모양 · 단추 이름(«N명에게 청구서 보내기» · «예약 발송»)으로, 체크의 «청구 내역 보기» 화면은 남겨요."]]}, {"id": "billgroup", "t": "월별 청구서 › 청구처 묶음", "w": null, "c": "check|월별 청구서|청구처 묶음", "rows": [["bill-group", "청구처 묶음", "없음", "안쪽 칸 «청구처 묶음»", "c", "기본은 딜러 한 명씩 청구(10/18 결정)이고, 묶음은 꼭 필요한 곳만 쓰는 예외예요. 체크에서 쓰던 기능이라 남겨요."]]}, {"id": "billtpl", "t": "월별 청구서 › 알림톡 템플릿", "w": null, "c": "check|월별 청구서|알림톡 템플릿", "rows": [["bill-tpl", "알림톡 문구", "설정 › 알림 안", "안쪽 칸 «알림톡 템플릿»", "w", "문구는 한곳(설정 › 알림)에 모아요."]]}, {"id": "money", "t": "입·출금 내역 › 입금 · 출금", "w": "wash|입·출금 내역|입금 · 출금", "c": "check|입·출금 내역|입금 · 출금", "rows": [["money-band", "할 일 띠", "«받을 금액 730,000원 · 차 8대 [받을 금액 보기]»", "«누가 보낸 돈인지 확인할 입금 3건 [해결하러 가기]»", "w", "10/18 결정(입·출금 = 워시 기준)대로 워시 띠. 확인할 입금은 숫자 칸 «확인 필요»를 누르면 걸러져요."], ["money-tools", "도구줄", "오늘 · 어제 · 최근 7일 · 이번 달 · 지난 달 · 기간 · 검색", "같음", "w", "이미 같아요."], ["money-table", "표 · 연결 상자", "표(통장 연결 뒤) · 주황 «통장을 먼저 연결해 주세요 ①②③» 상자", "체크 표(안쪽 탭) · 흰 연결 상자", "m", "워시 표 · 연결 상자 모양으로, 체크의 갈래 칸 · 일괄 단추는 덧붙여요."], ["money-import", "가져오기", "«입금 자동 확인 화면으로 가기» 안내만", "팝빌에서 가져오기 · 다시 맞추기 · 붙여넣기 · 은행 엑셀", "m", "체크 것은 «체크 전용» 접힘 상자로 화면 안에 남겨요. 통장 연결 설정은 설정 › 입금 자동 확인."]]}, {"id": "due", "t": "입·출금 내역 › 받을 금액", "w": "wash|입·출금 내역|받을 금액", "c": "check|입·출금 내역|받을 금액", "rows": [["due-band", "제목 · 숫자 칸", "제목 «입·출금 내역» · 위 숫자 칸 + «받을 금액» 상자 안 작은 4칸 · 받은 건 숨기기", "제목 «받을 금액» · 청구 달 고르기 · 큰 숫자 4칸 · 띠", "w", "10/18 결정대로 워시 모양. 같은 탭 안에서 모양이 바뀌지 않아요."], ["due-table", "표 칸", "딜러 · 상사 · 청구 기간 · 대수 · 받을 금액 · 줄마다 [입금 확인]", "딜러 · 청구 기간 · 상사 · 대수 · 받을 금액 · 할 일", "w", "줄마다 [입금 확인] 단추로 바로 처리돼요."]]}, {"id": "ins", "t": "입·출금 내역 › 보험료 맞춰 보기", "w": null, "c": "check|입·출금 내역|보험료 대조", "rows": [["ins-only", "보험료 맞춰 보기", "없음", "보험사 청구 엑셀 올리기 · 다시 맞추기", "c", "체크 전용 칸이에요. 맨 끝에 둬요."]]}, {"id": "tax", "t": "세금계산서", "w": "wash|세금계산서|", "c": "check|세금계산서|발행", "rows": [["tax-band", "할 일 띠", "«발급할 수 있는 1건 · 입금 전 4건은 입금 뒤 발급돼요 [해결하러 가기]» + 팝빌 안내 띠", "빨간 큰 띠 «팝빌 회원아이디나 사업자번호가 비어 있어요 [연결 · 팝빌로]»", "w", "무엇을 언제 발급할지 띠 하나로 알려 줘요."], ["tax-tools", "도구줄", "달 + 상사별 한 장에 묶기 · 작업 중 포함 · «계산서 없음» 빼기 · 부가세 별도", "달 + 모두 2026-10-31로 · 새로고침", "m", "워시의 묶기 고르기 + 체크의 작성일자 한꺼번에 바꾸기."], ["tax-kpi", "숫자 칸", "발급할 수 있는 곳 · 공급가액 · 세액 · 합계", "발급 대상 · 공급가액 · 세액 · 합계", "w", "«발급할 수 있는 곳»이 입금 완료만 센다는 뜻이 분명해요."], ["tax-table", "표 칸", "발행처 · 딜러 · 사업자등록번호 · 구분 · 대수 · 합계 · 공급가액 · 세액 · 입금 · 자동 발급 · 품목", "청구처 · 작성일자 · 공급받는자·사업자번호 · 합계 · 발급 상태 · 할 일(고치기 · 보기) + 전체/발급/입금 뒤 칸", "m", "워시 칸 + 체크의 작성일자 · 발급 상태 칸 · 줄마다 고치기."], ["tax-btns", "아래 단추", "홈택스 일괄발급 양식 내려받기 · 이 달 발행 완료로 표시 · 내역 CSV 받기 + 팝빌 준비 3단계", "홈택스 일괄발급 엑셀 받기 · 다른 양식 쓰기 · 팝빌로 발급", "m", "워시 단추 + 체크의 «팝빌로 발급»(발급 전 누구에게 · 몇 건 · 얼마 확인)."], ["tax-sent", "보낸 계산서", "보낸 때 · 받는 곳 · 합계 · 방식 · 결과 · 국세청 승인번호 · 안 된 이유 …", "보낸 계산서(칸 적음)", "w", "안 된 이유 · 승인번호까지 보여 확인이 쉬워요."], ["tax-fix", "잘못 냈을 때", "없음", "수정세금계산서 안내 · 고치기 · 직접 쓰기", "c", "체크 전용 접힘 상자로 그 자리에 남겨요."]]}, {"id": "ledger", "t": "세금계산서 › 달마다 장부", "w": null, "c": "check|세금계산서|달마다 장부", "rows": [["tax-ledger", "달마다 장부", "없음", "안쪽 칸 «달마다 장부»(옛 정산 기록)", "m", "10/18 결정대로 두 제품 공통 «달마다 장부»로(워시에도 붙여요)."]]}, {"id": "deliv", "t": "배달 › 기록", "w": "wash|배달|출고 기록", "c": "check|배달|배달 기록", "rows": [["deliv-name", "칸 이름", "«출고 기록»", "«배달 기록»", "c", "두 제품 모두 «배달 기록»(총괄 추천 · 체크 방 대조표). 10/18 «배달 = 워시 기준» 결정에서 이름만 예외라 대표님 확인이 필요해요."], ["deliv-kpi", "숫자 칸", "출고 · 목적지 · 알림 보냄 · 못 보냄", "배달 · 목적지 · 알림 보냄 · 못 보냄", "c", "칸 이름을 따라가요. 모양은 워시 숫자 칸."], ["deliv-table", "표 칸 · 단추", "딜러 · 상사 · 차량번호 · 차종 · 목적지 · 출고시각 · 출고자 · 입고한 사람 · 알림 · 연락처 · 사진 · 금액", "딜러 · 차량번호 · 연락처 · 상사 · 차명 · 목적지 · 도착 · 기사 · 번호판 · 사진 · 메모 · 알림 / 빈 차명 채우기 · 취소 표시", "m", "워시 표 · 단추 모양 + 체크 전용(빈 차명 채우기 · 취소 표시 · 도착 · 기사 · 번호판)을 덧붙여요."], ["deliv-reg", "딜러 등록 대기", "없음", "기사가 적은 이름 → 딜러로 등록하는 표", "c", "기사 앱이 있으면 꼭 필요해요. 쓸 일이 있을 때만 보여요."]]}, {"id": "dest", "t": "배달 › 목적지", "w": "wash|배달|목적지", "c": "check|배달|목적지", "rows": [["dest-ui", "목적지 화면", "목적지 추가 · 명함 사진으로 추가 · 엑셀 양식 · 엑셀로 한꺼번에 올리기", "목적지 · 분류 · 폰 버튼 · 쓰는 중 표", "m", "워시의 쉽게 넣는 단추 + 체크의 기사 폰 버튼 · 쓰는 중 칸."]]}, {"id": "msg", "t": "배달 › 문구 · 발송 설정", "w": "wash|배달|문구 · 발송 설정", "c": "check|배달|문구 · 발송 설정", "rows": [["msg-ui", "화면 모양", "«출고 알림 — 문구와 보내는 방식» 한 상자 · 내 번호로 시험", "보내는 방법 · 보낼 문구 · 기사 폰 주소 세 상자", "w", "한 상자에서 문구와 보내는 방식을 함께 보여요. 기사 폰 주소는 체크 칸으로."], ["msg-var", "문구 이름표", "{업체} {딜러} {차량번호} …", "[우리 회사] [딜러] [차량번호] …", "w", "워시 부품 그대로 써서 두 제품이 같아요."]]}, {"id": "driver", "t": "배달 › 기사 계정", "w": null, "c": "check|배달|기사 계정", "rows": [["deliv-driver", "기사 계정", "없음", "배달 안쪽 칸 «기사 계정»", "c", "기사 앱을 쓰는 체크 전용 칸이에요."]]}, {"id": "bydest", "t": "배달 › 목적지별 보기", "w": null, "c": "check|배달|목적지별 보기", "rows": [["deliv-bydest", "목적지별 보기", "없음", "안쪽 칸 «목적지별 보기»", "w", "대표님 지적대로 뺍니다. 목적지 화면에서 목적지를 누르면 그 목적지 기록만 보여요."]]}, {"id": "trash", "t": "휴지통", "w": null, "c": "check|배달|휴지통", "rows": [["deliv-trash", "휴지통", "설정 › 휴지통(모든 지운 것 · 되돌리기 · 비우기)", "배달 › 휴지통 · 마이페이지 › 지운 입금 따로", "w", "지운 것은 공통 휴지통 하나에(워시 모양). 서버 창구가 필요해요."]]}, {"id": "biz", "t": "설정 › 우리 사업장", "w": "wash|설정|우리 사업장", "c": "check|설정|우리 사업장", "rows": [["biz-ui", "우리 사업장", "공급자 정보 · 사업자등록증 사진으로 채우기 · 로고 · 문자에 넣을 연락처", "공급자 정보 · 계좌 · 보험료 부가세 · 쓰는 항목", "m", "대표님 지적: 워시의 사진 채우기 · 로고 · 문자 연락처 + 체크의 계좌 · 보험료 부가세 · 쓰는 항목."]]}, {"id": "bak", "t": "설정 › 백업 · 기기", "w": "wash|설정|백업 · 기기", "c": "check|설정|백업 · 기기", "rows": [["bak-ui", "백업 · 기기", "화면 배치 고르기 · 설정 백업 · 되돌리기 · 글씨 크기 · 접속 기기", "«준비 중» 안내", "w", "대표님 지적: 워시에 다 있어요. 체크도 그대로 붙여요."]]}, {"id": "party", "t": "설정 › 거래처", "w": "wash|설정|거래처", "c": "check|설정|거래처", "rows": [["party-title", "제목", "«거래처 관리»", "«거래처» + 설명 한 줄", "w", "대표님 지적: 제목은 «거래처 관리»."], ["party-roster", "딜러 명부 상자", "«딜러 명부 열기» 상자", "없음", "w", "명부를 한 번에 보고 고칠 수 있어요."], ["party-help", "이 화면 사용법", "있음", "없음", "w", "같은 자리 도움."], ["party-btns", "단추 자리", "딜러 / 상사 · ＋ 딜러 추가 · 명함 사진 · 지우기 · 엑셀 양식 · 엑셀 올리기", "같은 단추, 자리 조금 다름 + «모아 보기»", "w", "단추 자리는 워시 쪽으로 맞춰요."], ["party-col", "«청구서 받는 사람» 칸", "없음", "있음", "c", "대표님 지적: 누구에게 청구서를 보낼지 정하는 칸이에요."], ["party-band", "빠진 정보 띠", "없음", "«계산서 정보가 빠진 딜러 1명 [모아 보기]»", "c", "세금계산서 전에 빠진 것을 먼저 채워요."]]}, {"id": "staff", "t": "설정 › 직원 계정", "w": "wash|설정|직원 계정", "c": "check|설정|직원 계정", "rows": [["staff-ui", "직원 계정", "왼쪽 직원 목록(로그인 만들기 · 고치기 · 지우기) + 오른쪽 직원 추가", "한 표(이름 · 휴대폰 · 권한 · 비밀번호 · 마지막 로그인)", "w", "워시 모양으로 하고, 체크 권한 기능(멈추기 · 비밀번호 초기화)은 그대로 둬요. 로그인 방식은 서버 방과 확인해요."]]}, {"id": "price", "t": "설정 › 작업 항목 · 단가표", "w": "wash|설정|작업 항목 · 단가표", "c": "check|설정|작업 항목 · 단가표", "rows": [["price-ui", "단가표", "적용 기간별 단가표 · 차종 7종 한 번에 · 다른 항목에서 복사 · 작업 항목 관리", "적용 시작일별 구간 · 코드 · 엑셀 다운로드", "m", "워시의 쉬운 넣기 + 체크의 «코드» 칸 · 엑셀 받기."]]}, {"id": "bank", "t": "설정 › 입금 자동 확인", "w": "wash|설정|입금 자동 확인", "c": "check|설정|입금 자동 확인", "rows": [["bank-ui", "입금 자동 확인", "연결 상태 · 준비 순서(펼치기) · 자동으로 입금 완료 · 최근 입금", "팝빌 1~4단계 · 계좌 고르기 · 문자 자동수집(보조)", "m", "워시 차례(상태 → 준비 → 자동 처리) + 체크의 팝빌 단계 내용."]]}, {"id": "alarm", "t": "설정 › 알림", "w": "wash|설정|알림", "c": "check|설정|알림", "rows": [["alarm-ui", "알림", "문자 연동 · 알림톡 신청 · PC 알림창 · 소리 시험", "항목별 소리 · 발신번호", "m", "워시 모양 + 체크의 항목별 소리 · 보내는 번호(발신번호)."]]}, {"id": "outbox", "t": "설정 › 보낸 기록", "w": "wash|설정|보낸 기록", "c": null, "rows": [["set-outbox", "보낸 기록", "설정 › 보낸 기록(알림톡 · 문자 발송 기록)", "없음", "w", "공통 기능이라 체크에도 넣어요(서버 창구 필요)."]]}, {"id": "onlyw", "t": "워시 전용 — 자재", "w": "wash|자재|", "c": null, "rows": [["only-wash", "워시만", "자재 · QR 코드 · 출고 지연 기준", "—", "w", "광택 · 세차 일이라 워시 전용으로 남겨요."]]}, {"id": "qr", "t": "워시 전용 — 설정 › QR 코드 · 출고 지연 기준", "w": "wash|설정|QR 코드", "c": null, "rows": [["qr-only", "QR 코드 · 출고 지연 기준", "있음", "없음", "w", "워시 전용 — 체크엔 넣지 않아요. 설정 맨 끝 «워시 전용» 묶음."]]}, {"id": "onlyc", "t": "체크 전용 — 재검사 알림", "w": null, "c": "check|재검사 알림|", "rows": [["only-check", "체크만", "—", "재검사 알림 · 검사자 수수료 · 자료 올리기(카모두 · 나스 엑셀) · 보험료 맞춰 보기", "c", "검사소만 하는 일이라 체크 전용으로 남겨요. 메뉴 · 설정 맨 끝 한 묶음."]]}, {"id": "fee", "t": "체크 전용 — 설정 › 자료 올리기 · 검사자 수수료", "w": null, "c": "check|설정|자료 올리기", "rows": [["fee-only", "자료 올리기 · 검사자 수수료", "없음", "있음", "c", "체크 전용 — 설정 맨 끝 «체크 전용» 묶음."]]}];
+var SHOT={"wash|홈|":"w01","wash|일감|":"w02","wash|매출|":"w03","wash|월별 청구서|":"w04","wash|입·출금 내역|입금 · 출금":"w05","wash|입·출금 내역|받을 금액":"w06","wash|세금계산서|":"w07","wash|배달|출고 기록":"w08","wash|배달|목적지":"w09","wash|배달|문구 · 발송 설정":"w10","wash|자재|":"w11","wash|설정|우리 사업장":"w12","wash|설정|QR 코드":"w13","wash|설정|백업 · 기기":"w14","wash|설정|출고 지연 기준":"w15","wash|설정|거래처":"w16","wash|설정|직원 계정":"w17","wash|설정|작업 항목 · 단가표":"w18","wash|설정|입금 자동 확인":"w19","wash|설정|알림":"w20","wash|설정|보낸 기록":"w21",
+ "check|홈|":"c22","check|매출|":"c23","check|월별 청구서|월별 청구서":"c24","check|월별 청구서|청구처 묶음":"c25","check|월별 청구서|알림톡 템플릿":"c26","check|입·출금 내역|입금 · 출금":"c27","check|입·출금 내역|받을 금액":"c28","check|입·출금 내역|보험료 대조":"c29","check|세금계산서|발행":"c30","check|세금계산서|달마다 장부":"c31","check|배달|배달 기록":"c32","check|배달|목적지":"c33","check|배달|문구 · 발송 설정":"c34","check|배달|기사 계정":"c35","check|배달|목적지별 보기":"c36","check|배달|휴지통":"c37","check|재검사 알림|":"c38","check|설정|우리 사업장":"c39","check|설정|백업 · 기기":"c40","check|설정|거래처":"c41","check|설정|직원 계정":"c42","check|설정|작업 항목 · 단가표":"c43","check|설정|입금 자동 확인":"c44","check|설정|알림":"c45","check|설정|검사자 수수료":"c46","check|설정|자료 올리기":"c47"};
+var LBL={w:"워시 쪽",c:"체크 쪽",m:"둘 합침"}, REC={}, PICK={};
+S.forEach(function(s){ s.rows.forEach(function(r){ REC[r[0]]=r[4]; }); });
+function esc(t){ return String(t==null?"":t).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function fig(key,who){ var id=key&&SHOT[key]; return '<figure><figcaption><span class="k '+(who==="워시"?"kw":"kc")+'">'+who+'</span>'+(who==="워시"?"v136":"v55")+'</figcaption>'+(id?'<div class="shot"><img src="shots/'+id+'.jpg" alt="'+who+' 화면" loading="lazy"></div>':'<div class="none">'+who+'에는 이 화면이 없어요</div>')+'</figure>'; }
+function draw(){
+  document.getElementById("jump").innerHTML=S.map(function(s){ return '<a href="#'+s.id+'">'+esc(s.t)+'</a>'; }).join("");
+  document.getElementById("list").innerHTML=S.map(function(s){
+    return '<section id="'+s.id+'"><h2>'+esc(s.t)+'<small>'+s.rows.length+'줄</small></h2>'
+      +((s.w||s.c)?'<div class="pair">'+fig(s.w,"워시")+fig(s.c,"체크")+'</div>':'')
+      +'<div class="tw"><table><thead><tr><th>항목</th><th>워시</th><th>체크</th><th>추천 · 이유</th><th>고르기</th></tr></thead><tbody>'
+      +s.rows.map(function(r){ return '<tr data-row="'+r[0]+'"><td class="it">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td><td class="why"><span class="k kr">추천 · '+LBL[r[4]]+'</span><br>'+esc(r[5])+'</td><td class="pick"><div class="seg" role="group" aria-label="'+esc(r[1])+' 고르기">'
+        +["w","c","m"].map(function(v){ return '<button type="button" data-v="'+v+'" data-id="'+r[0]+'" aria-pressed="false">'+LBL[v]+'</button>'; }).join("")+'</div><div class="note"></div></td></tr>'; }).join("")+'</tbody></table></div></section>';
+  }).join("");
+  document.getElementById("nAll").textContent=Object.keys(REC).length;
+}
+function paint(){ var n=0;
+  Array.prototype.forEach.call(document.querySelectorAll("tr[data-row]"),function(tr){ var id=tr.getAttribute("data-row"), v=PICK[id]||REC[id];
+    if(v!==REC[id]) n++; tr.classList.toggle("changed",v!==REC[id]);
+    Array.prototype.forEach.call(tr.querySelectorAll(".seg button"),function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-v")===v)); });
+    tr.querySelector(".note").textContent=v!==REC[id]?"추천에서 바꿨어요":""; });
+  document.getElementById("nChg").textContent=n; }
+var ref=null, st=document.getElementById("st");
+function save(extra){ var body={picks:PICK,updatedAt:new Date().toISOString()}; if(extra) for(var k in extra) body[k]=extra[k];
+  if(!ref){ try{ localStorage.setItem("cgg_merge_picks",JSON.stringify(PICK)); }catch(e){} st.textContent="이 기기에만 저장했어요 (공유 저장이 안 되는 화면이에요)"; return; }
+  st.textContent="저장하는 중…";
+  ref.set(body).then(function(){ st.textContent="저장했어요 · "+new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"}); },function(){ st.textContent="저장이 안 됐어요. 고른 것은 이 화면에 남아 있어요"; }); }
+document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest(".seg button"); if(!b) return;
+  PICK[b.getAttribute("data-id")]=b.getAttribute("data-v"); paint(); save(); });
+document.getElementById("btnAll").onclick=function(){ PICK={}; Object.keys(REC).forEach(function(k){ PICK[k]=REC[k]; }); paint(); save({allRecommended:true}); };
+draw(); try{ var ls=JSON.parse(localStorage.getItem("cgg_merge_picks")||"null"); if(ls&&typeof ls==="object") PICK=ls; }catch(e){} paint();
+(async function(){ var db=null; try{ db=window.claude&&window.claude.use?await window.claude.use("db"):null; }catch(e){}
+  if(!db){ st.textContent="이 기기에만 저장돼요"; return; }
+  ref=db.doc("merge/picks"); st.textContent="고른 것은 바로 저장돼요";
+  ref.onSnapshot(function(snap){ if(snap.exists){ var d=snap.data()||{}; if(d.picks&&typeof d.picks==="object"){ var p={}; Object.keys(d.picks).forEach(function(k){ if(REC[k]&&/^[wcm]$/.test(d.picks[k])) p[k]=d.picks[k]; }); PICK=p; paint(); } } },function(){ st.textContent="저장된 것을 못 불러왔어요"; });
+})();
+</script>
