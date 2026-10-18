@@ -498,8 +498,17 @@ var CGG = (function(){
   }
   /* 홈 차례 (두 제품 같음): ② 화면 머리 → 알림 띠(있으면) → D 바로가기 → 할 일 3장 → 숫자 칸 4개 → [일정 달력 | 이번 달 입금 · 이번 달 일감] → 도움 카드
      o = {date, title(HTML — 숫자는 <em>, 사용자 글은 CGG.esc), desc, notice(HTML), quick:{feats,key,defs,onGo}, todo:{items,total,onPick,onAll}, kpis:[…], cal:{…}, money:{…}, rank:{…}, help} */
+  /* 1.12 (대표님 10/18) 홈 첫 줄은 두 제품이 같은 규칙 · 같은 문장 — o.sum:{unsent:안 보낸 청구서 딜러 수, due:받을 금액}
+     ① 안 보낸 청구서가 있으면 «청구서 보낼 딜러 N명이 있어요» ② 받을 돈이 남으면 «받을 금액 ○원이 남아 있어요» ③ 다 들어왔으면 «받을 금액이 모두 들어왔어요».
+     숫자는 기본 글자색(파란 강조 없음). o.title 은 sum 이 없을 때만 써요(옛 화면 호환). */
+  function homeTitle(s){ var n=Number(s.unsent), d=Number(s.due);
+    if(!isFinite(n)||!isFinite(d)) return null;   /* 숫자가 아니면 «다 들어왔어요»로 잘못 보이지 않게 — 옛 제목(o.title)을 써요 */
+    n=Math.max(0,Math.floor(n)); d=Math.max(0,Math.round(d));
+    if(n>0) return '청구서 보낼 딜러 <em>'+n+'명</em>이 있어요';
+    if(d>0) return '받을 금액 <em>'+won(d)+'원</em>이 남아 있어요';
+    return '받을 금액이 모두 들어왔어요'; }
   function home(el, o){ if(!el) return; o=o||{};
-    el.innerHTML=head({crumb:"홈", date:o.date, hi:true, title:o.title, desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
+    el.innerHTML=head({crumb:"홈", date:o.date, title:(o.sum&&homeTitle(o.sum))||o.title||"", desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
       +'<div data-h="quick"></div><div data-h="todo"></div><div data-h="kpi"></div>'
       +'<div class="cgg-homegrid"><div data-h="cal"></div><div class="cgg-homeside"><div data-h="money"></div><div data-h="rank"></div></div></div>'+(o.help?help(o.help):'');
     function q(k){ return el.querySelector('[data-h="'+k+'"]'); }
