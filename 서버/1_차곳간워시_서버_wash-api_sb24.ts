@@ -2228,17 +2228,23 @@ async function taxBillGate(shop: string, json: unknown): Promise<{ why: string; 
 /** sb24(보안 낮음 · 관리 방): 카드 환불하면 wash_payments 에 «refunded» 줄만 새로 생기고 원래 결제 줄은 «paid» 로 남음.
  *  결제 줄의 order_id 로 wash_pay_order 를 보고 status «canceled» 이거나 raw.cancel 이 있으면 환불된 것(부분 환불 포함).
  *  order_id 칸이 없거나 비면(수동 결제) 환불 기록 줄의 메모 «카드 환불 {주문}» 으로도 한 번 더 봄 */
-async function refundedSet(payIds: string[]): Promise<Set<string>> {
+async function refundedSet(payIds: string[], strict = false): Promise<Set<string>> {
   const out = new Set<string>();
   const ids = payIds.filter(Boolean);
   if (!ids.length) return out;
   const { data: ps, error } = await sb.from("wash_payments").select("id,order_id").in("id", ids);
-  if (error) return out;                                   // order_id 칸이 없으면(옛 표) 알 수 없음
+  if (error) {
+    /* order_id 칸이 없는 옛 표면 카드 주문과 이을 수 없어 «환불 없음»으로 봄 · 그 밖의 읽기 오류는 strict(발행)일 때 멈춤(보안 참고) */
+    const noCol = String((error as any).code || "") === "42703" || /order_id/.test(String((error as any).message || ""));
+    if (strict && !noCol) throw new Error("결제 기록을 확인하지 못했습니다. 잠시 뒤 다시 해 주세요");
+    return out;
+  }
   const byOrder = new Map<string, string[]>();
   (ps || []).forEach((p: any) => { const o = String(p.order_id || ""); if (o) byOrder.set(o, (byOrder.get(o) || []).concat(String(p.id))); });
   const orders = [...byOrder.keys()];
   for (let k = 0; k < orders.length; k += 500) {
-    const { data: od } = await sb.from("wash_pay_order").select("order_id,status,raw").in("order_id", orders.slice(k, k + 500));
+    const { data: od, error: oe } = await sb.from("wash_pay_order").select("order_id,status,raw").in("order_id", orders.slice(k, k + 500));
+    if (oe && strict) throw new Error("결제 기록을 확인하지 못했습니다. 잠시 뒤 다시 해 주세요");
     (od || []).forEach((o: any) => {
       if (String(o.status || "") === "canceled" || (o.raw && typeof o.raw === "object" && o.raw.cancel))
         (byOrder.get(String(o.order_id)) || []).forEach((id) => out.add(id));
@@ -2246,15 +2252,16 @@ async function refundedSet(payIds: string[]): Promise<Set<string>> {
   }
   return out;
 }
+/** 발행 전 확인 — 읽기 오류면 던짐(fail-closed · 보안 참고) */
 async function payRefunded(payId: string): Promise<boolean> {
-  if ((await refundedSet([payId])).has(payId)) return true;
-  try {
-    const { data: p } = await sb.from("wash_payments").select("order_id").eq("id", payId).maybeSingle();
-    const o = String((p && p.order_id) || "");
-    if (!o) return false;
-    const { data: rf } = await sb.from("wash_payments").select("id").eq("status", "refunded").ilike("memo", "%카드 환불 " + o.replace(/_/g, "\\_") + " ·%").limit(1);
-    return !!(rf && rf.length);
-  } catch (_) { return false; }
+  if ((await refundedSet([payId], true)).has(payId)) return true;
+  const { data: p, error: pe } = await sb.from("wash_payments").select("order_id").eq("id", payId).maybeSingle();
+  if (pe) return false;                                    // order_id 칸이 없는 옛 표(위에서 이미 걸렀음)
+  const o = String((p && p.order_id) || "");
+  if (!o) return false;
+  const { data: rf, error: re } = await sb.from("wash_payments").select("id").eq("status", "refunded").ilike("memo", "%카드 환불 " + o.replace(/_/g, "\\_") + " ·%").limit(1);
+  if (re) throw new Error("결제 기록을 확인하지 못했습니다. 잠시 뒤 다시 해 주세요");
+  return !!(rf && rf.length);
 }
 /** sb23: 받는 사업자번호 대조 — 차들의 딜러(dealers · type «biz» 면 그 bizNo)와 상사(companies · 차·딜러의 company 이름)의 번호만 허락 */
 async function taxCorpCheck(shop: string, ids: string[], corp: string): Promise<string> {
