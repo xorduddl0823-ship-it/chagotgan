@@ -19,6 +19,8 @@ var CGG_CSVUP = (function(){
   var V="csvup 1.0", MAXB=2*1024*1024, MAXR=3000, SHOW=300;
   function esc(s){ return (window.CGG&&CGG.esc) ? CGG.esc(s) : String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function dig(v){ return String(v==null?"":v).replace(/\D/g,""); }
+  /* 엑셀이 숫자로 바꾸며 맨 앞 0을 지운 번호(1012345678 · 212345678) → 0 붙여 되살림 */
+  function telDig(v){ var d=dig(v); return (/^[1-9]/.test(d) && d.length>=8 && d.length<=10 && !/[-\s]/.test(String(v).trim())) ? "0"+d : d; }
   function toast(t){ try{ CGG.toast(t); }catch(e){} }
   function $id(i){ return document.getElementById(i); }
   function closeD(){ try{ CGG.closeDialog(); }catch(e){} }
@@ -136,15 +138,21 @@ var CGG_CSVUP = (function(){
     var okb=dlg.querySelector("[data-dok]"), cx=dlg.querySelector(".ft [data-dx]"), pg=$id("csuProg");
     if(okb.disabled) return; okb.disabled=true; if(cx) cx.disabled=true;
     pg.hidden=false; pg.textContent="넣는 중이에요… 창을 닫지 말아 주세요.";
+    var dim=dlg.parentNode, xb=dlg.querySelectorAll("[data-dx]");
+    function blk(e){ if((e.type==="keydown" && e.key==="Escape") || (e.type==="click" && e.target===dim)){ e.stopPropagation(); e.preventDefault(); } }
+    document.addEventListener("keydown", blk, true); if(dim) dim.addEventListener("click", blk, true);
+    Array.prototype.forEach.call(xb, function(b){ b.disabled=true; });
+    function unblk(){ document.removeEventListener("keydown", blk, true); if(dim) dim.removeEventListener("click", blk, true);
+      Array.prototype.forEach.call(xb, function(b){ b.disabled=false; }); }
     Promise.resolve(o.save(r, function(i, t){ if(pg) pg.textContent="넣는 중이에요… "+i+" / "+t; })).then(function(res){
       var fails=(res&&res.fails)||[], ok=(res&&res.n)||0;
-      closeD();
+      unblk(); closeD();
       o.done && o.done(ok+"줄을 넣었어요."+(fails.length?" "+fails.length+"줄은 못 넣었어요.":""));
       if(fails.length) CGG.dialog({size:"form", title:"못 넣은 줄이 있어요", desc:"나머지는 다 넣었어요. 아래 줄만 다시 올려 주세요.",
         body:'<div class="csu-tbl"><table><thead><tr><th>줄</th><th>내용</th><th>까닭</th></tr></thead><tbody>'+
           fails.slice(0,SHOW).map(function(x){ return '<tr><td class="n">'+x.line+'</td><td>'+esc(o.label(x.c))+'</td><td class="w">'+esc(x.why)+'</td></tr>'; }).join("")+'</tbody></table></div>',
         cancel:"닫기"});
-    }).catch(function(e){ okb.disabled=false; if(cx) cx.disabled=false; pg.hidden=true;
+    }).catch(function(e){ unblk(); okb.disabled=false; pg.hidden=true;
       err(o.fail ? o.fail(e) : "넣지 못했어요. 다시 시도해 주세요."); });
   }
   /* 줄마다 차례로(한 번에 4개씩) — 하나가 안 돼도 나머지는 계속 */
@@ -181,7 +189,7 @@ var CGG_CSVUP = (function(){
     var have={}, haveNm={}, comps={}, seen={}, newComps={}, list=[];
     (o.dealers||[]).forEach(function(d){ var nk=key(d.comp)+"|"+key(d.name); have[nk+"|"+dig(d.tel)]=1; (haveNm[nk]=haveNm[nk]||[]).push(dig(d.tel)); });
     (o.companies||[]).forEach(function(c){ comps[key(c.name)]=c; });
-    recs.forEach(function(x){ var c=x.c, tel=dig(c.tel), no=dig(c.no), why=[], notes=[];
+    recs.forEach(function(x){ var c=x.c, tel=telDig(c.tel), no=dig(c.no), why=[], notes=[];
       if(x.ex){ x.st="ex"; x.why="양식의 예시 줄이라 건너뛰어요."; list.push(x); return; }
       var tax=taxOf(c.tax);
       if(!c.comp && !c.name) why.push("상사 이름이나 딜러 이름을 넣어 주세요");
@@ -234,7 +242,7 @@ var CGG_CSVUP = (function(){
       }); }
   function partners(o){
     open({owner:o.owner, title:"거래처 엑셀로 한꺼번에 올리기", tplName:o.tplName||"양식_거래처.csv", tplText:o.tplText, cols:PCOLS,
-      hint:"같은 사람(상사 · 딜러 이름 · 휴대폰이 같음)은 두 번 들어가지 않아요. 처음 보는 상사는 같이 만들어요. 사업자번호 · 대표자 · 이메일은 상사 것이에요(세금계산서가 «딜러 본인»이면 딜러 것).",
+      hint:"같은 사람은 두 번 안 들어가요. 처음 보는 상사는 같이 만들어요.",
       label:function(c){ return [c.comp, c.name, c.tel].filter(Boolean).join(" · "); },
       check:function(recs){ return checkPartners(o, recs); },
       save:function(r, prog){ return savePartners(o, r, prog); },
@@ -248,7 +256,7 @@ var CGG_CSVUP = (function(){
   function checkPlaces(o, recs){
     var have={}, seen={}, list=[];
     (o.places||[]).forEach(function(p){ have[key(p.name)]=1; });
-    recs.forEach(function(x){ var c=x.c, why=[], ph=dig(c.phone), k=key(c.name);
+    recs.forEach(function(x){ var c=x.c, why=[], ph=telDig(c.phone), k=key(c.name);
       if(x.ex){ x.st="ex"; x.why="양식의 예시 줄이라 건너뛰어요."; list.push(x); return; }
       if(!c.name) why.push("장소 이름을 넣어 주세요");
       if(c.phone && (ph.length<8 || ph.length>12)) why.push("연락처가 맞지 않아요");
@@ -264,7 +272,7 @@ var CGG_CSVUP = (function(){
       check:function(recs){ return checkPlaces(o, recs); },
       save:function(r, prog){ var add=r.list.filter(function(x){ return x.st==="new"; });
         prog && prog(0, add.length);
-        return Promise.resolve(o.api.savePlaces(add.map(function(x){ return {name:x.c.name, addr:x.c.addr, phone:x.c.phone, memo:x.c.memo}; })))
+        return Promise.resolve(o.api.savePlaces(add.map(function(x){ var ph=telDig(x.c.phone); return {name:x.c.name, addr:x.c.addr, phone:(ph!==dig(x.c.phone))?ph:x.c.phone, memo:x.c.memo}; })))
           .then(function(){ prog && prog(add.length, add.length); return {n:add.length, fails:[]}; }); },
       done:o.done, fail:o.fail}); }
 

@@ -20,4 +20,4 @@
 .csu-dup{background:var(--surface2);color:var(--muted)}
 .csu-bad{background:var(--warn-soft);color:var(--warn)}
 .csu-prog{font-size:14px;font-weight:700;color:var(--brand)}
-@media (max-width:640px){.csu-btns .cgg-btn{height:42px;min-height:42px}.csu-tbl{max-height:38vh}}
+@media (max-width:600px){.csu-btns .cgg-btn{height:42px;min-height:42px}.csu-tbl{max-height:38vh}}

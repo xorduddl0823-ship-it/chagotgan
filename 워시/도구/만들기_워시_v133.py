@@ -55,8 +55,8 @@ var W133_TPL_D=''' + json.dumps(TD, ensure_ascii=False) + ''';''')
 # 2) 목적지 화면 — 단추 두 개 + 메모 칸
 rep('''      <button class="btn" id="btnDestCard" type="button">명함 사진으로 추가</button>
 ''', '''      <button class="btn" id="btnDestCard" type="button">명함 사진으로 추가</button>
-      <button class="btn" id="destCsvTpl" type="button">엑셀 양식 받기</button>
-      <button class="btn" id="destCsv" type="button">엑셀로 한꺼번에 올리기</button>
+      <button class="btn" id="destCsvTpl" type="button" data-own="1">엑셀 양식 받기</button>
+      <button class="btn" id="destCsv" type="button" data-own="1">엑셀로 한꺼번에 올리기</button>
 ''')
 rep('''    row.style.gridTemplateColumns="34px 1.2fr 1fr 1.4fr 40px 40px";''', '''    row.style.gridTemplateColumns="34px 1.2fr 1fr 1.4fr 1fr 40px 40px";''')
 rep('''    row.appendChild(n);row.appendChild(ph);row.appendChild(ad);row.appendChild(mp);row.appendChild(x);''', '''    var me=document.createElement("input");me.type="text";me.value=dv.memo||"";me.placeholder="메모";me.maxLength=300;
@@ -65,6 +65,7 @@ rep('''    row.appendChild(n);row.appendChild(ph);row.appendChild(ad);row.append
 rep('''    return {name:(d.name||"").trim(),phone:(d.phone||"").trim(),addr:(d.addr||"").trim(),fav:!!d.fav};''', '''    return {name:(d.name||"").trim(),phone:(d.phone||"").trim(),addr:(d.addr||"").trim(),memo:(d.memo||"").trim(),fav:!!d.fav};''')
 rep('''$("btnAddDest").onclick=function(){editDests.push({name:""});renderDests();};''', '''$("btnAddDest").onclick=function(){editDests.push({name:""});renderDests();};
 /* v133 엑셀로 한꺼번에 올리기 — 저장된 목록 + 아직 저장 안 한 고친 목록 둘 다 보고 겹침을 걸러요 */
+function destCsvShow(){["destCsvTpl","destCsv"].forEach(function(i){if($(i))$(i).hidden=!isOwner();});}
 $("destCsvTpl").onclick=function(){CGG_CSVUP.download("양식_배달장소.csv",W133_TPL_D);};
 $("destCsv").onclick=function(){
   var cur=destList2().concat((editDests||[]).map(toObj).filter(function(d){return d.name;}));
@@ -79,13 +80,14 @@ $("destCsv").onclick=function(){
     fail:function(e){return errMsg(e);}});
 };''')
 
+rep('''function renderSms(){renderDests();}''', '''function renderSms(){renderDests();try{destCsvShow();}catch(e){}}''')
 # 3) 시험 쓰기(체험) 막기 — 거래처 · 목적지와 같은 열쇠
 rep('''btnSaveDest:"destinations",dSave:"destinations",''', '''btnSaveDest:"destinations",dSave:"destinations",wPtCsv:"partners",destCsv:"destinations",''')
 
 # 4) CSS — 거래처 화면 두 단추
 rep('''.wpt-roster{margin-top:14px;''', '''.wcsv-btns{display:flex;flex-wrap:wrap;gap:8px}
 .wcsv-btns .cgg-btn{min-height:43px;height:43px}
-@media (max-width:640px){.wcsv-btns{width:100%}.wcsv-btns .cgg-btn{flex:1 1 140px;height:42px;min-height:42px}}
+@media (max-width:600px){.wcsv-btns{width:100%}.wcsv-btns .cgg-btn{flex:1 1 140px;height:42px;min-height:42px}}
 .wpt-roster{margin-top:14px;''')
 
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
