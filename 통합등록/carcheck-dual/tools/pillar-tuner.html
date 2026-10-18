@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>절개도 기둥 맞추기</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { margin: 0; padding: 18px 20px 40px; background: #f6f8fa; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .lead { color: #5b6675; font-size: 13px; margin: 0 0 14px; }
+  /*  칸이 서로 겹치지 않게 — 줄어들지도(shrink) 늘어나지도 않게 못 박는다.
+      전에는 그림 칸이 눌려 그림이 옆 칸 위로 삐져나가 [저장] 을 가렸다. */
+  .tuner { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .card { background: #fff; border: 1px solid #dde3ea; border-radius: 8px;
+          padding: 12px 16px; flex: 0 0 auto; overflow: hidden; }
+  .card h2 { font-size: 13px; margin: 0 0 8px; color: #33415c; }
+
+  /* 큰 그림 — 좌측면만. 앱 CSS 의 flex 규칙을 여기서만 덮어쓴다 */
+  #big { width: 300px; }
+  #big .parts-views { display: block; }
+  #big .parts-view + .parts-view { display: none; }
+  #big .parts-view { flex: none; max-width: none; min-width: 0; width: 300px; }
+  #big .parts-svg { width: 300px; height: auto; }
+  #big .parts-cap { font-size: 13px; }
+  /* 미리보기 — 네 그림 그대로, 작게 */
+  #mini { width: 290px; }
+  #mini .parts-views { flex-wrap: nowrap; }
+  #mini .parts-view { flex: 1 1 64px; min-width: 58px; max-width: 68px; }
+  .panel { width: 420px; }
+
+  /*  부위 상자는 여기서 누를 일이 없다. 눌러도 상태 고르는 창이 뜨지 않게 막는다.
+      이게 없으면 기둥을 끌려다 옆 부위가 잡혀 창이 열린다. */
+  #big .part, #mini .part { pointer-events: none; }
+  #big .parts-guide, #mini .parts-guide,
+  #big .parts-summary, #mini .parts-summary,
+  #big .parts-legend, #mini .parts-legend,
+  #big .parts-ranks, #mini .parts-ranks { display: none; }
+
+  .hit { fill: transparent; cursor: grab; }
+  .hit:active { cursor: grabbing; }
+  .knob { pointer-events: none; }
+  .knob.sill { fill: #fff; stroke: #2f6fed; stroke-width: 2; }
+  .knob.roof { fill: #fff; stroke: #e67e22; stroke-width: 2; }
+  .bandhit { fill: transparent; cursor: move; }
+  .picked .knob { stroke-width: 3; }
+
+  table.vals { border-collapse: collapse; font-size: 13px; }
+  table.vals th { font-weight: 600; color: #6b7684; font-size: 11px; padding: 0 4px 4px; }
+  table.vals td { padding: 2px 2px; }
+  table.vals input { width: 48px; padding: 3px 4px; text-align: right; }
+  table.vals b { display: inline-block; width: 48px; }
+  .slid { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 4px 0; }
+  .slid span { width: 62px; color: #6b7684; }
+  .slid input[type=range] { flex: 1; }
+  .slid output { width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .hint { font-size: 12px; color: #5b6675; line-height: 1.8; margin: 10px 0 0; }
+  .acts { display: flex; gap: 8px; margin-top: 12px; }
+  button { padding: 7px 14px; border-radius: 5px; border: 1px solid #cbd3dc; background: #fff; cursor: pointer; }
+  button.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; font-weight: 600; }
+  #msg { margin-top: 10px; font-size: 13px; min-height: 20px; }
+  #msg.ok { color: #1a7f47; }
+  #msg.bad { color: #c0392b; }
+  .out { margin-top: 10px; font: 12px/1.6 ui-monospace, Consolas, monospace;
+         background: #f2f5f9; border: 1px solid #e1e7ee; border-radius: 5px; padding: 8px; white-space: pre; }
+  .pillsel { display: flex; gap: 6px; margin-bottom: 10px; }
+  .pillsel button.on { background: #eaf1ff; border-color: #2f6fed; color: #1b4bb8; font-weight: 700; }
+</style>
+</head>
+<body>
+  <h1>절개도 기둥 맞추기</h1>
+  <p class="lead">A·B·C 필러의 자리와 기울기를 맞춥니다. 좌측면에서 맞추면 우측면은 좌우로 뒤집혀 따라갑니다.</p>
+
+  <div class="tuner">
+    <div class="card">
+      <h2>좌측면 (크게)</h2>
+      <div id="big"></div>
+    </div>
+
+    <div class="card panel">
+      <div class="acts" style="margin:0 0 12px">
+        <button type="button" class="primary" id="save">저장</button>
+        <button type="button" id="reset">기본값으로</button>
+      </div>
+      <div id="msg"></div>
+
+      <h2>고칠 기둥</h2>
+      <div class="pillsel" id="pillsel"></div>
+
+      <div class="slid">
+        <span>위아래</span>
+        <input type="range" id="sl-move" min="-60" max="60" step="0.5" value="0">
+        <output id="ov-move">0</output>
+      </div>
+      <div class="slid">
+        <span>기울기</span>
+        <input type="range" id="sl-tilt" min="-40" max="40" step="0.5" value="0">
+        <output id="ov-tilt">0</output>
+      </div>
+      <div class="slid">
+        <span>굵기</span>
+        <input type="range" id="sl-thick" min="3" max="20" step="0.5" value="9">
+        <output id="ov-thick">9</output>
+      </div>
+      <div class="slid">
+        <span>굴곡(휨)</span>
+        <input type="range" id="sl-bend" min="-30" max="30" step="0.5" value="0">
+        <output id="ov-bend">0</output>
+      </div>
+
+      <h2 style="margin-top:14px">숫자로 고치기</h2>
+      <table class="vals" id="vals"></table>
+
+      <p class="hint">
+        <b>파란 점</b>은 문턱 쪽 끝, <b>주황 점</b>은 지붕 쪽 끝입니다. 점을 끌면 그 끝만,
+        기둥 몸통을 끌면 <b>기둥 전체</b>가 움직입니다.<br>
+        점을 한 번 누른 뒤 <b>화살표 키</b>로 0.5씩(Shift 5씩) 밀 수 있습니다.<br>
+        <b>굴곡(휨)</b> 은 기둥 가운데가 얼마나 배부른가입니다. 0 이면 곧은 선입니다.<br>
+        이 그림은 <b>앞이 위쪽</b>, <b>지붕이 오른쪽</b>입니다.
+      </p>
+      <div class="out" id="out"></div>
+    </div>
+
+    <div class="card">
+      <h2>미리보기</h2>
+      <div id="mini"></div>
+    </div>
+  </div>
+
+<script src="/parts-diagram.js"></script>
+<script>
+var SVGNS = 'http://www.w3.org/2000/svg';
+var KEYS = ['A', 'B', 'C'];
+var TITLE = { A: '14. 필러패널 A (좌)', B: '14. 필러패널 B (좌)', C: '14. 필러패널 C (좌)' };
+
+var FIELDS = [
+  ['pt1','1. 후드'],['pt2','2. 프론트펜더'],['pt3','3. 도어'],['pt4','4. 트렁크리드'],
+  ['pt5','5. 라디에이터서포트'],['pt6','6. 쿼터패널'],['pt7','7. 루프패널'],['pt8','8. 사이드실패널'],
+  ['pt9','9. 프론트패널'],['pt10','10. 크로스멤버'],['pt11','11. 인사이드패널'],['pt12','12. 사이드멤버'],
+  ['pt13','13. 휠하우스'],['pt14','14. 필러패널'],['pt14A','14. 필러패널 A'],['pt14B','14. 필러패널 B'],
+  ['pt14C','14. 필러패널 C'],['pt15','15. 대쉬패널'],['pt16','16. 플로어패널'],['pt17','17. 트렁크플로어'],
+  ['pt18','18. 리어패널'],['pt19','19. 패키지트레이']
+].map(function (r) { return { k: r[0], label: r[1], type: 'part' }; });
+
+var DEFAULT = JSON.parse(JSON.stringify(window.PILLARS));
+var P = window.PILLARS;
+var state = {};
+var picked = 'A';
+var big = document.getElementById('big');
+var mini = document.getElementById('mini');
+var msg = document.getElementById('msg');
+var shape = {};      // 기둥 -> { poly, hitBand, sill, roof, hitSill, hitRoof }
+
+/*  기둥 테두리는 앱과 같은 함수(window.pillarPath)를 쓴다.
+ *  여기서 따로 계산하면 도구에서 본 모양과 앱 모양이 어긋난다. */
+
+/* ── 큰 그림 한 번만 그리고, 그 위에 손잡이를 얹는다 ─────────────
+ *  끌 때마다 전체를 다시 그리면 잡고 있던 점이 사라져 끌기가 끊긴다.
+ *  그래서 끄는 동안에는 그 기둥의 도형만 고쳐 그린다. */
+function buildBig() {
+  big.textContent = '';
+  window.renderPartsDiagram(big, FIELDS, state, function () {});
+  var svg = big.querySelector('.parts-svg');
+  shape = {};
+
+  KEYS.forEach(function (k) {
+    var g = null;
+    big.querySelectorAll('.parts-svg g.part').forEach(function (el) {
+      var t = el.querySelector('title');
+      if (t && t.textContent === TITLE[k]) g = el;
+    });
+    if (!g) return;
+    var poly = g.querySelector('path');
+
+    //  몸통 끌기 판 (기둥 전체 옮기기)
+    var band = document.createElementNS(SVGNS, 'path');
+    band.setAttribute('class', 'bandhit');
+    band.dataset.key = k;
+    svg.appendChild(band);
+    band.addEventListener('pointerdown', function (e) { startDrag(e, k, 'band'); });
+
+    function knob(kind) {
+      var hit = document.createElementNS(SVGNS, 'circle');
+      hit.setAttribute('r', 11);                 // 넉넉한 잡는 자리
+      hit.setAttribute('class', 'hit');
+      hit.setAttribute('tabindex', '0');
+      hit.dataset.key = k;
+      hit.dataset.kind = kind;
+      var dot = document.createElementNS(SVGNS, 'circle');
+      dot.setAttribute('r', 5);
+      dot.setAttribute('class', 'knob ' + kind);
+      svg.appendChild(dot);
+      svg.appendChild(hit);
+      hit.addEventListener('pointerdown', function (e) { startDrag(e, k, kind); });
+      hit.addEventListener('keydown', nudge);
+      hit.addEventListener('focus', function () { pick(k); });
+      return { hit: hit, dot: dot };
+    }
+
+    var s = knob('sill');
+    var r = knob('roof');
+    shape[k] = { poly: poly, band: band, sill: s, roof: r };
+    paintShape(k);
+  });
+}
+
+/** 한 기둥의 도형·손잡이 자리만 고쳐 그린다 */
+function paintShape(k) {
+  var s = shape[k];
+  if (!s) return;
+  var l = P[k];
+  var d = window.pillarPath(l);
+  if (s.poly) s.poly.setAttribute('d', d);
+  s.band.setAttribute('d', d);
+  s.sill.dot.setAttribute('cx', l[0]); s.sill.dot.setAttribute('cy', l[1]);
+  s.sill.hit.setAttribute('cx', l[0]); s.sill.hit.setAttribute('cy', l[1]);
+  s.roof.dot.setAttribute('cx', l[2]); s.roof.dot.setAttribute('cy', l[3]);
+  s.roof.hit.setAttribute('cx', l[2]); s.roof.hit.setAttribute('cy', l[3]);
+}
+
+/* ── 끌기 ─────────────────────────────────────────────── */
+function startDrag(e, k, kind) {
+  e.preventDefault();
+  e.stopPropagation();
+  pick(k);
+
+  var svg = e.currentTarget.ownerSVGElement;
+  var box = svg.getBoundingClientRect();
+  var toX = function (cx) { return (cx - box.left) / box.width * 160; };
+  var toY = function (cy) { return (cy - box.top) / box.height * 270; };
+  var startX = toX(e.clientX), startY = toY(e.clientY);
+  var begin = P[k].slice();
+
+  //  잡기(capture)가 안 되는 경우가 있어도 끌기가 끊기지 않도록,
+  //  움직임은 창 전체에서 받는다. 잡기는 되면 좋고 안 돼도 그만이다.
+  var el = e.currentTarget;
+  try { el.setPointerCapture(e.pointerId); } catch (err) {}
+
+  function move(ev) {
+    var dx = toX(ev.clientX) - startX;
+    var dy = toY(ev.clientY) - startY;
+    var l = P[k];
+    if (kind === 'band') {
+      l[0] = round(begin[0] + dx); l[1] = round(begin[1] + dy);
+      l[2] = round(begin[2] + dx); l[3] = round(begin[3] + dy);
+    } else if (kind === 'sill') {
+      l[0] = round(begin[0] + dx); l[1] = round(begin[1] + dy);
+    } else {
+      l[2] = round(begin[2] + dx); l[3] = round(begin[3] + dy);
+    }
+    paintShape(k);
+    showNumbers();
+  }
+  function up(ev) {
+    try { el.releasePointerCapture(ev.pointerId); } catch (err) {}
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
+    commit();
+  }
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', up);
+}
+
+function round(v) { return Math.max(0, Math.min(270, Math.round(v * 2) / 2)); }
+
+/** 화살표 키로 미세 조정 */
+function nudge(e) {
+  var d = e.shiftKey ? 5 : 0.5;
+  var mx = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key];
+  if (!mx) return;
+  e.preventDefault();
+  var k = e.currentTarget.dataset.key, kind = e.currentTarget.dataset.kind;
+  var l = P[k];
+  var i = kind === 'sill' ? 0 : 2;
+  l[i] = round(l[i] + mx[0]);
+  l[i + 1] = round(l[i + 1] + mx[1]);
+  paintShape(k);
+  showNumbers();
+  commit();
+}
+
+/** 값이 확정되면 우측면·미리보기를 맞춘다 */
+function commit() {
+  window.setPillars(P);
+  renderMini();
+  showNumbers();
+}
+
+function renderMini() {
+  mini.textContent = '';
+  window.renderPartsDiagram(mini, FIELDS, state, function () {});
+}
+
+/* ── 어느 기둥을 고칠지 ───────────────────────────────── */
+var pillsel = document.getElementById('pillsel');
+KEYS.forEach(function (k) {
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = k + '필러';
+  b.dataset.key = k;
+  b.addEventListener('click', function () { pick(k); });
+  pillsel.appendChild(b);
+});
+
+function pick(k) {
+  picked = k;
+  pillsel.querySelectorAll('button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.key === k);
+  });
+  Object.keys(shape).forEach(function (kk) {
+    shape[kk].sill.dot.classList.toggle('picked', kk === k);
+  });
+  syncSliders();
+}
+
+/* ── 슬라이더 (위아래 · 기울기 · 굵기) ───────────────────
+ *  끌기가 어려울 때를 위한 길. 기울기는 기둥 가운데를 축으로 돌린다. */
+var base = {};        // 슬라이더를 잡기 시작할 때의 기준값
+var slMove = document.getElementById('sl-move');
+var slTilt = document.getElementById('sl-tilt');
+var slThick = document.getElementById('sl-thick');
+var slBend = document.getElementById('sl-bend');
+
+function syncSliders() {
+  slMove.value = 0;
+  document.getElementById('ov-move').textContent = '0';
+  var l = P[picked];
+  var tilt = Math.round((l[3] - l[1]) * 2) / 2;
+  slTilt.value = Math.max(-40, Math.min(40, tilt));
+  document.getElementById('ov-tilt').textContent = tilt;
+  slThick.value = l[4];
+  document.getElementById('ov-thick').textContent = l[4];
+  var bend = Number(l[5] || 0);
+  slBend.value = Math.max(-30, Math.min(30, bend));
+  document.getElementById('ov-bend').textContent = bend;
+  base[picked] = P[picked].slice();
+}
+
+slMove.addEventListener('pointerdown', function () { base[picked] = P[picked].slice(); });
+slMove.addEventListener('input', function () {
+  var b = base[picked] || P[picked];
+  var d = Number(this.value);
+  document.getElementById('ov-move').textContent = d;
+  P[picked][1] = round(b[1] + d);
+  P[picked][3] = round(b[3] + d);
+  paintShape(picked); showNumbers();
+});
+slMove.addEventListener('change', function () { commit(); syncSliders(); });
+
+slTilt.addEventListener('input', function () {
+  var l = P[picked];
+  var d = Number(this.value);
+  document.getElementById('ov-tilt').textContent = d;
+  var mid = (l[1] + l[3]) / 2;
+  l[1] = round(mid - d / 2);
+  l[3] = round(mid + d / 2);
+  paintShape(picked); showNumbers();
+});
+slTilt.addEventListener('change', function () { commit(); });
+
+slThick.addEventListener('input', function () {
+  document.getElementById('ov-thick').textContent = this.value;
+  P[picked][4] = Number(this.value);
+  paintShape(picked); showNumbers();
+});
+slThick.addEventListener('change', function () { commit(); });
+
+slBend.addEventListener('input', function () {
+  document.getElementById('ov-bend').textContent = this.value;
+  P[picked][5] = Number(this.value);
+  paintShape(picked); showNumbers();
+});
+slBend.addEventListener('change', function () { commit(); });
+
+/* ── 숫자 칸 ─────────────────────────────────────────── */
+var LABELS = ['문턱끝 x', '문턱끝 y', '지붕끝 x', '지붕끝 y', '굵기', '굴곡'];
+var vals = document.getElementById('vals');
+var head = document.createElement('tr');
+head.innerHTML = '<th></th>' + LABELS.map(function (t) { return '<th>' + t + '</th>'; }).join('');
+vals.appendChild(head);
+
+KEYS.forEach(function (k) {
+  var tr = document.createElement('tr');
+  var td0 = document.createElement('td');
+  td0.innerHTML = '<b>' + k + '필러</b>';
+  tr.appendChild(td0);
+  for (var i = 0; i < 6; i++) {
+    var td = document.createElement('td');
+    var inp = document.createElement('input');
+    inp.type = 'number';
+    inp.step = '0.5';
+    inp.dataset.key = k;
+    inp.dataset.at = i;
+    inp.addEventListener('change', function () {
+      var v = Number(this.value);
+      if (!isFinite(v)) return;
+      P[this.dataset.key][Number(this.dataset.at)] = v;
+      paintShape(this.dataset.key);
+      commit();
+    });
+    inp.addEventListener('focus', function () { pick(this.dataset.key); });
+    td.appendChild(inp);
+    tr.appendChild(td);
+  }
+  vals.appendChild(tr);
+});
+
+function showNumbers() {
+  vals.querySelectorAll('input').forEach(function (inp) {
+    inp.value = P[inp.dataset.key][Number(inp.dataset.at)];
+  });
+  document.getElementById('out').textContent = KEYS.map(function (k) {
+    return k + ': [' + P[k].join(', ') + ']';
+  }).join('\n');
+}
+
+/* ── 저장 · 되돌리기 ─────────────────────────────────── */
+document.getElementById('save').addEventListener('click', function () {
+  fetch('/save', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ A: P.A, B: P.B, C: P.C }),
+  }).then(function (r) { return r.json(); }).then(function (r) {
+    msg.className = r.ok ? 'ok' : 'bad';
+    msg.textContent = r.ok
+      ? '저장했습니다 → ' + r.file + '   (이중등록 프로그램을 다시 켜면 반영됩니다)'
+      : '저장하지 못했습니다: ' + r.error;
+  }).catch(function (e) {
+    msg.className = 'bad';
+    msg.textContent = '저장하지 못했습니다: ' + e.message;
+  });
+});
+
+document.getElementById('reset').addEventListener('click', function () {
+  window.setPillars(JSON.parse(JSON.stringify(DEFAULT)));
+  buildBig(); renderMini(); showNumbers(); syncSliders();
+  msg.className = '';
+  msg.textContent = '기본값으로 되돌렸습니다. 저장해야 프로그램에 적용됩니다.';
+});
+
+/* ── 시작 ────────────────────────────────────────────── */
+fetch('/load').then(function (r) { return r.json(); }).then(function (r) {
+  if (r.saved) {
+    window.setPillars(r.saved);
+    msg.textContent = '저장해 둔 값을 불러왔습니다.';
+  }
+  start();
+}).catch(start);
+
+function start() {
+  buildBig();
+  renderMini();
+  showNumbers();
+  pick('A');
+}
+</script>
+</body>
+</html>

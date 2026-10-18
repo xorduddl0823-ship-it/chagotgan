@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>성능점검 이중등록</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>성능점검 이중등록</h1>
+    <div class="sites">
+      <button class="site-btn" data-site="carmodoo">경기조합 창</button>
+      <button class="site-btn" data-site="carinfo">카인포 창</button>
+    </div>
+  </header>
+
+  <div class="steps">
+    <div class="step">
+      <span class="num">1</span>
+      <span class="txt">차량번호와 딜러명을 입력하고</span>
+      <button id="btn-prepare" class="primary">신규등록 + 차량정보·차대번호 가져오기</button>
+    </div>
+    <div class="step">
+      <span class="num">2</span>
+      <span class="txt">점검 항목을 채운 뒤 아래 <b>두 곳 동시 전송</b></span>
+      <span id="prep-state" class="prep-state"></span>
+    </div>
+  </div>
+
+  <main>
+    <div id="form"></div>
+  </main>
+
+  <footer>
+    <div class="left">
+      <button id="btn-clear" class="ghost">초기화</button>
+      <button id="btn-save" class="ghost">임시저장</button>
+      <button id="btn-settings" class="ghost">설정 (로그인 정보)</button>
+      <button id="btn-probe" class="ghost">사고체크 구조 조사</button>
+      <button id="btn-learn" class="ghost">카인포 절개도 학습</button>
+      <button id="btn-dealer-ci" class="ghost">딜러 바꾸기 (두 곳 함께)</button>
+      <button id="btn-dealer" class="ghost">딜러 바꾸기 (조합만)</button>
+      <button id="btn-popup-diag" class="ghost">팝업 진단 (조합)</button>
+      <button id="btn-photo-cm" class="ghost">사진만 전송 (조합)</button>
+      <button id="btn-photo-ci" class="ghost">사진만 전송 (카인포)</button>
+      <button id="btn-photo-probe" class="ghost">사진 화면 조사</button>
+    </div>
+    <div class="right">
+      <button id="btn-send-cm">경기조합만</button>
+      <button id="btn-send-ci">카인포만</button>
+      <button id="btn-send-all" class="primary">두 곳 동시 전송</button>
+    </div>
+  </footer>
+
+  <div id="picker" class="overlay hidden">
+    <div class="panel">
+      <h2>딜러 선택</h2>
+      <p class="sub">검색 결과가 여러 건입니다. 등록할 딜러를 골라 주세요.</p>
+      <div id="picker-list" class="picker-list"></div>
+      <div class="panel-foot"><button id="picker-cancel" class="ghost">취소</button></div>
+    </div>
+  </div>
+
+  <div id="report" class="overlay hidden">
+    <div class="panel">
+      <h2>결과</h2>
+      <div id="report-body"></div>
+      <div class="panel-foot"><button id="report-close">닫기</button></div>
+    </div>
+  </div>
+
+  <div id="settings" class="overlay hidden">
+    <div class="panel">
+      <h2>로그인 정보</h2>
+      <p class="sub">두 사이트에 자동으로 로그인합니다. 비밀번호는 이 PC의 윈도우 계정 키로 암호화해 저장하며, 화면에 다시 보여주지 않습니다.</p>
+      <div id="creds-form"></div>
+      <p id="creds-warn" class="note hidden"></p>
+      <div class="cred-site">
+        <h3>전송 속도</h3>
+        <div class="cred-row">
+          <label><input type="checkbox" id="opt-thorough"> 절개도를 꼼꼼히 확인 (느림)</label>
+        </div>
+        <p class="note">평소에는 절개도에 실제로 표시가 남아 있는 곳만 열어 확인합니다(빠름).
+          표시가 지워지지 않는 일이 생기면 이것을 켜세요.
+          모든 부위를 하나씩 열어 확인하므로 전송이 1분 가까이 걸립니다.</p>
+      </div>
+      <div class="panel-foot">
+        <button id="creds-cancel" class="ghost">닫기</button>
+        <button id="creds-save" class="primary">저장</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="busy" class="overlay hidden">
+    <div class="busy-box"><div class="spinner"></div><span id="busy-text">처리 중…</span></div>
+  </div>
+
+  <script src="parts-diagram.js"></script>
+  <script src="photos.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
