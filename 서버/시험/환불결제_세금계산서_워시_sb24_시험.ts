@@ -1,6 +1,6 @@
 // 워시 sb24 시험 — 카드 환불한 결제(부분 포함)는 본사 → 업체 세금계산서 거절 · hqPayments 에 refunded
 // 실행:  deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/환불결제_세금계산서_워시_sb24_시험.ts
-import { store } from "./fake_supabase_wash.ts";
+import { knobs, store } from "./fake_supabase_wash.ts";
 Deno.env.set("SUPABASE_URL", "http://fake.local");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake");
 Deno.env.set("POPBILL_LINKID", "LID"); Deno.env.set("POPBILL_SECRET", btoa("secret"));
@@ -53,5 +53,13 @@ check("주문 없는 수동 결제는 지금처럼 발행", r.result?.ok === tru
 r = await call("hqPayments", []);
 const by = Object.fromEntries((r.result?.payments || []).map((p: any) => [p.id, p.refunded]));
 check("hqPayments: 줄마다 refunded", by.p1 === true && by.p2 === true && by.p3 === false && by.p4 === false, by);
+knobs.missing.add("wash_pay_order");
+store.wash_payments.push({ id: "p5", shop: "BT", amount: 55000, status: "paid", order_id: "o5" });
+const P = pop.length;
+r = await hq("p5");
+check("(보안 참고) 주문 기록을 못 읽으면 발행 안 함(fail-closed)", !!r.__err && /확인하지 못했/.test(r.__err) && pop.length === P, r);
+r = await call("hqPayments", []);
+check("목록은 읽기 오류여도 그대로 보임", Array.isArray(r.result?.payments), r);
+knobs.missing.delete("wash_pay_order");
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);

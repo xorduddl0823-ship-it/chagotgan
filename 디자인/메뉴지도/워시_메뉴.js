@@ -51,7 +51,7 @@ var CGG_MENU_WASH = {
     {id:"caropt",      label:"출고 지연 기준 · 주차 구역", path:"설정 › 출고 지연 기준",       go:"settings/caropt",   words:"지연 늦어짐 주차 구역 안전장치 안전 출고안됨 사진없이 두번출고 중복 입고없이 경고 경고창 위치 자리"},
     {id:"bank",        label:"입금 자동 확인",       path:"설정 › 입금 자동 확인",             go:"settings/bank",     words:"통장 연결 은행 자동 수금 입금 확인 계좌"},
     {id:"sms",         label:"문자 · 알림톡 설정",   path:"설정 › 알림",                      go:"settings/send",     words:"문자 알림톡 카카오 솔라피 자동 발송 연동 카톡 예약"},
-    {id:"sender",      label:"발신번호",             path:"설정 › 알림",                      go:"settings/send",     words:"발신번호 보내는 번호 문자 번호 솔라피 등록 번호", spot:"#smsFrom"},
+    {id:"sender",      label:"보내는 번호(발신번호)",             path:"설정 › 알림",                      go:"settings/send",     words:"발신번호 보내는 번호 문자 번호 솔라피 등록 번호 보내는 번호", spot:"#smsFrom"},
     {id:"outbox",      label:"보낸 기록",   path:"설정 › 보낸 기록",                    go:"settings/outbox",   words:"발송함 보낸 문자 예약 취소 발송 기록 (보낸 기록)"},
     {id:"link",        label:"직원에게 앱 주소 보내기", path:"머리말 › 주소",               go:"hdr/link",          words:"링크 복사 앱 주소 직원 주소 보내기 설치 링크"},
     {id:"qr",          label:"QR 코드",              path:"설정 › QR 코드",                   go:"settings/qr",       words:"큐알 직원 앱 주소 링크 설치"},
