@@ -10723,7 +10723,7 @@ function taxGroups(){
     var tw=G.dealer?(S.dealers.filter(function(x){return x.name===G.dealer&&(!G.company||x.company===G.company);})[0]||S.dealers.filter(function(x){return x.name===G.dealer;})[0])
                    :S.comps.filter(function(x){return x.name===G.company;})[0];
     G.taxOn=taxIssues(tw);   /* v135 청구서와 같은 판단 — 안 끊는 곳은 청구서에 부가세가 없어 계산서를 낼 수 없어요 */
-    var ba=billAmt(G.amount,G.taxOn),v={sup:ba.supply,vat:ba.vat};   /* v136 청구서와 같은 셈 — 합계 = 공급가액 + 세액 */
+    var ba=billAmt(G.amount,G.taxOn),v={sup:G.taxOn?ba.supply:ba.charge,vat:ba.vat};   /* v136 청구서와 같은 셈 — 합계 = 공급가액 + 세액 (안 끊는 곳은 청구 금액 그대로) */
     G.sup=v.sup;G.vat=v.vat;
     G.itemList=Object.keys(G.items).map(function(x){return G.items[x];})
       .sort(function(a,b){return (b.price*b.qty)-(a.price*a.qty);});

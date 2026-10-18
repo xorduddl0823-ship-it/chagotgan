@@ -18,7 +18,7 @@ rep('var APP_VER="워시 v135 · UI 3.0 · 2026-10-18";', 'var APP_VER="워시 v
 # 1) 공급가액 · 세액 = 청구서와 같은 셈(안 끊는 곳은 세액 0)
 rep('''    var v=splitVat(G.amount);
     if(G.taxOn){var ba=billAmt(G.amount,true);v={sup:ba.supply,vat:ba.vat};}''',
-'''    var ba=billAmt(G.amount,G.taxOn),v={sup:ba.supply,vat:ba.vat};   /* v136 청구서와 같은 셈 — 합계 = 공급가액 + 세액 */''')
+'''    var ba=billAmt(G.amount,G.taxOn),v={sup:G.taxOn?ba.supply:ba.charge,vat:ba.vat};   /* v136 청구서와 같은 셈 — 합계 = 공급가액 + 세액 (안 끊는 곳은 청구 금액 그대로) */''')
 
 # 2) 합계 = 공급가액 + 세액
 rep('''    {k:"amount",label:"합계",align:"right",html:function(g){return wonExact(g.amount);}},''',
