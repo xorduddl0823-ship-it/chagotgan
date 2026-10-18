@@ -46,7 +46,11 @@
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Bash(rm -rf:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git push origin --force:*)",
+      "Bash(git push origin -f:*)",
+      "Bash(git push -u origin --force:*)",
+      "Bash(git push -u origin -f:*)"
     ]
   }
 }
