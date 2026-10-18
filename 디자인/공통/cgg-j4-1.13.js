@@ -601,6 +601,14 @@ var CGG = (function(){
       return m[1]+'<ul class="cgg-list">'+m[2].split(/\s+\/\s+/).map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul>'; }).join("<br>"); }
   /* 글자 목록 → 목록 HTML (모두 esc) */
   function list(items){ return '<ul class="cgg-list">'+(items||[]).map(function(x){ return '<li>'+esc(x)+'</li>'; }).join("")+'</ul>'; }
+  /* 1.13.1 진행 칸(«이번 달 어디까지 왔나») — CGG.steps(el, [{label:"자료 올리기", note:"끝", state:"done"|"now"|"todo"}, …], {title, desc})
+     4칸이 기본(넓은 화면 한 줄 · 폰은 한 칸씩). 글자는 모두 esc. 지금 칸은 aria-current="step" */
+  function steps(el, items, o){ if(!el) return; o=o||{};
+    var S={done:"끝",now:"지금",todo:"남음"};
+    el.classList.add("cgg-steps");
+    el.innerHTML=(o.title?'<div class="cgg-stepsh"><b>'+esc(o.title)+'</b>'+(o.desc?'<small>'+esc(o.desc)+'</small>':'')+'</div>':'')
+      +'<ol>'+(items||[]).map(function(x,i){ var st=S[x.state]?x.state:"todo";
+        return '<li class="'+st+'"'+(st==="now"?' aria-current="step"':'')+'><i>'+(st==="done"?"✓":(i+1))+'</i><span><b>'+esc(x.label)+'</b><small>'+esc(x.note!=null?x.note:S[st])+'</small></span></li>'; }).join("")+'</ol>'; }
   /* 얇은 진행 줄 — 화면 맨 위 3px. CGG.progress(3,10,"보내는 중") · CGG.progress(null) 로 닫아요 */
   var prog=null;
   function progress(done, total, label){
@@ -628,7 +636,8 @@ var CGG = (function(){
       var sum=L.reduce(function(t,x){ return t+(Number(x.sum)||0); },0), mn=L.reduce(function(t,x){ return t+x.ids.length; },0), m0=L[0].months||[];
       dialog({size:"confirm",title:"밀린 달 청구서를 보낼까요?",desc:"알림톡이 안 가면 문자로 대신 가요.",
         rows:[["누구에게",L[0].name+(L.length>1?" 외 "+(L.length-1)+"명":"")],["몇 달",L.length>1?L.length+"명 · 모두 "+mn+"달":mn+"달"+(m0.length?" ("+m0[0]+(mn>1?" ~ "+m0[m0.length-1]:"")+")":"")],["얼마",won(sum)+"원"],["입금 기한",o.due||"확인 후 입금"]],
-        body:'<div style="margin-top:10px"><button type="button" class="cgg-btn" data-bbtest="1">먼저 내 번호로 시험</button></div>',
+        body:(L.length>1?'<details class="cgg-who"><summary>받는 사람 '+L.length+'명 모두 보기</summary>'+list(L.map(function(x){ return x.name+" · "+x.ids.length+"달 · "+won(x.sum)+"원"; }))+'</details>':'')   /* 1.13.1 — «A 외 N명» 뒤 이름 목록(보여 주기만) */
+          +'<div style="margin-top:10px"><button type="button" class="cgg-btn" data-bbtest="1">먼저 내 번호로 시험</button></div>',
         ok:L.length>1?L.length+"명에게 보내기":"보내기",cancel:"취소",onOk:function(){ setTimeout(function(){ o.onSend&&o.onSend(false); },0); } });
       var t=dim&&dim.querySelector("[data-bbtest]"); if(t) t.onclick=function(){ closeDialog(); o.onSend&&o.onSend(true); }; },
     run:function(items, send, done){ var out=[], i=0, n=(items||[]).length;
@@ -638,5 +647,5 @@ var CGG = (function(){
         Promise.resolve().then(function(){ return send(x); }).then(function(r){ r=r||{}; out.push({item:x,ok:!!r.ok,why:String(r.why||"")}); next(); },
           function(e){ out.push({item:x,ok:false,why:String((e&&e.message)||"")}); next(); }); })(); } };
   return { CI:CI, favicon:favicon, todoBand:todoBand, monthPick:monthPick, findDialog:findDialog, myPage:myPage, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
-           listify:listify, list:list, progress:progress, bundle:bundle, status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.13" };
+           listify:listify, list:list, progress:progress, bundle:bundle, steps:steps, status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.13.1" };
 })();

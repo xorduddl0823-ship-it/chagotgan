@@ -1,5 +1,7 @@
 """체크 v55.1 → v56 — 디자인 통합 2단계 (대표님 «디자인 통합 계획» 승인 10/18)
-쓰는 법: python3 체크/도구/만들기_체크_v56.py   (v55.1 은 읽기만 · 덮어쓰지 않아요)
+쓰는 법: python3 체크/도구/만들기_체크_v56.py [v56.1]   (v55.1 은 읽기만 · 덮어쓰지 않아요)
+  v56.1 (총괄 10/18 밤) = 같은 만들기에 공통 부품만 1.13 으로 바꿔 끼우기 — 결과 목록 · 진행 줄 · 밀린 달 창은 1.13 공통(CGG.listify · CGG.progress · CGG.bundle),
+        알림톡 잠금은 디자인/공통/cgg-ata-1.1.js, 폰 목록은 1.13 «이름표: 값» 칸(cgg-mf), 덧붙임은 v56.1_통합.js
   ① 공통 부품 cgg-j4 1.10 → 1.12(보안 통과 판 그대로) + 메뉴 지도 체크_메뉴.js(CGG_MENU_CHECK)
   ② 덧댄 조각(chk-j4 · v42-cal · v43-piece · chk-glue · chk-v50 · cgg-beta-piece) 걷어내고 체크 전용 몫만 «chk-v56» 한 곳에
   ③ 대조표 74줄 추천(체크/대조 · 04 결정 기록) — 표 · 숫자 칸 · 할 일 띠 · 화면 제목 · 말(«메시지») · 배달 기록 · 목적지별 보기 뺌
@@ -8,7 +10,9 @@
 """
 import os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); CHK = os.path.dirname(HERE); ROOT = os.path.dirname(CHK)
-SRC = os.path.join(CHK, "2_차곳간_체크_index_v55.1.html"); OUT = os.path.join(CHK, "2_차곳간_체크_index_v56.html")
+V = sys.argv[1] if len(sys.argv) > 1 else "v56"; N = V != "v56"   # N: v56.1 (공통 1.13)
+assert V in ("v56", "v56.1")
+SRC = os.path.join(CHK, "2_차곳간_체크_index_v55.1.html"); OUT = os.path.join(CHK, "2_차곳간_체크_index_%s.html" % V)
 def rd(*p): return open(os.path.join(ROOT, *p), encoding="utf-8").read()
 s = open(SRC, encoding="utf-8").read()
 def rep(old, new, count=1):
@@ -25,16 +29,17 @@ def cut(start, end):
 
 # ═══ ① 공통 부품 1.10 → 1.12 · 메뉴 지도 ═══
 J110, C110 = rd("디자인", "공통", "cgg-j4-1.10.js"), rd("디자인", "공통", "cgg-j4-1.10.css")
-J112, C112 = rd("디자인", "공통", "cgg-j4-1.12.js"), rd("디자인", "공통", "cgg-j4-1.12.css")
+CV = "1.13" if N else "1.12"
+J112, C112 = rd("디자인", "공통", "cgg-j4-%s.js" % CV), rd("디자인", "공통", "cgg-j4-%s.css" % CV)
 MENU = rd("디자인", "메뉴지도", "체크_메뉴.js")
 rep(J110, J112 + "\n" + MENU)
 rep(C110, C112)
-assert 'version:"cgg-j4 1.12"' in s
+assert ('version:"cgg-j4 %s"' % CV) in s
 
 # 판 이름
-rep('ver:"체크 v55.1", date:"10/18"', 'ver:"체크 v56", date:"10/18"')
-rep('$("hdVer").textContent="체크 v55.1 · "', '$("hdVer").textContent="체크 v56 · "')
-rep('<!-- 체크 v55.1 (', '<!-- 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (')
+rep('ver:"체크 v55.1", date:"10/18"', 'ver:"체크 %s", date:"10/18"' % V)
+rep('$("hdVer").textContent="체크 v55.1 · "', '$("hdVer").textContent="체크 %s · "' % V)
+rep('<!-- 체크 v55.1 (', '<!-- ' + ('체크 v56.1 (v56 + 공통 부품 1.13 바꿔 끼우기) · ' if N else '') + '체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (')
 
 # ═══ ③-A3 표 = 공통 1.12 모양(워시 표) — 위 «넓은 찾기 · 상태 칩 · 20개씩 · 빨간 지우기», 칸 머리 ↕, 아래 «처음 · 이전 · 1 / N · 모두 N줄 · 다음 · 맨뒤», 할 일 단추는 표 아래 줄
 #    표 안 동작(wireTable · picked · data-* 이름)은 그대로 — 모양만 바꿔요
@@ -73,12 +78,18 @@ s = s[:i] + r'''  /* v56 아래 쪽 — 처음 · 이전 · 1 / N · 모두 N줄
 ''' + s[j:]
 # ③-A2 숫자 칸 뜻 색은 sums(돈 코드 목록 · 안 고침) 대신 그린 뒤 v56_통합.js 가 입혀요
 
+CSSV = open(os.path.join(HERE, "v56_체크전용.css"), encoding="utf-8").read()
+if N:   # 1.13 공통으로 옮겨 간 몫은 뺌
+    for a_, b_ in (("/* 결과 목록 창 · 얇은 진행 줄", "@media (prefers-reduced-motion:reduce){ body.chk-loading::before{animation:none;width:100%;opacity:.6} }\n"),
+                   ("/* 밀린 달 한꺼번에 — 달 고르기 줄 */", ".cgg-dlg label.chk-bb input{flex:none;width:20px;height:20px;margin:0}\n")):
+        i_ = CSSV.index(a_); j_ = CSSV.index(b_, i_) + len(b_); CSSV = CSSV[:i_] + CSSV[j_:]
+    CSSV = CSSV.replace('<style id="chk-v56">', '<style id="chk-v56">\n/* v56.1: 결과 목록 · 진행 줄 · 밀린 달 줄은 공통 1.13(.cgg-list · .cgg-prog · .cgg-bb) */')
 # ═══ ② 덧댄 조각 걷어내기 → 체크 전용 몫 한 곳(chk-v56, 공통 부품 앞) ═══
 cut('<style id="chk-j4">', '</style>')
 for sid in ("cgg-beta-piece", "v42-cal", "v43-piece", "chk-glue", "chk-v50"):
     cut('<style id="%s">' % sid, '</style>')
 rep('<!-- ===== 체크 붙임 몫 — 옛 .wrap 틀과 공통 부품이 맞물리게 (머리말 버튼 모양은 디자인/공통/예시.html 그대로) ===== -->', '')
-rep('<!-- ===== 차곳간 공통 부품 cgg-j4 (디자인/공통 최신판', open(os.path.join(HERE, "v56_체크전용.css"), encoding="utf-8").read() + '<!-- ===== 차곳간 공통 부품 cgg-j4 (디자인/공통 최신판')
+rep('<!-- ===== 차곳간 공통 부품 cgg-j4 (디자인/공통 최신판', CSSV + '<!-- ===== 차곳간 공통 부품 cgg-j4 (디자인/공통 최신판')
 for sid in ("chk-j4", "chk-glue", "chk-v50", "v42-cal", "v43-piece", "cgg-beta-piece"):
     assert ('id="%s"' % sid) not in s, sid
 
@@ -91,7 +102,11 @@ rep("""    $("main").innerHTML='<div class="card"><div class="loading">불러오
     """    if(!String($("main").innerHTML||"").trim()) $("main").innerHTML='<div class="card"><div class="loading">불러오는 중이에요…</div></div>';   /* v56: 처음 한 번만 */
     document.body.classList.add("chk-loading"); busy(true);
     need(page).then(function(){ document.body.classList.remove("chk-loading"); busy(false); draw(); })
-              .catch(function(e){ document.body.classList.remove("chk-loading"); busy(false); fail(e); draw(); });""")
+              .catch(function(e){ document.body.classList.remove("chk-loading"); busy(false); fail(e); draw(); });""" if not N else
+    """    if(!String($("main").innerHTML||"").trim()) $("main").innerHTML='<div class="card"><div class="loading">불러오는 중이에요…</div></div>';   /* v56: 처음 한 번만 */
+    CGG.progress(1,3,"불러오는 중"); busy(true);   /* v56.1: 공통 1.13 진행 줄 */
+    need(page).then(function(){ CGG.progress(null); busy(false); draw(); })
+              .catch(function(e){ CGG.progress(null); busy(false); fail(e); draw(); });""")
 # «매일 자동» 잠금 풀기 — 서버 v50부터 승인 전에도 켤 수 있음(그동안 문자로)
 rep("""(RRULE.auto?" checked":"")+((own&&RRULE.ataReady)?"":" disabled")+'> 매일 아침 9시쯤 자동으로 보내기</label>'""",
     """(RRULE.auto?" checked":"")+(own?"":" disabled")+'> 매일 아침 9시쯤 자동으로 보내기</label>'""")
@@ -108,7 +123,7 @@ k = s.index('<div class="phone-from">차곳간 카카오 채널에서</div>', k)
 s = s[:k] + '<div class="phone-from">검사소 번호로</div>' + s[k+len('<div class="phone-from">차곳간 카카오 채널에서</div>'):]
 # 알림톡 문구 부품 ata 1.1 + v56 덧붙임 — 마지막 «공통 부품 부르기» 앞
 rep("""<script>
-/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", "<script>\n" + rd("체크", "부품", "알림톡문구_부품_1.1.js") + "\n</script>\n" + open(os.path.join(HERE, "v56_통합.js"), encoding="utf-8").read() + """<script>
+/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", "<script>\n" + (rd("디자인", "공통", "cgg-ata-1.1.js") if N else rd("체크", "부품", "알림톡문구_부품_1.1.js")) + "\n</script>\n" + open(os.path.join(HERE, "v56.1_통합.js" if N else "v56_통합.js"), encoding="utf-8").read() + """<script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */""")
 
 rep('  home:["bill","dep"], sales:["sales"],', '  home:["bill","dep","sales"], sales:["sales"],   /* v56: 홈 숫자 칸 작은 그래프 · 지난달 비교 */')
@@ -141,6 +156,30 @@ rep("<h3>엑셀로 한꺼번에 올리기</h3><p class=\"csub\">양식에 상사
 # «준비 중» 글 없애기 — 배달 문구 화면 상태 글
 rep('["문자 보낼 준비",DCONF.sms_ready===false?"아직 (차곳간 준비 중)":"됨"]', '["문자 보낼 준비",DCONF.sms_ready===false?"아직 안 켜짐 (차곳간에 알려 주세요)":"됨"]')
 rep('["번호판 읽기 준비",DCONF.ai_ready===false?"아직 (차곳간 준비 중)":"됨"]', '["번호판 읽기 준비",DCONF.ai_ready===false?"아직 안 켜짐 (차곳간에 알려 주세요)":"됨"]')
+
+# v56.1 폰 목록 = 공통 1.13 모양(R02~R05): 이름 · 둘째 칸 / 글 칸 한 줄 / «이름표: 값» 칸(금액 · 날짜 · 상태, 또는 opt.mobileFields 열 열쇠) / 줄 단추
+if N:
+    rep("""      var rest=cols.map(function(c,k){ return (k<2||k===si||k===mi)?"":tbPlain(cellHtml(c,r)); }).filter(Boolean).join(" · ");
+      var ra=hasAct?acts(r):"";
+      return '<div class="cgg-mrow"><input type="checkbox" class="pk" data-k="'+esc(key)+'"'+(s.sel[key]?" checked":"")+' aria-label="선택">'+
+        '<span class="t"><b>'+cellHtml(cols[0],r)+(sub?'<span>'+esc(sub)+'</span>':'')+'</b><small>'+esc(rest)+'</small></span>'+
+        '<span class="r">'+(mi>=0?'<b>'+cellHtml(cols[mi],r)+'</b>':'')+(si>=0?cellHtml(cols[si],r):'')+'</span>'+
+        (ra?'<span class="ra">'+ra+'</span>':'')+'</div>'; }).join("")""",
+    """      var MF=opt.mobileFields?cols.map(function(c,k){ return opt.mobileFields.indexOf(c.k)>=0?k:-1; }).filter(function(k){ return k>0; })
+                              :kinds.map(function(kd,k){ return (k>0&&(kd==="money"||kd==="state"||kd==="date"||kd==="time"))?k:-1; }).filter(function(k){ return k>0; });   /* v56.1 (1.13 R02~R05) */
+      var rest=opt.mobileFields?"":cols.map(function(c,k){ return (k<2||MF.indexOf(k)>=0)?"":tbPlain(cellHtml(c,r)); }).filter(Boolean).join(" · ");   /* 1.13: mobileFields 를 주면 긴 줄 없음 */
+      var ra=hasAct?acts(r):"";
+      return '<div class="cgg-mrow"><input type="checkbox" class="pk" data-k="'+esc(key)+'"'+(s.sel[key]?" checked":"")+' aria-label="선택">'+
+        '<span class="t"><b>'+cellHtml(cols[0],r)+(sub&&MF.indexOf(1)<0?'<span>'+esc(sub)+'</span>':'')+'</b>'+(rest?'<small>'+esc(rest)+'</small>':'')+
+        '<span class="cgg-mf">'+MF.map(function(k){ return '<span class="'+(kinds[k]==="money"?'n':'')+'"><i>'+esc(cols[k].t)+'</i>'+cellHtml(cols[k],r)+'</span>'; }).join("")+'</span></span>'+
+        (ra?'<span class="ra">'+ra+'</span>':'')+'</div>'; }).join("")""")
+    # 청구서 표 폰 칸 (디자인 권장: 청구액 · 받을 금액 · 기한 · 발송 — 체크 청구서엔 기한 칸이 없어 셋)
+    rep("    ], billShown(), {pick:true,", "    ], billShown(), {pick:true, mobileFields:[\"total\",\"left\",\"sendState\"],   /* v56.1 폰 칸 */")
+
+# v56.1 검사 일꾼: 메뉴 지도 1.13 이름 «월별 장부» 와 화면 제목 · 카드 제목 맞추기, 청구서 «입금 대기» 칸 이름 = 워시 «받을 금액»(이름만)
+if N:
+    rep('  card("달마다 장부","달을 누르면 그 달 청구서로 가요.', '  card("월별 장부","달을 누르면 그 달 청구서로 가요.')
+    rep('      {k:"left",t:"입금 대기",num:true,fmt:function(v){return v>0?', '      {k:"left",t:"받을 금액",num:true,fmt:function(v){return v>0?')
 
 #@@끝
 
