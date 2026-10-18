@@ -106,6 +106,11 @@ r = await call("invoiceView", ["k" + I("aa").view_key]);
 check("unpaid: 같은 딜러의 다른 덜 받은 달 (다 받은 달 · 남의 딜러 · 남의 검사소 · 자기 달 없음)",
   Array.isArray(r.unpaid) && r.unpaid.map((x: any) => x.ym).join() === "2026-08,2026-09" && r.unpaid[1].left === 200000, r.unpaid);
 check("그 달 보기 주소(k열쇠) · 내부 칸 없음", r.unpaid?.[0]?.view === "k" + I("a8").view_key && !/office_id|bill_to_id|"id"/.test(JSON.stringify(r.unpaid)), r.unpaid);
+const keepSent = I("a9").sent_at;
+I("a9").sent_at = null;
+r = await call("invoiceView", ["k" + I("aa").view_key]);
+check("(보안 낮음) 안 보낸 달은 목록에 없음 (초안 안 보임)", r.unpaid?.map((x: any) => x.ym).join() === "2026-08", r.unpaid);
+I("a9").sent_at = keepSent;
 I("a8").view_until = new Date(Date.now() - 1000).toISOString();
 r = await call("invoiceView", ["k" + I("aa").view_key]);
 check("기한 지난 달은 주소 없이 금액만", r.unpaid?.[0]?.view === "" && r.unpaid[0].left === 110000, r.unpaid);

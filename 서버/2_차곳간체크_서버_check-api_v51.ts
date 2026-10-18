@@ -15,7 +15,7 @@
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
 //  v51 (2026-10-18): 대표님 «미수금 한꺼번에 보내기»(서버/설계/30 A안 · SQL 없음) — billBundleList({dealerId}) ·
 //    billBundleSend({dealerId, ids, due, test}): 한 딜러의 덜 받은 청구서 여러 달을 «가장 최근 달 청구서» 보기 주소로 한 통 ·
-//    #{기간} «2026년 8~10월» · #{금액} = 남은 금액 합 · 달마다 보냄 표시 · invoiceView 답에 unpaid(밀린 달 목록) 더함.
+//    #{기간} «2026년 8~10월» · #{금액} = 남은 금액 합 · 달마다 보냄 표시 · invoiceView 답에 unpaid(밀린 달 목록 · 보낸 달만) 더함.
 //    문자 단문/장문 판단을 45글자 → 90바이트(한글 2 · 영문·숫자 1)로 (⑦ 확정 문구가 단문으로 가게).
 //  v50 은 v49.2(재검사 대체 문자에 «차량 목록 https://check.cgg.co.kr/r/?c=열쇠») 를 품음.
 //  v50 (2026-10-18): 총괄 «대체 문자 전부» — 재검사 대체 문구를 알림톡/12 ⑦ 확정본으로(«만료» · 87바이트 단문) ·
@@ -1197,7 +1197,7 @@ async function billSend(ctx: Ctx, a0: any, a1?: any, a2?: any) {
    ============================================================ */
 const leftAmt = (v: any) => Math.max(0, Math.round(N(v.total_amount) - N(v.paid_amount)));
 async function unpaidOf(officeId: string, dealerId: string) {
-  const { data, error } = await db.from("check_invoice").select("id,ym,bill_to_id,bill_to_name,total_amount,paid_amount,view_key,view_until,sent_at,created_at")
+  const { data, error } = await db.from("check_invoice").select("id,ym,bill_to_id,bill_to_name,total_amount,paid_amount,view_key,view_until,sent_at,send_how,created_at")
     .eq("office_id", officeId).eq("bill_to_id", dealerId).limit(500);
   if (error) throw new Error("청구서를 읽지 못했습니다. 잠시 뒤 다시 해 주세요.");
   return (data ?? []).filter((v: any) => N(v.total_amount) > 0 && leftAmt(v) > 0)
@@ -1210,7 +1210,8 @@ async function unpaidOthers(inv: any) {
     const did = S(me?.bill_to_id);
     if (!did) return [];
     const list = await unpaidOf(S(inv.office_id), did);
-    return list.filter((v: any) => S(v.id) !== S(inv.id)).slice(0, 24).map((v: any) => {
+    /* v51(보안 낮음): 보낸 달(sent_at)만 — 대표가 보내기 전 초안을 딜러가 먼저 보지 않게 */
+    return list.filter((v: any) => S(v.id) !== S(inv.id) && !!S(v.sent_at) && S(v.send_how) !== "sending").slice(0, 24).map((v: any) => {
       const until = v.view_until ? Date.parse(S(v.view_until)) : Date.parse(S(v.created_at)) + BILL_VIEW_OLD_DAYS * 86400000;
       return { ym: S(v.ym), total: Math.round(N(v.total_amount)), paid: Math.round(N(v.paid_amount)), left: leftAmt(v),
         view: (isFinite(until) && until > Date.now() && S(v.view_key)) ? "k" + S(v.view_key) : "" };

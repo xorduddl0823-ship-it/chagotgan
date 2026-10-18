@@ -54,6 +54,7 @@ const c9 = await code(bill("2026-09", [["a9", 200000], ["b9", 50000]]));
 const c10 = await code(bill("2026-10", [["aa", 300000]]));
 const n9 = await code(bill("2026-09", [["n9", 90000]], { company: "나상사" }));
 const p9 = await code(bill("2026-09", [["p9", 80000]], { name: "박딜러" }));
+for (const c of [c7, c8, c9, c10, n9, p9]) store.wash_viewcode.find((x: any) => x.code === c).to_phones = ["01033334444"];   // 보낸 청구서
 check("보기 주소 6개", [c7, c8, c9, c10, n9, p9].every((x) => /^[A-F0-9]{24}$/.test(x)) && new Set([c7, c8, c9, c10, n9, p9]).size === 6);
 let v = (await call("viewCar", [c10])).result ?? {};
 check("10월 청구서 그대로 + unpaid", v.kind === "bill" && v.bill?.month === "2026-10" && Array.isArray(v.unpaid), v);
@@ -61,6 +62,10 @@ check("밀린 달 = 8·9월 (다 받은 7월 · 다른 상사 같은 이름 · �
 const u9 = v.unpaid?.find((x: any) => x.month === "2026-09") ?? {};
 check("9월: 청구 250,000 · 받음 50,000 · 남음 200,000 (장부로 셈)", u9.amount === 250000 && u9.paid === 50000 && u9.due === 200000, u9);
 check("그 달 보기코드 · 일감 id·메모 없음", u9.code === c9 && !/a9|b9|memo/.test(JSON.stringify(v.unpaid)), v.unpaid);
+store.wash_viewcode.find((x: any) => x.code === c9).to_phones = [];
+v = (await call("viewCar", [c10])).result ?? {};
+check("(보안 낮음) 안 보낸 달은 목록에 없음 (초안 안 보임)", v.unpaid?.map((x: any) => x.month).join() === "2026-08", v.unpaid);
+store.wash_viewcode.find((x: any) => x.code === c9).to_phones = ["01033334444"];
 store.wash_viewcode.find((x: any) => x.code === c8).expires_at = new Date(Date.now() - 1000).toISOString();
 v = (await call("viewCar", [c10])).result ?? {};
 check("기한 지난 달 주소는 목록에서 빠짐", v.unpaid?.map((x: any) => x.month).join() === "2026-09", v.unpaid);

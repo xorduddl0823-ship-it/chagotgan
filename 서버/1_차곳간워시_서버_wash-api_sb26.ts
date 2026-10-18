@@ -2187,13 +2187,15 @@ async function billUnpaidOthers(shop: string, recId: string, code: string) {
   if (!m) return [];
   const tail = "|" + m[2];
   try {
-    const { data, error } = await sb.from("wash_viewcode").select("code,rec_id,expires_at,data")
+    /* 보안 낮음(체크 v51 과 같음): 보낸 청구서(to_phones 에 받은 번호가 있는 것)만 — 보내기 전 초안은 안 보임 · 칸이 없으면(SQL 06 전) 목록 없음 */
+    const { data, error } = await sb.from("wash_viewcode").select("code,rec_id,expires_at,data,to_phones")
       .eq("shop", shop).eq("kind", "bill").gt("expires_at", new Date().toISOString()).limit(2000);
     if (error) return [];
     const byMonth = new Map<string, any>();
     (data || []).forEach((v: any) => {
       const r = /^bill:(\d{4}-\d{2})(\|.+)$/.exec(String(v.rec_id || ""));
       if (!r || r[2] !== tail || String(v.code) === code || !v.data) return;
+      if (!(Array.isArray(v.to_phones) && v.to_phones.length)) return;
       const had = byMonth.get(r[1]);
       if (!had || String(v.expires_at) > String(had.expires_at)) byMonth.set(r[1], v);
     });
