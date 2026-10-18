@@ -17,8 +17,8 @@ var CGG_MENU_WASH = {
     {key:"tax",      label:"세금계산서", icon:"receipt"},
     {key:"delivery", label:"배달",      icon:"truck",   isNew:true, subs:[{key:"outlog",label:"출고 기록"},{key:"dest",label:"목적지"},{key:"msg",label:"문구 · 발송 설정"}]},
     {key:"mat",      label:"자재",      icon:"box"},
-    {key:"settings", label:"설정",      icon:"gear",    subs:[{key:"biz",label:"우리 사업장"},{key:"parties",label:"거래처"},{key:"staff",label:"직원 계정"},{key:"items",label:"작업 항목 · 단가표"},
-                                                              {key:"caropt",label:"출고 지연 기준"},{key:"bank",label:"입금 자동 확인"},{key:"send",label:"알림"},{key:"outbox",label:"보낸 기록"},{key:"qr",label:"QR 코드"},{key:"bak",label:"백업 · 기기"}]}
+    {key:"settings", label:"설정",      icon:"gear",    subs:[{key:"biz",label:"우리 사업장"},{key:"bak",label:"백업 · 기기"},{key:"parties",label:"거래처"},{key:"staff",label:"직원 계정"},{key:"items",label:"작업 항목 · 단가표"},
+                                                              {key:"bank",label:"입금 자동 확인"},{key:"send",label:"알림"},{key:"outbox",label:"보낸 기록"},{group:"워시 전용"},{key:"qr",label:"QR 코드"},{key:"caropt",label:"출고 지연 기준"}]}
   ],
   /* 폰 아래 탭 5칸 (PC 화면일 때. 현장 화면 탭 «홈 · 입고 · 출고 · 오늘 · 날짜 검색»은 그대로) */
   tabs: [{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"delivery",icon:"truck",label:"배달"},{key:"money",icon:"wallet",label:"입·출금"},{key:"__all",icon:"more",label:"전체"}],
