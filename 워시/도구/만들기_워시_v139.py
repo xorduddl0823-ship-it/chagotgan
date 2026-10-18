@@ -103,7 +103,7 @@ def wording(seg):
     seg = seg.replace('"발급"', "\x00Q\x00").replace("일괄발급", "\x00I\x00")
     seg = seg.replace("발급", "발행")
     return seg.replace("\x00Q\x00", '"발급"').replace("\x00I\x00", "일괄발급")
-for name in ["renderBill", "renderTax", "pbCardHtml", "pbBarHtml", "pbCopy", "pbFixSheet", "taxUnpaidText", "useSheet", "taxBox"]:
+for name in ["renderBill", "renderTax", "pbCardHtml", "pbBarHtml", "pbCopy", "pbFixSheet", "taxUnpaidText", "useSheet", "taxBox", "wBandOf", "bindPbCard"]:
     assert name not in MONEY, name
     a, b = fn_span(name)
     s = s[:a] + wording(s[a:b]) + s[b:]
@@ -111,5 +111,17 @@ for a0, b0 in [("팝빌을 쓰면 버튼 한 번으로 발급돼요.", "팝빌�
                ("vTax:\"한 달치 세금계산서를 모아 보고, 발급하거나", "vTax:\"한 달치 세금계산서를 모아 보고, 발행하거나"),
                ("[\"tPbIssue\",\"세금계산서 발급\",\"국세청에 세금계산서를 발급해요.\"]", "[\"tPbIssue\",\"세금계산서 발행\",\"국세청에 세금계산서를 발행해요.\"]")]:
     rep(a0, b0)
+
+# 도움말(HELP) 안 «발급» 글 — 화면 단추 이름과 맞게
+for a0, b0 in [("팝빌로 발급한 건은 자동", "팝빌로 발행한 건은 자동"),
+               ("켜 두면 진짜 발급이 되지 않아요.", "켜 두면 진짜 발행이 되지 않아요."),
+               ("<b>자동 발급(팝빌)</b>: 팝빌 가입·연동 후 켜면 [고른 건 바로 발급]으로 국세청까지 바로 발급됩니다. 처음엔 <b>시험 모드</b>로 확인하세요. 한 번 발급된 건은 다시 발급되지 않습니다.",
+                "<b>자동 발행(팝빌)</b>: 팝빌 가입·연동 후 켜면 [고른 건 바로 발행]으로 국세청까지 바로 발행돼요. 처음엔 <b>시험 모드</b>로 확인하세요. 한 번 발행된 건은 다시 발행되지 않아요.")]:
+    rep(a0, b0)
+# 3) 잔액 부족 같은 보내기 실패 까닭은 sendWhy 를 먼저 (easyMsg 는 «잔액» 글을 숨겨서)
+rep('''    else{o.status="실패";o.err=kmsg(res&&(res.error||res.message),"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");}''',
+'''    else{o.status="실패";o.err=((window.CGG&&CGG.sendWhy)?CGG.sendWhy(String((res&&(res.error||res.message))||"")):"")||kmsg(res&&(res.error||res.message),"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");}   /* v139 sendWhy 먼저 */''')
+rep('''    o.err=kmsg(e,"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");''',
+'''    o.err=((window.CGG&&CGG.sendWhy)?CGG.sendWhy(String((e&&(e.message||e.error||e.__err))||(typeof e==="string"?e:""))):"")||kmsg(e,"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");   /* v139 sendWhy 먼저 */''')
 
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))

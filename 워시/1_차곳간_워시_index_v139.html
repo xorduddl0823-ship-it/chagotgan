@@ -5194,7 +5194,7 @@ function wBandOf(tab){
     if(MNTAB==="due")return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대 — 딜러 줄의 [입금 확인]을 눌러요"};
     return {count:d.length,text:"받을 금액 "+won(sum(d))+" · 차 "+d.length+"대",go:"받을 금액 보기",onGo:function(){goKey("money/due");}};}
   if(tab==="tax"){var n=0,u=0;try{taxGroups().forEach(function(g){var d=taxDoc(g);if(!g.issue||(d&&d.status==="발급"))return;if(g.unpaid)u++;else n++;});}catch(e){}
-    return {count:n,text:"발급할 수 있는 세금계산서 "+n+"건 (입금 완료)"+(u?" · 입금 전 "+u+"건은 입금 뒤 발급돼요":""),onGo:function(){var t=$("tTable");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView();}}};}
+    return {count:n,text:"발행할 수 있는 세금계산서 "+n+"건 (입금 완료)"+(u?" · 입금 전 "+u+"건은 입금 뒤 발행돼요":""),onGo:function(){var t=$("tTable");if(t)try{CGG.spot(t);}catch(e){t.scrollIntoView();}}};}
   if(tab==="outlog"){var f=wDelivBad();
     return {count:(S.dSub||"outlog")==="outlog"?f:0,tone:"stop",text:"오늘 못 보낸 출고 알림 "+f+"건 — 다시 보내 주세요",
       onGo:function(){var b=$("olResend");if(b)try{CGG.spot(b);}catch(e){b.scrollIntoView();}}};}
@@ -12876,7 +12876,7 @@ function bindPbCard(){
   };
   $("pbSave").onclick=function(){
     var o={on:$("pb_on").checked,test:$("pb_test").checked,userId:pbCfg().userId,cert:pbCert()};
-    if(o.on&&!o.test&&!confirmed("시험 모드를 끄면 진짜 세금계산서가 국세청으로 발급돼요.\n그대로 저장할까요?",this,"네, 실제로"))return;
+    if(o.on&&!o.test&&!confirmed("시험 모드를 끄면 진짜 세금계산서가 국세청으로 발행돼요.\n그대로 저장할까요?",this,"네, 실제로"))return;
     S.cfg=Object.assign({},S.cfg);S.cfg.popbill=o;
     saveCfg().then(function(){toast("저장했어요");renderTax();}).catch(function(e){toast(errMsg(e),true);});
   };
@@ -13439,11 +13439,11 @@ function sendNow(o){
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
       o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";
       if(o.via==="sms"&&o.sentKind==="ATA")o.sentKind="AUTO"; else if(o.via==="ata")o.sentKind="ATA";}
-    else{o.status="실패";o.err=kmsg(res&&(res.error||res.message),"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");}
+    else{o.status="실패";o.err=((window.CGG&&CGG.sendWhy)?CGG.sendWhy(String((res&&(res.error||res.message))||"")):"")||kmsg(res&&(res.error||res.message),"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");}   /* v139 sendWhy 먼저 */
     return saveJob(o).then(function(){return o;});
   }).catch(function(e){
     o.status="실패";
-    o.err=kmsg(e,"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");
+    o.err=((window.CGG&&CGG.sendWhy)?CGG.sendWhy(String((e&&(e.message||e.error||e.__err))||(typeof e==="string"?e:""))):"")||kmsg(e,"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");   /* v139 sendWhy 먼저 */
     return saveJob(o).then(function(){throw e;});
   });
 }
@@ -14844,7 +14844,7 @@ var HELP=[
   "<li><b>달력 메모</b>: 날짜를 누르고 아래 메모 칸에 적으면(시간은 골라도 되고 안 골라도 됨) 그 날 칸에 메모로 보이고, 그 날이 되면 <b>오늘 할 일</b> 맨 위에 떠요. 끝나면 체크. 체크 안 한 지난 메모는 '지난 날 메모'로 계속 남아요.</li>"+
   "<li>제목 옆 <b>달력 버튼</b>으로 원하는 년·월로 바로 가요.</li>"+
   "<li><b>오늘 할 일</b>: 늦어지는 차, 청구 안 보낸 곳, 부족한 자재 등. 누르면 그 화면으로 가요.</li>"+
-  "<li><b>빨간 [중요]</b> 표시: 자재 부족 · 청구서 안 보냄 · 세금계산서 안 보냄(지난달분, 이번 달 10일까지). 세금계산서를 홈택스로 발행했으면 세금계산서 화면에서 [이 달 발행 완료로 표시]를 누르면 사라져요(팝빌로 발급한 건은 자동).</li>"+
+  "<li><b>빨간 [중요]</b> 표시: 자재 부족 · 청구서 안 보냄 · 세금계산서 안 보냄(지난달분, 이번 달 10일까지). 세금계산서를 홈택스로 발행했으면 세금계산서 화면에서 [이 달 발행 완료로 표시]를 누르면 사라져요(팝빌로 발행한 건은 자동).</li>"+
   "<li><b>작업 항목별 · 이번 달 일감 · 입금</b>: 이번 달 흐름을 한눈에 봐요.</li></ul>"},
  {id:"ledger",who:"pc",t:"PC · 입고 · 출고 내역",h:
   "<ul><li>모든 입출고 기록 장부예요. 월·상태(작업 중/출고/입금 완료)로 거르고, 검색해요.</li>"+
@@ -14890,8 +14890,8 @@ var HELP=[
   "<li><b>[홈택스 일괄발급 엑셀 받기]</b>: 홈택스 → 전자세금계산서 → 일괄발급에 그대로 올리면 돼요(100건씩 나눠 받음).</li>"+
   "<li><b>버튼 한 번으로 국세청까지</b>: 팝빌을 켜면 엑셀을 홈택스에 올리지 않아도 돼요. 표에서 고른 건이 바로 나가요. 켜기 전에 <b>인증서를 한 번 등록</b>해야 하는데, 거래 은행에서 <b>전자세금계산서용 인증서</b>(보통 연 4,400원)를 받아 팝빌 사이트에서 등록하시면 돼요. 은행 업무용(금융거래용) 인증서로는 안 돼요.</li>"+
   "<li><b>수정발행</b>: 잘못 나갔으면 표의 <b>[수정발행]</b> 버튼을 눌러요. 「금액이 바뀌었어요 / 거래가 취소됐어요 / 잘못 적었어요 / 일부를 돌려줬어요 / 실수로 두 번 나갔어요」 중에 고르시면, 몇 장이 어떻게 나가는지 알려드린 뒤 처리해요.</li>"+
-  "<li><b>시험 모드</b>: 켜 두면 진짜 발급이 되지 않아요. 처음에는 시험 모드로 한 건 해보고, 잘 되면 끄세요.</li>"+
-  "<li><b>자동 발급(팝빌)</b>: 팝빌 가입·연동 후 켜면 [고른 건 바로 발급]으로 국세청까지 바로 발급됩니다. 처음엔 <b>시험 모드</b>로 확인하세요. 한 번 발급된 건은 다시 발급되지 않습니다.</li></ul>"},
+  "<li><b>시험 모드</b>: 켜 두면 진짜 발행이 되지 않아요. 처음에는 시험 모드로 한 건 해보고, 잘 되면 끄세요.</li>"+
+  "<li><b>자동 발행(팝빌)</b>: 팝빌 가입·연동 후 켜면 [고른 건 바로 발행]으로 국세청까지 바로 발행돼요. 처음엔 <b>시험 모드</b>로 확인하세요. 한 번 발행된 건은 다시 발행되지 않아요.</li></ul>"},
  {id:"mat",who:"pc",t:"PC · 자재 · 도매상",h:
   "<ul><li>[＋ 자재 추가]: 이름, 단위, 지금 재고, <b>안전재고</b>(이 아래로 떨어지면 '더 사야 함'), 단가, 사는 곳.</li>"+
   "<li>자재를 누르면 <b>＋구매(들어옴) / －사용(나감)</b>을 적어요. 재고가 알아서 바뀌고 아래 '최근 기록'에 남아요.</li>"+
