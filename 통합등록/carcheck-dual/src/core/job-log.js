@@ -33,8 +33,9 @@
  *  ── 작업 닫기 ───────────────────────────────────────────────────────────
  *    close()            세 전산(requiredSites) 모두 done + 번호 확인 + 번호가 서로 같을 때만 «정상 닫기»
  *    forceClose()       그 밖. **관리자 PIN 확인 표(admin-auth)** 가 있어야 하고 «강제 닫기»로 따로 기록
- *    releaseAfterForce() 강제로 닫힌 작업이 있으면 **다음 차 저장이 막힌다.** 관리자 확인 표 + 세 전산 목록을
- *                       사람이 확인했다는 표시가 모두 있어야 풀린다 (번호가 밀리지 않았는지 먼저 보라는 뜻)
+ *    releaseAfterForce() 강제로 닫힌 작업이 있으면 **다음 차 저장이 막힌다.** 풀기는 **사람이 세 전산 목록을 직접 보고
+ *                       확인하는 수동 절차**다 — 프로그램이 자동으로 확인한 것이 아니다. 관리자 확인 표 + 전산별 확인 시각 +
+ *                       까닭이 있어야 하고, «manual» 로 기록해 자동 검증 완료와 구분한다.
  *
  *  ── 여러 프로세스가 같은 기록 파일을 쓸 때 (잠금) ───────────────────────────
  *    · 잠금 파일 `<기록파일>.lock` 은 «임시 파일을 다 쓴 뒤 link» 로 만든다 → 내용 없는 잠금이 생기지 않음
@@ -233,8 +234,11 @@ function createJobLog(file, opts = {}) {
       } else if (e.type === 'close') {
         j.closed = true;
         j.forced = !!e.forced;
+      } else if (e.type === 'meta') {
+        j.meta = Object.assign(j.meta || {}, e.meta || {});
       } else if (e.type === 'release') {
         j.released = true;
+        j.release = { method: e.method, by: e.by, reason: e.reason, checkedAt: e.checkedAt, at: e.at };
       }
     });
     return { jobs, broken };
@@ -334,6 +338,22 @@ function createJobLog(file, opts = {}) {
         const jobId = newJobId(jobs);
         write({ type: 'job', jobId, office, pc, carNo: car, vin: String(vin || '').replace(/\s+/g, '').toUpperCase(), ...(replaces ? { replaces } : {}) });
         return jobId;
+      });
+    },
+
+    /**
+     * 작업에 딸린 판단 자료 저장 — 다시 켜도 이어 판단할 수 있게(예: 저장 전 찍어 둔 «이 차의 예전 번호들»).
+     *  받는 칸: oldNos(점검번호 목록) · startDate(YYYY-MM-DD) · entryNext(엔트리 다음 번호) · carinfoLast(카인포 마지막 번호)
+     *  사람 정보는 받지 않는다.
+     */
+    setMeta(jobId, meta) {
+      const m = {};
+      if (Array.isArray(meta && meta.oldNos)) m.oldNos = meta.oldNos.map((x) => String(x).slice(0, 40)).slice(0, 200);
+      ['startDate', 'entryNext', 'carinfoLast'].forEach((k) => { if (meta && meta[k] != null) m[k] = String(meta[k]).slice(0, 40); });
+      withLock(() => {
+        const j = getJob(load().jobs, jobId);
+        if (j.closed) throw new Error('이미 닫힌 작업입니다: ' + jobId);
+        write({ type: 'meta', jobId, meta: m });
       });
     },
 
@@ -442,18 +462,25 @@ function createJobLog(file, opts = {}) {
     },
 
     /**
-     * 강제 닫기 뒤 «다음 차 허용» — 관리자 확인 표 + 세 전산 목록을 사람이 확인했다는 표시가 모두 있어야 한다.
-     *  checks: { carinfo:true, carmodoo:true, entry:true } (requiredSites 전부)
+     * 강제 닫기 뒤 «다음 차 허용» — **사람이 세 전산 목록을 직접 확인한 수동 절차**.
+     *  ticket: 관리자 PIN 확인 표
+     *  checkedAt: { carinfo: '2026-10-19T09:10', carmodoo: …, entry: … } — 전산별로 사람이 목록을 확인한 시각(requiredSites 전부)
+     *  reason: 무엇을 확인했고 왜 다음 차를 허용하는지(5자 이상)
+     *  기록: type 'release' · method 'manual-list-check'(자동 검증이 아님) · 관리자 · 까닭 · 전산별 확인 시각
      */
-    releaseAfterForce(jobId, { ticket, checks } = {}) {
-      const miss = required.filter((s) => !(checks && checks[s] === true));
-      if (miss.length) throw new Error('다음 차를 허용하기 전에 이 전산 목록을 확인해 주세요: ' + miss.join(', '));
+    releaseAfterForce(jobId, { ticket, checkedAt, reason } = {}) {
+      const miss = required.filter((s) => !(checkedAt && checkedAt[s] && !Number.isNaN(Date.parse(checkedAt[s]))));
+      if (miss.length) throw new Error('다음 차를 허용하기 전에 이 전산 목록을 직접 확인하고 확인한 시각을 적어 주세요: ' + miss.join(', '));
+      if (String(reason || '').trim().length < 5) throw new Error('무엇을 확인했는지 까닭을 5자 이상 적어 주세요.');
       withLock(() => {
         const j = getJob(load().jobs, jobId);
         if (!(j.closed && j.forced)) throw new Error('강제로 닫힌 작업이 아닙니다: ' + jobId);
         if (j.released) throw new Error('이미 허용했습니다: ' + jobId);
         const by = useTicket(ticket, '다음 차 허용');
-        write({ type: 'release', jobId, ...pick({ by, checks: required.join(',') + ' 목록 확인' }) });
+        const times = {};
+        required.forEach((s) => { times[s] = new Date(Date.parse(checkedAt[s])).toISOString(); });
+        write({ type: 'release', jobId, method: 'manual-list-check', auto: false, by, checkedAt: times,
+                reason: String(reason).trim().slice(0, 300), sites: required.slice() });
       });
     },
 
@@ -479,7 +506,7 @@ function createJobLog(file, opts = {}) {
       const sites = {};
       Object.keys(j.sites).forEach((s) => { sites[s] = { state: siteState(j, s), checkNo: j.sites[s].checkNo || null }; });
       return { jobId: j.jobId, office: j.office, pc: j.pc, carNo: j.carNo, vin: j.vin, closed: j.closed,
-               forced: j.forced, released: j.released, sites };
+               forced: j.forced, released: j.released, release: j.release || null, meta: j.meta || {}, sites };
     },
   };
 }

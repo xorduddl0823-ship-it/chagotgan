@@ -39,4 +39,23 @@ contextBridge.exposeInMainWorld('api', {
   sendPhotos:  (id, d) => ipcRenderer.invoke('photo:send', { id, data: d }),
   probePhotos: (id)    => ipcRenderer.invoke('photo:probe', id),
   filePath,
+
+  //  등록 흐름 (설정 flow 가 켜졌을 때만 동작 — 화면은 시안 확정 뒤)
+  flow: {
+    start:        (o) => ipcRenderer.invoke('flow:start', o),
+    entryPrecheck:(o) => ipcRenderer.invoke('flow:entryPrecheck', o),
+    fill:         (o) => ipcRenderer.invoke('flow:fill', o),
+    allowSave:    (o) => ipcRenderer.invoke('flow:allowSave', o),
+    afterSave:    (o) => ipcRenderer.invoke('flow:afterSave', o),
+    confirmFromList: (o) => ipcRenderer.invoke('flow:confirmFromList', o),
+    resolve:      (o) => ipcRenderer.invoke('flow:resolve', o),
+    finish:       (o) => ipcRenderer.invoke('flow:finish', o),
+    resume:       ()  => ipcRenderer.invoke('flow:resume'),
+    forceClose:   (o) => ipcRenderer.invoke('flow:forceClose', o),
+    releaseAfterForce: (o) => ipcRenderer.invoke('flow:releaseAfterForce', o),
+  },
+  admin: {
+    isSet:  () => ipcRenderer.invoke('admin:isSet'),
+    setPin: (o) => ipcRenderer.invoke('admin:setPin', o),
+  },
 });

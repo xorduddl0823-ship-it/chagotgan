@@ -6,7 +6,9 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win",
-    "test": "node --test \"test/*.test.js\""
+    "pretest": "npm --prefix test install --no-audit --no-fund",
+    "test": "node --test \"test/*.test.js\"",
+    "test:electron": "node test/electron/run.js"
   },
   "license": "UNLICENSED",
   "devDependencies": {

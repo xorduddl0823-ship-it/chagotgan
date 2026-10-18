@@ -38,7 +38,7 @@ test('허락 한 번에 저장 요청 하나만 — 두 번 누르면 둘째는 
   assert.strictEqual(g.onRequest(a), 'pass');
   assert.strictEqual(g.onRequest(req('/api/save', 'POST', 'ajax')), 'hold');
   g.onResponse(a.id, 200);
-  assert.strictEqual(g.outcome().result, 'saved');
+  assert.strictEqual(g.outcome().result, 'reached');
   assert.strictEqual(g.sentCount, 1);
 });
 
@@ -49,7 +49,7 @@ test('form 저장도 같은 규칙 (허락 → 하나 내보냄 → 302 넘김 �
   assert.strictEqual(g.onRequest(f), 'pass');
   assert.strictEqual(g.outcome().result, 'waiting');
   g.onResponse(f.id, 302);
-  assert.strictEqual(g.outcome().result, 'saved');
+  assert.strictEqual(g.outcome().result, 'reached');
   const g2 = guard();
   g2.unlock();
   const f2 = req('/carCheck/regist.do', 'POST', 'form');
@@ -64,7 +64,7 @@ test('팝업에서 나가는 저장도 같은 규칙', () => {
   const p = req('/pop/insert', 'POST', 'popup');
   assert.strictEqual(g.onRequest(p), 'pass');
   g.onResponse(p.id, 200);
-  assert.strictEqual(g.outcome().result, 'saved');
+  assert.strictEqual(g.outcome().result, 'reached');
 });
 
 test('네트워크가 끊기면 «실패»가 아니라 «불확실» — 서버에 닿았는지 모르므로', () => {
@@ -94,13 +94,46 @@ test('응답을 끝내 못 받으면(시간 초과) «불확실»', () => {
   assert.strictEqual(g.outcome().result, 'uncertain');
 });
 
-test('서버가 분명한 오류(500)를 주면 «실패»', () => {
+test('서버 오류(4xx·5xx)는 «실패 확정»이 아니라 «불확실» — 저장한 뒤 오류를 돌려줬을 수 있음', () => {
+  [500, 503, 400, 409].forEach((code) => {
+    const g = guard();
+    g.unlock();
+    const a = req('/api/save', 'POST', 'ajax');
+    g.onRequest(a);
+    g.onResponse(a.id, code);
+    const o = g.outcome();
+    assert.strictEqual(o.result, 'uncertain', String(code));
+    assert.match(o.reasons[0], /서버 오류/);
+  });
+});
+
+test('다른 주소(별도 도메인)로 가는 쓰기 요청은 붙잡고 «알 수 없는 저장 경로»로 중단', () => {
   const g = guard();
   g.unlock();
-  const a = req('/api/save', 'POST', 'ajax');
-  g.onRequest(a);
-  g.onResponse(a.id, 500);
-  assert.strictEqual(g.outcome().result, 'failed');
+  assert.strictEqual(g.onRequest({ id: 'f1', url: 'https://upload.other.example/save', method: 'POST', kind: 'popup' }), 'hold');
+  assert.strictEqual(g.locked, false, '허락은 그 전산 저장에 쓰도록 남겨 둠');
+  const o = g.outcome();
+  assert.strictEqual(o.result, 'unknownPath');
+  assert.match(o.reasons[0], /upload\.other\.example/);
+  assert.deepStrictEqual(g.coverage().unknownHosts, ['upload.other.example']);
+  assert.strictEqual(g.onRequest({ id: 'f2', url: 'https://cdn.other.example/a.js', method: 'GET' }), 'ignore', '다른 주소 읽기는 무관');
+});
+
+test('팝업 창이 생겼는데 통제기가 붙지 않았으면 «알 수 없는 저장 경로»로 중단', () => {
+  const g = guard();
+  g.registerWindow('main'); g.attachWindow('main');
+  g.registerWindow('popup-1');
+  assert.strictEqual(g.outcome().result, 'unknownPath');
+  assert.deepStrictEqual(g.coverage().unattachedWindows, ['popup-1']);
+  g.attachWindow('popup-1');
+  assert.strictEqual(g.outcome().result, 'notSent');
+});
+
+test('통제 범위를 드러낸다 (확정 안 된 설정이면 confirmed:false)', () => {
+  const c = guard().coverage();
+  assert.strictEqual(c.confirmed, false);
+  assert.deepStrictEqual(c.hosts, ['site.example']);
+  assert.ok(c.savePatterns.length && c.readAllow.length);
 });
 
 test('허락했지만 사람이 저장을 누르지 않고 창을 닫음 → «안 나감»(notSent) → 작업 기록에서 취소 가능', () => {

@@ -15,6 +15,7 @@ const cmPhoto = require('./src/photo-upload');
 const cmDealer = require('./src/carmodoo-dealer');
 const ciDealer = require('./src/carinfo-dealer');
 const safety = require('./src/core/safety');
+const quiet = require('./src/sites/quiet-window');
 
 const SITES = {
   carmodoo: {
@@ -52,6 +53,11 @@ const popupLogs = { carmodoo: [], carinfo: [] };
 /** 막은 팝업 주소(host 만) — 전송 결과에 «막은 팝업»으로 알린다. 필요하면 config.json 의 popupHosts 에 넣는다 */
 const blockedPopups = { carmodoo: [], carinfo: [] };
 
+/** 조용한 창(config.quietWindows) — 켜면 프로그램이 일할 때 사이트 창을 앞으로 내지 않는다(기본 꺼짐 = 예전 그대로) */
+function isQuiet() {
+  try { return loadConfig().quietWindows === true; } catch { return false; }
+}
+
 /** 사이트 창(과 그 팝업)이 새 창을 열 때의 규칙 — src/core/safety.js popupAllowed */
 function popupHandler(id) {
   return ({ url }) => {
@@ -68,7 +74,7 @@ function popupHandler(id) {
      *  팝업이 로그인 안 된 상태로 뜰 수 있다. */
     return {
       action: 'allow',
-      overrideBrowserWindowOptions: { width: 1100, height: 860, autoHideMenuBar: true },
+      overrideBrowserWindowOptions: { width: 1100, height: 860, autoHideMenuBar: true, ...quiet.popupOptions(isQuiet()) },
     };
   };
 }
@@ -141,7 +147,14 @@ function createMainWindow() {
   windows.main.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
-function siteWindow(id, show = true) {
+/**
+ * 사이트 창을 꺼내 온다.
+ *  reason: 'user'(사람이 창 열기 단추) | 'auto'(프로그램이 일하려고) — 예전 호출의 true 는 'auto' 로 본다.
+ *  조용한 창이 꺼져 있으면 예전처럼 보이고 앞으로 낸다. 켜져 있으면 'user' 일 때만 앞으로 낸다.
+ */
+function siteWindow(id, reason = 'auto') {
+  const why = reason === 'user' ? 'user' : 'auto';
+  const show = quiet.windowAction(why, isQuiet()) === 'show-focus';
   const cfg = SITES[id];
   const old = windows[id];
   if (old && !old.isDestroyed()) {
@@ -164,6 +177,7 @@ function siteWindow(id, show = true) {
       partition: cfg.partition,
       contextIsolation: true,
       nodeIntegration: false,
+      ...quiet.extraPrefs(isQuiet()),
     },
   });
   /*  팝업(window.open)은 진짜 창으로 연다.
@@ -243,7 +257,7 @@ ipcMain.handle('site:open', async (_e, id) => {
   const cfg = SITES[id];
   if (!cfg) return { ok: false, error: '알 수 없는 사이트입니다: ' + id };
 
-  const win = siteWindow(id, true);
+  const win = siteWindow(id, 'user');
   await waitReady(win, 20000);
 
   //  화면이 뜨지 않았으면 한 번 더 홈으로 시도한다 (한 번의 실패로 빈 창이 남지 않도록)
@@ -380,10 +394,16 @@ async function ensureCarinfoDetail(win) {
   return { ok: false, error: '[성능점검] 을 눌렀지만 상세 화면이 나타나지 않았습니다.\n카인포 창 상태를 확인해 주세요.' };
 }
 
-ipcMain.handle('site:send', async (_e, { id, data }) => {
+ipcMain.handle('site:send', async (_e, { id, data }) => sendToSite(id, data));
+
+/**
+ * 사이트에 값 넣기(전송) — [카인포만]/[경기조합만]/[두 곳 동시 전송] 과 등록 흐름(flow:fill)이 함께 쓴다.
+ *  (예전 site:send 안에 있던 코드를 그대로 함수로 옮김 — 동작 같음)
+ */
+async function sendToSite(id, data) {
   const cfg = loadConfig();
   const site = SITES[id];
-  const win = siteWindow(id, true);
+  const win = siteWindow(id, 'auto');
   if (blockedPopups[id]) blockedPopups[id].length = 0;
 
   await waitReady(win);
@@ -470,7 +490,7 @@ ipcMain.handle('site:send', async (_e, { id, data }) => {
   } catch (err) {
     return { ok: false, error: err.message };
   }
-});
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -544,7 +564,7 @@ async function ensureCarinfoReady(win) {
 
 /** 카인포: 신규등록 → 차량번호 → 딜러 검색·선택 → 확인 까지 자동 진행 */
 ipcMain.handle('carinfo:prepare', async (_e, opts) => {
-  const win = siteWindow('carinfo', true);
+  const win = siteWindow('carinfo', 'auto');
 
   const ready = await ensureCarinfoReady(win);
   if (!ready.ok) return { ...ready, step: '카인포 화면 준비' };
@@ -567,7 +587,7 @@ ipcMain.handle('vin:sync', async (_e, { carNo }) => {
   const tailLen = cfg.vinTail || 6;
 
   // ── 경기조합에서 조회 ──
-  const cm = siteWindow('carmodoo', true);
+  const cm = siteWindow('carmodoo', 'auto');
   await waitReady(cm);
   if (!cm.webContents.getURL().includes('pop_carcheck')) {
     try { await cm.loadURL(SITES.carmodoo.form); } catch (e) {
@@ -969,9 +989,12 @@ async function noEnterSave(win, on) {
 
 async function pressEnter(win) {
   const wc = win.webContents;
-  try { win.focus(); } catch {}
-  wc.focus();
-  await sleep(120);                       // 창이 앞으로 나올 시간
+  const q = isQuiet();
+  if (!q) {
+    try { win.focus(); } catch {}
+    wc.focus();
+    await sleep(120);                     // 창이 앞으로 나올 시간
+  }
 
   /*  누르기 직전에 딜러명 칸을 다시 잡아 둔다.
    *  창을 앞으로 내는 사이 입력 자리가 옮겨간다 — 실제로 엔터가 BODY 로 가서
@@ -987,9 +1010,14 @@ async function pressEnter(win) {
    *  사이트가 걸어 둔 처리기(사원선택 열기)는 그대로 돈다. */
   await noEnterSave(win, true);
   try {
-    wc.sendInputEvent({ type: 'keyDown', keyCode: 'Enter' });
-    wc.sendInputEvent({ type: 'char', keyCode: 'Enter' });
-    wc.sendInputEvent({ type: 'keyUp', keyCode: 'Enter' });
+    if (q) {
+      //  조용한 창: 창 초점 없이 개발자 연결로 «진짜 엔터»(isTrusted) — src/sites/quiet-window.js
+      await quiet.cdpKey(wc, 'Enter');
+    } else {
+      wc.sendInputEvent({ type: 'keyDown', keyCode: 'Enter' });
+      wc.sendInputEvent({ type: 'char', keyCode: 'Enter' });
+      wc.sendInputEvent({ type: 'keyUp', keyCode: 'Enter' });
+    }
     await sleep(700);                     // 사이트가 사원선택을 여는 동안
   } finally {
     const g = await noEnterSave(win, false);
@@ -1256,7 +1284,7 @@ async function pickCarmodooDealerInner(win, name, chosen, match, frame) {
   const typed = await onForm(cmDealer.buildDealerTypeScript(want), 15000, "딜러명 넣기");
   if (!typed || !typed.ok) return { ok: false, error: (typed && typed.error) || '딜러명을 넣지 못했습니다.' };
 
-  win.show();
+  if (!isQuiet()) win.show();
   const active = await pressEnter(win);
 
   /*  ③ 사원선택 조각이 뜨기를 기다린다.
@@ -1829,7 +1857,7 @@ ipcMain.handle('dealer:pick', async (_e, arg) => {
 ipcMain.handle('photo:send', async (_e, { id, data }) => {
   const site = SITES[id];
   if (!site) return { ok: false, error: '알 수 없는 사이트입니다.' };
-  const win = siteWindow(id, true);
+  const win = siteWindow(id, 'auto');
   await waitReady(win);
   if (!isOnSite(win, site)) return { ok: false, error: site.name + ' 화면이 열려 있지 않습니다.' };
 
@@ -2084,9 +2112,89 @@ async function autoLogin(win, id) {
 ipcMain.handle('site:login', async (_e, id) => {
   const cfg = SITES[id];
   if (!cfg) return { ok: false, error: '알 수 없는 사이트입니다: ' + id };
-  const win = siteWindow(id, true);
+  const win = siteWindow(id, 'auto');
   await waitReady(win);
   //  화면 자체가 안 떴으면 로그인을 시도해 봐야 소용이 없다
   if (!isOnSite(win, cfg)) return { ok: false, error: cfg.name + ' 화면이 아직 열리지 않았습니다.' };
   return autoLogin(win, id);
 });
+
+/* ================================================================
+ *  등록 흐름 (카인포 → 카모두 → 엔트리) — 2026-10-19 연결
+ * ----------------------------------------------------------------
+ *  ⚠ 기본은 꺼져 있다(config.json 의 "flow": true 일 때만). 지금 쓰는 단추·기능은 그대로.
+ *  ⚠ 실제 전산 설정(src/sites/site-config.js REAL)이 확정되기 전에는 흐름이 저장을 허락하지 않는다
+ *     — 값 넣기·목록 읽기까지만 되고 [저장해도 돼요]는 «통제 범위 미확정»으로 거절된다.
+ *  공통 기능(src/core)과 가온 내부용 전산 연결(src/sites)은 나눠 둔다.
+ * ================================================================ */
+const { createJobLog, pcTag } = require('./src/core/job-log');
+const { createAdminAuth } = require('./src/core/admin-auth');
+const { createRegisterFlow } = require('./src/core/register-flow');
+const { createElectronAdapters } = require('./src/sites/flow-adapters');
+const siteConfig = require('./src/sites/site-config');
+
+let flowCtx = null;
+function flow() {
+  if (loadConfig().flow !== true) throw new Error('등록 흐름이 꺼져 있습니다(설정 flow).');
+  if (flowCtx) return flowCtx;
+  const os = require('os');
+  const admin = createAdminAuth(userFile('admin.json'));
+  const jobLog = createJobLog(userFile('jobs-' + pcTag(os.hostname()) + '.jsonl'), { admin, office: loadConfig().office || 'gaon' });
+  const C = siteConfig.REAL;
+  const adapters = createElectronAdapters({
+    config: C,
+    getWindow: (s) => (s === 'entry' ? null : siteWindow(s, 'auto')),
+    fillFns: {
+      carinfo: async (data) => { const r = await sendToSite('carinfo', data); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
+      carmodoo: async (data) => { const r = await sendToSite('carmodoo', data); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
+      entry: async () => ({ filled: [], missing: ['엔트리 연결 모듈이 아직 없습니다(10/19 화면 확인 뒤)'] }),
+    },
+  });
+  const siteConfirmed = { carinfo: C.carinfo.confirmed, carmodoo: C.carmodoo.confirmed, entry: C.entry.confirmed };
+  flowCtx = { admin, jobLog, flow: createRegisterFlow({ jobLog, adapters, siteConfirmed }) };
+  return flowCtx;
+}
+
+/** 흐름 IPC 공통 — 오류는 쉬운 말 한 줄로 돌려준다 */
+const flowCall = (fn) => async (_e, arg) => {
+  try { return await fn(arg || {}); } catch (e) { return { ok: false, error: e.message }; }
+};
+ipcMain.handle('flow:start', flowCall((a) => flow().flow.start({ carNo: a.carNo, vin: a.vin })));
+ipcMain.handle('flow:entryPrecheck', flowCall((a) => flow().flow.entryPrecheck(a.jobId)));
+ipcMain.handle('flow:fill', flowCall((a) => flow().flow.fill(a.jobId, a.site, a.data || {})));
+ipcMain.handle('flow:allowSave', flowCall((a) => flow().flow.allowSave(a.jobId, a.site, { partialConfirmedBy: a.partialConfirmedBy })));
+ipcMain.handle('flow:afterSave', flowCall((a) => flow().flow.afterSave(a.jobId, a.site)));
+ipcMain.handle('flow:confirmFromList', flowCall((a) => flow().flow.confirmFromList(a.jobId, a.site, { partialConfirmedBy: a.partialConfirmedBy })));
+ipcMain.handle('flow:resolve', flowCall((a) => { flow().jobLog.resolve(a.jobId, a.site, a.outcome, { by: a.by }); return { ok: true }; }));
+ipcMain.handle('flow:finish', flowCall((a) => flow().flow.finish(a.jobId)));
+ipcMain.handle('flow:resume', flowCall(() => ({ ok: true, ...flow().flow.resume() })));
+//  관리자 — PIN 은 화면에서 받아 여기(메인)에서만 확인하고, 확인 표는 화면으로 내보내지 않는다
+ipcMain.handle('admin:isSet', flowCall(() => ({ ok: true, set: flow().admin.isSet() })));
+ipcMain.handle('admin:setPin', flowCall((a) => { flow().admin.setPin(a.pin, a.currentPin); return { ok: true }; }));
+ipcMain.handle('flow:forceClose', flowCall((a) => {
+  const ctx = flow();
+  const v = ctx.admin.verify(a.by, a.pin);
+  if (!v.ok) return v;
+  ctx.jobLog.forceClose(a.jobId, { ticket: v.ticket, reason: a.reason, confirm: a.confirm });
+  return { ok: true };
+}));
+ipcMain.handle('flow:releaseAfterForce', flowCall((a) => {
+  const ctx = flow();
+  const v = ctx.admin.verify(a.by, a.pin);
+  if (!v.ok) return v;
+  ctx.jobLog.releaseAfterForce(a.jobId, { ticket: v.ticket, checkedAt: a.checkedAt, reason: a.reason });
+  return { ok: true };
+}));
+
+/*  시험용 실행(CARCHECK_SMOKE=1): 실제 기록 폴더를 건드리지 않게 임시 폴더를 쓰고, 입력 화면이 뜨면 끝낸다 */
+if (process.env.CARCHECK_SMOKE === '1') {
+  app.setPath('userData', fs.mkdtempSync(path.join(require('os').tmpdir(), 'cc-smoke-')));
+  app.whenReady().then(() => {
+    setTimeout(async () => {
+      let title = '';
+      try { title = await windows.main.webContents.executeJavaScript('document.title', true); } catch {}
+      console.log('SMOKE main-title=' + title + ' handlers=' + ['flow:start', 'site:send', 'admin:setPin'].filter((h) => ipcMain._invokeHandlers ? ipcMain._invokeHandlers.has(h) : true).length);
+      app.exit(0);
+    }, 1500);
+  });
+}

@@ -232,7 +232,7 @@ test('관리자 PIN 을 5번 틀리면 잠기고, 확인 표는 5분이 지나�
   assert.ok(!fs.readFileSync(path.join(dir, 'admin.json'), 'utf8').includes(PIN), 'PIN 을 그대로 저장하지 않음');
 });
 
-test('강제로 닫힌 작업이 있으면 다음 차 저장이 막히고, 관리자 + 세 전산 목록 확인이 있어야 풀린다', () => {
+test('강제로 닫힌 작업이 있으면 다음 차가 막히고, 풀기는 «사람이 세 전산 목록을 직접 확인한 수동 절차»로 기록된다', () => {
   const file = tmpFile();
   const { admin, log } = withAdmin(file);
   const a = log.newJob(CAR);
@@ -245,11 +245,21 @@ test('강제로 닫힌 작업이 있으면 다음 차 저장이 막히고, 관�
   assert.strictEqual(c.ok, false);
   assert.strictEqual(c.forcedBlock, a);
   assert.deepStrictEqual(log.resumeList().forcedBlocks, [a]);
-  assert.throws(() => log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checks: { carinfo: true, carmodoo: true } }), /entry/);
-  assert.throws(() => log.releaseAfterForce(a, { checks: { carinfo: true, carmodoo: true, entry: true } }), /관리자 확인/);
-  log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checks: { carinfo: true, carmodoo: true, entry: true } });
+  const T = { carinfo: '2026-10-19T09:10:00', carmodoo: '2026-10-19T09:12:00', entry: '2026-10-19T09:15:00' };
+  const R = '세 전산 목록에서 번호 밀림 없음 확인';
+  assert.throws(() => log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checkedAt: { carinfo: T.carinfo, carmodoo: T.carmodoo }, reason: R }), /entry/);
+  assert.throws(() => log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checkedAt: { ...T, entry: '언젠가' }, reason: R }), /entry/, '시각 아님');
+  assert.throws(() => log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checkedAt: T, reason: '확인' }), /5자 이상/);
+  assert.throws(() => log.releaseAfterForce(a, { checkedAt: T, reason: R }), /관리자 확인/);
+  log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checkedAt: T, reason: R });
   assert.strictEqual(log.canSubmit(b, 'carinfo').ok, true);
-  assert.throws(() => log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checks: { carinfo: true, carmodoo: true, entry: true } }), /이미 허용/);
+  const rel = log.get(a).release;
+  assert.strictEqual(rel.method, 'manual-list-check', '자동 검증과 구분되는 수동 확인');
+  assert.strictEqual(rel.by, '대표님');
+  assert.strictEqual(rel.reason, R);
+  assert.deepStrictEqual(Object.keys(rel.checkedAt).sort(), ['carinfo', 'carmodoo', 'entry']);
+  assert.match(fs.readFileSync(file, 'utf8'), /"auto":false/);
+  assert.throws(() => log.releaseAfterForce(a, { ticket: admin.verify('대표님', PIN).ticket, checkedAt: T, reason: R }), /이미 허용/);
 });
 
 test('정상으로 닫힌 작업은 다음 차를 막지 않는다', () => {
