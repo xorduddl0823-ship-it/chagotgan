@@ -17,6 +17,9 @@
  *
  *  기록 파일은 한 줄에 하나씩 덧붙이기만 한다(고치지 않음). 줄마다 디스크에 바로 쓴다(fsync).
  *  이름·전화·로그인 정보는 받지 않는다. 차량번호·차대번호는 이어 보기·중복 확인에 꼭 필요해서 남긴다.
+ *
+ *  사업장(office): 지금은 가온 하나지만, 나중에 다른 점검장이 쓸 수 있게 작업마다 사업장 표시를 붙인다.
+ *  «한 번에 한 대»·«같은 차 중복» 판단은 같은 사업장 안에서만 한다.
  */
 const fsDefault = require('fs');
 
@@ -37,6 +40,7 @@ function pick(extra) {
 function createJobLog(file, opts = {}) {
   const fs = opts.fs || fsDefault;
   const now = opts.now || (() => new Date());
+  const office = String(opts.office || 'default');
 
   /** 한 줄을 디스크까지 확실히 쓴다. 실패하면 오류를 던진다(호출한 쪽은 단추를 풀면 안 됨). */
   function write(entry) {
@@ -61,7 +65,7 @@ function createJobLog(file, opts = {}) {
       let e;
       try { e = JSON.parse(line); } catch { broken++; return; }
       if (e.type === 'job') {
-        jobs.set(e.jobId, { jobId: e.jobId, carNo: e.carNo, vin: e.vin, at: e.at, sites: {}, closed: false, replaces: e.replaces || null });
+        jobs.set(e.jobId, { jobId: e.jobId, office: String(e.office || 'default'), carNo: e.carNo, vin: e.vin, at: e.at, sites: {}, closed: false, replaces: e.replaces || null });
       } else if (e.type === 'stage' && jobs.has(e.jobId)) {
         const j = jobs.get(e.jobId);
         const s = j.sites[e.site] || (j.sites[e.site] = { stage: null, history: [] });
@@ -107,12 +111,12 @@ function createJobLog(file, opts = {}) {
       if (!car) throw new Error('차량번호가 없어 작업을 만들 수 없습니다.');
       const { jobs } = load();
       for (const j of jobs.values()) {
-        if (!j.closed && String(j.carNo) === car && j.jobId !== replaces) {
+        if (!j.closed && j.office === office && String(j.carNo) === car && j.jobId !== replaces) {
           throw new Error('이 차(' + car + ')는 아직 끝나지 않은 작업(' + j.jobId + ')이 있습니다. 그 작업을 먼저 이어 하거나 정리해 주세요.');
         }
       }
       const jobId = newJobId(jobs);
-      write({ type: 'job', jobId, carNo: car, vin: String(vin || '').replace(/\s+/g, '').toUpperCase(), ...(replaces ? { replaces } : {}) });
+      write({ type: 'job', jobId, office, carNo: car, vin: String(vin || '').replace(/\s+/g, '').toUpperCase(), ...(replaces ? { replaces } : {}) });
       return jobId;
     },
 
@@ -148,7 +152,7 @@ function createJobLog(file, opts = {}) {
       //  한 번에 한 대: 저장을 한 번이라도 풀어 준 다른 작업이 닫히기(세 전산 모두 끝) 전에는 막는다.
       //  입력만 해 둔 차(저장을 안 푼 작업)는 기다리는 차라 막지 않는다.
       for (const o of jobs.values()) {
-        if (o.jobId === jobId || o.closed) continue;
+        if (o.jobId === jobId || o.closed || o.office !== j.office) continue;
         const started = Object.keys(o.sites).some((s) => {
           const x = siteState(o, s);
           return x === 'uncertain' || x === 'stopped' || rank(x) >= rank('submitReady');
@@ -199,7 +203,8 @@ function createJobLog(file, opts = {}) {
         if (j.closed) return;
         const sites = {};
         Object.keys(j.sites).forEach((s) => { sites[s] = { state: siteState(j, s), checkNo: j.sites[s].checkNo || null }; });
-        list.push({ jobId: j.jobId, carNo: j.carNo, vin: j.vin, sites });
+        if (j.office !== office) return;
+        list.push({ jobId: j.jobId, office: j.office, carNo: j.carNo, vin: j.vin, sites });
       });
       return { list, broken };
     },
@@ -209,7 +214,7 @@ function createJobLog(file, opts = {}) {
       if (!j) return null;
       const sites = {};
       Object.keys(j.sites).forEach((s) => { sites[s] = { state: siteState(j, s), checkNo: j.sites[s].checkNo || null }; });
-      return { jobId: j.jobId, carNo: j.carNo, vin: j.vin, closed: j.closed, sites };
+      return { jobId: j.jobId, office: j.office, carNo: j.carNo, vin: j.vin, closed: j.closed, sites };
     },
   };
 }

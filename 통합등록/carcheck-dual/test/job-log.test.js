@@ -149,3 +149,17 @@ test('기록에는 이름·전화 같은 칸이 남지 않는다', () => {
   assert.ok(!text.includes('010-0000-0000'));
   assert.ok(text.includes('시험'));
 });
+
+test('사업장이 다르면 «한 번에 한 대»·«같은 차 중복» 판단을 섞지 않는다 (상용화 대비)', () => {
+  const file = tmpFile();
+  const gaon = createJobLog(file, { office: 'gaon' });
+  const other = createJobLog(file, { office: 'other' });
+  const a = gaon.newJob(CAR);
+  gaon.mark(a, 'carinfo', 'filled');
+  assert.ok(gaon.beginSubmit(a, 'carinfo').ok);
+  const b = other.newJob(CAR);                                  // 다른 점검장은 같은 차라도 만들 수 있음
+  other.mark(b, 'carinfo', 'filled');
+  assert.strictEqual(other.canSubmit(b, 'carinfo').ok, true, '다른 사업장 작업 때문에 막히지 않음');
+  assert.strictEqual(gaon.get(a).office, 'gaon');
+  assert.strictEqual(gaon.resumeList().list.length, 1, '이어 보기 목록에는 우리 사업장 것만');
+});
