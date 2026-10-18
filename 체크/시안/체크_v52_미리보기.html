@@ -3486,7 +3486,7 @@ function loadBill(){
       var fee=(v.fee_amount||0)+(v.ext_amount||0), rep=v.repair_amount||0;
       var tot=v.total_amount||0, paid=v.paid_amount||0;
       var b={ id:v.id, name:v.bill_to_name, members:mem.join(" · "),
-        cnt:(v.dom_n||0)+(v.imp_n||0)+(v.etc_n||0), fee:fee, rep:rep, paid:paid,
+        cnt:(v.dom_n||0)+(v.imp_n||0)+(v.etc_n||0), fee:fee, rep:rep, paid:paid, feeOnly:(v.fee_amount||0), ext:(v.ext_amount||0),
         total:tot, left:tot-paid, comp:v.company_name||"",
         biz:(v.issuer_name||"")+(v.issuer_biz?" "+v.issuer_biz:"") || "(미등록)",
         tax: v.tax_issue ? "끊음" : "안 끊음",
@@ -3665,7 +3665,7 @@ var NEEDS={
   home:["bill","dep"], sales:["sales"], bill:["bill","set","sales"], billgrp:["bill","set"], billtpl:[],
   deposit:["dep","bill"], unpaid:["ins"],
   partner:["set"], staff:["set"], price:["set"], files:["set","up"], backup:["set"],
-  popbill:["set","pop"], hometax:["bill","tax"],
+  popbill:["set","pop"], hometax:["bill","tax","set"],
   remind:["remind","set"], sms:["pop"],
   deliv:["deliv"], delivdest:["deliv"], delivplace:["deliv"],
   delivmsg:["deliv"], delivdriver:["deliv"], delivtrash:["deliv","delivtrash"]
@@ -4447,7 +4447,7 @@ PAGE.sales=function(){
       '<div><p class="k">재검 · 선납 · 가성능</p><p class="v">'+won(r.etc)+'<em>대 · 0원</em></p></div>'+
       '<div><p class="k">검사비</p><p class="v">'+won(vmoney(r.fee))+'<em>원</em></p></div>'+
       '<div><p class="k">정비비</p><p class="v">'+won(vmoney(r.rep))+'<em>원 · '+won(r.repN)+'건</em></p></div>'+
-      '<div><p class="k">성능보증보험료</p><p class="v">'+won(vmoney(r.ins))+'<em>원 · '+won(r.insN)+'대</em></p></div>'+
+      '<div><p class="k">성능보증보험료</p><p class="v">'+won(insMoney(r.ins))+'<em>원 · '+won(r.insN)+'대</em></p></div>'+
       '<div><p class="k">보험료 면제(P)</p><p class="v">'+won(r.free)+'<em>대</em></p></div>'+
     '</div>'+
     (last12.length?('<div class="spark"><div class="lab"><b>최근 12달 매출</b>'+
@@ -4532,7 +4532,7 @@ AFTER.sales=function(){
            "지난달 대비(%)","지난해 같은 달(%)","한 대 평균","보험료","청구액","들어온 금액"];
     var b=SALES.map(function(r){ return [r.ym,r.n,r.dom,r.imp,r.etc,vmoney(r.fee),vmoney(r.rep),
       vmoney(r.total), r.mom==null?"":r.mom, r.yoy==null?"":r.yoy, vmoney(r.avg),
-      vmoney(r.ins), vmoney(r.bill), vmoney(r.got)]; });
+      insMoney(r.ins), vmoney(r.bill), vmoney(r.got)]; });
     if(typeof XLSX==="undefined"){ bar("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.","err"); return; }   /* v39 */
     var wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([h].concat(b)),
@@ -5510,7 +5510,7 @@ PAGE.hometax=function(){
   var able=TAXES.filter(function(t){ return t.can && !/발급|전송/.test(t.state); });
   var done=TAXES.filter(function(t){ return /발급|전송/.test(t.state); });
   var skip=TAXES.filter(function(t){ return t.skip; });
-  var bad =TAXES.filter(function(t){ return !t.can && !t.skip; });
+  var bad =TAXES.filter(function(t){ return !t.can && !t.skip && !t.unpaid; });
   var sup=0,vat=0; able.forEach(function(t){ sup+=t.supply; vat+=t.tax; });
   var pbOk=OFFICE.popbill_userid && OFFICE.biz_no;
   var endDay=(function(){ var y=Number(ST.ym.slice(0,4)), m=Number(ST.ym.slice(5,7));
@@ -5554,7 +5554,7 @@ PAGE.hometax=function(){
         if(r.skip) return '<span class="tag" style="background:var(--chip);color:var(--muted)">안 받음</span>';
         if(!v) return r.can
           ? '<span class="tag" style="background:var(--warn-soft);color:var(--warn)">아직</span>'
-          : '<span class="tag" style="background:var(--danger-soft);color:var(--danger)">'+esc(r.why)+'</span>';
+          : '<span class="tag" style="'+(r.unpaid?'background:var(--line);color:var(--muted)':'background:var(--danger-soft);color:var(--danger)')+'">'+esc(r.why)+'</span>';
         var c=/실패/.test(v)?"background:var(--danger-soft);color:var(--danger)"
              :/전송성공|발급/.test(v)?"background:var(--good-soft);color:var(--good)"
              :"background:var(--brand-soft);color:var(--brand)";
@@ -5563,7 +5563,7 @@ PAGE.hometax=function(){
     ], TAXES, {pick:true,
       actions:function(r){ return /발급|전송/.test(r.state)   /* v35: 줄 버튼은 할 일 칸 */
           ? [{key:"fix",label:"고치기",attr:"data-txfix",val:r.id},{key:"pop",label:"보기",attr:"data-txpop",val:r.id}]
-          : [{key:"skip",label:(r.skip?"다시 받기":"안 받음"),attr:"data-txskip",val:r.id}]; },
+          : (r.unpaid?[{key:"early",label:"입금 전에 발급",attr:"data-txearly",val:r.id}]:[]).concat([{key:"skip",label:(r.skip?"다시 받기":"안 받음"),attr:"data-txskip",val:r.id}]); },
       filters:'<select id="txFil"><option value="">전체</option><option value="wait">아직 안 함</option>'+
               '<option value="done">발급됨</option><option value="skip">안 받음</option>'+
               '<option value="bad">못 함</option></select>',
@@ -7000,7 +7000,7 @@ PAGE.partner=function(){
       ofld("owner_name","대표자")+ofld("tel","연락처")+
       ofld("addr","사업장 주소")+ofld("sms_from","문자로 대신 갈 때 보내는 번호")+
       ofld("biz_type","업태 (세금계산서에 찍힘)")+ofld("biz_class","종목 (세금계산서에 찍힘)")+
-      ofld("bank_fee","검사비 받는 계좌")+ofld("bank_repair","정비비 받는 계좌")+
+      ofld("bank_fee","검사비 받는 계좌")+ofld("bank_repair","정비비 받는 계좌")+'<div class="fld"><label class="f" for="of-ins_vat">보험료 부가세 (카모두 환경설정과 같게)</label><select id="of-ins_vat"><option value="미포함">부가세 미포함 — 엑셀 금액 그대로</option><option value="포함"'+(OFFICE.ins_vat==="포함"?" selected":"")+'>부가세 포함</option></select></div>'+
     '</div>'+
     '<div class="tools"><button class="btn primary" id="offSave">저장</button>'+
       '<span style="font-size:12.5px;color:var(--muted)">팝빌 '+(OFFICE.popbill_ready?"연결됨":"연결 안 됨")+
@@ -7208,7 +7208,7 @@ function companyDelGo(){
     }).catch(function(e){ fail({message:needNewServer(e)}); });
   }, busyN.length ? "소속 딜러가 있는 상사 <b>"+won(busyN.length)+"곳</b>은 지워지지 않아요. 딜러를 먼저 다른 상사로 옮기거나 지워 주세요." : "");
 }
-var OFF_KEYS=["name","biz_no","owner_name","tel","addr","sms_from","biz_type","biz_class",
+var OFF_KEYS=["ins_vat","name","biz_no","owner_name","tel","addr","sms_from","biz_type","biz_class",
   "bank_fee","bank_repair"];
 function ofld(k,lab){
   return '<div class="fld"><label class="f">'+lab+'</label>'+
@@ -10208,7 +10208,7 @@ function billDel(){
        warn:"지운 청구서는 «청구서 만들기»를 다시 누르면 다시 생겨요. 아예 빼려면 그 딜러의 차를 다른 청구처로 옮기거나 거래처에서 정리해 주세요.", yes:"지우기"}, function(){
     busy(true);
     call("invoiceDel",[{ids:L.map(function(b){ return b.id; }), ym:ST.ym}]).then(function(r){
-      busy(false); clearPick("bill"); bar(won((r&&r.n)||L.length)+"곳 청구서를 지웠어요.","ok"); refresh(["bill"]);
+      busy(false); clearPick("bill"); var kp=(r&&r.kept)||[]; bar(won((r&&r.n)||0)+"곳 청구서를 지웠어요."+(kp.length?" 못 지운 "+kp.length+"곳 — "+kp.slice(0,2).map(function(x){ return (x.name||"")+"("+(x.why||"")+")"; }).join(" / "):""), kp.length?"err":"ok"); refresh(["bill"]);
     }).catch(function(er){ busy(false);
       if(!noSrv(er)){ fail(er); return; }
       /* 서버 창구 전: 이 화면에서만 빼 두고(보내기 · 인쇄 대상에서 빠짐), 새로고침하면 다시 보여요 */
@@ -10894,6 +10894,329 @@ AFTER.sales=function(){ if(as) as.apply(this,arguments);
   var r=(typeof HERO!=="undefined"&&SALES[HERO])||SALES[0]; var t=warnText(r);
   var unk=Array.isArray(r&&r.unknown)&&r.unknown.length, need=r&&Number(r.feeNeed)>0;
   if(t) addBand("v52Sales", (r?ymText(r.ym)+" · ":"")+t, !isOwner()?"":unk?"단가표 보기":need?"청구서에서 금액 넣기":"", function(){ if(unk){ go("price"); return; } if(r&&r.ym){ ST.ym=r.ym; try{ set("cgg_ym",r.ym); }catch(e){} } go("bill"); }); };
+})();
+</script>
+
+<script>
+/* ═══ v52 — 세금계산서 «입금한 곳만 발급» (대표님 «매우매우 중요» 10/18)
+   · 받을 금액이 남은 청구서는 발급 대상 · 전체 선택 · 팝빌 발급 · 홈택스 양식에서 빠지고 «입금 전 — 발급 안 함»(회색 · 체크 안 됨)
+   · 예외: 줄마다 «입금 전에 발급» → 가운데 확인 창(누구에게 · 얼마 · 아직 입금 안 됨) → 그 한 장만 발급 (서버 v46 taxIssue opt.unpaidOk)
+   · 홈택스 일괄발급: 우리 마음대로 만든 엑셀 대신, 대표님이 홈택스에서 받은 «공식 양식 파일»을 골라 그 칸 이름대로 채워 내려받기
+   받은 금액은 서버 taxList 의 paid · left(v46~), 없으면 같은 달 청구서(BILLS)의 받은 금액으로 셈 ═══ */
+(function(){
+function endOf(ym){ var y=Number(String(ym).slice(0,4)), m=Number(String(ym).slice(5,7)); if(!y||!m) return ""; return new Date(Date.UTC(y,m,0)).toISOString().slice(0,10); }
+function wd(t){ return TXDT[t.id]||t.writeDate||endOf(ST.ym); }
+function leftOf(t){
+  if(t._srv===undefined) t._srv=(t.left!=null&&!isNaN(Number(t.left)))?{left:Number(t.left), paid:Number(t.paid)||0}:null;   /* 서버 v46 값(처음 받은 그대로) */
+  if(t._srv) return t._srv;
+  var b=(BILLS||[]).filter(function(x){ return x.id===t.id; })[0]||(BILLS||[]).filter(function(x){ return x.name===t.name; })[0];   /* 번호가 같아야 하지만 못 찾으면 청구처 이름으로 */
+  return b?{left:Math.max(0,Number(b.left)||0), paid:Number(b.paid)||0}:{left:Number(t.total)||0, paid:0};
+}
+/* 그릴 때마다 입금 여부를 다시 붙여요 (발급된 것 · 안 받음은 그대로) */
+function mark(){
+  TAXES.forEach(function(t){
+    if(t._can0===undefined) t._can0=t.can;
+    var p=leftOf(t); t.paid=p.paid; t.left=p.left;
+    var done=/발급|전송/.test(t.state||"");
+    t.unpaid=!!(t._can0 && !t.skip && !done && p.left>0);
+    t.can=t._can0 && !t.unpaid;
+    if(t.unpaid) t.why=p.paid>0?"입금 전 — 발급 안 함 (입금 "+won(p.paid)+"원 · 남은 "+won(p.left)+"원)":"입금 전 — 발급 안 함";
+  });
+}
+var _ph=PAGE.hometax;
+PAGE.hometax=function(){ mark(); return _ph.apply(this,arguments); };
+window.chkTaxMark=mark;
+
+/* 입금 전에 발급 — 그 한 장만, 확인 창 한 번 더 */
+function early(id){
+  var t=TAXES.filter(function(x){ return x.id===id; })[0]; if(!t) return;
+  if(!isOwner()){ tell("대표만 할 수 있어요","세금계산서 발급은 대표 계정으로 해 주세요."); return; }
+  var d=wd(t);
+  ask({title:"아직 입금 전이에요. 그래도 발급할까요?\n"+ymText(ST.ym)+"분 · 작성일자 "+d,
+       k1:"누구에게", v1:t.name+(t.members?" + "+t.members:"")+" · "+(t.issuer||t.comp||""),
+       k2:"얼마", v2:won(t.total)+"원 (받은 "+won(t.paid||0)+"원 · 남은 "+won(t.left||0)+"원)",
+       warn:(OFFICE.popbill_test?"지금은 시험 모드예요 — 국세청으로 가지 않아요.":"실제로 국세청에 발급돼요. 입금이 안 되면 수정세금계산서로 바로잡아야 해요."),
+       warnKind:OFFICE.popbill_test?"ok":"bad", yes:"입금 전에 발급"}, function(){
+    var dates={}; dates[t.id]=d;
+    bar("팝빌로 발급하는 중이에요…","info"); busy(true);
+    call("taxIssue",[[t.id],"",dates,{unpaidOk:[t.id]}]).then(function(r){
+      busy(false); var bad=(r&&r.bad)||[];
+      bar(bad.length?"발급하지 못했어요 — "+bad.slice(0,2).join(" / "):"«"+t.name+"» 세금계산서를 발급했어요 (입금 전).", bad.length?"err":"ok");
+      refresh(["tax","bill"]);
+    }).catch(fail);
+  });
+}
+
+/* ── 홈택스 공식 양식 채우기 ── */
+function nz(v){ return String(v==null?"":v).replace(/[\s* ()\[\]·:.,\-_/]/g,""); }
+function digits(v){ return String(v||"").replace(/[^0-9]/g,""); }
+function readHead(ws){
+  var R=XLSX.utils.decode_range(ws["!ref"]||"A1"), grid=[], maxR=Math.min(R.e.r,40);
+  for(var r=0;r<=maxR;r++){ grid[r]=[]; for(var c=0;c<=R.e.c;c++){ var cell=ws[XLSX.utils.encode_cell({r:r,c:c})]; grid[r][c]=cell?String(cell.w!=null?cell.w:cell.v):""; } }
+  (ws["!merges"]||[]).forEach(function(m){ if(m.s.r>maxR) return; var v=grid[m.s.r][m.s.c];
+    for(var r=m.s.r;r<=Math.min(m.e.r,maxR);r++) for(var c=m.s.c;c<=m.e.c;c++) grid[r][c]=v; });
+  var hr=-1;
+  for(var r2=0;r2<=maxR;r2++){ var j=nz(grid[r2].join("|")); if(j.indexOf("작성일자")>=0 && (j.indexOf("공급받는자")>=0||j.indexOf("등록번호")>=0)){ hr=r2; break; } }
+  if(hr<0) return null;
+  /* 칸 이름 = 위 두 줄(묶음 이름) + 그 줄 */
+  var labels=grid[hr].map(function(x,c){ var up=[hr-2,hr-1].filter(function(q){ return q>=0; }).map(function(q){ return grid[q][c]; }).join("");
+    return nz(up)+"|"+nz(x); });
+  return {hr:hr, labels:labels, maxC:R.e.c, R:R};
+}
+function fieldOf(L){
+  var all=L.replace("|",""), own=L.split("|")[1]||"";
+  var buyer=/공급받는/.test(all), sup=/공급자/.test(all)&&!buyer;
+  var item=/\d$/.test(own) && /^(일자|품목|규격|수량|단가|공급가액|세액|비고)/.test(own) ? own.replace(/\d+$/,"") : "";
+  var idx=item?Number(own.match(/(\d+)$/)[1]):0;
+  if(item) return idx===1?"item:"+item:"";
+  if(/종류/.test(own)&&!/품목/.test(own)) return "kind";
+  if(/작성일자/.test(own)) return "date";
+  if(/영수/.test(all)&&/청구/.test(all)) return "pay";
+  var who=buyer?"b":sup?"s":"";
+  if(who){
+    if(/종사업장/.test(own)) return who+":sub";
+    if(/등록번호/.test(own)) return who+":biz";
+    if(/상호/.test(own)) return who+":name";
+    if(/성명/.test(own)) return who+":ceo";
+    if(/주소/.test(own)) return who+":addr";
+    if(/업태/.test(own)) return who+":upte";
+    if(/종목/.test(own)) return who+":jong";
+    if(/이메일/.test(own)) return who+":mail"+(/2$/.test(own)?"2":"");
+  }
+  if(/^공급가액$/.test(own)||/^공급가액합계/.test(own)) return "supply";
+  if(/^세액$/.test(own)||/^세액합계/.test(own)) return "tax";
+  if(/합계금액/.test(own)) return "total";
+  if(/^비고$/.test(own)) return "memo";
+  return "";
+}
+function valOf(f, t, d){
+  var ymd=digits(d), O=OFFICE||{};
+  var V={kind:"01", date:ymd, pay:"01",
+    "s:biz":digits(O.popbill_corp||O.biz_no), "s:sub":"", "s:name":O.popbill_corp_name||O.name||"", "s:ceo":O.owner_name||"", "s:addr":O.addr||"",
+    "s:upte":O.biz_type||"", "s:jong":O.biz_class||"", "s:mail":O.tax_email||"",
+    "b:biz":digits(t.biz), "b:sub":"", "b:name":t.issuer||t.comp||t.name, "b:ceo":t.ceo||"", "b:addr":t.addr||"", "b:upte":"", "b:jong":"", "b:mail":"", "b:mail2":"",
+    supply:t.supply, tax:t.tax, total:t.total, memo:"",
+    "item:일자":ymd.slice(6,8), "item:품목":"자동차 성능점검 수수료", "item:규격":"", "item:수량":"", "item:단가":"", "item:공급가액":t.supply, "item:세액":t.tax, "item:비고":""};
+  return V.hasOwnProperty(f)?V[f]:"";
+}
+function fill(file){
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var wb=XLSX.read(new Uint8Array(rd.result),{type:"array",cellStyles:true}), sh=null, H=null;
+      for(var i=0;i<wb.SheetNames.length&&!H;i++){ var w=wb.Sheets[wb.SheetNames[i]]; var h=readHead(w); if(h){ sh=w; H=h; } }
+      if(!H){ tell("홈택스 양식이 아닌 것 같아요","«작성일자» · «공급받는자 등록번호» 칸을 찾지 못했어요. 홈택스 › 전자(세금)계산서 › 일괄발급에서 받은 양식 파일을 그대로 골라 주세요."); return; }
+      var F=H.labels.map(fieldOf), need=["date","s:biz","b:biz","supply","tax"], miss=need.filter(function(k){ return F.indexOf(k)<0; });
+      if(miss.length){ tell("양식에서 칸을 다 찾지 못했어요","못 찾은 칸: "+esc(miss.join(", "))+". 홈택스에서 받은 양식을 고치지 않고 그대로 골라 주세요."); return; }
+      var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); });
+      var ids=picked("htx"), pick=ids.length?able.filter(function(t){ return ids.indexOf(t.id)>=0; }):able;
+      if(!pick.length){ tell("넣을 곳이 없어요","입금 완료 · 아직 발급 안 한 곳이 없어요."); return; }
+      /* 제목 줄 아래 첫 빈 줄부터 (예시 줄이 있으면 그 아래) */
+      var used=F.map(function(f,c){ return f?c:-1; }).filter(function(c){ return c>=0; }), r=H.hr+1;
+      function empty(row){ return used.every(function(c){ var x=sh[XLSX.utils.encode_cell({r:row,c:c})]; return !x||x.v===""||x.v==null; }); }
+      while(r<=H.R.e.r && !empty(r)) r++;
+      pick.forEach(function(t){ var d=wd(t);
+        F.forEach(function(f,c){ if(!f) return; var v=valOf(f,t,d), ad=XLSX.utils.encode_cell({r:r,c:c});
+          sh[ad]=(typeof v==="number")?{t:"n",v:v}:{t:"s",v:String(v)}; });
+        r++; });
+      var rg=XLSX.utils.decode_range(sh["!ref"]); if(r-1>rg.e.r){ rg.e.r=r-1; sh["!ref"]=XLSX.utils.encode_range(rg); }
+      var ext=/\.xls$/i.test(file.name)?"xls":"xlsx";
+      XLSX.writeFile(wb, "홈택스_일괄발급_"+ST.ym+"_"+pick.length+"건."+ext, {bookType:ext==="xls"?"biff8":"xlsx"});
+      bar("홈택스 양식에 "+pick.length+"건(입금 완료)을 채웠어요. 홈택스 › 일괄발급 › 파일 불러오기로 올려 주세요.","ok");
+    }catch(e){ tell("양식을 읽지 못했어요","파일이 열려 있으면 닫고 다시 골라 주세요. ("+esc(String(e&&e.message||""))+")"); }
+  };
+  rd.readAsArrayBuffer(file);
+}
+function hometaxGo(){
+  if(typeof XLSX==="undefined"){ bar("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.","err"); return; }
+  var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); });
+  if(!able.length){ tell("넣을 곳이 없어요","입금 완료 · 아직 발급 안 한 곳이 없어요. 입금 전인 곳은 줄마다 «입금 전에 발급»으로 따로 해요."); return; }
+  CGG.dialog({size:"form", title:"홈택스 일괄발급 양식 채우기",
+    desc:"홈택스에서 받은 공식 양식 파일을 고르면 입금 완료된 곳만 그 칸대로 채워 드려요.",
+    body:'<ol style="margin:0 0 12px;padding-left:18px;line-height:1.8;font-size:13.5px"><li>홈택스 › 전자(세금)계산서 › <b>일괄발급</b>에서 엑셀 양식을 한 번 받아 둬요.</li><li>아래 단추로 그 파일을 골라요(고치지 않은 그대로).</li><li>채워진 파일을 홈택스 일괄발급 화면에 올려요.</li></ol>'+
+      '<button type="button" class="cgg-btn pri" id="htxPick">양식 파일 고르기</button> <span class="note">'+able.length+'곳 · 고른 줄이 있으면 고른 곳만</span>',
+    cancel:"닫기"});
+  var b=document.getElementById("htxPick");
+  if(b) b.onclick=function(){ var i=document.createElement("input"); i.type="file"; i.accept=".xls,.xlsx"; i.hidden=true; document.body.appendChild(i);
+    i.onchange=function(){ var f=i.files&&i.files[0]; i.remove(); if(f){ CGG.closeDialog(); fill(f); } }; i.click(); };
+}
+var _a=AFTER.hometax;
+AFTER.hometax=function(){
+  if(_a) _a.apply(this,arguments);
+  var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 양식 채우기"; xl.onclick=hometaxGo; }
+  document.querySelectorAll("[data-txearly]").forEach(function(b){ b.onclick=function(){ early(b.getAttribute("data-txearly")); }; });
+  /* 입금 전 줄은 체크 안 됨 */
+  TAXES.forEach(function(t){ if(!t.unpaid) return;
+    document.querySelectorAll('#htx-blk .pk[data-k="'+(window.CSS&&CSS.escape?CSS.escape(t.id):t.id)+'"]').forEach(function(c){ c.disabled=true; c.checked=false; c.title="입금 전 — 발급 안 함"; }); });
+};
+})();
+</script>
+<script>
+/* ═══ v52 — 나스 «가온 정산 v150»과 같게 (대표님 10/18)
+   ① 나스 엑셀 올리기: «전산외청구 2026.xlsx»(시트 «성능» 여러 장) · «정비비 2026.xlsx»(시트 «정비» 여러 장) — 시트를 합치고 칸을 짝지어 excelPut
+   ② 월별 청구서: «검사비 소계 · 전산외 청구 소계 · 정비비 소계 · 총계»(부가세 포함 — 나스와 같은 기준) · 전산외는 검사비에 섞지 않음
+   ③ 매출: «나스와 비교는 부가세 포함» 한 줄 · 보험료는 «보험료 부가세» 설정대로(기본 미포함 = 엑셀 금액 그대로)
+   ④ 정산 기록: 달마다 청구 · 입금 · 남은 금액 장부 (salesStat bill · got)
+   ⑤ 서버 v45 단추: 알림톡 템플릿은 보기만(관리에서 넣음) · 수수료 규칙 · 수집함 주소를 서버에 (대표만) ═══ */
+(function(){
+/* ③ 보험료 부가세 — 미포함(기본)이면 엑셀 금액 그대로, 포함이면 다른 금액처럼 */
+window.insMoney=function(v){ return (typeof OFFICE!=="undefined"&&OFFICE&&OFFICE.ins_vat==="포함")?vmoney(v):Math.round(Number(v)||0); };
+function band(id, text, tone){ if(!text||$(id)) return; var h=$("main").querySelector(".cgg-head"); if(!h) return;
+  var b=document.createElement("div"); b.id=id; b.className="msg info"; b.style.margin="0 0 12px"; b.textContent=text;
+  var bd=$("chkBand"); h.parentNode.insertBefore(b,(bd&&bd.parentNode===h.parentNode)?bd.nextSibling:h.nextSibling); }
+var as=AFTER.sales;
+AFTER.sales=function(){ if(as) as.apply(this,arguments);
+  band("v52Nas","나스(가온 정산)와 견줄 때는 «부가세 포함»으로 봐요. 보험료는 "+((OFFICE&&OFFICE.ins_vat==="포함")?"부가세 포함 설정이에요.":"엑셀 금액 그대로예요(보험료 부가세 미포함).")); };
+
+/* ② 월별 청구서 소계 (부가세 포함) */
+var ab=AFTER.bill;
+AFTER.bill=function(){ if(ab) ab.apply(this,arguments);
+  if(!BILLS.length||$("v52Sub")) return;
+  var f=0,x=0,r=0; BILLS.forEach(function(b){ f+=Number(b.feeOnly!=null?b.feeOnly:b.fee)||0; x+=Number(b.ext)||0; r+=Number(b.rep)||0; });
+  var k=$("main").querySelector(".cgg-kpis"); if(!k) return;
+  var c=document.createElement("div"); c.id="v52Sub"; c.className="card";
+  c.innerHTML='<h3>'+esc(ymText(ST.ym))+' 청구 합계 <span class="rt">부가세 포함 · 나스와 같은 기준</span></h3>'+
+    '<div class="sums c4">'+[["검사비 소계",f],["전산외 청구 소계",x],["정비비 소계",r],["총계",f+x+r]].map(function(s,i){
+      return '<div class="sum'+(i===3?" good":"")+'"><span>'+s[0]+'</span><b>'+won(s[1])+'원</b></div>'; }).join("")+'</div>'+
+    '<p class="note">전산외 청구는 검사비 소계와 따로 셈해요(총계에서만 합쳐요).</p>';
+  k.parentNode.insertBefore(c, k.nextSibling);
+};
+
+/* ① 나스 엑셀 올리기 */
+function nz(v){ return String(v==null?"":v).replace(/[\s()\[\]·:.]/g,""); }
+function ymd(v, yr){
+  if(v instanceof Date && !isNaN(v)) return v.getFullYear()+"-"+("0"+(v.getMonth()+1)).slice(-2)+"-"+("0"+v.getDate()).slice(-2);
+  var s=String(v==null?"":v).trim(), n=Number(s);
+  if(n>30000&&n<80000){ var d=new Date(Math.round((n-25569)*86400000)); return d.getUTCFullYear()+"-"+("0"+(d.getUTCMonth()+1)).slice(-2)+"-"+("0"+d.getUTCDate()).slice(-2); }
+  var m=s.match(/(20\d{2})\D{1,3}(\d{1,2})\D{1,3}(\d{1,2})/); if(m) return m[1]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[3]).slice(-2);
+  m=s.match(/^(\d{1,2})\s*[\/.\-월]\s*(\d{1,2})/); if(m&&yr) return yr+"-"+("0"+m[1]).slice(-2)+"-"+("0"+m[2]).slice(-2);
+  return ""; }
+function ymOf(v, yr){ var s=String(v==null?"":v).trim(), m=s.match(/(20\d{2})\D{0,3}(\d{1,2})/); if(m) return m[1]+"-"+("0"+m[2]).slice(-2);
+  m=s.match(/^(\d{1,2})\s*월?$/); if(m&&yr) return yr+"-"+("0"+m[1]).slice(-2); var d=ymd(v,yr); return d?d.slice(0,7):""; }
+function money(v){ return Math.round(Number(String(v==null?"":v).replace(/[^0-9.\-]/g,""))||0); }
+/* 모든 시트에서 제목 줄(날짜 · 금액 + need)을 찾아 줄을 합쳐요 */
+function sheets(wb, need){
+  var out=[], used=[];
+  wb.SheetNames.forEach(function(sn){
+    var A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""}), hr=-1;
+    for(var r=0;r<Math.min(A.length,15);r++){ var j=A[r].map(nz); if(j.indexOf("날짜")>=0 && j.indexOf("금액")>=0 && need.every(function(w){ return j.some(function(c){ return c.indexOf(w)>=0; }); })){ hr=r; break; } }
+    if(hr<0) return; used.push(sn);
+    var H=A[hr].map(nz);
+    function col(){ for(var i=0;i<arguments.length;i++){ var w=arguments[i]; for(var c=0;c<H.length;c++) if(H[c]===w||H[c].indexOf(w)===0) return c; } return -1; }
+    var C={date:col("날짜"),comp:col("상사"),name:col("이름","딜러","신청인"),kind:col("국/수","국수","구분"),amt:col("금액"),plate:col("차량","차량번호"),car:col("차명"),
+           tax:col("계산서발행여부","계산서발행","발행여부","계산서"),why:col("사유"),memo:col("특이사항"),bm:col("청구월")};
+    for(var r2=hr+1;r2<A.length;r2++){ var R=A[r2]; if(!R||!R.some(function(x){ return x!==""&&x!=null; })) continue;
+      var g=function(k){ return C[k]>=0?R[C[k]]:""; }; out.push({sheet:sn, line:r2+1, g:g}); }
+  });
+  return {rows:out, used:used};
+}
+function readWb(file, done){
+  if(typeof XLSX==="undefined"){ bar("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.","err"); return; }
+  var rd=new FileReader(); rd.onload=function(){ try{ done(XLSX.read(new Uint8Array(rd.result),{type:"array",cellDates:true})); }catch(e){ tell("엑셀을 읽지 못했어요","파일이 열려 있으면 닫고 다시 골라 주세요."); } };
+  rd.readAsArrayBuffer(file);
+}
+function byMonth(list){ var M={}; list.forEach(function(x){ (M[x.ym]=M[x.ym]||[]).push(x.row); }); return M; }
+function upload(kind, M, file, done){
+  var ks=Object.keys(M).sort(), i=0, n=0; busy(true);
+  (function next(){ if(i>=ks.length){ busy(false); done(n); return; }
+    var ym=ks[i++]; putOne(kind, M[ym], file, "xlMsg", ym).then(function(k){ n+=k; next(); }).catch(function(e){ busy(false); fail(e); }); })();
+}
+function extGo(file){
+  readWb(file, function(wb){
+    var yr=(String(file.name).match(/20\d{2}/)||[""])[0], S=sheets(wb,["국"]), bad=0, list=[];
+    S.rows.forEach(function(x){ var g=x.g, d=ymd(g("date"),yr), a=money(g("amt")); if(!d||!a){ if(String(g("date")||g("amt")).trim()) bad++; return; }
+      var k=String(g("kind")).trim(), goods=/^국/.test(k)?"국산차":/^수/.test(k)?"수입차":(k||"전산외");
+      var tx=String(g("tax")).trim(), yn=/미발행|^x$|^n$|아니/i.test(tx)?"N":(/발행|^o$|^y$|^v$|○|●/i.test(tx)?"Y":"");
+      list.push({ym:d.slice(0,7), amt:a, row:{성능번호:"", 차량번호:String(g("plate")).trim(), 차명:String(g("car")).trim(), 검사일:d, 회사명:String(g("comp")).trim(),
+        신청인:String(g("name")).trim(), 상품명:goods, 금액:a, 성능보험료:0, 보험료납부:"N", 계산서발행:yn, 사유:String(g("why")).trim(), 특이사항:String(g("memo")).trim()}}); });
+    confirmUp("전산외", file, S, list, bad);
+  });
+}
+function repGo(file){
+  readWb(file, function(wb){
+    var yr=(String(file.name).match(/20\d{2}/)||[""])[0], S=sheets(wb,["사유"]), bad=0, list=[];
+    S.rows.forEach(function(x){ var g=x.g, d=ymd(g("date"),yr), a=money(g("amt")), bm=ymOf(g("bm"),yr)||(d?d.slice(0,7):"");
+      if(!bm||!a){ if(String(g("date")||g("amt")).trim()) bad++; return; }
+      list.push({ym:bm, amt:a, row:{작업일:d, 차량번호:String(g("plate")).trim(), 차명:String(g("car")).trim(), 신청인:String(g("name")).trim(),
+        회사명:String(g("comp")).trim(), 작업내용:String(g("why")).trim()||"정비비", 금액:a}}); });
+    confirmUp("정비비", file, S, list, bad);
+  });
+}
+function confirmUp(kind, file, S, list, bad){
+  if(!S.used.length){ tell("칸을 찾지 못했어요","«날짜 · 금액"+(kind==="정비비"?" · 사유":" · 국/수")+"» 칸이 있는 시트가 없어요. 나스에서 쓰던 «"+kind+(kind==="전산외"?"청구":"")+"» 파일을 그대로 골라 주세요."); return; }
+  if(!list.length){ tell("넣을 줄이 없어요","날짜 · 금액을 읽은 줄이 없어요."+(bad?" (못 읽은 줄 "+bad+"개)":"")); return; }
+  var M=byMonth(list), sum=list.reduce(function(t,x){ return t+x.amt; },0);
+  ask({title:(kind==="전산외"?"전산외 청구":"정비비")+" "+list.length+"건을 넣을까요?\n시트 "+S.used.length+"장 합침"+(bad?" · 못 읽은 줄 "+bad+"개는 빼요":""),
+       rows:Object.keys(M).sort().map(function(ym){ var a=M[ym].reduce(function(t,r){ return t+(Number(r.금액)||0); },0); return [esc(ymText(ym)), esc(M[ym].length+"건 · "+won(a)+"원")]; }),
+       rowsTitle:"달마다", k1:"합계 (부가세 포함)", v1:won(sum)+"원",
+       warn:kind==="정비비"?"같은 청구월에 전에 엑셀로 넣은 정비비는 이번 것으로 바뀌어요.":"같은 차 · 같은 날은 한 번만 들어가요. 전산외 청구는 검사비 소계와 따로 셈해요.", yes:"넣기"}, function(){
+    upload(kind, M, file.name, function(n){ bar((kind==="전산외"?"전산외 청구":"정비비")+" "+won(n)+"건을 넣었어요. 월별 청구서에서 «청구서 만들기»를 한 번 더 눌러요.","ok"); refresh(["set","up","bill","sales"]); });
+  });
+}
+function pickFile(f){ var i=document.createElement("input"); i.type="file"; i.accept=".xlsx,.xls"; i.hidden=true; document.body.appendChild(i);   /* 문서에 붙여 둬야 고른 뒤 사라지지 않아요 */
+  i.onchange=function(){ var x=i.files&&i.files[0]; i.remove(); if(x) f(x); }; i.click(); }
+var af=AFTER.files;
+AFTER.files=function(){ if(af) af.apply(this,arguments);
+  if($("v52Nas2")) return; var c0=$("main").querySelector(".card"); if(!c0) return;
+  var c=document.createElement("div"); c.id="v52Nas2"; c.className="card";
+  c.innerHTML='<h3>나스 엑셀 올리기 — 전산외 청구 · 정비비</h3><p class="csub">나스(가온 정산)에서 쓰던 파일을 그대로 골라요. 시트가 여러 장이면 모두 합쳐요.</p>'+
+    '<div class="tools"><button type="button" class="btn" id="v52Ext">전산외청구 파일 고르기</button><button type="button" class="btn" id="v52Rep">정비비 파일 고르기</button></div>';
+  c0.parentNode.insertBefore(c, c0.nextSibling);
+  $("v52Ext").onclick=function(){ pickFile(extGo); }; $("v52Rep").onclick=function(){ pickFile(repGo); };
+};
+
+/* ④ 정산 기록 — 달마다 장부 */
+PAGE.history=function(){
+  var H=(SALES||[]).filter(function(r){ return Number(r.bill)>0||Number(r.got)>0; }).map(function(r){
+    return {id:r.ym, ym:r.ym, n:r.n, bill:Number(r.bill)||0, got:Number(r.got)||0, left:Math.max(0,(Number(r.bill)||0)-(Number(r.got)||0)), tax:r.taxN!=null?r.taxN+"장":"보기 ›", _q:r.ym}; });
+  return head("정산 기록","달마다 만든 청구서와 입금 · 세금계산서 결과를 모아 두는 장부예요.")+
+  (H.length?"":'<div class="msg info">월별 청구서에서 청구서를 만들면 여기에 쌓여요.</div>')+
+  card("달마다 장부","달을 누르면 그 달 청구서로 가요. 금액은 부가세 포함이에요.",
+    tableBlock("his",[
+      {k:"ym",t:"청구 달",name:true,fmt:function(v){ return '<a href="#" data-hisym="'+esc(v)+'"><b>'+esc(ymText(v))+'</b></a>'; }},
+      {k:"n",t:"검사 대수",num:true,fmt:function(v){ return won(v)+"대"; }},
+      {k:"bill",t:"청구",num:true,fmt:function(v){ return won(v); }},
+      {k:"got",t:"입금",num:true,fmt:function(v){ return won(v); }},
+      {k:"left",t:"남은 금액",num:true,fmt:function(v){ return v>0?'<span style="color:var(--danger);font-weight:800">'+won(v)+'</span>':'0'; }},
+      {k:"tax",t:"세금계산서",fmt:function(v,r){ return '<a href="#" data-histax="'+esc(r.ym)+'">'+esc(v)+'</a>'; }}
+    ], H, {tools:'<button class="btn">기록 전체 엑셀 다운로드</button>'}));
+};
+NEEDS.history=["sales"];
+AFTER.history=function(){ wireTable("his",function(){ draw(); });
+  function goYm(ym, p){ ST.ym=ym; try{ set("cgg_ym",ym); }catch(e){} refresh(["bill","tax","dep"]); go(p); }
+  document.querySelectorAll("[data-hisym]").forEach(function(a){ a.onclick=function(e){ e.preventDefault(); goYm(a.getAttribute("data-hisym"),"bill"); }; });
+  document.querySelectorAll("[data-histax]").forEach(function(a){ a.onclick=function(e){ e.preventDefault(); goYm(a.getAttribute("data-histax"),"hometax"); }; });
+};
+
+/* ⑤ 서버 v45 단추 — 알림톡 템플릿은 보기만 · 수수료 규칙 · 수집함 주소 (모두 대표만) */
+var at=AFTER.billtpl;
+AFTER.billtpl=function(){ if(at) at.apply(this,arguments);
+  var ins=document.querySelector("#main .row2"); if(!ins) return; var card=ins.closest(".card"); if(!card||card.getAttribute("data-v52")) return; card.setAttribute("data-v52","1");
+  Array.prototype.forEach.call(card.querySelectorAll("button"),function(b){ if(String(b.textContent).trim()==="저장") b.remove(); });
+  ins.innerHTML='<p class="note" style="margin:0">발신프로필 · 템플릿 ID는 <b>차곳간 관리</b>에서 넣어요. 체크에서는 넣었는지만 봐요.</p>';
+  call("tplInfo",[]).then(function(r){ if(!r) return; var L=[["발신프로필",r.profile],["① 청구서",r.bill],["② 보험료",r.deposit],["③ 재검사",r.remind],["차량 도착",r.arrive]];
+    ins.innerHTML+='<div style="margin-top:8px">'+L.map(function(x){ return '<div class="kv"><span>'+esc(x[0])+'</span><b>'+(x[1]?"넣음":"아직")+'</b></div>'; }).join("")+'</div>'; }).catch(function(){});
+};
+var aF=AFTER.fee, feeLoaded=false;
+AFTER.fee=function(){ if(aF) aF.apply(this,arguments);
+  if(!isOwner()||feeLoaded) return; feeLoaded=true;
+  call("feeRules",[]).then(function(r){ if(!r||!Array.isArray(r.rules)) return;
+    try{ localStorage.setItem("chk_fee:"+(ST.shop||""), JSON.stringify({on:!!r.on, rules:r.rules})); }catch(e){}
+    if(page==="fee") draw(); }).catch(function(){});
+};
+var aS=AFTER.sms;
+AFTER.sms=function(){ if(aS) aS.apply(this,arguments);
+  if(!isOwner()) return;
+  var u=document.querySelector('#main input[type=text]'), p=document.querySelector('#main input[type=password]');
+  call("smsConf",[]).then(function(r){ if(!r) return; if(u&&r.url) u.value=r.url; if(p&&r.pwSet) p.placeholder="저장돼 있어요 (바꿀 때만 넣어요)"; }).catch(function(){});
+  var ok=Array.prototype.filter.call(document.querySelectorAll("#main button"),function(b){ return String(b.textContent).trim()==="연결 확인"; })[0];
+  if(ok){ var ping=ok.onclick; ok.onclick=function(){
+    var url=String((u||{}).value||"").trim(), pw=String((p||{}).value||"");
+    if(!/^https:\/\//.test(url)){ if(ping) ping.apply(this,arguments); return; }
+    var body={url:url}; if(pw) body.pw=pw;
+    call("smsConf",[body]).then(function(){ if(p) p.value=""; bar("수집함 주소를 서버에 저장했어요.","ok"); }).catch(function(e){ bar(niceMsg(e&&e.message),"err"); });
+    if(ping) ping.apply(this,arguments); }; }
+};
 })();
 </script>
 
