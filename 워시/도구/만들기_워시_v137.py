@@ -8,17 +8,57 @@
 """
 import os
 HERE = os.path.dirname(os.path.abspath(__file__)); BASE = os.path.dirname(HERE); ROOT = os.path.dirname(BASE)
-SRC = os.path.join(BASE, "1_차곳간_워시_index_v136_1.html"); OUT = os.path.join(BASE, "1_차곳간_워시_index_v137.html")
+SRC = os.path.join(BASE, "1_차곳간_워시_index_v136_2.html"); OUT = os.path.join(BASE, "1_차곳간_워시_index_v137.html")
 P = os.path.join(ROOT, "체크", "부품")
 def rd(n): return open(os.path.join(P, n), encoding="utf-8").read()
-CPT13, ATA = rd("거래처_부품_1.3.js"), rd("알림톡문구_부품_1.0.js")
+CPT13 = rd("거래처_부품_1.3.js")
+G = os.path.join(ROOT, "디자인", "공통")
+def gd(n): return open(os.path.join(G, n), encoding="utf-8").read()
+ATA = gd("cgg-ata-1.1.js")   # 공통 자리로 옮긴 같은 글(1.1 = 1.0 + 체크 재검사 안내)
 s = open(SRC, encoding="utf-8").read()
 def rep(old, new, count=1):
     global s
     n = s.count(old)
     if n != count: raise SystemExit("찾은 수가 다름(%d≠%d): %s" % (n, count, old[:90]))
     s = s.replace(old, new)
-rep('var APP_VER="워시 v136.1 · UI 3.0 · 2026-10-18";', 'var APP_VER="워시 v137 · UI 3.0 · 2026-10-18";')
+rep('var APP_VER="워시 v136.2 · UI 3.0 · 2026-10-18";', 'var APP_VER="워시 v137 · UI 3.0 · 2026-10-18";')
+
+# 0) 공통 부품 1.10 → 1.13 (1.12 확정본 + 검수 고침 · 체크 v56 공통 몫) · 메뉴 지도 → 최신(«배달 기록» · 보낸 기록은 알림 안 · 메시지 설정 · 카모두 명부)
+import subprocess
+def gitshow(rev, path): return subprocess.check_output(["git", "-C", ROOT, "show", rev + ":" + path]).decode("utf-8")
+rep(gd("cgg-j4-1.10.css"), gd("cgg-j4-1.13.css"))
+rep(gd("cgg-j4-1.10.js"), gd("cgg-j4-1.13.js"))
+rep(gitshow("4d75f08", "디자인/메뉴지도/워시_메뉴.js"), open(os.path.join(ROOT, "디자인", "메뉴지도", "워시_메뉴.js"), encoding="utf-8").read())
+
+# 0-2) 설정 항목 줄 = 메뉴 지도 차례 그대로(1.11 규칙 · «워시 전용» 묶음 이름 포함) · 보낸 기록은 «알림» 안
+rep('''      var subs=g.subs.filter(function(x){
+        if(g.key==="settings")return setK.indexOf(x.key)>=0;''',
+'''      var subs=g.subs.filter(function(x){
+        if(g.key==="settings")return !!x.group||setK.indexOf(x.key)>=0;   /* v137 묶음 이름({group}) 도 메뉴 차례대로 */''')
+rep('''      if(g.key==="settings")subs.sort(function(a,b){return setK.indexOf(a.key)-setK.indexOf(b.key);});
+      o.subs=subs.map(function(x){return {key:x.key,label:x.label};});''',
+'''      /* v137 메뉴 지도 차례 그대로 — 묶음 이름 뒤에 칸이 하나도 없으면 묶음 이름도 빼요 */
+      subs=subs.filter(function(x,i){ if(!x.group)return true; var n=subs[i+1]; return !!(n&&!n.group); });
+      o.subs=subs.map(function(x){return x.group?{group:x.group}:{key:x.key,label:x.label};});''')
+rep('''  if(t==="settings")return S.setSub==="trash"?"settings":"settings/"+(S.setSub||"");''',
+'''  if(t==="settings")return S.setSub==="trash"?"settings":"settings/"+(S.setSub==="outbox"?"send":(S.setSub||""));   /* v137 보낸 기록은 «알림» 안 */''')
+rep('''function renderSend(){
+  var c=sendCfg();
+  $("sendBody").innerHTML=
+''',
+'''function renderSend(){
+  var c=sendCfg();
+  /* v137 보낸 기록은 «알림» 안 — 맨 위에 한 줄 (공통 1.12 · 체크와 같은 자리) */
+  var obl=S.outbox||[], obSent=obl.filter(function(o){return o.status==="보냄";}).length, obFail=obl.filter(function(o){return o.status==="실패";}).length;
+  $("sendBody").innerHTML=
+  '<div class="card" id="sendOutbox"><h2>보낸 기록 <span class="rt">'+(obFail?'<span style="color:var(--stop)">못 보냄 '+obFail+'건</span>':'보냄 '+obSent+'건')+'</span></h2>'+
+   '<div class="hint" style="margin:-6px 0 12px">보낸 문자 · 알림톡을 보고, 못 보낸 것은 다시 보내요.</div>'+
+   '<button class="btn'+(obFail?' primary':'')+'" id="sendObGo">보낸 기록 열기</button></div>'+
+''')
+
+rep('''  $("scSave").onclick=function(){''',
+'''  if($("sendObGo"))$("sendObGo").onclick=function(){S.setSub="outbox";decideMode(false);window.scrollTo(0,0);};
+  $("scSave").onclick=function(){''')
 
 # 1) 부품 넣기 — 거래처 부품 바로 뒤
 rep(CPT13, CPT13 + "\n" + ATA)
@@ -87,5 +127,22 @@ import re, json
 def jsstr(name):
     m = re.search(r'var ' + name + r'="((?:[^"\\]|\\.)*)";', s); return json.loads('"' + m.group(1) + '"')
 assert jsstr("DEF_ATA_OUT") in ATA.replace("\\n", "\n") and jsstr("DEF_ATA_BILL") in ATA.replace("\\n", "\n"), "승인 문구가 부품과 달라요"
+
+# 9) 말 맞추기 (디자인/말_대조표.md · 대표님 10/18) — 맨 마지막에 한 번에
+#  · 문자 · 알림톡을 함께 뜻하면 «메시지»   · 배달 화면 «출고 기록» → «배달 기록»(«입출고 기록»은 그대로)
+import re
+for a, b in [("체크한 번호가 문자·알림톡에 들어가요", "체크한 번호가 메시지에 들어가요"),
+             ("문자에 넣을 연락처", "메시지에 넣을 연락처"),
+             ("문자·알림톡·세금계산서", "메시지 · 세금계산서"),
+             ("문자 · 알림톡 · 세금계산서", "메시지 · 세금계산서"),
+             ("문자·알림톡 연동과 보낸 기록", "메시지 연동과 보낸 기록"),
+             ("출고 · 문자·알림톡 · 사진", "출고 · 메시지 · 사진"),
+             ("보낸 문자 · 알림톡을 보고", "보낸 메시지를 보고"),
+             ("내역·출고 기록·자재", "내역·배달 기록·자재"),
+             ("화면이 새 모양으로 바뀌었어요. 출고 기록 · 목적지는", "화면이 새 모양으로 바뀌었어요. 배달 기록 · 목적지는")]:
+    if a not in s: raise SystemExit("말 맞추기 못 찾음: " + a)
+    s = s.replace(a, b)
+s, nOut = re.subn(r"(?<![입·])출고 기록", "배달 기록", s)
+print("출고 기록 → 배달 기록", nOut)
 
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
