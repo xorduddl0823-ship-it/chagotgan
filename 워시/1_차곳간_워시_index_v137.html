@@ -3014,9 +3014,11 @@ var CGG = (function(){
     if(o.quick) quick(q("quick"), o.quick.feats, o.quick.key, o.quick.defs, o.quick.onGo); else q("quick").remove();
     todoBlock(q("todo"), (o.todo&&o.todo.items)||[], o.todo&&o.todo.total, o.todo&&o.todo.onPick, o.todo&&o.todo.onAll);
     kpis(q("kpi"), o.kpis||[]);
-    calendar(q("cal"), o.cal||{y:2026,m:1});
-    moneyCard(q("money"), o.money||{});
-    rankCard(q("rank"), o.rank||{});
+    /* 1.13 — cal · money · rank 에 false 를 주면 그 카드를 빼요(딜러앱처럼 일정 · 입금 카드가 필요 없는 홈). 셋 다 빼면 아래 칸도 없어요 */
+    if(o.cal===false) q("cal").remove(); else calendar(q("cal"), o.cal||{y:2026,m:1});
+    if(o.money===false) q("money").remove(); else moneyCard(q("money"), o.money||{});
+    if(o.rank===false) q("rank").remove(); else rankCard(q("rank"), o.rank||{});
+    if(o.cal===false&&o.money===false&&o.rank===false){ var g=el.querySelector(".cgg-homegrid"); if(g) g.remove(); }
   }
 
   /* ═════════ ⑩ 1.10 — 차곳간 대표 CI (디자인/공통/ci/ 의 SVG 를 그대로 담았어요 · 바깥 주소 없음) ═════════ */
@@ -19499,7 +19501,7 @@ select.cgg-hb{width:auto}
 .cgg-prog>i{display:block;height:100%;width:0;background:var(--blue);transition:width .25s}
 .cgg-bb{max-height:46vh;overflow:auto;display:grid;gap:6px}
 .cgg-bbrow{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;box-sizing:border-box;cursor:pointer}
-.cgg-bbrow input{width:20px;height:20px;flex:none}
+.cgg-bbrow input{width:22px;height:22px;flex:none}
 .cgg-bbrow>span{flex:1;min-width:0} .cgg-bbrow small{display:block;color:var(--muted);font-size:12.5px}
 .cgg-bbrow .amt{flex:none;color:var(--chk-ink)}
 .cgg-bbdue{display:block;margin:12px 0 4px;font-size:13px;color:var(--muted)}
@@ -19509,6 +19511,18 @@ select.cgg-hb{width:auto}
 .cgg-nbadge{background:var(--stop-ink)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cgg-badge,:root:not([data-theme="light"]) .cgg-nbadge{color:#1a0b0a}}
 :root[data-theme="dark"] .cgg-badge,:root[data-theme="dark"] .cgg-nbadge{color:#1a0b0a}
+/* 1.13 고침(체크 방 알림 10/18) — 폰 머리 단추를 44px 로 키우면서 업체명 자리가 줄던 것: 폰에서는 «찾기»를 돋보기 그림 하나(44 × 44)로.
+   글자는 화면 읽기용으로만 남겨요(aria-label «기능 찾기»). 업체명은 1.12 만큼 자리를 다시 가져요 */
+@media (max-width:760px){
+  .cgg-top .cgg-findbtn{width:44px;padding:0;justify-content:center}
+  .cgg-top .cgg-findbtn>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .cgg-top .cgg-hb.cgg-me{padding:0 8px}
+  .cgg-top .cgg-right{gap:4px}
+}
+/* 1.13 손질 ③ (워시 · 체크 방 알림) — 창 안 label 은 세로(이름 위 · 칸 아래)인데, 밀린 달 줄(label.cgg-bbrow)까지 세로로 쌓이던 것 → 가로 한 줄로 */
+.cgg-dlg label.cgg-bbrow{flex-direction:row;align-items:center;text-align:left;gap:10px;font-size:14px;font-weight:400;color:var(--text)}
+.cgg-dlg label.cgg-bbrow b{color:var(--text)} .cgg-dlg label.cgg-bbrow .amt{color:var(--chk-ink);font-weight:800}
+.cgg-dlg label.cgg-bbdue{display:block}
 
 </style>
 <!-- ===== 워시 이음 (공통 부품 위에 워시 머리말 단추 모양만) ===== -->
@@ -19596,8 +19610,6 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
 </style>
 <!-- ===== 워시 v121 · J안 4판 완성 모양 (워시/도구/cgg-j4_워시_완성.css) ===== -->
 <style id="cgg-j4-wash-done">
-/* v137 공통 1.13 고쳐질 때까지: 밀린 달 고르기 줄은 가로 한 줄 (체크 v56 .chk-bb 와 같은 모양) */
-.cgg-dlg label.cgg-bbrow{flex-direction:row;text-align:left;font-size:14px;font-weight:400;color:var(--text)}
 /* 워시 v121 — J안 4판 «완성 모양» (디자인/01_J안_제품별_시안_기준.md · 08 J안 원본 값 그대로)
    공통 부품 cgg-j4 1.2 + 워시 이음(cgg-j4_워시_이음.css) 다음에 붙어요. 본문 칸(화면 일곱 칸 · 표 · 창 · 숫자 카드)을 J 값으로 맞춰요.
    색은 이름(변수)만 써요. 밝은 화면만 J 상태색으로 바꾸고, 어두운 화면은 원래 값을 둬요. */
