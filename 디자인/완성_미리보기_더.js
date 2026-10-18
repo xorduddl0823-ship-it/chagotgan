@@ -160,7 +160,18 @@ var PVX=(function(){
     q("wd").onclick=function(){ CGG.dialog({size:"confirm",title:"동의를 철회할까요?",desc:"철회하면 내 차 · 청구서를 더 볼 수 없어요.",ok:"동의 철회",cancel:"취소",onOk:toast("철회했어요")}); }; };
 
   /* ═══ 홈페이지 (cgg.co.kr 메인 · 요금제 · 통합 입구 로그인 · 가입) — 앱 틀 대신 사이트 틀 ═══ */
+  /* 메인 홈페이지는 «지금 / 손본 뒤» 나란히 (대표님 확정 10/18 — 지금 느낌 그대로, 바꾸는 건 최소만) */
+  function compare(root){
+    root.innerHTML='<div class="cmp"><div class="cmph"><b>cgg.co.kr 메인 — 지금 / 손본 뒤</b><span class="d">배치 · 큰 제목 · 그림 · 문구 · 색 · 구역 차례는 그대로예요. 바꾼 곳: 로고(CI) · 누르는 곳 44px · 체크칸 22px · 입력칸.</span>'
+      +'<span class="row" style="margin:0">'+chip("나란히",true)+chip("지금만")+chip("손본 뒤만")+'<label class="ck"><input type="checkbox" id="mk" checked> 바뀐 곳 표시</label></span>'
+      +'<span class="row" style="margin:0"><a class="cgg-btn" href="#site-login">로그인 화면</a><a class="cgg-btn" href="#site-join">가입 화면</a></span></div>'
+      +'<div class="cmpb" data-v="both"><figure><figcaption>지금</figcaption><iframe title="지금 홈페이지" src="시안/홈페이지/지금.html"></iframe></figure><figure><figcaption>손본 뒤</figcaption><iframe id="aft" title="손본 뒤 홈페이지" src="시안/홈페이지/손본뒤.html?mark"></iframe></figure></div></div>';
+    var box=root.querySelector(".cmpb"), cs=root.querySelectorAll(".cmph .cgg-fp");
+    if(window.innerWidth<900){ box.setAttribute("data-v","after"); cs[0].classList.remove("on"); cs[2].classList.add("on"); }
+    Array.prototype.forEach.call(cs,function(c,i){ c.onclick=function(){ Array.prototype.forEach.call(cs,function(x){ x.classList.remove("on"); }); c.classList.add("on"); box.setAttribute("data-v",["both","now","after"][i]); }; });
+    q("mk").onchange=function(){ q("aft").src="시안/홈페이지/손본뒤.html"+(this.checked?"?mark":""); }; }
   function site(root, page){
+    if(page==="main"||page==="price"){ compare(root); return; }
     var NAV=[["main","차곳간"],["try","미리 써 보기"],["price","요금제"],["join","회원가입"],["ask","문의"],["login","로그인"]];
     var top='<div class="ssb">오픈 베타 · 차곳간은 지금 오픈 베타예요. 쓰시면서 불편한 점을 알려 주시면 바로 고쳐요.</div>'
       +'<header class="shd"><a class="slogo" href="#site"><img src="'+CGG.CI.white+'" alt="" width="32" height="32"><b>차곳간</b></a><nav class="snav" aria-label="홈페이지 메뉴">'+NAV.slice(1).map(function(n){ return '<a href="#site-'+n[0]+'"'+(page===n[0]?' aria-current="page"':'')+'>'+n[1]+'</a>'; }).join("")+'</nav></header>';
