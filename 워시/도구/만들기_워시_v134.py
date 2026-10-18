@@ -3,6 +3,7 @@
   1) 부품 csvup 1.0 → 1.1 (체크/부품/엑셀올리기_부품_1.1.js · .css): 비슷한 말 사전 자동 짝 · 미리보기 위 «칸 짝짓기» 줄 · 이 기기 업체별 기억 · .xlsx 받기
   2) 업체별 기억 열쇠 = 우리 사업장 이름(S.cfg.shopName) — 칸 이름만 저장, 손님 자료는 저장 안 함
   3) 거래처 칸 안내 글: 카모두 명부도 그대로
+  6) 공통 부품 1.9 → 1.10 (머리말 차곳간 심볼 · 탭 아이콘)
   4) 머리말 업체 이름 밑 둘째 줄: 사업자번호 · 대표 (없으면 짧은 안내)
   5) 카모두 딜러리스트 · 상사리스트: 회사코드(개인정보일 수 있음) 안 읽음 · 재직/영업만 · 2만 줄 · 상사로 거르기
 운영 v111 · 시험판 v125 · v126 ~ v133 은 덮어쓰지 않는다.
@@ -11,6 +12,9 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__)); BASE = os.path.dirname(HERE); ROOT = os.path.dirname(BASE)
 SRC = os.path.join(BASE, "1_차곳간_워시_index_v133.html"); OUT = os.path.join(BASE, "1_차곳간_워시_index_v134.html")
 P = os.path.join(ROOT, "체크", "부품")
+G = os.path.join(ROOT, "디자인", "공통")
+def gd(n): return open(os.path.join(G, n), encoding="utf-8").read()
+C19, J19, C110, J110 = gd("cgg-j4-1.9.css"), gd("cgg-j4-1.9.js"), gd("cgg-j4-1.10.css"), gd("cgg-j4-1.10.js")
 def rd(n): return open(os.path.join(P, n), encoding="utf-8").read()
 U10J, U10C, U11J, U11C = rd("엑셀올리기_부품_1.0.js"), rd("엑셀올리기_부품_1.0.css"), rd("엑셀올리기_부품_1.1.js"), rd("엑셀올리기_부품_1.1.css")
 s = open(SRC, encoding="utf-8").read()
@@ -20,6 +24,17 @@ def rep(old, new, count=1):
     if n != count: raise SystemExit("찾은 수가 다름(%d≠%d): %s" % (n, count, old[:90]))
     s = s.replace(old, new)
 rep('var APP_VER="워시 v133 · UI 3.0 · 2026-10-18";', 'var APP_VER="워시 v134 · UI 3.0 · 2026-10-18";')
+# 공통 부품 1.9 → 1.10 (머리말 «차» → 차곳간 심볼 · 탭 아이콘 CGG.favicon(), 보안 통과 d18ec73)
+rep(C19, C110)
+rep(J19, J110)
+rep('''(function(){
+"use strict";
+
+/* ===== 상태 ===== */''', '''(function(){
+"use strict";
+try{CGG.favicon();}catch(e){}   /* v134 공통 1.10 — 탭 아이콘 = 차곳간 CI */
+
+/* ===== 상태 ===== */''')
 rep(U10J, U11J)
 rep(U10C, U11C)
 

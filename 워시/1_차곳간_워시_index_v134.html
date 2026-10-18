@@ -2479,7 +2479,9 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 <script>
 /* 차곳간 공통 부품 cgg-j4 1.5 (디자인/공통/cgg-j4.js — 글자 그대로) */
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.9 (2026-10-18, 디자인 방 · 초안)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.10 (2026-10-18, 디자인 방)
+   1.10 바뀐 것: ⑩ 머리말 왼쪽 «차» 글자 네모 → 차곳간 대표 CI(심볼 — 곳간 지붕 + 확인 표시 + 차). 남색 머리말 위 흰색 판, 폰 · PC 같은 크기
+     CGG.CI.white · small · blue · favicon (그림 글자 data:), CGG.favicon() — 브라우저 탭 아이콘을 같은 CI 로. 파일은 디자인/공통/ci/
    1.9 바뀐 것: ⑨ 새 규칙(.claude/skills/chagotgan-builder/SKILL.md) 맞춤 — 대표님 10/18 «화면 통합은 출시 전에»
      머리말 작은 줄에 날짜(o.date) · 단추 이름 «주소» · «연결됨»(초록 점) · 사람 단추 두 줄 · find.mode:"button"(찾기 단추 → 창)
      CGG.todoBand(할 일 띠 + [해결하러 가기]) · CGG.monthPick(달력식 달 고르기 창) · CGG.findDialog · CGG.myPage(요금제 · 사용량 · 내 계정) — 모양은 워시 통합 시안 v132 와 같게
@@ -2869,7 +2871,7 @@ var CGG = (function(){
      없는 단추는 빼고 그려요(자리는 앞으로 당겨져요). 글자는 모두 esc. */
   function header(el, o){ if(!el) return {}; o=o||{};
     var B=[["notice","공지사항"],["help","도움말"],["link","주소"],["refresh","새로고침"]];   /* 1.9 «링크 복사» → «주소» (SKILL.md 머리말 차례) */
-    el.innerHTML='<div class="cgg-brand"><span class="cgg-ci" aria-hidden="true">차</span><div><b>차곳간 '+esc(o.product||"")+'</b><small>'+esc([o.sub,o.ver,o.date].filter(Boolean).join(" · "))+'</small></div></div>'
+    el.innerHTML='<div class="cgg-brand"><span class="cgg-ci cgg-cimg" aria-hidden="true"><img src="'+CI.white+'" alt="" width="36" height="36"></span><div><b>차곳간 '+esc(o.product||"")+'</b><small>'+esc([o.sub,o.ver,o.date].filter(Boolean).join(" · "))+'</small></div></div>'
       +(o.biz?'<div class="cgg-hdr-biz"><b>'+esc(o.biz.name||"")+'</b><small>'+esc(o.biz.line||"")+'</small></div>':'')
       +'<div class="cgg-right">'+(o.find?(o.find.mode==="button"||o.find.mode==="nav"?'<button type="button" class="cgg-hb cgg-findbtn'+(o.find.mode==="nav"?' cgg-findalt':'')+'" data-hb="findbtn" aria-label="기능 찾기">'+ic("search")+'<span>찾기</span></button>':'<div class="cgg-hfind-slot"></div>'):'')
       +B.filter(function(b){ return o[b[0]]; }).map(function(b){ return '<button type="button" class="cgg-hb'+(b[0]==="refresh"?'':' cgg-wide')+'" data-hb="'+b[0]+'">'+(b[0]==="refresh"?ic("refresh"):'')+'<span>'+b[1]+'</span></button>'; }).join("")
@@ -2971,6 +2973,14 @@ var CGG = (function(){
     rankCard(q("rank"), o.rank||{});
   }
 
+  /* ═════════ ⑩ 1.10 — 차곳간 대표 CI (디자인/공통/ci/ 의 SVG 를 그대로 담았어요 · 바깥 주소 없음) ═════════ */
+  var CI={ white:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI0LjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+IDx0aXRsZT7ssKjqs7PqsIQg7Ius67O8ICh3aGl0ZSk8L3RpdGxlPiA8cGF0aCBkPSJNNCAyNCBMMzIgNiBMNjAgMjQiLz4gPHBhdGggZD0iTTEyLjUgMjQgVjU4Ii8+IDxwYXRoIGQ9Ik01MS41IDI0IFY1OCIvPiA8cGF0aCBkPSJNMTAgNTggSDU0Ii8+IDxwYXRoIGQ9Ik0yMyAyOSBMMjggMzQuNSBMMzguNSAyMy41IiBzdHJva2Utd2lkdGg9IjUiLz4gPHBhdGggZD0iTTIwIDQ5IEwyNCA0MS41IEgzNiBMNDIgNDkiIHN0cm9rZS13aWR0aD0iMy44Ii8+IDxwYXRoIGQ9Ik0xOSA0OSBINDUiIHN0cm9rZS13aWR0aD0iMy44Ii8+IDxjaXJjbGUgY3g9IjI2IiBjeT0iNTIuNSIgcj0iMi41IiBzdHJva2Utd2lkdGg9IjMiLz4gPGNpcmNsZSBjeD0iMzgiIGN5PSI1Mi41IiByPSIyLjUiIHN0cm9rZS13aWR0aD0iMyIvPiA8L3N2Zz4=",
+    small:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPiA8dGl0bGU+7LCo6rOz6rCEIOyLrOuzvCDCtyDsnpHsnYAg7YGs6riw7JqpIOqwhOydtO2YlSAo7Z2w7IOJKTwvdGl0bGU+IDxwYXRoIGQ9Ik00IDI0IEwzMiA2IEw2MCAyNCIvPiA8cGF0aCBkPSJNMTIuNSAyNCBWNTgiLz4gPHBhdGggZD0iTTUxLjUgMjQgVjU4Ii8+IDxwYXRoIGQ9Ik0xMCA1OCBINTQiLz4gPHBhdGggZD0iTTIxIDM3IEwyOC41IDQ1IEw0MyAzMCIgc3Ryb2tlLXdpZHRoPSI2Ii8+IDwvc3ZnPg==",
+    blue:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzE2NjhDNCIgc3Ryb2tlLXdpZHRoPSI0LjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+IDx0aXRsZT7ssKjqs7PqsIQg7Ius67O8ICjtjIzrnpEpPC90aXRsZT4gPHBhdGggZD0iTTQgMjQgTDMyIDYgTDYwIDI0Ii8+IDxwYXRoIGQ9Ik0xMi41IDI0IFY1OCIvPiA8cGF0aCBkPSJNNTEuNSAyNCBWNTgiLz4gPHBhdGggZD0iTTEwIDU4IEg1NCIvPiA8cGF0aCBkPSJNMjMgMjkgTDI4IDM0LjUgTDM4LjUgMjMuNSIgc3Ryb2tlLXdpZHRoPSI1Ii8+IDxwYXRoIGQ9Ik0yMCA0OSBMMjQgNDEuNSBIMzYgTDQyIDQ5IiBzdHJva2Utd2lkdGg9IjMuOCIvPiA8cGF0aCBkPSJNMTkgNDkgSDQ1IiBzdHJva2Utd2lkdGg9IjMuOCIvPiA8Y2lyY2xlIGN4PSIyNiIgY3k9IjUyLjUiIHI9IjIuNSIgc3Ryb2tlLXdpZHRoPSIzIi8+IDxjaXJjbGUgY3g9IjM4IiBjeT0iNTIuNSIgcj0iMi41IiBzdHJva2Utd2lkdGg9IjMiLz4gPC9zdmc+",
+    favicon:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij48dGl0bGU+7LCo6rOz6rCEIO2MjOu5hOy9mCAo64Ko7IOJIOuwlO2DlSDCtyDtnbDsg4kg6rCE7J20IOyLrOuzvCk8L3RpdGxlPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSIjMEIyNTQ1Ii8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzIgMzMpIHNjYWxlKC43MikgdHJhbnNsYXRlKC0zMiAtMzIpIiBmaWxsPSJub25lIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4gPHBhdGggZD0iTTQgMjQgTDMyIDYgTDYwIDI0Ii8+IDxwYXRoIGQ9Ik0xMi41IDI0IFY1OCIvPiA8cGF0aCBkPSJNNTEuNSAyNCBWNTgiLz4gPHBhdGggZD0iTTEwIDU4IEg1NCIvPiA8cGF0aCBkPSJNMjEgMzcgTDI4LjUgNDUgTDQzIDMwIiBzdHJva2Utd2lkdGg9IjYiLz4gPC9nPjwvc3ZnPgo=" };
+  /* 브라우저 탭 아이콘을 차곳간 CI 로 (남색 바탕 · 흰색 간이 심볼). 이미 있는 rel=icon 은 바꿔요 */
+  function favicon(){ try{ var l=document.querySelector('link[rel="icon"]'); if(!l){ l=document.createElement("link"); l.rel="icon"; document.head.appendChild(l); } l.type="image/svg+xml"; l.href=CI.favicon; }catch(e){} }
+
   /* ═════════ ⑨ 1.9 — 새 규칙 부품 ═════════ */
   /* 할 일 띠 + [해결하러 가기] — 일 화면 «제목 + 설명» 바로 아래 (SKILL.md 4. 화면 뼈대 · 워시 시안 v132 모양)
      o = {text:"출고했는데 아직 입금 안 된 차 6대 · 510,000원", count:6, tone:"chk"(주황 · 확인 필요) | "stop"(빨강 · 막힘) | "run"(파랑), go:"해결하러 가기", onGo:fn}
@@ -3019,8 +3029,8 @@ var CGG = (function(){
       body:'<div class="cgg-mypage">'+(o.plan?'<section><h4>요금제</h4>'+dl(o.plan)+'</section>':'')+(o.usage?'<section><h4>이번 달 사용량</h4>'+use+'</section>':'')+(o.account?'<section><h4>내 계정</h4>'+dl(o.account)+'</section>':'')+'</div>',
       ok:o.ok, cancel:"닫기", onOk:o.onOk}); }
 
-  return { todoBand:todoBand, monthPick:monthPick, findDialog:findDialog, myPage:myPage, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
-           status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.9" };
+  return { CI:CI, favicon:favicon, todoBand:todoBand, monthPick:monthPick, findDialog:findDialog, myPage:myPage, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
+           status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.10" };
 })();
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3894,6 +3904,7 @@ var CGG_CSVUP = (function(){
 <script>
 (function(){
 "use strict";
+try{CGG.favicon();}catch(e){}   /* v134 공통 1.10 — 탭 아이콘 = 차곳간 CI */
 
 /* ===== 상태 ===== */
 var S={db:null,assets:null,sample:null,canImage:false,
@@ -18254,7 +18265,7 @@ body,.card,.sheet,.askbox,.banner,th,td,.hint,.empty{word-break:keep-all;overflo
 <!-- ===== 차곳간 공통 부품 cgg-j4 1.5 (디자인/공통 — 글자 그대로 · 동결판) ===== -->
 <style id="cgg-j4">
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.9 (2026-10-18, 디자인 방 · 초안)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.10 (2026-10-18, 디자인 방 · 초안)
    1.8 바뀐 것: ⑧ 페이지 뼈대 — 크기는 모두 아래 «뼈대 치수» 변수 한 벌. 제품 CSS 에서 이 변수와 뼈대 부품의 크기를 덮어쓰지 않아요 (통합 검사표로 숫자 확인)
    1.7 바뀐 것:
    1.7 바뀐 것: ⑦ 메뉴 찾기 — 왼쪽 메뉴 늘 펼침(.cgg-nsubs) · 기능 찾기(.cgg-hfind) · 전체 메뉴 판(.cgg-sheet) · 홈 바로가기(.cgg-quick)
@@ -18900,6 +18911,11 @@ select.cgg-hb{width:auto}
 .cgg-hb.cgg-findalt{display:none}
 @media (max-width:1000px){ .cgg-nav .cgg-navfind{display:none} .cgg-hb.cgg-findalt{display:inline-flex} .cgg-nav:has(.cgg-navfind){overflow-x:auto} }
 @media (min-width:1001px){ .lay-side .cgg-nav .cgg-navfind,.lay-icon .cgg-nav .cgg-navfind{display:none} .lay-side .cgg-hb.cgg-findalt,.lay-icon .cgg-hb.cgg-findalt{display:inline-flex} }
+
+/* ═════════ 1.10 — 머리말 CI: «차» 글자 네모 → 차곳간 대표 심볼(흰색 선). 남색 위에 바로 · 폰 · PC 같은 크기(--logo 36px) ═════════ */
+.cgg-brand .cgg-ci.cgg-cimg{width:var(--logo);height:var(--logo);background:transparent;border-radius:0;padding:0;display:block;flex:none}
+.cgg-brand .cgg-ci.cgg-cimg img{display:block;width:100%;height:100%}
+@media (max-width:600px){ .cgg-brand .cgg-ci.cgg-cimg{width:36px;height:36px} }   /* 폰도 PC 와 같은 36px (폰 --logo 26 을 쓰지 않아요) */
 
 </style>
 <!-- ===== 워시 이음 (공통 부품 위에 워시 머리말 단추 모양만) ===== -->
