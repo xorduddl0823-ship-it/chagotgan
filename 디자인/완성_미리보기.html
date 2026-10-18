@@ -71,6 +71,16 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .dbm strong{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums} .dbm strong small{font-size:14px;margin-left:2px;color:var(--muted)}
 .dbm span{font-size:13px;color:var(--muted)}
 .site{min-height:100vh;background:var(--bg)}
+.cmp{padding:12px 16px 16px}
+.cmph{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px}
+.cmph .d{color:var(--muted);font-size:13.5px;flex-basis:100%}
+.cmph a.cgg-btn{text-decoration:none}
+.cmpb{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cmpb[data-v="now"],.cmpb[data-v="after"]{grid-template-columns:1fr}
+.cmpb[data-v="now"] figure:nth-child(2),.cmpb[data-v="after"] figure:nth-child(1){display:none}
+.cmpb figure{margin:0;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);overflow:hidden}
+.cmpb figcaption{font-weight:800;padding:8px 14px;border-bottom:1px solid var(--line)}
+.cmpb iframe{display:block;width:100%;height:calc(100vh - 190px);min-height:520px;border:0;background:#fff}
 .ssb{background:var(--navy);color:#fff;font-size:13px;text-align:center;padding:8px 16px}
 .shd{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px max(16px,calc((100% - 1200px)/2));background:var(--navy);border-top:1px solid #ffffff1f}
 .slogo{display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-size:18px;font-weight:900}
@@ -428,7 +438,7 @@ CGG.header(document.getElementById("top"),{product:HD[0],sub:HD[1],ver:HD[2],dat
   notice:toast("공지사항"),help:toast("도움말"),link:toast("주소를 복사했어요"),refresh:toast("새로고침했어요"),
   auto:P==="dealer"?null:{value:"30",options:[["0","자동 끄기"],["30","30초마다"],["60","1분마다"]],onChange:function(){}},saved:true,
   field:W?{label:"현장 화면",on:toast("현장 화면으로")}:null,
-  me:{name:P==="dealer"?"김민수":P==="admin"?"관리자":"김대표",role:P==="dealer"?"딜러":P==="admin"?"본사 관리자":"대표",items:[{key:"me",icon:"user",label:"마이페이지",note:"요금제 · 사용량"},{key:"trash",icon:"trash",label:"휴지통"},"-",{key:"lay",icon:"pc",label:"화면 설정"},"-",{key:"out",icon:"out",label:"로그아웃"}],onPick:function(k){ var WHO={wash:"김대표 · 대표",check:"김대표 · 대표",admin:"관리자 · 본사 관리자",dealer:"김민수 · 딜러 (예시상사)"}[P];
+  me:{name:P==="dealer"?"김민수":P==="admin"?"관리자":"김대표",role:P==="dealer"?"딜러":P==="admin"?"본사 관리자":"대표",items:[{key:"me",icon:"user",label:"마이페이지",note:P==="admin"||P==="dealer"?"내 계정":"요금제 · 사용량"},{key:"trash",icon:"trash",label:"휴지통"},"-",{key:"lay",icon:"pc",label:"화면 설정"},"-",{key:"out",icon:"out",label:"로그아웃"}],onPick:function(k){ var WHO={wash:"김대표 · 대표",check:"김대표 · 대표",admin:"관리자 · 본사 관리자",dealer:"김민수 · 딜러 (예시상사)"}[P];
     if(k==="me") CGG.myPage(P==="admin"?{who:WHO,account:[["아이디","admin (예시)"]]}:P==="dealer"?{who:WHO,account:[["로그인 번호","010-****-0000"]]}:{who:WHO,plan:[["지금 요금제","스탠다드 (예시)"]],usage:[["알림톡",198,1000,"건"]],account:[["로그인 번호","010-****-0000"]]});
     else if(k==="out") CGG.dialog({size:"confirm",title:"로그아웃할까요?",rows:[["누구",WHO]],ok:"로그아웃",cancel:"취소",onOk:toast("로그아웃했어요")});
     else CGG.toast("미리보기예요"); }}});
