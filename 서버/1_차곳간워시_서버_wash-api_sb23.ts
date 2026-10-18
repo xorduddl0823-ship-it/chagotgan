@@ -2157,24 +2157,35 @@ async function billLive(shop: string, b: any) {
   let paid = all ? amount : raw + (taxOut ? Math.round(raw * 0.1) : 0);
   paid = Math.max(0, Math.min(amount, paid));
   const due = Math.max(0, amount - paid);
-  return { paid, due, full: amount > 0 && due === 0, paidAt: amount > 0 && due === 0 ? last : "", paidRow };
+  /* sb23(보안 낮음 1): 줄 합계(장부 값) — 세금계산서 기준 금액은 화면이 담은 amount 가 아니라 이것으로 */
+  const sum = ids.reduce((t, x) => t + Math.round(Number(by[x].total) || 0), 0);
+  const sumAmt = sum + (taxOut ? Math.round(sum * 0.1) : 0);
+  return { paid, due, full: amount > 0 && due === 0, paidAt: amount > 0 && due === 0 ? last : "", paidRow, sumAmt };
 }
 
 /** sb23(대표님 «입금 전 세금계산서 발급 없음»): 업체 → 딜러 계산서는 청구서(보기코드)가 모두 입금 완료이고 금액이 같을 때만.
  *  통과면 "" · 아니면 까닭 글 */
-async function taxBillGate(shop: string, json: unknown): Promise<string> {
+async function taxBillGate(shop: string, json: unknown): Promise<{ why: string; json?: string }> {
   let req: any = {};
-  try { req = typeof json === "string" ? JSON.parse(json) : (json || {}); } catch { return "요청을 읽지 못했습니다"; }
+  const no = (why: string) => ({ why });
+  try { req = typeof json === "string" ? JSON.parse(json) : (json || {}); } catch { return no("요청을 읽지 못했습니다"); }
   const code = String(req.bill || "").trim().toUpperCase();
-  if (!/^[A-F0-9]{24}$/.test(code)) return "어느 청구서의 계산서인지 알 수 없습니다. 청구서에서 «세금계산서»를 눌러 주세요";
+  if (!/^[A-F0-9]{24}$/.test(code)) return no("어느 청구서의 계산서인지 알 수 없습니다. 청구서에서 «세금계산서»를 눌러 주세요");
   const { data: vc } = await sb.from("wash_viewcode").select("shop,kind,data").eq("code", code).maybeSingle();
-  if (!vc || String(vc.shop) !== shop || String(vc.kind) !== "bill" || !vc.data) return "이 업체 청구서가 아닙니다";
+  if (!vc || String(vc.shop) !== shop || String(vc.kind) !== "bill" || !vc.data) return no("이 업체 청구서가 아닙니다");
   const live = await billLive(shop, vc.data).catch(() => null);
-  if (!live) return "이 청구서는 입금 상태를 셀 수 없습니다. 청구서를 다시 만든 뒤 발행해 주세요";
-  if (!live.full) return "아직 입금 전입니다 (남은 금액 " + Math.round(live.due).toLocaleString("ko-KR") + "원) — 입금이 끝나면 발행할 수 있어요";
-  const want = Math.round(Number(vc.data.amount) || 0), got = Math.round(Number(req.doc && req.doc.totalAmount) || 0);
-  if (!want || got !== want) return "계산서 합계(" + got.toLocaleString("ko-KR") + "원)가 청구서 금액(" + want.toLocaleString("ko-KR") + "원)과 다릅니다";
-  return "";
+  if (!live) return no("이 청구서는 입금 상태를 셀 수 없습니다. 청구서를 다시 만든 뒤 발행해 주세요");
+  if (!live.full) return no("아직 입금 전입니다 (남은 금액 " + Math.round(live.due).toLocaleString("ko-KR") + "원) — 입금이 끝나면 발행할 수 있어요");
+  /* 보안 낮음 1: 기준 금액은 장부 줄 합계(부가세 붙는 청구서면 +10%) */
+  const want = Math.round(Number(live.sumAmt) || 0), got = Math.round(Number(req.doc && req.doc.totalAmount) || 0);
+  if (!want || got !== want) return no("계산서 합계(" + got.toLocaleString("ko-KR") + "원)가 청구서 금액(" + want.toLocaleString("ko-KR") + "원)과 다릅니다");
+  /* 보안 낮음 2: 한 청구서로는 한 번만 — 비고 앞에 «청구서 {code} ·» 를 서버가 붙이고, 성공 기록이 있으면 거절(«다시 보내기»도) */
+  const tag = "청구서 " + code + " ·";
+  const { data: done } = await sb.from("wash_taxlog").select("no").eq("shop", shop).eq("ok", true).ilike("memo", "%" + tag + "%").limit(1);
+  if (done && done.length) return no("이 청구서로 이미 세금계산서를 발행했습니다");
+  const d = Object.assign({}, req.doc || {});
+  d.remark1 = (tag + " " + String(d.remark1 || "")).slice(0, 300);
+  return { why: "", json: JSON.stringify(Object.assign({}, req, { doc: d })) };
 }
 
 /* sb18: 국세청 사업자등록정보 진위확인 및 상태조회(공공데이터포털) — 체크 v37 ntsVerify 와 같음 · 열쇠 NTS_API_KEY(Secrets) */
@@ -2716,7 +2727,8 @@ const FN: Record<string, Fn> = {
     ownerOnly(ss);
     /* sb23: 입금 완료된 청구서만 (캐시·건수를 깎기 전에 거름) */
     const gate = await taxBillGate(s, a[0]);
-    if (gate) return { ok: false, error: gate, unpaid: true };
+    if (gate.why) return { ok: false, error: gate.why, unpaid: true };
+    a = [gate.json];                                        // 서버가 «청구서 {code}» 를 비고에 붙인 요청으로 발행
     /* 한 건을 미리 깎고, 실패하면 되돌립니다 */
     const cfg = await hqCfg();
     if (cfg.cashOn) {
@@ -6339,7 +6351,7 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
       throw new Error("계산서 합계(" + total.toLocaleString("ko-KR") + "원)가 결제 금액(" + Math.round(Number(pay.amount) || 0).toLocaleString("ko-KR") + "원)과 다릅니다");
     {
       const { data: done } = await sb.from("wash_taxlog").select("no").eq("shop", "ADMIN").eq("ok", true)
-        .ilike("memo", "%결제 " + payId.replace(/_/g, "\\_") + "%").limit(1);
+        .ilike("memo", "%결제 " + payId.replace(/_/g, "\\_") + " ·%").limit(1);   // 보안 참고: 뒤 « ·» 까지(앞부분 같은 id 막지 않게)
       if (done && done.length) throw new Error("이 결제로 이미 세금계산서를 발행했습니다");
     }
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");

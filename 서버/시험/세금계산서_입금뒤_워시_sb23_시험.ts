@@ -6,7 +6,7 @@ Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake");
 Deno.env.set("POPBILL_LINKID", "LID"); Deno.env.set("POPBILL_SECRET", btoa("secret"));
 const far = new Date(Date.now() + 864e5).toISOString();
 const OWN = "c".repeat(48), ADM = "b".repeat(48), OWN2 = "e".repeat(48);
-const BILL = "A".repeat(24), BILL_OLD = "B".repeat(24), BILL_ZZ = "C".repeat(24);
+const BILL = "A".repeat(24), BILL_OLD = "B".repeat(24), BILL_ZZ = "C".repeat(24), BILL_BIG = "D".repeat(24);
 Object.assign(store, {
   wash_hq: [{ id: 1, biz_no: "9999999999", biz_name: "차곳간", cash_on: false }],
   wash_shops: [
@@ -27,6 +27,7 @@ Object.assign(store, {
     { code: BILL, shop: "BT", kind: "bill", expires_at: far, data: { amount: 110000, base: 100000, rows: [{ id: "j1" }, { id: "j2" }] } },
     { code: BILL_OLD, shop: "BT", kind: "bill", expires_at: far, data: { amount: 55000, rows: [{ car: "옛 줄(id 없음)" }] } },
     { code: BILL_ZZ, shop: "ZZ", kind: "bill", expires_at: far, data: { amount: 1000, rows: [] } },
+    { code: BILL_BIG, shop: "BT", kind: "bill", expires_at: far, data: { amount: 220000, base: 200000, rows: [{ id: "j1" }, { id: "j2" }] } },
   ],
   wash_payments: [
     { id: "pay1", shop: "BT", amount: 55000, status: "paid" },
@@ -66,8 +67,12 @@ check("남의 업체 청구서는 거절", r.ok === false && /이 업체 청구�
 (store.wash_docs as any[]).find((d) => d.id === "j2").data.status = "수금완료";
 r = await issue({ bill: BILL, doc: doc(99000) });
 check("다 입금됐어도 금액이 다르면 거절", r.ok === false && /다릅니다/.test(r.error) && pop.length === 0, r);
+r = await issue({ bill: BILL_BIG, doc: doc(220000) });
+check("(보안 낮음 1) 화면이 부풀린 청구서 금액으로는 거절 — 기준은 장부 줄 합계", r.ok === false && /110,000원/.test(r.error) && pop.length === 0, r);
 r = await issue({ bill: BILL, doc: doc(110000) });
-check("다 입금 + 금액 같음 → 발행", r.ok === true && pop.length === 1, r);
+check("다 입금 + 금액 같음 → 발행 · 비고 앞에 «청구서 코드»", r.ok === true && pop.length === 1 && pop[0].remark1.startsWith("청구서 " + BILL + " · 홍딜러"), [r, pop[0]?.remark1]);
+r = await issue({ bill: BILL, doc: doc(110000), force: true });
+check("(보안 낮음 2) 같은 청구서로 두 번째는 거절(«다시 보내기»도)", r.ok === false && /이미/.test(r.error) && pop.length === 1, r);
 
 console.log("■ 본사 → 업체 (hqTaxIssue)");
 const hq = async (v: any) => { const x = await call("hqTaxIssue", ["BT", v], ADM, "ADMIN"); return x; };
@@ -81,8 +86,11 @@ r = await hq({ amount: 40000, payId: "pay1" });
 check("금액이 다르면 거절 (44,000 ≠ 55,000)", !!r.__err && /다릅니다/.test(r.__err) && pop.length === 1, r);
 r = await hq({ amount: 50000, payId: "pay1", period: "2026-10" });
 check("결제 완료 + 금액 같음 → 발행 · 비고에 결제 번호", r.result?.ok === true && pop.length === 2 && /^결제 pay1/.test(pop[1].remark1), [r, pop[1]?.remark1]);
+store.wash_payments.push({ id: "pay10", shop: "BT", amount: 55000, status: "paid" });
+r = await hq({ amount: 50000, payId: "pay10", period: "2026-10" });
+check("(보안 참고) 앞부분이 같은 다른 결제(pay10)는 막히지 않음", r.result?.ok === true && pop.length === 3, r);
 r = await hq({ amount: 50000, payId: "pay1", period: "2026-10", force: true });
-check("같은 결제로 다시(«그대로 다시 보내기» 포함)는 거절", !!r.__err && /이미/.test(r.__err) && pop.length === 2, r);
+check("같은 결제로 다시(«그대로 다시 보내기» 포함)는 거절", !!r.__err && /이미/.test(r.__err) && pop.length === 3, r);
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);
