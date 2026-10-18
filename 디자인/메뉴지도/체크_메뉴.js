@@ -2,7 +2,7 @@
    차곳간 체크 — 메뉴 · 기능 목록 확정본 (2026-10-18, 디자인 방 · 체크 방 확인 v44)
    대표님 결정(10/18) «메뉴 찾기 쉽게 = A 메뉴 아래 칸 늘 보임(가로 기본 · 세로는 왼쪽 펼침) + C 기능 찾기(메뉴 줄 오른쪽 끝) + D 홈 바로가기», 배달은 큰 메뉴(운영/06 O)
    10/18 대표님 확정: 탭 차례 홈 → 일감 → 매출 → 월별 청구서 → 입·출금 내역 → 세금계산서 → (제품 전용) → 설정
-   cgg-j4 1.9 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.9 JS 바로 뒤에 붙여요.
+   cgg-j4 1.12 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.12 JS 바로 뒤에 붙여요.
    go = "묶음/칸" 이름표. 체크 화면 열쇠로 잇는 표는 디자인/메뉴지도/README.md «체크 열쇠 표»
    spot = 그 화면 안에서 빛낼 칸의 id (체크 방이 그 칸에 id 를 붙여요. 없으면 화면 맨 위만 열려요)
    ═══════════════════════════════════════════════════════════════════ */
@@ -49,7 +49,8 @@ var CGG_MENU_CHECK = {
     {id:"fee",          label:"검사자 수수료",          path:"설정 › 검사자 수수료",                go:"set/fee",          words:"수수료 검사자 규칙"},
     {id:"popbill",      label:"팝빌 연결",              path:"설정 › 입금 자동 확인",                    go:"set/popbill",      words:"팝빌 연결 세금계산서 계좌 회원 연동"},
     {id:"sms-collect",  label:"문자 자동수집",          path:"설정 › 입금 자동 확인",                go:"set/popbill",          words:"입금 문자 자동 수집 구글 시트 카카오뱅크"},
-    {id:"alarm",        label:"알람 소리",              path:"설정 › 알림",                    go:"set/alarm",        words:"소리 알람 알림음"},
+    {id:"outbox",       label:"보낸 기록",              path:"설정 › 알림 › 보낸 기록",        go:"set/alarm",        words:"발송함 보낸 문자 알림톡 예약 취소 발송 기록 실패 다시 보내기 (보낸 기록)"},
+    {id:"alarm",        label:"PC 알림창 · 소리",              path:"설정 › 알림",                    go:"set/alarm",        words:"소리 알람 알림음"},
     {id:"staff",        label:"직원 계정 · 권한",       path:"설정 › 직원 계정",                    go:"set/staff",       words:"직원 추가 권한 사람 추가 계정 비밀번호 비번 매니저 대표 관리자 로그인"},
     {id:"backup",       label:"설정 백업",              path:"설정 › 백업 · 기기",                    go:"set/backup",       words:"백업 되돌리기"},
     {id:"link",         label:"직원에게 앱 주소 보내기", path:"머리말 › 주소",               go:"hdr/link",         words:"링크 복사 앱 주소 직원 주소 보내기 설치 링크"},

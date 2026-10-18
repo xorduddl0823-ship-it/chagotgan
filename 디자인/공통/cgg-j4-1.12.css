@@ -129,7 +129,7 @@
 .cgg-drop button .cnt{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--stop);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
 .cgg-drop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 /* 사람 단추 위 빨간 개수 (휴지통 건수 — 2026-10-14 「나」안) */
-.cgg-badge{position:absolute;top:-5px;left:22px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--stop);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;font-style:normal;line-height:1}
+.cgg-badge{position:absolute;top:-7px;right:-7px;left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--stop);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;font-style:normal;line-height:1}
 
 /* 창 · 알림 글 층 (1.1) — 제품의 창에 이 class 를 «더하거나», 제품 CSS 에서 z-index:var(--z-dialog) 로 맞춰요 */
 .cgg-dialog{z-index:var(--z-dialog)!important} .cgg-toast{z-index:var(--z-toast)!important}
@@ -512,7 +512,7 @@ select.cgg-hb option{color:#101828}
   .cgg-hdr .cgg-top .cgg-hdr-biz small{display:none}
   .cgg-top .cgg-hb[data-hb="refresh"] span{display:none}
   .cgg-top .cgg-hb[data-hb="refresh"]{padding:0;width:var(--hb-h);justify-content:center}
-  .cgg-top .cgg-hb.cgg-me{max-width:92px;overflow:hidden;text-overflow:ellipsis}
+  .cgg-top .cgg-hb.cgg-me{max-width:92px;overflow:visible} .cgg-top .cgg-hb.cgg-me>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 
 @media (min-width:1000px){
@@ -698,3 +698,5 @@ select.cgg-hb{width:auto}
   .cgg-pager .cgg-btn{height:34px;padding:0 9px;font-size:12px}
   .cgg-tacts .cgg-btn{flex:1 1 auto}
 }
+/* 1.12 — 휴지통 숫자 배지가 단추 오른쪽 위 바깥(7px)으로 나가요. 머리말 오른쪽 여백 8px 안에 들어가서 폰에서도 안 잘리고, 넘침 검사(더보기 접기)에도 안 걸려요 */
+.cgg-right{padding-right:8px}
