@@ -216,5 +216,13 @@ rep('''<script>
 <script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */''')
 
+# 공통 부품이 없을 때 쓰는 예비 확인 창 — 값은 글자로만 (검사 일꾼 10/18)
+rep('''    $("dk1").textContent=opt.k1||""; $("dv1").innerHTML=opt.v1||"";
+    $("dk2").textContent=opt.k2||""; $("dv2").innerHTML=opt.v2||"";''', '''    $("dk1").textContent=opt.k1||""; $("dv1").textContent=String(opt.v1||"").replace(/<[^>]+>/g,"");
+    $("dk2").textContent=opt.k2||""; $("dv2").textContent=String(opt.v2||"").replace(/<[^>]+>/g,"");''')
+rep('''  card("준비 중인 기능",
+    "아래 기능은 서버 창구가 생기면 이 자리에 붙여요. 지금은 눌러도 되는 버튼이 없어요.",''', '''  card("다음에 붙일 기능",
+    "아래 기능은 서버 창구가 생기면 이 자리에 단추로 붙여요.",''')
+
 open(BASE + "체크/2_차곳간_체크_index_v50.html", "w", encoding="utf-8").write(s)
 print("만듦: 체크/2_차곳간_체크_index_v50.html", len(s))

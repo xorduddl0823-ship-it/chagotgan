@@ -58,7 +58,7 @@ function billMove(){
   var heads=BILLS.filter(function(b){ return L.indexOf(b)<0; });
   if(!heads.length){ tell("옮길 곳이 없어요","이 달 청구처가 하나뿐이에요."); return; }
   var sum=L.reduce(function(t,b){ return t+(b.total||0); },0);
-  CGG.dialog({size:"form", title:"어느 청구처로 옮길까요?", desc:"고른 "+L.length+"곳 · "+won(sum)+"원 → 고른 청구처 한 장으로 합쳐져요 ("+ymText(ST.ym)+"만)",
+  CGG.dialog({size:"form", title:"어느 청구처로 옮길까요?", desc:"고른 "+whoTxt(L)+" · "+won(sum)+"원 → 고른 청구처 한 장으로 합쳐져요 ("+ymText(ST.ym)+"만)",
     body:'<div style="display:grid;gap:6px;max-height:46vh;overflow:auto">'+heads.map(function(b,i){
       return '<label style="display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-weight:600;color:var(--text)">'+
         '<input type="radio" name="v50mv" value="'+i+'"> <span><b>'+esc(b.group||b.name)+'</b> <span style="color:var(--muted)">'+esc(b.comp||"")+' · '+won(b.total)+'원</span></span></label>'; }).join("")+'</div>'+
@@ -267,14 +267,14 @@ PAGE.trash=function(){
   if(TRASHDEP===null && isOwner()){ TRASHDEP=[];
     call("depositTrash",[]).then(function(list){ TRASHDEP=(list||[]).map(function(d){ return {id:String(d.id||""), sender:d.sender||"입금자미상", at:shortTs(d.tx_at), amount:d.amount||0, kind:d.kind||"미분류", who:d.who||"", del:shortTs(d.updated_at||"")}; }); if(page==="trash") draw(); })
       .catch(function(){ TRASHDEP=[]; }); }
-  var h=_pt();
-  return h.replace("], T, {pick:true", "], T, {pick:true");
+  return _pt();
 };
 after("trash", function(){
+  on("엑셀 다운로드", function(){ tbXls("trs"); });
   on("선택한 줄 되살리기", function(){
     var ids=picked("trs"); if(!ids.length){ tell("고른 줄이 없어요","표 왼쪽 네모로 되살릴 입금을 골라 주세요."); return; }
     var L=(TRASHDEP||[]).filter(function(d){ return ids.indexOf(d.id)>=0; });
-    ask({title:"입금 "+L.length+"건을 되살릴까요?", k1:"합계", v1:won(L.reduce(function(t,d){ return t+d.amount; },0))+"원", k2:"보낸 분", v2:L.slice(0,3).map(function(d){ return d.sender; }).join(", "), yes:"되살리기"}, function(){
+    ask({title:"입금 "+L.length+"건을 되살릴까요?", k1:"합계", v1:won(L.reduce(function(t,d){ return t+d.amount; },0))+"원", k2:"보낸 분", v2:L.slice(0,3).map(function(d){ return d.sender; }).join(", ")+(L.length>3?" 외 "+(L.length-3)+"건":""), yes:"되살리기"}, function(){
       busy(true); call("depositRestore",[{ids:ids}]).then(function(r){ busy(false); clearPick("trs"); TRASHDEP=null; bar(won((r&&r.n)||0)+"건을 입금 내역으로 되살렸어요.","ok"); refresh(["dep"]); }).catch(fail); });
   });
 });
