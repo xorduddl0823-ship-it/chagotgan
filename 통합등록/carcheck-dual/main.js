@@ -49,6 +49,30 @@ const popups = { carmodoo: null, carinfo: null };
 /** 팝업 안에서 난 오류·기록 (팝업이 부모 창에 값을 못 넣을 때 여기에 남는다) */
 const popupLogs = { carmodoo: [], carinfo: [] };
 
+/** 막은 팝업 주소(host 만) — 전송 결과에 «막은 팝업»으로 알린다. 필요하면 config.json 의 popupHosts 에 넣는다 */
+const blockedPopups = { carmodoo: [], carinfo: [] };
+
+/** 사이트 창(과 그 팝업)이 새 창을 열 때의 규칙 — src/core/safety.js popupAllowed */
+function popupHandler(id) {
+  return ({ url }) => {
+    const cfg = SITES[id];
+    if (!safety.popupAllowed(url, cfg.home, loadConfig().popupHosts)) {
+      const h = safety.hostOf(url) || String(url || '').split(':')[0] + ':';
+      const list = blockedPopups[id];
+      if (list && !list.includes(h)) { list.push(h); if (list.length > 20) list.shift(); }
+      console.log('[막은 팝업] ' + cfg.name + ' → ' + h);
+      return { action: 'deny' };
+    }
+    /*  창 크기만 정해 주고 나머지는 연 창에서 그대로 물려받게 둔다.
+     *  webPreferences 를 여기서 다시 쓰면 로그인 정보(session)까지 새로 잡혀
+     *  팝업이 로그인 안 된 상태로 뜰 수 있다. */
+    return {
+      action: 'allow',
+      overrideBrowserWindowOptions: { width: 1100, height: 860, autoHideMenuBar: true },
+    };
+  };
+}
+
 /** 그 사이트가 지금 띄워 둔 팝업 (없으면 null) */
 function sitePopup(id) {
   const p = popups[id];
@@ -152,22 +176,15 @@ function siteWindow(id, show = true) {
    *
    *  진짜 창으로 열면 form 의 target 이 제대로 걸려 사이트가 하던 대로 POST 한다.
    *  로그인 정보(session)는 연 창에서 그대로 물려받는다. */
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    //  javascript:·file:·data: 같은 모양은 막는다 (빈 창·http·https 만 허용 — src/core/safety.js)
-    if (!safety.popupAllowed(url)) return { action: 'deny' };
-    /*  창 크기만 정해 주고 나머지는 연 창에서 그대로 물려받게 둔다.
-     *  webPreferences 를 여기서 다시 쓰면 로그인 정보(session)까지 새로 잡혀
-     *  팝업이 로그인 안 된 상태로 뜰 수 있다. */
-    return {
-      action: 'allow',
-      overrideBrowserWindowOptions: { width: 1100, height: 860, autoHideMenuBar: true },
-    };
-  });
+  //  빈 창 · 같은 사이트 · 따로 허락한 주소(config.popupHosts)만 연다. 그 밖은 막고 알린다.
+  win.webContents.setWindowOpenHandler(popupHandler(id));
 
   //  열린 팝업을 기억해 둔다 — 사진 올리기처럼 그 창을 다뤄야 할 때가 있다
   win.webContents.on('did-create-window', (child) => {
     popups[id] = child;
     popupLogs[id] = [];
+    //  팝업이 또 여는 창에도 같은 규칙을 건다 (예전에는 팝업 안의 새 창은 아무 주소나 열렸다)
+    child.webContents.setWindowOpenHandler(popupHandler(id));
 
     /*  팝업 안에서 난 오류를 담아 둔다.
      *  "크롬에서는 되는데 앱에서만 안 된다" 는 대개 팝업이 부모 창에 값을 넣다가
@@ -367,6 +384,7 @@ ipcMain.handle('site:send', async (_e, { id, data }) => {
   const cfg = loadConfig();
   const site = SITES[id];
   const win = siteWindow(id, true);
+  if (blockedPopups[id]) blockedPopups[id].length = 0;
 
   await waitReady(win);
 
@@ -443,6 +461,10 @@ ipcMain.handle('site:send', async (_e, { id, data }) => {
       report.filled = (report.filled || []).concat(shot.filled);
       report.missing = (report.missing || []).concat(shot.missing);
     }
+    //  이번 전송 중에 막은 팝업 — 사이트 기능이 그 팝업을 꼭 써야 하면 config.json popupHosts 에 넣는다
+    (blockedPopups[id] || []).forEach((h) => {
+      report.missing = (report.missing || []).concat(['막은 팝업: ' + h + ' (필요하면 허락 목록에 넣어야 함)']);
+    });
 
     return { ok: true, url, ...report };
   } catch (err) {

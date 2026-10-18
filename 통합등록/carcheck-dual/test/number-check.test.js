@@ -55,10 +55,34 @@ test('작업 시작 전 날짜의 줄은 예전 것으로 본다', () => {
   assert.strictEqual(nc.findNewNumber(rows, CAR, new Set(), '2026-10-18').ok, false);
 });
 
-test('차대번호 일부(뒤 6자리 이상)만 보이면 그 부분으로 비교, 5자리 이하면 모름', () => {
-  assert.strictEqual(nc.vinMatches('123456', CAR.vin), true);
-  assert.strictEqual(nc.vinMatches('023456', CAR.vin), false);
-  assert.strictEqual(nc.vinMatches('23456', CAR.vin), null);
+test('차대번호: 17자리 전체 같음만 확정, 뒷자리만 같으면 «추가 확인 필요», 5자리 이하는 모름', () => {
+  assert.strictEqual(nc.vinMatchLevel(CAR.vin, CAR.vin), 'full');
+  assert.strictEqual(nc.vinMatchLevel('123456', CAR.vin), 'partial');
+  assert.strictEqual(nc.vinMatchLevel('XX123456', CAR.vin), 'partial');
+  assert.strictEqual(nc.vinMatchLevel('023456', CAR.vin), 'different');
+  assert.strictEqual(nc.vinMatchLevel('23456', CAR.vin), 'unknown');
+  assert.strictEqual(nc.vinMatches('123456', CAR.vin), null, '일부 일치는 확정(true)이 아님');
+  assert.strictEqual(nc.isOurCar({ carNo: CAR.carNo, vin: '123456' }, CAR), false);
+  assert.strictEqual(nc.isOurCar({ carNo: CAR.carNo, vin: CAR.vin }, CAR), true);
+});
+
+test('저장 뒤 번호 찾기: 차대번호 뒷자리만 같으면 번호를 알려 주되 «추가 확인 필요»로 멈춘다', () => {
+  const rows = [{ checkNo: 'T-0600', carNo: '12가3456', vin: '***123456', date: '2026-10-18' }];
+  const r = nc.findNewNumber(rows, CAR, new Set(), '2026-10-18');
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.needsConfirm, true);
+  assert.strictEqual(r.checkNo, 'T-0600');
+  const r2 = nc.findNewNumber(rows, CAR, new Set(), '2026-10-18', { partialConfirmedBy: '대표님' });
+  assert.deepStrictEqual(r2, { ok: true, checkNo: 'T-0600', partial: true, confirmedBy: '대표님' });
+});
+
+test('엔트리 저장 직전: 차대번호 뒷자리만 같으면 «추가 확인 필요», 사람이 확인하면 통과', () => {
+  const base = { carinfoNo: 'T-1', entryNo: 'T-1', entryCarNo: '12가3456', entryVin: '123456', car: CAR };
+  const r = nc.checkEntryBeforeSave(base);
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.needsConfirm, true);
+  assert.strictEqual(nc.checkEntryBeforeSave({ ...base, partialConfirmedBy: '대표님' }).ok, true);
+  assert.strictEqual(nc.checkEntryBeforeSave({ ...base, entryVin: '000000', partialConfirmedBy: '대표님' }).ok, false, '다르면 확인해도 통과 아님');
 });
 
 test('카모두 저장 직전: 자동 부여가 꺼졌는지 모르면 막고, 번호가 같아야 통과', () => {

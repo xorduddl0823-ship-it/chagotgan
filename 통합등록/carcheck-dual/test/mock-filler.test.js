@@ -3,7 +3,20 @@
  *  (사고 부위·딜러·사진 업로드처럼 실제 화면 구조가 필요한 부분은 여기서 시험하지 않는다) */
 const test = require('node:test');
 const assert = require('node:assert');
-const { JSDOM } = require('jsdom');
+/*  흉내 화면에는 시험 도구 jsdom 이 필요하다. 프로그램 본체에는 없고 test 폴더에만 받는다.
+ *  없으면 이 파일의 시험이 «조용히 통과»하지 않도록, 까닭과 설치 방법을 적은 실패 하나만 남긴다. */
+let JSDOM = null;
+try {
+  ({ JSDOM } = require('jsdom'));
+} catch (e) {
+  test('흉내 화면 시험 준비 — 시험 도구(jsdom)가 설치되지 않았습니다', () => {
+    assert.fail('jsdom 이 없어 흉내 화면 시험(값 넣기·사진 알림)을 돌릴 수 없습니다.\n' +
+      '  설치: test 폴더로 가서 «npm install» 을 한 번 실행한 뒤 다시 «npm test» 하세요.\n' +
+      '  (jsdom 24.1.3 · 인터넷 연결 필요 · 프로그램 설치 파일에는 들어가지 않음)\n' +
+      '  원인: ' + e.message.split('\n')[0]);
+  });
+}
+if (JSDOM) {
 const { ALL_FIELDS, OPT } = require('../src/schema');
 const { buildPlan, buildScript } = require('../src/filler');
 const photo = require('../src/photo-upload');
@@ -131,3 +144,4 @@ test('예전 모양(숫자만) 뒷정리 결과도 받아들인다', () => {
   assert.deepStrictEqual(photo.restoreAlerts(3), []);
   assert.deepStrictEqual(photo.restoreAlerts(null), []);
 });
+}

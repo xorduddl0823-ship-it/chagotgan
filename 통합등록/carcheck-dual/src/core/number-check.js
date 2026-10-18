@@ -8,12 +8,21 @@
  *   4. 같은 차의 예전 점검·재등록 줄은 «저장 전에 찍어 둔 목록»으로 걸러 낸다.
  *   5. 다르거나 읽지 못하면 통과가 아니다(ok:false).
  *
+ *  차대번호 비교 단계 (2026-10-18 검수 반영):
+ *    full      17자리 전체가 같음 → 같은 차로 확정
+ *    partial   한쪽이 일부만 보여 뒤 6자리 이상이 같음 → «추가 확인 필요» (확정 아님)
+ *    different 다름
+ *    unknown   못 읽음 / 5자리 이하
+ *
+ *  ⚠ 2026-10-18 현재: 시험만 통과했고 실제 등록 흐름(main.js)에는 아직 연결하지 않았다.
+ *
  *  화면에서 읽은 목록 줄 모양(전산 연결 모듈이 만들어 넘김):
  *    { checkNo, carNo, vin, date, status }   — 없는 칸은 비워 둠
  */
 
 const normCar = (s) => String(s || '').replace(/\s+/g, '');
-const normVin = (s) => String(s || '').replace(/[\s-]+/g, '').toUpperCase();
+//  차대번호: 영문·숫자만 남긴다(가림표 *·띄어쓰기·- 는 뺌 — «***123456» 은 뒤 6자리만 보이는 것)
+const normVin = (s) => String(s || '').replace(/[^0-9A-Za-z]+/g, '').toUpperCase();
 const normNo = (s) => String(s || '').replace(/\s+/g, '');
 
 /** 지워진·취소된 줄로 보이는가 (상태 글자로 판단) */
@@ -22,24 +31,44 @@ function isDeleted(row) {
 }
 
 /**
- * 차대번호가 같은가.
- *  목록에 차대번호 전체(17자리)가 있으면 전체로, 일부만 있으면 뒤 6자리 이상 같을 때만.
- *  목록에 차대번호가 없으면 «모름» — 같다고 치지 않는다.
+ * 차대번호 비교 단계: 'full' | 'partial' | 'different' | 'unknown'
+ *  둘 다 17자리면 전체 비교. 한쪽이 일부만이면 겹치는 뒷자리(6자리 이상)를 비교하되,
+ *  같아도 'partial'(추가 확인 필요)일 뿐 확정이 아니다.
  */
-function vinMatches(rowVin, carVin) {
+function vinMatchLevel(rowVin, carVin) {
   const a = normVin(rowVin);
   const b = normVin(carVin);
-  if (!a || !b) return null;                      // 모름
-  if (a.length >= 17 && b.length >= 17) return a === b;
+  if (!a || !b) return 'unknown';
+  if (a.length >= 17 && b.length >= 17) return a === b ? 'full' : 'different';
   const n = Math.min(a.length, b.length);
-  if (n < 6) return null;
-  return a.slice(-n) === b.slice(-n);
+  if (n < 6) return 'unknown';
+  return a.slice(-n) === b.slice(-n) ? 'partial' : 'different';
 }
 
-/** 이 줄이 우리 차인가: 차량번호 같음 + 차대번호 같음(모르면 아님) */
+/** 예전 모양: true(전체 같음) / false(다름) / null(모름·일부만 같음 — 확정 아님) */
+function vinMatches(rowVin, carVin) {
+  const lv = vinMatchLevel(rowVin, carVin);
+  return lv === 'full' ? true : lv === 'different' ? false : null;
+}
+
+/** 이 줄이 우리 차로 «확정»인가: 차량번호 같음 + 차대번호 17자리 전체 같음 */
 function isOurCar(row, car) {
   if (!row || normCar(row.carNo) !== normCar(car.carNo)) return false;
-  return vinMatches(row.vin, car.vin) === true;
+  return vinMatchLevel(row.vin, car.vin) === 'full';
+}
+
+/** 차대번호 단계 → 판단 결과 (partial 은 needsConfirm) */
+function vinVerdict(level, label, opts) {
+  if (level === 'full') return { ok: true };
+  if (level === 'partial') {
+    if (opts && String(opts.partialConfirmedBy || '').trim()) {
+      return { ok: true, confirmedBy: String(opts.partialConfirmedBy).trim(), partial: true };
+    }
+    return { ok: false, needsConfirm: true,
+             reason: label + ' 차대번호가 일부(뒷자리)만 같습니다. 화면에서 전체 차대번호를 확인해 주세요.' };
+  }
+  if (level === 'different') return { ok: false, reason: label + ' 차대번호가 이 차와 다릅니다.' };
+  return { ok: false, reason: label + ' 차대번호를 읽지 못해 이 차인지 확인할 수 없습니다.' };
 }
 
 /**
@@ -60,8 +89,9 @@ function snapshotOldNumbers(rows, car) {
  *  @param car       { carNo, vin }
  *  @param oldNos    snapshotOldNumbers 결과 (저장 전 목록) — 없으면 찾지 않는다
  *  @param since     작업 시작 날짜(YYYY-MM-DD). 그보다 이른 날짜 줄은 예전 것으로 본다
+ *  @param opts      { partialConfirmedBy } — 차대번호 일부 일치를 사람이 화면에서 확인했을 때만
  */
-function findNewNumber(rows, car, oldNos, since) {
+function findNewNumber(rows, car, oldNos, since, opts) {
   if (!(oldNos instanceof Set)) {
     return { ok: false, reason: '저장 전 목록을 찍어 두지 않아 예전 번호와 구분할 수 없습니다.' };
   }
@@ -74,10 +104,10 @@ function findNewNumber(rows, car, oldNos, since) {
              fresh.map((r) => normNo(r.checkNo)).join(', ') + '). 사람이 확인해 주세요.' };
   }
   const row = fresh[0];
-  const v = vinMatches(row.vin, car.vin);
-  if (v === null) return { ok: false, reason: '번호 ' + normNo(row.checkNo) + ' 줄의 차대번호를 읽지 못해 이 차인지 확인할 수 없습니다.' };
-  if (v === false) return { ok: false, reason: '번호 ' + normNo(row.checkNo) + ' 줄의 차대번호가 이 차와 다릅니다.' };
-  return { ok: true, checkNo: normNo(row.checkNo) };
+  const no = normNo(row.checkNo);
+  const v = vinVerdict(vinMatchLevel(row.vin, car.vin), '번호 ' + no + ' 줄의', opts);
+  if (!v.ok) return { ...v, checkNo: no };
+  return { ok: true, checkNo: no, ...(v.partial ? { partial: true, confirmedBy: v.confirmedBy } : {}) };
 }
 
 /** 두 번호가 같은가 (빈 값이면 통과 아님) */
@@ -104,17 +134,14 @@ function checkCarmodooAfterSave({ carinfoNo, savedNo }) {
 }
 
 /** D. 엔트리 저장 직전 — 번호 · 차량번호 · 차대번호 셋 다 */
-function checkEntryBeforeSave({ carinfoNo, entryNo, entryCarNo, entryVin, car }) {
+function checkEntryBeforeSave({ carinfoNo, entryNo, entryCarNo, entryVin, car, partialConfirmedBy }) {
   const n = sameNumber('엔트리 번호', carinfoNo, entryNo);
   if (!n.ok) return n;
   if (!normCar(entryCarNo)) return { ok: false, reason: '엔트리가 끌어온 차량번호를 읽지 못했습니다.' };
   if (normCar(entryCarNo) !== normCar(car.carNo)) {
     return { ok: false, reason: '엔트리가 끌어온 차량번호(' + normCar(entryCarNo) + ')가 이 차(' + normCar(car.carNo) + ')와 다릅니다.' };
   }
-  const v = vinMatches(entryVin, car.vin);
-  if (v === null) return { ok: false, reason: '엔트리가 끌어온 차대번호를 읽지 못했습니다.' };
-  if (v === false) return { ok: false, reason: '엔트리가 끌어온 차대번호가 이 차와 다릅니다.' };
-  return { ok: true };
+  return vinVerdict(vinMatchLevel(entryVin, car.vin), '엔트리가 끌어온', { partialConfirmedBy });
 }
 
 /**
@@ -133,7 +160,7 @@ function previewNext(lastCarinfoNo, entryNextNo) {
 }
 
 module.exports = {
-  normCar, normVin, normNo, vinMatches, isOurCar, isDeleted,
+  normCar, normVin, normNo, vinMatchLevel, vinMatches, isOurCar, isDeleted,
   snapshotOldNumbers, findNewNumber,
   checkCarmodooBeforeSave, checkCarmodooAfterSave, checkEntryBeforeSave,
   previewNext,

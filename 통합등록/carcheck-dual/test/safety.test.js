@@ -17,15 +17,26 @@ test('비밀번호는 같은 주소(https)에만 넣는다', () => {
   assert.strictEqual(s.isSiteUrl('', CI), false);
 });
 
-test('팝업: 빈 창·http·https 만 열고 javascript:·file:·data: 는 막는다', () => {
-  ['', 'about:blank', 'https://ai.carinfo.co.kr/pop', 'http://postcode.example/'].forEach((u) => assert.strictEqual(s.popupAllowed(u), true, u));
-  ['javascript:alert(1)', 'file:///C:/Windows/', 'data:text/html,hi', 'chrome://settings'].forEach((u) => assert.strictEqual(s.popupAllowed(u), false, u));
+test('팝업: 빈 창 · 같은 사이트(https) · 허락 목록만 열고, 나머지는 막는다', () => {
+  const allow = ['postcode.example'];
+  ['', 'about:blank', 'https://ai.carinfo.co.kr/pop/photo', 'https://postcode.example/find'].forEach((u) => assert.strictEqual(s.popupAllowed(u, CI, allow), true, u));
+  [
+    'http://ai.carinfo.co.kr/pop',              // 같은 사이트라도 http 는 안 됨
+    'https://ck.carmodoo.com/pop',              // 다른 사이트
+    'https://ai.carinfo.co.kr.evil.example/',   // 비슷한 이름
+    'http://postcode.example/find',             // 허락 목록이라도 http 는 안 됨
+    'https://unknown.example/',                 // 허락 목록에 없음
+    'javascript:alert(1)', 'file:///C:/Windows/', 'data:text/html,hi', 'chrome://settings',
+  ].forEach((u) => assert.strictEqual(s.popupAllowed(u, CI, allow), false, u));
+  assert.strictEqual(s.popupAllowed('https://postcode.example/', CI), false, '허락 목록이 없으면 바깥 주소는 막음');
 });
 
-test('기록 파일에는 고객명·연락처·사진 파일 위치를 남기지 않는다', () => {
-  const d = { carNo: '12가3456', clientName: '홍길동', dealerHp: '010-0000-0000', photo1: 'C:\\사진\\a.jpg', mileage: '12000' };
+test('기록 파일에는 사람 이름·연락처·주소·사진 파일 위치를 남기지 않는다 (차 정보는 남김)', () => {
+  const d = { carNo: '12가3456', clientName: '홍길동', dealerName: '김딜러', sangsaName: '시험상사', dealerHp: '010-0000-0000',
+              ownerPhone: '010-1111-1111', ownerAddr: '어딘가', photo1: 'C:\\사진\\a.jpg', mileage: '12000',
+              carModel: '시험차', carModel2: '시험 트림', engHighPress: '1', vin: 'KMHXX00XXXX123456' };
   const out = s.sanitizeRecordData(d);
-  assert.deepStrictEqual(out, { carNo: '12가3456', mileage: '12000' });
+  assert.deepStrictEqual(out, { carNo: '12가3456', mileage: '12000', carModel: '시험차', carModel2: '시험 트림', engHighPress: '1', vin: 'KMHXX00XXXX123456' });
   assert.strictEqual(d.clientName, '홍길동', '원래 값은 그대로');
 });
 
