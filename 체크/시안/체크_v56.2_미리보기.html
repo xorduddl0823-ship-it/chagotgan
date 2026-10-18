@@ -12335,7 +12335,7 @@ function slLoad(){
   SL.err="";
   return slCall(SL.days).then(function(r){ r=r||{}; SL.rows=(r.list||[]).map(function(x,i){
       return {id:"sl"+i, at:String(x.createdAt||""), type:String(x.type||""), to:String(x.to||""), kind:String(x.kind||""), st:String(x.status||""), err:String(x.err||"")}; });
-      SL.sums=r.sums||{}; if(SL.days===7) SL7=SL.sums; })
+      SL.sums=r.sums||{}; SL.need=r.need?String(r.need):""; if(SL.days===7) SL7=SL.sums; })
     .catch(function(e){ SL.rows=[]; SL.sums=null; SL.err=slOld(e)?"old":String((e&&e.message)||""); });
 }
 function slSt(v,r){ var k=/실패/.test(v)?"stop":/대기/.test(v)?"run":/안 보냄/.test(v)?"chk":"done";
@@ -12350,6 +12350,7 @@ PAGE.sendlog=function(){
   if(SL.rows===null) return h+'<div class="card"><div class="loading">보낸 기록을 읽고 있어요…</div></div>';
   if(SL.err==="old") return h+card("체크 서버를 v52로 올리면 보여요","보낸 기록은 서버 check-api v52부터 볼 수 있어요. 보내기는 지금도 그대로 돼요.","");
   if(SL.err) return h+card("보낸 기록을 읽지 못했어요",esc(niceMsg(SL.err)),"");
+  if(SL.need) return h+card("보낸 기록을 아직 볼 수 없어요","서버에 보낸 기록 저장 칸(SQL 11)이 아직 없어요. 차곳간(총괄)에 알려 주세요. 보내기는 지금도 그대로 돼요.","");   /* 보안 낮음: need 를 0건으로 보이지 않게 */
   var S=SL.sums||{};
   return h+sums([["보낸 수",won((S.sent||0)+(S.sub||0))+"건","good"],["발송 실패",won(S.fail||0)+"건","bad"],["예약",won(S.wait||0)+"건"],["남은 문자",slLeft()]])+
     tableBlock("sl",[
@@ -12379,7 +12380,7 @@ PAGE.alarm=function(){
 var _aa4=AFTER.alarm, SL7ask=false;
 AFTER.alarm=function(){ if(_aa4) _aa4.apply(this,arguments);
   Array.prototype.forEach.call(document.querySelectorAll("#main [data-v56go]"),function(b){ b.onclick=function(){ go(b.getAttribute("data-v56go")); }; });
-  if(isOwner() && !SL7 && !SL7ask){ SL7ask=true; slCall(7).then(function(r){ SL7=(r&&r.sums)||{}; if(page==="alarm") draw(); }).catch(function(){}); }
+  if(isOwner() && !SL7 && !SL7ask){ SL7ask=true; slCall(7).then(function(r){ if(r&&r.need) return; SL7=(r&&r.sums)||{}; if(page==="alarm") draw(); }).catch(function(){}); }
 };
 var _g2=groupOf;
 window.groupOf=groupOf=function(p){ if(p==="sendlog") return ["set",SETS]; return _g2.apply(this,arguments); };
