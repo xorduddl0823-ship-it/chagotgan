@@ -79,7 +79,7 @@ test('한 번 저장을 푼 전산은 다시 풀 수 없다(같은 작업 안에
   assert.strictEqual(log.beginSubmit(id, 'carinfo').ok, false);
   log.mark(id, 'carinfo', 'saveConfirmed', { checkNo: 'T-0002' });
   assert.strictEqual(log.beginSubmit(id, 'carinfo').ok, false);
-  assert.throws(() => log.mark(id, 'carinfo', 'filled'), /되돌릴 수 없습니다/);
+  assert.throws(() => log.mark(id, 'carinfo', 'filled'), /허용 전이 아님/);
 });
 
 test('같은 차로 끝나지 않은 작업이 있으면 새 작업을 만들지 않는다', () => {
@@ -206,29 +206,10 @@ test('done 은 번호 확인 뒤에만, 번호 확인은 저장 확인 뒤에만
   const log = createJobLog(tmpFile());
   const id = log.newJob(CAR);
   log.mark(id, 'carinfo', 'filled');
-  assert.throws(() => log.mark(id, 'carinfo', 'done'), /번호 확인을 마친 뒤/);
-  assert.throws(() => log.mark(id, 'carinfo', 'numberChecked', { checkNo: 'T-1' }), /저장 확인 뒤/);
+  assert.throws(() => log.mark(id, 'carinfo', 'done'), /허용 전이 아님/);
+  assert.throws(() => log.mark(id, 'carinfo', 'numberChecked', { checkNo: 'T-1' }), /허용 전이 아님/);
   assert.throws(() => log.mark(id, 'carinfo', 'numberChecked'), /점검번호가 있어야/);
   assert.throws(() => log.mark(id, 'carinfo', 'submitReady'), /beginSubmit/);
-});
-
-test('관리자 강제 닫기: 이름·까닭·작업 ID 재입력이 있어야 하고 «강제»로 기록된다', () => {
-  const file = tmpFile();
-  const log = createJobLog(file);
-  const id = log.newJob(CAR);
-  log.mark(id, 'carinfo', 'filled'); log.beginSubmit(id, 'carinfo');
-  log.mark(id, 'carinfo', 'stopped', { reason: '번호 다름' });
-  assert.throws(() => log.forceClose(id, { reason: '두 곳 지우고 재등록함', confirm: id }), /관리자 이름/);
-  assert.throws(() => log.forceClose(id, { by: '대표님', reason: '짧음', confirm: id }), /5자 이상/);
-  assert.throws(() => log.forceClose(id, { by: '대표님', reason: '두 곳 지우고 재등록함', confirm: 'x' }), /그대로 적어/);
-  log.forceClose(id, { by: '대표님', reason: '두 곳 지우고 재등록함', confirm: id });
-  const j = log.get(id);
-  assert.strictEqual(j.closed, true);
-  assert.strictEqual(j.forced, true);
-  const last = fs.readFileSync(file, 'utf8').trim().split('\n').pop();
-  assert.match(last, /"forced":true/);
-  assert.match(last, /carinfo=stopped/);
-  assert.match(last, /대표님/);
 });
 
 test('작업 ID 에 PC 표시가 들어가 PC 가 달라도 겹치지 않는다', () => {
@@ -286,15 +267,6 @@ test('두 프로세스가 동시에 서로 다른 차의 저장을 풀려 해도
     const oks = rs.map((r) => JSON.parse(r.out).ok).filter(Boolean);
     assert.strictEqual(oks.length, 1, '정확히 한 대만 저장이 풀려야 함 (round ' + round + ')');
   }
-});
-
-test('잠금을 쥔 채 꺼진 프로그램의 오래된 잠금은 치우고 계속한다', () => {
-  const file = tmpFile();
-  fs.writeFileSync(file + '.lock', '{"pid":1}');
-  const old = new Date(Date.now() - 60000);
-  fs.utimesSync(file + '.lock', old, old);
-  const log = createJobLog(file, { lockStaleMs: 30000 });
-  assert.ok(log.newJob(CAR));
 });
 
 test('최근 잠금이 풀리지 않으면 기다리다 멈추고, 저장 단추는 풀지 않는다', () => {

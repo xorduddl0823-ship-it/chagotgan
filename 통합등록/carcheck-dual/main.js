@@ -624,12 +624,12 @@ ipcMain.handle('site:scrape', async (_e, id) => {
   }
 });
 
-/*  전송 기록. 개인정보(고객명·연락처)와 사진 파일 위치는 남기지 않고,
+/*  전송 기록. 개인정보(이름·연락처 등)와 사진 파일 위치는 남기지 않고, 차량번호·차대번호는 가리고,
  *  보관 기간(config.recordDays, 기본 90일)이 지난 줄은 쓸 때마다 정리한다. */
 ipcMain.handle('record:save', (_e, rec) => {
   const file = userFile('records.jsonl');
-  const r = { ...(rec || {}) };
-  if (r.data) r.data = safety.sanitizeRecordData(r.data);
+  //  사람 정보는 빼고, 차량번호·차대번호는 뒤 4자리만 남긴다(보호 대상)
+  const r = safety.protectRecord(rec);
   let lines = [];
   try { lines = fs.readFileSync(file, 'utf8').split('\n'); } catch {}
   lines = safety.pruneRecordLines(lines, loadConfig().recordDays || 90);

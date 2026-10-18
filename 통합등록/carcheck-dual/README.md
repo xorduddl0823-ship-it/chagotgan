@@ -526,10 +526,15 @@ part-173            교환·판금·요철·부식·손상
 
 ## 폴더 나눔 (지금은 가온 자체 사용 · 나중에 상용화할 수 있게 구조를 맞춤)
 
-- `src/core/` — **업무 관리**(전산 이름을 모름): 안전 규칙(`safety.js`), 작업 기록(`job-log.js`), 번호 확인(`number-check.js`)
+- `src/core/` — **업무 관리**(전산 이름을 모름, 전산 모듈 없이도 동작 — `test/structure.test.js`): 안전 규칙(`safety.js`), 작업 기록(`job-log.js`), 번호 확인(`number-check.js`), 저장 통제기(`save-guard.js`), 관리자 확인(`admin-auth.js`), 개인정보 점검(`privacy-scan.js`)
 - `src/` 의 나머지 — **전산별 연결 모듈**(카인포·카모두). 새로 만드는 엔트리 연결도 따로 둔다.
 - `src/schema.js` — **점검기록부 자료 틀**(통합 항목 121개 + 전산별 값 바꾸기 표)
 - `test/` — 모의 시험(실제 전산에 접속하지 않음). 설치 파일에는 들어가지 않는다.
+
+## 지난 기록 개인정보 점검 (읽기만)
+
+- `node tools/privacy-scan.js` — `%APPDATA%\carcheck-dual` 의 기록·진단 파일에 어떤 정보가 몇 개 있는지만 보여 준다(값은 안 보여 줌, 로그인 정보 파일은 열지 않음)
+- `node tools/privacy-scan.js --backup` — 위 + `backup-YYYYMMDD` 폴더에 복사(원본 그대로, 지우지 않음)
 
 ## 모의 시험 돌리는 법
 

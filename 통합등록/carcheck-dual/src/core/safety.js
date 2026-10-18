@@ -62,6 +62,30 @@ function sanitizeRecordData(data) {
   return out;
 }
 
+/** 차량번호·차대번호 가림 (보호 대상 — 기록에는 뒤 4자리만) */
+function maskTail(v, keep = 4) {
+  const t = String(v == null ? '' : v).replace(/\s+/g, '');
+  if (!t) return t;
+  return t.length <= keep ? '*'.repeat(t.length) : '*'.repeat(t.length - keep) + t.slice(-keep);
+}
+
+/**
+ * 전송 기록 한 줄을 남겨도 되는 모양으로 (2026-10-18 3차 검수 — 차량번호·차대번호도 보호 대상)
+ *  · data 는 sanitizeRecordData 로 거르고, 그 안의 carNo·vin 도 가림
+ *  · 맨 위 carNo 도 가림. checkNo(점검번호)는 남김 — 기관 번호라 나중에 찾을 때 필요
+ */
+function protectRecord(rec) {
+  const r = { ...(rec || {}) };
+  if (r.data) {
+    r.data = sanitizeRecordData(r.data);
+    if (r.data.carNo != null) r.data.carNo = maskTail(r.data.carNo);
+    if (r.data.vin != null) r.data.vin = maskTail(r.data.vin);
+  }
+  if (r.carNo != null) r.carNo = maskTail(r.carNo);
+  if (r.vin != null) r.vin = maskTail(r.vin);
+  return r;
+}
+
 /**
  * 기록 줄 가운데 보관 기간(일)이 지난 것을 뺀다.
  *  날짜를 못 읽는 줄은 남긴다(함부로 지우지 않음).
@@ -79,4 +103,4 @@ function pruneRecordLines(lines, days, now = Date.now()) {
   });
 }
 
-module.exports = { hostOf, isSiteUrl, popupAllowed, sanitizeRecordData, pruneRecordLines, DROP_KEYS };
+module.exports = { hostOf, isSiteUrl, popupAllowed, sanitizeRecordData, protectRecord, maskTail, pruneRecordLines, DROP_KEYS };
