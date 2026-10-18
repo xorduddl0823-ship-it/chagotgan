@@ -4,6 +4,7 @@
   ① 제목 «로그인할 수 없어요» + 이유 «PC로 들어올 수 있는 자리(2대)가 모두 쓰이고 있어요» + 지금 자리를 쓰는 기기(이름 · 쓴 사람 · 마지막 접속)
   ② 대표(owner)만: 기기 옆 «내보내기» → 확인 → 그 자리를 비우고 바로 들어가기. 직원은 «대표에게 문의해 주세요»
   ③ 잠금 상자 글 가운데 정렬
+  ④ Supabase 로그인이면 화면 쪽 자리 세기로 막지 않음(서버 sb23 이 기기 수를 지킴) · 기기 목록 기록은 그대로
 운영 v111 · 시험판 v125 · v126 ~ v137 은 덮어쓰지 않는다.
 """
 import os
@@ -56,5 +57,10 @@ rep('''  $("lkBack").onclick=function(){authLogin();};
     };
   });
   /* 잠금 화면에서도 로고를 빠르게 5번 누르면 숨은 관리자 계정이 보여요 */''')
+
+# ④ 총괄 결정(대표님 위임): Supabase 로그인이면 화면 쪽 자리 세기로 막지 않아요 — 기기 수는 서버(sb23 makeSession: 같은 사람 같은 종류 1대 ·
+#    trimShopPc: 업체 PC pc_max 넘으면 가장 오래된 PC 로그아웃 · 직원 수는 요금제 seats)가 지켜요. 기기 목록 기록(보기)은 그대로 남겨요
+rep('''  if(used>=devLimit(kind))return Promise.resolve(false);   // 자리가 없으면 막아요''',
+'''  if(used>=devLimit(kind)&&!onSupa())return Promise.resolve(false);   // 자리가 없으면 막아요 (v136.2 Supabase 로그인은 서버가 기기 수를 지켜요)''')
 
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))

@@ -11047,7 +11047,7 @@ function checkDevice(){
       used=list.filter(function(d){return d.kind===kind;}).length;
     }
   }
-  if(used>=devLimit(kind))return Promise.resolve(false);   // 자리가 없으면 막아요
+  if(used>=devLimit(kind)&&!onSupa())return Promise.resolve(false);   // 자리가 없으면 막아요 (v136.2 Supabase 로그인은 서버가 기기 수를 지켜요)
   list.push({id:id,kind:kind,name:nameNow,by:who,at:nowIso(),addedAt:nowIso()});
   return saveDevList(list).then(function(){return true;});
 }
