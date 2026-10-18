@@ -10653,20 +10653,21 @@ function expGo(){
     var L=[]; BILLS.forEach(function(b){ (b.rows||[]).forEach(function(r){ if(r.car_id && EXP.test(String(r.item||""))) L.push({b:b, r:r}); }); });
     if(!L.length){ tell("수출 가성능 차가 없어요", esc(ymText(ST.ym))+" 청구서에 수출 가성능 줄이 없어요. 딜러가 이어지지 않은 차는 매출 › 자료 올리기에서 딜러를 먼저 이어 주세요."); return; }
     var seq={};
-    CGG.dialog({size:"form", title:"수출 가성능 검사비 넣기", desc:ymText(ST.ym)+" · "+L.length+"대 · 금액은 부가세 별도 · 비우면 0원",
+    CGG.dialog({size:"form", title:"수출 가성능 검사비 넣기", desc:ymText(ST.ym)+" · "+L.length+"대 · 금액은 부가세 별도 · 비운 칸은 그대로 둬요",
       body:'<div style="display:grid;gap:8px;max-height:52vh;overflow:auto">'+L.map(function(x,i){
         var k=x.b.name; seq[k]=(seq[k]||0)+1; var car=x.r.car||{};
         var who=(car.plate?car.plate+" · ":"")+(car.check_date?String(car.check_date).slice(5,10)+" · ":"")+x.b.name+(car.plate?"":" · "+seq[k]+"번째 수출 가성능");
         var v=Number(x.r.unit)||0;
         return '<label style="display:flex;gap:10px;align-items:center;font-weight:600;color:var(--text)"><span style="flex:1;min-width:0">'+esc(who)+'</span>'+
-          '<input type="text" inputmode="numeric" maxlength="9" data-ex="'+i+'" value="'+(v?won(v):"")+'" placeholder="0" style="width:130px;text-align:right" aria-label="'+esc(who)+' 검사비"> 원</label>'; }).join("")+'</div>'+
+          '<input type="text" inputmode="numeric" maxlength="9" data-ex="'+i+'" value="'+(v?won(v):"")+'" data-was="'+(v?won(v):"")+'" placeholder="금액" style="width:130px;text-align:right" aria-label="'+esc(who)+' 검사비"> 원</label>'; }).join("")+'</div>'+
         '<div class="msg err" id="exErr" hidden style="margin-top:8px"></div>',
       ok:"저장", cancel:"닫기",
       onOk:function(){
         var e=$("exErr"), go=[];
-        for(var i=0;i<L.length;i++){ var inp=document.querySelector('[data-ex="'+i+'"]'), raw=String(inp?inp.value:"").replace(/[^0-9]/g,"");
+        for(var i=0;i<L.length;i++){ var inp=document.querySelector('[data-ex="'+i+'"]'), typed=String(inp?inp.value:"").trim(), raw=typed.replace(/[^0-9]/g,"");
+          if(!typed||typed===inp.getAttribute("data-was")) continue;   /* 빈칸 · 그대로인 칸은 안 보냄 (0 을 쳤으면 0원으로 보냄) */
           var fee=raw===""?0:Number(raw); if(!(fee>=0&&fee<=10000000)){ e.hidden=false; e.textContent=(i+1)+"번째 금액을 0~10,000,000원으로 넣어 주세요."; return false; }
-          if(fee!==(Number(L[i].r.unit)||0)) go.push({carId:String(L[i].r.car_id), fee:fee}); }
+          go.push({carId:String(L[i].r.car_id), fee:fee}); }
         if(!go.length){ CGG.closeDialog(); return; }
         var okb=document.querySelector(".cgg-dlg [data-dok]"); if(okb) okb.disabled=true;
         go.reduce(function(p,x){ return p.then(function(){ return call("carFeeSet",[x]); }); }, Promise.resolve()).then(function(){
@@ -10681,7 +10682,8 @@ AFTER.bill=function(){ if(ab) ab.apply(this,arguments);
 var as=AFTER.sales;
 AFTER.sales=function(){ if(as) as.apply(this,arguments);
   var r=(typeof HERO!=="undefined"&&SALES[HERO])||SALES[0]; var t=warnText(r);
-  if(t) addBand("v52Sales", (r?ymText(r.ym)+" · ":"")+t, isOwner()&&Array.isArray(r&&r.unknown)&&r.unknown.length?"단가표 보기":"", function(){ go("price"); }); };
+  var unk=Array.isArray(r&&r.unknown)&&r.unknown.length, need=r&&Number(r.feeNeed)>0;
+  if(t) addBand("v52Sales", (r?ymText(r.ym)+" · ":"")+t, !isOwner()?"":unk?"단가표 보기":need?"청구서에서 금액 넣기":"", function(){ if(unk){ go("price"); return; } if(r&&r.ym){ ST.ym=r.ym; try{ set("cgg_ym",r.ym); }catch(e){} } go("bill"); }); };
 })();
 </script>
 
