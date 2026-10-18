@@ -2,7 +2,7 @@
    차곳간 워시 — 메뉴 · 기능 목록 확정본 (2026-10-18, 디자인 방)
    대표님 결정(10/18) «메뉴 찾기 쉽게 = A 메뉴 아래 칸 늘 보임(가로 기본 · 세로는 왼쪽 펼침) + C 기능 찾기(메뉴 줄 오른쪽 끝) + D 홈 바로가기», 배달은 큰 메뉴(운영/06 O)
    10/18 대표님 확정: 탭 차례 홈 → 일감 → 매출 → 월별 청구서 → 입·출금 내역 → 세금계산서 → (제품 전용) → 설정
-   cgg-j4 1.9 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.9 JS 바로 뒤에 붙여요.
+   cgg-j4 1.12 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.12 JS 바로 뒤에 붙여요.
    go = "묶음/칸" 이름표. 워시 화면 열쇠로 잇는 표는 디자인/메뉴지도/README.md «워시 열쇠 표»
    spot = 그 화면 안에서 빛낼 칸의 id (워시 방이 그 칸에 id 를 붙여요. 없으면 화면 맨 위만 열려요)
    ═══════════════════════════════════════════════════════════════════ */
@@ -15,10 +15,10 @@ var CGG_MENU_WASH = {
     {key:"bill",     label:"월별 청구서", icon:"file"},
     {key:"money",    label:"입·출금 내역", icon:"wallet",  subs:[{key:"io",label:"입금 · 출금"},{key:"due",label:"받을 금액"}]},
     {key:"tax",      label:"세금계산서", icon:"receipt"},
-    {key:"delivery", label:"배달",      icon:"truck",   isNew:true, subs:[{key:"outlog",label:"출고 기록"},{key:"dest",label:"목적지"},{key:"msg",label:"문구 · 발송 설정"}]},
+    {key:"delivery", label:"배달",      icon:"truck",   isNew:true, subs:[{key:"outlog",label:"배달 기록"},{key:"dest",label:"목적지"},{key:"msg",label:"문구 · 발송 설정"}]},
     {key:"mat",      label:"자재",      icon:"box"},
     {key:"settings", label:"설정",      icon:"gear",    subs:[{key:"biz",label:"우리 사업장"},{key:"bak",label:"백업 · 기기"},{key:"parties",label:"거래처"},{key:"staff",label:"직원 계정"},{key:"items",label:"작업 항목 · 단가표"},
-                                                              {key:"bank",label:"입금 자동 확인"},{key:"send",label:"알림"},{key:"outbox",label:"보낸 기록"},{group:"워시 전용"},{key:"qr",label:"QR 코드"},{key:"caropt",label:"출고 지연 기준"}]}
+                                                              {key:"bank",label:"입금 자동 확인"},{key:"send",label:"알림"},{group:"워시 전용"},{key:"qr",label:"QR 코드"},{key:"caropt",label:"출고 지연 기준"}]}
   ],
   /* 폰 아래 탭 5칸 (PC 화면일 때. 현장 화면 탭 «홈 · 입고 · 출고 · 오늘 · 날짜 검색»은 그대로) */
   tabs: [{key:"home",icon:"home",label:"홈"},{key:"ledger",icon:"car",label:"일감"},{key:"delivery",icon:"truck",label:"배달"},{key:"money",icon:"wallet",label:"입·출금"},{key:"__all",icon:"more",label:"전체"}],
@@ -29,8 +29,8 @@ var CGG_MENU_WASH = {
     {id:"ledger",      label:"입고 · 출고 내역",          path:"일감 › 입고 · 출고 내역",               go:"ledger/list",       words:"차 목록 작업 중 일감 장부 입고 출고 내역 입고차량 오늘 입고 들어온 차 입출고"},
     {id:"pay-done",    label:"입금 확인",       path:"일감 › 입고 · 출고 내역",               go:"ledger/list",       words:"수금 완료 돈 받음 입금 처리 입금 완료 표시 입금 확인 수금 확인 입출고 내역", spot:"#wkBulkPaid"},
     {id:"extra-ok",    label:"추가 작업 확인 · 입금 확인", path:"일감 › 입고 · 출고 내역 › 차 줄 누르기", go:"ledger/list",     words:"추가 작업 확인 요청 추가 작업 승인 입금 확인 차 자세히 입출고 내역"},
-    {id:"outlog",      label:"출고 기록",            path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"배달 기록 출고 내역 나간 차 배송 이동 확인 탁송 출고차량 오늘 출고 오늘 배달 나간 차"},
-    {id:"out-resend",  label:"출고 알림 다시 보내기", path:"배달 › 출고 기록",                 go:"delivery/outlog",   words:"재발송 다시 보내기 못 보낸 실패 문자"},
+    {id:"outlog",      label:"배달 기록",            path:"배달 › 배달 기록",                 go:"delivery/outlog",   words:"배달 기록 출고 내역 나간 차 배송 이동 확인 탁송 출고차량 오늘 출고 오늘 배달 나간 차"},
+    {id:"out-resend",  label:"출고 알림 다시 보내기", path:"배달 › 배달 기록",                 go:"delivery/outlog",   words:"재발송 다시 보내기 못 보낸 실패 문자"},
     {id:"dest",        label:"목적지 추가",          path:"배달 › 목적지",                    go:"delivery/dest",     words:"목적지 배달 도착지 주소 자주 가는 곳 추가"},
     {id:"out-msg",     label:"출고 알림 문구",       path:"배달 › 문구 · 발송 설정",           go:"delivery/msg",      words:"출고 문자 문구 알림 내용 바꾸기 메시지"},
     {id:"sales",       label:"매출 보기",            path:"매출",                             go:"sales",             words:"매출 실적 월별 년별 통계 얼마 벌었"},
@@ -52,7 +52,7 @@ var CGG_MENU_WASH = {
     {id:"bank",        label:"입금 자동 확인",       path:"설정 › 입금 자동 확인",             go:"settings/bank",     words:"통장 연결 은행 자동 수금 입금 확인 계좌"},
     {id:"sms",         label:"문자 · 알림톡 설정",   path:"설정 › 알림",                      go:"settings/send",     words:"문자 알림톡 카카오 솔라피 자동 발송 연동 카톡 예약"},
     {id:"sender",      label:"보내는 번호(발신번호)",             path:"설정 › 알림",                      go:"settings/send",     words:"발신번호 보내는 번호 문자 번호 솔라피 등록 번호 보내는 번호", spot:"#smsFrom"},
-    {id:"outbox",      label:"보낸 기록",   path:"설정 › 보낸 기록",                    go:"settings/outbox",   words:"발송함 보낸 문자 예약 취소 발송 기록 (보낸 기록)"},
+    {id:"outbox",      label:"보낸 기록",   path:"설정 › 알림 › 보낸 기록",              go:"settings/send",     words:"발송함 보낸 문자 알림톡 예약 취소 발송 기록 실패 다시 보내기 (보낸 기록)"},
     {id:"link",        label:"직원에게 앱 주소 보내기", path:"머리말 › 주소",               go:"hdr/link",          words:"링크 복사 앱 주소 직원 주소 보내기 설치 링크"},
     {id:"qr",          label:"QR 코드",              path:"설정 › QR 코드",                   go:"settings/qr",       words:"큐알 직원 앱 주소 링크 설치"},
     {id:"help",        label:"도움말 (기능 설명서)", path:"머리말 › 도움말",                  go:"hdr/help",          words:"도움말 설명서 사용법 모르겠 어떻게 안됨 안돼 오류 에러 고장 느림 느려"},

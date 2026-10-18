@@ -51,6 +51,9 @@ class Q {
         if (tbl.some((r) => r.office_id === p.office_id && r.car_id === p.car_id && r.step === p.step))
           return { data: null, error: { message: "duplicate key value violates unique constraint" } };
     }
+    /* v49.1 시험: «같은 줄 막기 규칙»이 없는 표 — onConflict upsert 는 42P10 오류 (store.__depRule.noIdx) */
+    if (this.op === "upsert" && this.t === "check_deposit" && store.__depRule?.noIdx)
+      return { data: null, error: { code: "42P10", message: "there is no unique or exclusion constraint matching the ON CONFLICT specification" } };
     /* v41 시험: 입금 표 제한 흉내 — store.__depRule = { notNull: ["bank_id"], uniq: true, check: "src", down: true } */
     if (this.op === "insert" && this.t === "check_deposit") {
       const rule = store.__depRule ?? {};
