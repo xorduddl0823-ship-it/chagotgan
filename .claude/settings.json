@@ -98,7 +98,9 @@
       "TaskList",
       "TaskGet",
       "ToolSearch",
-      "NotebookEdit"
+      "NotebookEdit",
+      "Bash",
+      "WebFetch"
     ],
     "deny": [
       "Bash(git push --force:*)",
