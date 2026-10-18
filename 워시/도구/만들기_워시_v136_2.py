@@ -25,7 +25,7 @@ rep('''function authLocked(p){
    '<button class="btn primary big" id="lkRetry">다시 시도</button>'+''',
 '''function authLocked(p){
   /* v136.2 이유와 자리를 쓰는 기기를 보여 주고, 대표는 다른 기기를 내보내고 들어올 수 있어요 */
-  var kind=devKind(), kname=(kind==="pc"?"PC":"휴대폰"), owner=!!(p&&p.role==="owner");
+  var kind=devKind(), kname=(kind==="pc"?"PC로":"휴대폰으로"), owner=!!(p&&p.role==="owner");
   var used=devList().filter(function(d){return d&&d.kind===kind;});
   var rows=used.map(function(d,i){
     return '<div style="display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);text-align:left">'+
@@ -36,7 +36,7 @@ rep('''function authLocked(p){
   showAuth(
    '<div class="plate-result warn" style="margin:0 0 14px;font-size:15px;line-height:1.7;text-align:center">'+
      '<b style="font-size:17px">로그인할 수 없어요</b><br>'+
-     kname+'로 들어올 수 있는 자리('+devLimit(kind)+'대)가 모두 쓰이고 있어요.<br>'+
+     kname+' 들어올 수 있는 자리('+devLimit(kind)+'대)가 모두 쓰이고 있어요.<br>'+
      (owner?'아래에서 안 쓰는 기기를 <b>내보내면</b> 바로 들어와요.':'대표에게 문의해 주세요.')+'</div>'+
    (rows?'<div style="margin:0 0 14px"><div style="font-size:13px;color:var(--muted);margin-bottom:2px;text-align:center">지금 자리를 쓰는 기기</div>'+rows+'</div>':'')+
    '<button class="btn primary big" id="lkRetry">다시 시도</button>'+''')
@@ -49,7 +49,7 @@ rep('''  $("lkBack").onclick=function(){authLogin();};
       var d=used[Number(b.getAttribute("data-lkout"))];if(!d)return;
       ask((d.name||"기기")+(d.by?" ("+d.by+")":"")+" 을(를) 내보낼까요? 그 기기는 다음에 다시 로그인해야 해요.",function(){
         b.disabled=true;b.textContent="내보내는 중…";
-        var left=devList().filter(function(x){return x!==d&&!(x&&x.id===d.id&&x.kind===d.kind);});
+        var left=devList().filter(function(x){return x!==d&&!(d.id&&x&&x.id===d.id&&x.kind===d.kind);});
         saveDevList(left).then(function(){toast("내보냈어요");login(p);})
           .catch(function(e){b.disabled=false;b.textContent="내보내기";toast(errMsg(e),true);});
       },"내보내기",true);
