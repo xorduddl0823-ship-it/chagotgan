@@ -499,7 +499,7 @@ var CGG = (function(){
   /* 홈 차례 (두 제품 같음): ② 화면 머리 → 알림 띠(있으면) → D 바로가기 → 할 일 3장 → 숫자 칸 4개 → [일정 달력 | 이번 달 입금 · 이번 달 일감] → 도움 카드
      o = {date, title(HTML — 숫자는 <em>, 사용자 글은 CGG.esc), desc, notice(HTML), quick:{feats,key,defs,onGo}, todo:{items,total,onPick,onAll}, kpis:[…], cal:{…}, money:{…}, rank:{…}, help} */
   function home(el, o){ if(!el) return; o=o||{};
-    el.innerHTML=head({crumb:"홈 · "+(o.date||""), title:o.title, desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
+    el.innerHTML=head({crumb:"홈", date:o.date, title:o.title, desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
       +'<div data-h="quick"></div><div data-h="todo"></div><div data-h="kpi"></div>'
       +'<div class="cgg-homegrid"><div data-h="cal"></div><div class="cgg-homeside"><div data-h="money"></div><div data-h="rank"></div></div></div>'+(o.help?help(o.help):'');
     function q(k){ return el.querySelector('[data-h="'+k+'"]'); }
