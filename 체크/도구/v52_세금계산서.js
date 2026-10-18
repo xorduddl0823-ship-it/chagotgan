@@ -149,8 +149,9 @@ AFTER.hometax=function(){
     $("txXls2").onclick=function(){ var i=document.createElement("input"); i.type="file"; i.accept=".xls,.xlsx"; i.hidden=true; document.body.appendChild(i);
       setTimeout(function(){ document.body.onfocus=function(){ document.body.onfocus=null; setTimeout(function(){ if(i.parentNode&&!(i.files&&i.files.length)) i.remove(); },800); }; },0);   /* «취소»면 숨은 칸 치우기 */
       i.onchange=function(){ var f=i.files&&i.files[0]; i.remove(); if(!f) return; var rd=new FileReader();
-        rd.onload=function(){ var u=new Uint8Array(rd.result); try{ XLSX.read(u,{type:"array",bookSheets:true}); }catch(e){
+        rd.onload=function(){ var u=new Uint8Array(rd.result), okH=false; try{ var w0=XLSX.read(u,{type:"array"}); okH=w0.SheetNames.some(function(n){ var h=readHead(w0.Sheets[n]); return h&&h.labels.map(fieldOf).indexOf("b:biz")>=0; }); }catch(e){
             tell("이 양식은 열 수 없어요", /password/i.test(String(e&&e.message))?"암호가 걸린 파일이에요. 엑셀에서 열어 «다른 이름으로 저장»한 파일로 골라 주세요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요.":"엑셀 파일이 맞는지 봐 주세요."); return; }
+          if(!okH){ tell("홈택스 일괄발급 양식이 아닌 것 같아요","작성일자 · 공급받는자 등록번호 칸이 있는 양식이어야 해요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요."); return; }
           hometaxGo(u); };
         rd.readAsArrayBuffer(f); }; i.click(); }; }
   document.querySelectorAll("[data-txearly]").forEach(function(b){ b.onclick=function(){ early(b.getAttribute("data-txearly")); }; });
