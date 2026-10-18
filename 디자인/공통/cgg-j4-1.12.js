@@ -176,7 +176,7 @@ var CGG = (function(){
   function today(d){ d=d||new Date(); return (d.getMonth()+1)+"월 "+d.getDate()+"일 "+WD[d.getDay()]+"요일"; }
   function head(o){   /* 1.12 제목 위 작은 글 = «메뉴 › 칸 · 10월 18일 일요일» (date:false 면 날짜 없음, 글자를 주면 그 글자) */
     var cr=o.crumb?o.crumb+(o.date===false?"":" · "+(typeof o.date==="string"?o.date:today())):"";
-    return '<div class="cgg-head"><div class="hello">'+(cr?'<small>'+esc(cr)+'</small>':'')+'<h1>'+(o.title||"")+'</h1>'+(o.desc?'<p>'+esc(o.desc)+'</p>':'')+'</div>'
+    return '<div class="cgg-head'+(o.hi?' hi':'')+'"><div class="hello">'+(cr?'<small>'+esc(cr)+'</small>':'')+'<h1>'+(o.title||"")+'</h1>'+(o.desc?'<p>'+esc(o.desc)+'</p>':'')+'</div>'
       +((o.acts&&o.acts.length)?'<div class="acts">'+o.acts.map(function(a){ return '<button type="button" class="cgg-btn'+(a.pri?' pri':'')+'"'+(a.id?' id="'+esc(a.id)+'"':'')+(a.disabled?' disabled':'')+'>'+(a.icon?ic(a.icon):'')+esc(a.label)+(a.after||'')+'</button>'; }).join("")+'</div>':'')+'</div>';
   }
   /* ⑤ 숫자 카드 4개: [{label, value, unit, delta, down, spark:[…], color}] */
@@ -499,7 +499,7 @@ var CGG = (function(){
   /* 홈 차례 (두 제품 같음): ② 화면 머리 → 알림 띠(있으면) → D 바로가기 → 할 일 3장 → 숫자 칸 4개 → [일정 달력 | 이번 달 입금 · 이번 달 일감] → 도움 카드
      o = {date, title(HTML — 숫자는 <em>, 사용자 글은 CGG.esc), desc, notice(HTML), quick:{feats,key,defs,onGo}, todo:{items,total,onPick,onAll}, kpis:[…], cal:{…}, money:{…}, rank:{…}, help} */
   function home(el, o){ if(!el) return; o=o||{};
-    el.innerHTML=head({crumb:"홈", date:o.date, title:o.title, desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
+    el.innerHTML=head({crumb:"홈", date:o.date, hi:true, title:o.title, desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
       +'<div data-h="quick"></div><div data-h="todo"></div><div data-h="kpi"></div>'
       +'<div class="cgg-homegrid"><div data-h="cal"></div><div class="cgg-homeside"><div data-h="money"></div><div data-h="rank"></div></div></div>'+(o.help?help(o.help):'');
     function q(k){ return el.querySelector('[data-h="'+k+'"]'); }
