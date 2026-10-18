@@ -12601,15 +12601,12 @@ function pbIssueSelected(all){
   var done=gs.filter(function(g){var d=taxDoc(g);return d&&d.status==="발급"&&!d.test;});
   var bad=gs.filter(function(g){return !g.issue;});
   var go=gs.filter(function(g){return g.issue&&done.indexOf(g)<0;});
-  var noBill=go.filter(function(g){return !taxBillFor(g);}); go=go.filter(function(g){return noBill.indexOf(g)<0;});   /* v135 청구서 한 장 = 계산서 한 장 */
-  if(!go.length&&noBill.length)return toast("맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요",true);
   if(!go.length)return toast("발급할 수 있는 건이 없어요 (이미 발급됐거나 사업자번호 없음)",true);
   var warn=go.filter(function(g){return pbProblems(g).length;});
   ask((c.test?"[시험 모드] 진짜 발급은 되지 않아요.\n\n":"국세청으로 실제 발급해요. 되돌리려면 수정·취소 세금계산서를 따로 끊어야 해요.\n\n")+
       "받는 곳 · "+wWho(go.map(function(g){return g.issuerName;}))+"\n"+go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+
       (done.length?("\n이미 발급된 "+done.length+"건은 빼요."):"")+
       (bad.length?("\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+
-      (noBill.length?("\n맞는 청구서가 없는 "+noBill.length+"건은 빼요(상사별 묶기)."):"")+
       (warn.length?("\n\n확인 필요 "+warn.length+"건: "+warn.map(function(g){return g.issuerName+"("+pbProblems(g).join(", ")+")";}).join(" / ")):""),
     function(){ pbRun(go,c,sup,false); },c.test?"시험 발급":"실제 발급",!c.test);
 }
@@ -12635,7 +12632,7 @@ function pbRun(go,c,sup,force){
     taxBillCode(g).then(function(code){ req.bill=taxBillOf(g,code);
         return gsCall("pbIssue",[JSON.stringify(req)])
           .then(function(t){return typeof t==="string"?JSON.parse(t):t;},function(e){return {ok:false,error:errMsg(e)};}); },
-      function(e){ return {ok:false,error:(e&&e.why)||"청구서를 찾지 못했어요"}; })
+      function(e){ return {ok:false,error:"보내지 못했어요. 다시 해 주세요"}; })
       .then(function(r){
         if(r&&r.dup&&!force){ dups.push({g:g,r:r}); return null; }
         var o={id:taxDocId(g),month:T.month,key:g.key,issuerName:g.issuerName,bizNo:(g.issuer&&g.issuer.bizNo)||"",
@@ -12709,13 +12706,11 @@ function taxBillFor(g){
 }
 /* 서버와 같은 셈: 청구서에 부가세가 붙으면(amount > base) 일감 합계 × 1.1, 아니면 일감 합계 */
 function taxBillTotal(b){ return (b.amount>b.base)?Math.round(b.base*1.1):b.base; }
-/* 팝빌로 보내기 전 — 청구서 보기코드 받기. 안 되면 까닭을 글로 돌려줘요 */
+/* 팝빌로 보내기 전 — 맞는 월별 청구서가 있으면 보기코드도 붙여요(서버 sb23 은 recIds 로 장부를 다시 읽어 판단 · 코드는 참고) */
 function taxBillCode(g){
   var b=taxBillFor(g);
-  if(!b) return Promise.reject({why:"이 묶음과 맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요"});
-  var want=taxBillTotal(b);
-  if(want!==g.sup+g.vat) return Promise.reject({why:"계산서 합계("+wonExact(g.sup+g.vat)+")가 청구서 금액("+wonExact(want)+")과 달라요 — 차곳간에 알려 주세요"});
-  return billCode(b).then(function(code){ if(!code) throw {why:"청구서 보기코드를 받지 못했어요. 잠시 뒤 다시 해 주세요"}; return code; });
+  if(!b) return Promise.resolve("");   /* 상사별로 묶어 청구서와 다른 묶음도 보내요 */
+  return billCode(b).then(function(c){return c||"";},function(){return "";});
 }
 
 /* ── 홈택스 공식 양식 채우기 (체크 v52 와 같은 읽기 방식) ── */

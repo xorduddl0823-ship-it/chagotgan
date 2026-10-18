@@ -2,14 +2,13 @@
 쓰는 법: python3 워시/도구/만들기_워시_v135.py  (v134 판 위에 덧붙임 — v134 는 덮어쓰지 않아요)
   1) 발급 대상 = 입금 완료(받을 금액 0원) 묶음만. 입금 전 줄은 회색 «입금 뒤 발급돼요» + 체크칸 잠김(전체 선택에서도 빠짐). 예외 단추 없음
   2) 숫자 칸 = 발급할 수 있는 곳(입금 완료) 기준. 표에 «입금» 칸
-  3) 팝빌 발급: 입금 전 묶음은 보내지 않음 · 늘 «영수» · 그 묶음의 월별 청구서를 찾아 보기코드를 받아 req.bill.code 로 함께(서버 sb23 필수)
-     — 청구서와 차가 다르면(상사별 묶기) · 합계가 다르면 보내지 않고 까닭을 표에 남김
+  3) 팝빌 발급: 입금 전 묶음은 보내지 않음 · 늘 «영수» · req.bill(recIds · 금액 + 맞는 월별 청구서가 있으면 보기코드) — 서버 sb23 이 recIds 로 장부를 다시 읽어 판단
   4) 홈택스 일괄발급: 체크와 같은 공식 양식(체크/부품/홈택스_일괄발급_양식_일반_1.0.xls)에 칸 이름대로 채워 .xls (100건씩 · 길이 제한 · 영수 01)
      — 코드 = 워시/도구/v135_세금계산서.js (체크 v52_세금계산서.js 의 읽기 방식을 워시 자료에 맞춤)
   5) «청구 / 영수» 고르는 칸 없앰(입금 완료만 발급하니 늘 영수)
   7) 부가세 셈 = 단가표 설정(청구서와 같음). «적은 금액은 부가세 별도» 칸 없앰
   8) 매출 화면: 이번 달 작은 항목 · 맨 위 해 칸 · 큰 숫자 이름 글씨 키움(모양 그대로)
-  9) 계산서 끊는 곳 · 부가세 판단 = 청구서와 같음(안 끊는 곳은 «계산서 끊음»으로 바꾸라고 안내) · 상사별 묶기면 팝빌 전에 뺌
+  9) 계산서 끊는 곳 · 부가세 판단 = 청구서와 같음(안 끊는 곳은 «계산서 끊음»으로 바꾸라고 안내)
   6) 할 일 띠 · 홈 «세금계산서 안 보낸 것»도 입금 완료만 셈
   워시는 «정산 기록» 큰 메뉴가 없어서 «달마다 장부»로 옮길 것은 없어요.
 운영 v111 · 시험판 v125 · v126 ~ v134 는 덮어쓰지 않는다.
@@ -87,7 +86,7 @@ rep('''    gsCall("pbIssue",[JSON.stringify(req)])
 '''    taxBillCode(g).then(function(code){ req.bill=taxBillOf(g,code);
         return gsCall("pbIssue",[JSON.stringify(req)])
           .then(function(t){return typeof t==="string"?JSON.parse(t):t;},function(e){return {ok:false,error:errMsg(e)};}); },
-      function(e){ return {ok:false,error:(e&&e.why)||"청구서를 찾지 못했어요"}; })''')
+      function(e){ return {ok:false,error:"보내지 못했어요. 다시 해 주세요"}; })''')
 rep('''  var pay=(S.cfg&&S.cfg.payType)==="01"?"영수":"청구";
   var lines=g.itemList.map''', '''  var pay="영수";   /* v135 입금 완료만 발급 → 늘 영수 */
   var lines=g.itemList.map''')
@@ -123,12 +122,6 @@ rep('''    var rNone=0, rBad=0, rNoParty=0;''', '''    var rNone=0, rBad=0, rNoP
 rep('''        if(!g.issuer||!g.issuer.bizNo)return '<span style="color:var(--danger)">번호 없음 — 거래처에 넣어 주세요</span>';''',
 '''        if(!g.taxOn)return '<span style="color:var(--warn)">계산서 안 끊는 곳 — 거래처에서 «계산서 끊음»으로</span>';
         if(!g.issuer||!g.issuer.bizNo)return '<span style="color:var(--danger)">번호 없음 — 거래처에 넣어 주세요</span>';''')
-# 3-4) 팝빌 — 맞는 청구서가 없는 묶음(상사별 묶기)은 확인 창 전에 빼고 알려요
-rep('''  var go=gs.filter(function(g){return g.issue&&done.indexOf(g)<0;});''', '''  var go=gs.filter(function(g){return g.issue&&done.indexOf(g)<0;});
-  var noBill=go.filter(function(g){return !taxBillFor(g);}); go=go.filter(function(g){return noBill.indexOf(g)<0;});   /* v135 청구서 한 장 = 계산서 한 장 */
-  if(!go.length&&noBill.length)return toast("맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요",true);''')
-rep('''      (bad.length?("\\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+''', '''      (bad.length?("\\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+
-      (noBill.length?("\\n맞는 청구서가 없는 "+noBill.length+"건은 빼요(상사별 묶기)."):"")+''')
 # 4-1) 할 일 띠 · 홈 «세금계산서 안 보낸 것» — 입금 완료만 셈
 rep('''  if(tab==="tax"){var n=0;try{n=taxGroups().filter(function(g){var d=taxDoc(g);return g.issue&&!(d&&d.status==="발급");}).length;}catch(e){}
     return {count:n,text:"아직 발급 안 한 세금계산서 "+n+"건",''', '''  if(tab==="tax"){var n=0,u=0;try{taxGroups().forEach(function(g){var d=taxDoc(g);if(!g.issue||(d&&d.status==="발급"))return;if(g.unpaid)u++;else n++;});}catch(e){}

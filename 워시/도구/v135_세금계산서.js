@@ -30,13 +30,11 @@ function taxBillFor(g){
 }
 /* 서버와 같은 셈: 청구서에 부가세가 붙으면(amount > base) 일감 합계 × 1.1, 아니면 일감 합계 */
 function taxBillTotal(b){ return (b.amount>b.base)?Math.round(b.base*1.1):b.base; }
-/* 팝빌로 보내기 전 — 청구서 보기코드 받기. 안 되면 까닭을 글로 돌려줘요 */
+/* 팝빌로 보내기 전 — 맞는 월별 청구서가 있으면 보기코드도 붙여요(서버 sb23 은 recIds 로 장부를 다시 읽어 판단 · 코드는 참고) */
 function taxBillCode(g){
   var b=taxBillFor(g);
-  if(!b) return Promise.reject({why:"이 묶음과 맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요"});
-  var want=taxBillTotal(b);
-  if(want!==g.sup+g.vat) return Promise.reject({why:"계산서 합계("+wonExact(g.sup+g.vat)+")가 청구서 금액("+wonExact(want)+")과 달라요 — 차곳간에 알려 주세요"});
-  return billCode(b).then(function(code){ if(!code) throw {why:"청구서 보기코드를 받지 못했어요. 잠시 뒤 다시 해 주세요"}; return code; });
+  if(!b) return Promise.resolve("");   /* 상사별로 묶어 청구서와 다른 묶음도 보내요 */
+  return billCode(b).then(function(c){return c||"";},function(){return "";});
 }
 
 /* ── 홈택스 공식 양식 채우기 (체크 v52 와 같은 읽기 방식) ── */
