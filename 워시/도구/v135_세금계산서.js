@@ -13,10 +13,30 @@ function taxPayOf(g){
 }
 function taxIssuedReal(g){var d=taxDoc(g);return !!(d&&d.status==="발급"&&!d.test);}
 function taxUnpaidText(g){return "입금 뒤 발급돼요 (받은 "+wonExact(g.paid||0)+" · 남은 "+wonExact(g.left||0)+")";}
-/* 서버 sb23 에 같이 보내는 묶음 정보 */
-function taxBillOf(g){
-  return {month:T.month||"",key:g.key,dealer:g.dealer||"",company:g.company||"",
-    recIds:g.recs.map(function(r){return String(r.id);}),amount:g.amount,paid:g.paid||0,left:g.left||0,code:""};
+/* 서버 sb23 에 같이 보내는 묶음 정보 — 서버는 code(청구서 보기코드)로 장부를 다시 읽어 판단해요(나머지는 참고) */
+function taxBillOf(g,code){
+  return {code:code||"",month:T.month||"",key:g.key,dealer:g.dealer||"",company:g.company||"",
+    recIds:g.recs.map(function(r){return String(r.id);}),amount:g.amount,paid:g.paid||0,left:g.left||0};
+}
+/* 이 묶음과 차가 똑같은 월별 청구서(딜러 한 명씩 → 없으면 상사별) — «상사별로 한 장에 묶기»로 딜러가 섞이면 없어요 */
+function taxBillFor(g){
+  var sm=B.month,su=B.unit,ss=B.scope,sz=B.zero,ids=g.recs.map(function(r){return String(r.id);}).sort().join(","),hit=null;
+  try{ B.month=T.month; B.scope="out"; B.zero="";
+    ["dealer","company"].some(function(u){ B.unit=u;
+      hit=buildBills().filter(function(b){return (b.recs||[]).map(function(r){return String(r.id);}).sort().join(",")===ids;})[0]||null; return !!hit; });
+  }catch(e){ hit=null; }
+  B.month=sm;B.unit=su;B.scope=ss;B.zero=sz;
+  return hit;
+}
+/* 서버와 같은 셈: 청구서에 부가세가 붙으면(amount > base) 일감 합계 × 1.1, 아니면 일감 합계 */
+function taxBillTotal(b){ return (b.amount>b.base)?Math.round(b.base*1.1):b.base; }
+/* 팝빌로 보내기 전 — 청구서 보기코드 받기. 안 되면 까닭을 글로 돌려줘요 */
+function taxBillCode(g){
+  var b=taxBillFor(g);
+  if(!b) return Promise.reject({why:"이 묶음과 맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요"});
+  var want=taxBillTotal(b);
+  if(want!==g.sup+g.vat) return Promise.reject({why:"계산서 합계("+wonExact(g.sup+g.vat)+")가 청구서 금액("+wonExact(want)+")과 달라요 — 차곳간에 알려 주세요"});
+  return billCode(b).then(function(code){ if(!code) throw {why:"청구서 보기코드를 받지 못했어요. 잠시 뒤 다시 해 주세요"}; return code; });
 }
 
 /* ── 홈택스 공식 양식 채우기 (체크 v52 와 같은 읽기 방식) ── */

@@ -2,10 +2,13 @@
 쓰는 법: python3 워시/도구/만들기_워시_v135.py  (v134 판 위에 덧붙임 — v134 는 덮어쓰지 않아요)
   1) 발급 대상 = 입금 완료(받을 금액 0원) 묶음만. 입금 전 줄은 회색 «입금 뒤 발급돼요» + 체크칸 잠김(전체 선택에서도 빠짐). 예외 단추 없음
   2) 숫자 칸 = 발급할 수 있는 곳(입금 완료) 기준. 표에 «입금» 칸
-  3) 팝빌 발급: 입금 전 묶음은 보내지 않음 · 늘 «영수» · req.bill(달 · 열쇠 · 입고 기록 id · 받은/남은 금액) 함께 → 서버 sb23 이 다시 확인
+  3) 팝빌 발급: 입금 전 묶음은 보내지 않음 · 늘 «영수» · 그 묶음의 월별 청구서를 찾아 보기코드를 받아 req.bill.code 로 함께(서버 sb23 필수)
+     — 청구서와 차가 다르면(상사별 묶기) · 합계가 다르면 보내지 않고 까닭을 표에 남김
   4) 홈택스 일괄발급: 체크와 같은 공식 양식(체크/부품/홈택스_일괄발급_양식_일반_1.0.xls)에 칸 이름대로 채워 .xls (100건씩 · 길이 제한 · 영수 01)
      — 코드 = 워시/도구/v135_세금계산서.js (체크 v52_세금계산서.js 의 읽기 방식을 워시 자료에 맞춤)
   5) «청구 / 영수» 고르는 칸 없앰(입금 완료만 발급하니 늘 영수)
+  7) 부가세 셈 = 단가표 설정(청구서와 같음). «적은 금액은 부가세 별도» 칸 없앰
+  8) 매출 화면: 이번 달 작은 항목 · 맨 위 해 칸 · 큰 숫자 이름 글씨 키움(모양 그대로)
   6) 할 일 띠 · 홈 «세금계산서 안 보낸 것»도 입금 완료만 셈
   워시는 «정산 기록» 큰 메뉴가 없어서 «달마다 장부»로 옮길 것은 없어요.
 운영 v111 · 시험판 v125 · v126 ~ v134 는 덮어쓰지 않는다.
@@ -76,7 +79,14 @@ rep('''  var gs=all.filter(function(g){return T.sel[g.key];});
   if(!gs.length)return toast("입금 완료된 곳만 발급할 수 있어요 — 입금 전인 곳은 입금 뒤 발급돼요",true);
   var done=gs.filter(function(g){var d=taxDoc(g);return d&&d.status==="발급"&&!d.test;});''')
 rep('''    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key)};''', '''    if(g.unpaid){ return next(); }   /* v135 한 번 더 — 입금 전은 보내지 않아요(앞에서 이미 빠져 거의 없음) */
-    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key),bill:taxBillOf(g)};''')
+    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key)};''')
+# 3-1) 서버 sb23: 청구서 보기코드(bill.code)를 꼭 넣어요 — 먼저 그 묶음의 월별 청구서를 찾아 billCode 로 받고 보내요
+rep('''    gsCall("pbIssue",[JSON.stringify(req)])
+      .then(function(t){return typeof t==="string"?JSON.parse(t):t;},function(e){return {ok:false,error:errMsg(e)};})''',
+'''    taxBillCode(g).then(function(code){ req.bill=taxBillOf(g,code);
+        return gsCall("pbIssue",[JSON.stringify(req)])
+          .then(function(t){return typeof t==="string"?JSON.parse(t):t;},function(e){return {ok:false,error:errMsg(e)};}); },
+      function(e){ return {ok:false,error:(e&&e.why)||"청구서를 찾지 못했어요"}; })''')
 rep('''  var pay=(S.cfg&&S.cfg.payType)==="01"?"영수":"청구";
   var lines=g.itemList.map''', '''  var pay="영수";   /* v135 입금 완료만 발급 → 늘 영수 */
   var lines=g.itemList.map''')
@@ -85,11 +95,31 @@ rep('''  var pay=(S.cfg&&S.cfg.payType)==="01"?"영수":"청구";
 rep('''function exportHometax(all){''', MOD + '''
 function exportHometax0(all){''')
 
+# 3-2) 부가세 셈을 청구서와 같게 — 예전엔 세금계산서 화면만 따로 «적은 금액은 부가세 별도» 칸(기본: 포함)을 써서
+#      단가표가 «부가세 별도»(기본)인 업체는 청구서(×1.1)와 계산서 금액이 달랐어요. 서버 sb23 은 청구서 금액과 같아야 발급해요
+rep('''function splitVat(amount){
+  var inc=!(S.cfg&&S.cfg.vatExcluded);''', '''function splitVat(amount){
+  var inc=(vatMode()==="in");   /* v135 단가표의 부가세 별도/포함을 따라요(청구서 billAmt 와 같은 셈) */''')
+rep('''    '<label class="chip"><input type="checkbox" id="tVat" style="width:18px;height:18px;vertical-align:-3px"'+((S.cfg&&S.cfg.vatExcluded)?" checked":"")+'> 적은 금액은 부가세 <b>별도</b></label>'+''',
+'''    '<span class="hint">부가세: 단가표 설정('+(vatMode()==="in"?"포함":"별도")+')대로 · 청구서와 같은 금액</span>'+''')
+rep('''  $("tVat").onchange=function(){S.cfg=Object.assign({},S.cfg);S.cfg.vatExcluded=this.checked;saveCfg();renderTax();};
+''', '')
 # 4-1) 할 일 띠 · 홈 «세금계산서 안 보낸 것» — 입금 완료만 셈
 rep('''  if(tab==="tax"){var n=0;try{n=taxGroups().filter(function(g){var d=taxDoc(g);return g.issue&&!(d&&d.status==="발급");}).length;}catch(e){}
     return {count:n,text:"아직 발급 안 한 세금계산서 "+n+"건",''', '''  if(tab==="tax"){var n=0,u=0;try{taxGroups().forEach(function(g){var d=taxDoc(g);if(!g.issue||(d&&d.status==="발급"))return;if(g.unpaid)u++;else n++;});}catch(e){}
     return {count:n,text:"발급할 수 있는 세금계산서 "+n+"건 (입금 완료)"+(u?" · 입금 전 "+u+"건은 입금 뒤 발급돼요":""),''')
 rep('''    var gs=taxGroups().filter(function(g){var d=taxDoc(g);return !(d&&d.status==="발급"&&!d.test);});''', '''    var gs=taxGroups().filter(function(g){var d=taxDoc(g);return !g.unpaid&&!(d&&d.status==="발급"&&!d.test);});   /* v135 입금 완료만 */''')
+# 8) 매출 화면 글씨(대표님 10/18 «너무 작아 한눈에 안 보여요») — 모양은 그대로, 이름은 본문 크기 이상 · 숫자는 크고 굵게
+rep('''#hdrOld,#homeOld{display:none!important}''', '''/* v135 매출 화면 글씨 키움 — 이번 달 작은 항목 · 맨 위 해 칸 · 큰 숫자 이름 */
+#vSales .hero .big3 .k{font-size:15px}
+#vSales .hero .facts > div{padding:14px 20px}
+#vSales .hero .facts .k{font-size:15px;margin:0 0 5px}
+#vSales .hero .facts .v{font-size:23px;font-weight:900;letter-spacing:-.02em;line-height:1.15}
+#vSales .hero .facts .v em{font-size:15px;font-weight:800}
+#vSales .sum span{font-size:14.5px}
+#vSales .sum b{font-size:22px}
+@media (max-width:760px){#vSales .hero .facts .v{font-size:20px}#vSales .sum b{font-size:19px}#vSales .hero .facts .k,#vSales .sum span{font-size:14px}}
+#hdrOld,#homeOld{display:none!important}''')
 # 5) CSS — 잠긴 줄 회색
 rep('''#hdrOld,#homeOld{display:none!important}''', '''#hdrOld,#homeOld{display:none!important}
 tr.goff td,tr.goff td.c-chk,tr.goff td.c-name{background:var(--surface2);color:var(--muted)} tr.goff .tag{opacity:.75} .c-chk input:disabled{opacity:.45;cursor:not-allowed}''')

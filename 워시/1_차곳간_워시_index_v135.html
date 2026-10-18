@@ -10636,7 +10636,7 @@ function lastDayOf(mk){var p=(mk||mKey(nowIso())).split("-");
   var d=new Date(Number(p[0]),Number(p[1]),0);
   return {ymd:p[0]+p[1]+String(d.getDate()).padStart(2,"0"),dd:String(d.getDate()).padStart(2,"0")};}
 function splitVat(amount){
-  var inc=!(S.cfg&&S.cfg.vatExcluded);
+  var inc=(vatMode()==="in");   /* v135 단가표의 부가세 별도/포함을 따라요(청구서 billAmt 와 같은 셈) */
   if(inc){var sup=Math.round(amount/1.1);return {sup:sup,vat:amount-sup};}
   return {sup:amount,vat:Math.round(amount*0.1)};
 }
@@ -10739,7 +10739,7 @@ function renderTax(){
     '<label class="chip"><input type="checkbox" id="tMerge" style="width:18px;height:18px;vertical-align:-3px"'+(T.mergeByCompany?" checked":"")+'> 상사별로 한 장에 묶기</label>'+
     '<label class="chip"><input type="checkbox" id="tWork" style="width:18px;height:18px;vertical-align:-3px"'+(T.includeWorking?" checked":"")+'> 아직 작업 중인 차도 포함</label>'+
     '<label class="chip"><input type="checkbox" id="tNoTax" style="width:18px;height:18px;vertical-align:-3px"'+(T.skipNoTax!==false?" checked":"")+'> 거래처에 \'계산서 없음\'으로 적힌 곳은 빼기</label>'+
-    '<label class="chip"><input type="checkbox" id="tVat" style="width:18px;height:18px;vertical-align:-3px"'+((S.cfg&&S.cfg.vatExcluded)?" checked":"")+'> 적은 금액은 부가세 <b>별도</b></label>'+
+    '<span class="hint">부가세: 단가표 설정('+(vatMode()==="in"?"포함":"별도")+')대로 · 청구서와 같은 금액</span>'+
     '<span class="hint">입금 완료된 곳만 발급해요 (영수)</span>'+
    '</div></div>'+
 
@@ -10771,7 +10771,6 @@ function renderTax(){
   $("tMerge").onchange=function(){T.mergeByCompany=this.checked;T.sel={};renderTax();};
   $("tWork").onchange=function(){T.includeWorking=this.checked;T.sel={};renderTax();};
   $("tNoTax").onchange=function(){T.skipNoTax=this.checked;T.sel={};renderTax();};
-  $("tVat").onchange=function(){S.cfg=Object.assign({},S.cfg);S.cfg.vatExcluded=this.checked;saveCfg();renderTax();};
 
   var gs=taxGroups();
   gs.forEach(function(g){if(g.unpaid&&T.sel)delete T.sel[g.key];});   /* v135 입금 전 줄은 고를 수 없어요 */
@@ -12620,10 +12619,12 @@ function pbRun(go,c,sup,force){
     toast("발급 중… "+i+" / "+go.length);
     var key=pbMgtKey(g);
     if(g.unpaid){ return next(); }   /* v135 한 번 더 — 입금 전은 보내지 않아요(앞에서 이미 빠져 거의 없음) */
-    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key),bill:taxBillOf(g)};
+    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key)};
     if(force) req.force=true;
-    gsCall("pbIssue",[JSON.stringify(req)])
-      .then(function(t){return typeof t==="string"?JSON.parse(t):t;},function(e){return {ok:false,error:errMsg(e)};})
+    taxBillCode(g).then(function(code){ req.bill=taxBillOf(g,code);
+        return gsCall("pbIssue",[JSON.stringify(req)])
+          .then(function(t){return typeof t==="string"?JSON.parse(t):t;},function(e){return {ok:false,error:errMsg(e)};}); },
+      function(e){ return {ok:false,error:(e&&e.why)||"청구서를 찾지 못했어요"}; })
       .then(function(r){
         if(r&&r.dup&&!force){ dups.push({g:g,r:r}); return null; }
         var o={id:taxDocId(g),month:T.month,key:g.key,issuerName:g.issuerName,bizNo:(g.issuer&&g.issuer.bizNo)||"",
@@ -12680,10 +12681,30 @@ function taxPayOf(g){
 }
 function taxIssuedReal(g){var d=taxDoc(g);return !!(d&&d.status==="발급"&&!d.test);}
 function taxUnpaidText(g){return "입금 뒤 발급돼요 (받은 "+wonExact(g.paid||0)+" · 남은 "+wonExact(g.left||0)+")";}
-/* 서버 sb23 에 같이 보내는 묶음 정보 */
-function taxBillOf(g){
-  return {month:T.month||"",key:g.key,dealer:g.dealer||"",company:g.company||"",
-    recIds:g.recs.map(function(r){return String(r.id);}),amount:g.amount,paid:g.paid||0,left:g.left||0,code:""};
+/* 서버 sb23 에 같이 보내는 묶음 정보 — 서버는 code(청구서 보기코드)로 장부를 다시 읽어 판단해요(나머지는 참고) */
+function taxBillOf(g,code){
+  return {code:code||"",month:T.month||"",key:g.key,dealer:g.dealer||"",company:g.company||"",
+    recIds:g.recs.map(function(r){return String(r.id);}),amount:g.amount,paid:g.paid||0,left:g.left||0};
+}
+/* 이 묶음과 차가 똑같은 월별 청구서(딜러 한 명씩 → 없으면 상사별) — «상사별로 한 장에 묶기»로 딜러가 섞이면 없어요 */
+function taxBillFor(g){
+  var sm=B.month,su=B.unit,ss=B.scope,sz=B.zero,ids=g.recs.map(function(r){return String(r.id);}).sort().join(","),hit=null;
+  try{ B.month=T.month; B.scope="out"; B.zero="";
+    ["dealer","company"].some(function(u){ B.unit=u;
+      hit=buildBills().filter(function(b){return (b.recs||[]).map(function(r){return String(r.id);}).sort().join(",")===ids;})[0]||null; return !!hit; });
+  }catch(e){ hit=null; }
+  B.month=sm;B.unit=su;B.scope=ss;B.zero=sz;
+  return hit;
+}
+/* 서버와 같은 셈: 청구서에 부가세가 붙으면(amount > base) 일감 합계 × 1.1, 아니면 일감 합계 */
+function taxBillTotal(b){ return (b.amount>b.base)?Math.round(b.base*1.1):b.base; }
+/* 팝빌로 보내기 전 — 청구서 보기코드 받기. 안 되면 까닭을 글로 돌려줘요 */
+function taxBillCode(g){
+  var b=taxBillFor(g);
+  if(!b) return Promise.reject({why:"이 묶음과 맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요"});
+  var want=taxBillTotal(b);
+  if(want!==g.sup+g.vat) return Promise.reject({why:"계산서 합계("+wonExact(g.sup+g.vat)+")가 청구서 금액("+wonExact(want)+")과 달라요 — 차곳간에 알려 주세요"});
+  return billCode(b).then(function(code){ if(!code) throw {why:"청구서 보기코드를 받지 못했어요. 잠시 뒤 다시 해 주세요"}; return code; });
 }
 
 /* ── 홈택스 공식 양식 채우기 (체크 v52 와 같은 읽기 방식) ── */
@@ -19492,6 +19513,15 @@ body.jpay #ccwLockBar{display:none!important}
 .wpt-roster{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 
 /* ── v129 공통 부품 1.8 뼈대 — 숨긴 옛 머리말 · 옛 홈, 배달 안쪽 칸 ── */
+/* v135 매출 화면 글씨 키움 — 이번 달 작은 항목 · 맨 위 해 칸 · 큰 숫자 이름 */
+#vSales .hero .big3 .k{font-size:15px}
+#vSales .hero .facts > div{padding:14px 20px}
+#vSales .hero .facts .k{font-size:15px;margin:0 0 5px}
+#vSales .hero .facts .v{font-size:23px;font-weight:900;letter-spacing:-.02em;line-height:1.15}
+#vSales .hero .facts .v em{font-size:15px;font-weight:800}
+#vSales .sum span{font-size:14.5px}
+#vSales .sum b{font-size:22px}
+@media (max-width:760px){#vSales .hero .facts .v{font-size:20px}#vSales .sum b{font-size:19px}#vSales .hero .facts .k,#vSales .sum span{font-size:14px}}
 #hdrOld,#homeOld{display:none!important}
 tr.goff td,tr.goff td.c-chk,tr.goff td.c-name{background:var(--surface2);color:var(--muted)} tr.goff .tag{opacity:.75} .c-chk input:disabled{opacity:.45;cursor:not-allowed}
 .wsubdup #setSub,.wsubdup #mnTabs{display:none!important}
