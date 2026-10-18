@@ -2,218 +2,151 @@
 <title>공통 화면 네 가지 시안</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
-<link rel="stylesheet" href="cgg-j4-1.10.css">
 <style>
-/* 판: 차곳간 E안 색 그대로 — 위에 «전»(지금 두 제품 사진), 아래에 «후»(공통 부품 1.10으로 그린 한 모양) */
+/* 판: 차곳간 E안 색. 화면마다 왼쪽 «전 = 체크 지금», 오른쪽 «후 = 워시 모양(체크도 이대로)», 아래 «체크에서 바꿀 곳» 표 */
 :root{
-  --pg-bg:#EEF2F7; --pg-ink:#0B2545; --pg-muted:#5B6B80; --pg-card:#FFFFFF; --pg-line:#D9E1EC; --pg-accent:#1668C4; --pg-rec:#1E9E5A;
-  --f-body:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --bg:#EEF2F7; --ink:#0B2545; --muted:#5B6B80; --card:#FFFFFF; --line:#D9E1EC; --accent:#1668C4; --chg:#B26B00; --chg-bg:#FFF4E0; --same:#1E9E5A; --same-bg:#E7F6EE; --own:#5B6B80; --own-bg:#EEF1F5;
+  --f:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg-bg:#0e141c;--pg-ink:#e8eef6;--pg-muted:#9fb0c4;--pg-card:#161e28;--pg-line:#2a3646;--pg-accent:#5FA8E8;--pg-rec:#4cc58a;color-scheme:dark}}
-:root[data-theme="dark"]{--pg-bg:#0e141c;--pg-ink:#e8eef6;--pg-muted:#9fb0c4;--pg-card:#161e28;--pg-line:#2a3646;--pg-accent:#5FA8E8;--pg-rec:#4cc58a;color-scheme:dark}
-body{background:var(--pg-bg);color:var(--pg-ink);font-family:var(--f-body);font-size:15px;line-height:1.55;word-break:keep-all}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141c;--ink:#e8eef6;--muted:#9fb0c4;--card:#161e28;--line:#2a3646;--accent:#5FA8E8;--chg:#f0b45a;--chg-bg:#3a2a12;--same:#4cc58a;--same-bg:#123326;--own:#9fb0c4;--own-bg:#1d2733;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141c;--ink:#e8eef6;--muted:#9fb0c4;--card:#161e28;--line:#2a3646;--accent:#5FA8E8;--chg:#f0b45a;--chg-bg:#3a2a12;--same:#4cc58a;--same-bg:#123326;--own:#9fb0c4;--own-bg:#1d2733;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.55;word-break:keep-all}
 .wrap{max-width:1320px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.top h1{font-size:26px;font-weight:900;margin:0 0 6px;text-wrap:balance}
-.top p{margin:0;color:var(--pg-muted);max-width:68ch}
-.jump{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
-.jump a{display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--pg-line);background:var(--pg-card);color:var(--pg-ink);text-decoration:none;font-weight:700;font-size:14px}
-.jump a:focus-visible,.opt button:focus-visible{outline:3px solid var(--pg-accent);outline-offset:2px}
-section.scr{margin-top:36px;border-top:2px solid var(--pg-line);padding-top:22px}
-section.scr h2{font-size:22px;font-weight:900;margin:0 0 4px}
-section.scr .what{color:var(--pg-muted);margin:0 0 14px;max-width:80ch}
-.lbl{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--pg-muted);margin:18px 0 8px}
-.before{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.before figure{margin:0;min-width:0;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:14px;overflow:hidden}
-.before figcaption{padding:8px 12px;font-size:13px;font-weight:700;border-bottom:1px solid var(--pg-line)}
-.before .shot{height:340px;overflow:auto}
-.before img{display:block;width:100%;height:auto}
-.diff{margin:10px 0 0;padding:10px 14px;border-radius:12px;background:var(--pg-card);border:1px dashed var(--pg-line);font-size:14px}
-.diff b{color:var(--pg-ink)}
-.opt{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
-.opt button{height:40px;padding:0 16px;border-radius:12px;border:1px solid var(--pg-line);background:var(--pg-card);color:var(--pg-ink);font:inherit;font-weight:700;cursor:pointer}
-.opt button[aria-pressed="true"]{background:var(--pg-accent);border-color:var(--pg-accent);color:#fff}
-.opt .rec{font-size:11px;font-weight:800;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--pg-rec);color:#fff}
-.optnote{margin:0 0 10px;font-size:14px;color:var(--pg-muted)}
-.frame{border:1px solid var(--pg-line);border-radius:16px;overflow:hidden;background:var(--bg)}
-.frame .cgg-main{padding:18px 20px 22px}
-.frame .cgg-navsub{position:static;display:flex}
-.subt{display:flex;gap:6px;flex-wrap:wrap;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
-.subt span{height:32px;display:inline-flex;align-items:center;padding:0 13px;border-radius:999px;border:1px solid var(--ln2);font-size:13.5px;color:var(--btn-ink)}
-.subt span.on{background:var(--tabon);color:var(--blue);border-color:transparent;font-weight:700}
-.subt span em{font-style:normal;font-size:11px;color:var(--muted);margin-left:4px}
-.acts-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin:12px 0 4px}
-.box{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:16px 18px;margin:0 0 var(--sec-gap)}
-.box h3{margin:0 0 4px;font-size:16px}
-.box p{margin:0;color:var(--muted);font-size:13.5px}
-.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.board .col{background:var(--surface);border-radius:14px;box-shadow:var(--sh);padding:10px;min-width:0}
-.board .col h4{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between}
-.board .it{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:13px}
-.board .it b{display:block;font-size:13.5px}
-.setg{display:grid;grid-template-columns:230px minmax(0,1fr);gap:16px;align-items:start}
-.setnav{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:8px}
-.setnav button{display:flex;width:100%;align-items:center;height:40px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--btn-ink);font:inherit;font-size:14px;text-align:left;cursor:pointer}
-.setnav button[aria-current="true"]{background:var(--tabon);color:var(--blue);font-weight:700}
-.setnav small{display:block;padding:10px 12px 4px;font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.04em}
-.form2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
-.form2 label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-.form2 input{height:var(--ctl);box-sizing:border-box;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:0 12px;font:inherit;font-size:14px;background:var(--surface);color:var(--text)}
-.end{margin-top:40px;padding:16px 18px;border-radius:14px;background:var(--pg-card);border:1px solid var(--pg-line);font-size:14px}
-@media (max-width:760px){
-  .before{grid-template-columns:1fr} .before .shot{height:260px}
-  .board{grid-template-columns:1fr 1fr} .setg{grid-template-columns:1fr} .form2{grid-template-columns:1fr}
-}
+h1{font-size:26px;font-weight:900;margin:0 0 6px;text-wrap:balance}
+.lead{margin:0;color:var(--muted);max-width:72ch}
+.rule{margin:14px 0 0;padding:12px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:14px;max-width:90ch}
+.jump{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.jump a{display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}
+.jump a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+section{margin-top:34px;border-top:2px solid var(--line);padding-top:20px}
+h2{font-size:22px;font-weight:900;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 12px;max-width:85ch;font-size:14px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+figure{margin:0;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+figcaption{padding:8px 12px;font-size:13px;font-weight:800;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+figcaption i{font-style:normal;font-size:11px;padding:1px 8px;border-radius:999px}
+.t-before{background:var(--own-bg);color:var(--own)} .t-after{background:var(--accent);color:#fff}
+.shot{height:380px;overflow:auto}
+.shot img{display:block;width:100%;height:auto}
+.tw{overflow-x:auto;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12.5px;color:var(--muted);font-weight:800;background:var(--card)}
+tr:last-child td{border-bottom:0}
+td b{font-weight:800}
+.tag{display:inline-block;font-size:11.5px;font-weight:800;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.chg{background:var(--chg-bg);color:var(--chg)} .same{background:var(--same-bg);color:var(--same)} .own{background:var(--own-bg);color:var(--own)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 0;font-size:13px;color:var(--muted)}
+.end{margin-top:36px;padding:14px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:14px}
+@media (max-width:760px){ .pair{grid-template-columns:1fr} .shot{height:280px} }
 </style>
 
 <div class="wrap">
-  <div class="top">
-    <h1>공통 화면 네 가지 시안</h1>
-    <p>워시와 체크에서 모양이 다른 네 화면(세금계산서 · 입·출금 내역 · 배달 · 설정)을 한 모양으로 맞추는 시안이에요. 화면마다 위는 <b>지금(전)</b>, 아래는 <b>바뀐 뒤(후)</b>예요. 후는 안을 2개씩 그렸고, <b>추천</b> 표시가 있는 안이 먼저 보여요. 모두 지어낸 예시 자료예요.</p>
-  </div>
-  <nav class="jump" aria-label="화면 바로 가기"><a href="#tax">세금계산서</a><a href="#money">입·출금 내역</a><a href="#deliv">배달</a><a href="#set">설정</a></nav>
+  <h1>공통 화면 네 가지 시안</h1>
+  <p class="lead">워시를 기준으로, 체크의 <b>세금계산서 · 입·출금 내역 · 배달 · 설정</b>을 워시와 똑같이 맞추는 안 하나예요. 화면마다 왼쪽은 <b>체크 지금(전)</b>, 오른쪽은 <b>워시 모양(후 · 체크도 이대로)</b>이고, 아래 표에 체크에서 바꿀 곳을 적었어요. 사진은 모두 미리보기의 지어낸 자료예요.</p>
+  <p class="rule"><b>원칙</b> (새 규칙 5-1) 같은 이름의 탭 · 칸 · 설정 항목은 모양 · 차례 · 글자 · 단추가 100% 같아요. 다른 것은 제품 전용 칸뿐이에요(워시 현장 화면 · 자재 · 출고 지연 기준 · QR 코드, 체크 재검사 알림 · 보험료 대조 · 검사자 수수료 · 달마다 장부). 워시는 바꾸지 않고 체크를 워시 모양으로 옮겨요. 체크가 지금 하는 기능은 빼지 않고 자리만 옮겨요.</p>
+  <div class="legend"><span><span class="tag chg">체크 바꿈</span> 체크를 워시처럼 고쳐요</span><span><span class="tag same">같음</span> 이미 같아요</span><span><span class="tag own">제품 전용</span> 그 제품에만 남아요</span></div>
+  <nav class="jump" aria-label="바로 가기"><a href="#all">전체 대조표</a><a href="#tax">세금계산서</a><a href="#money">입·출금 내역</a><a href="#deliv">배달</a><a href="#set">설정</a></nav>
 
-  <section class="scr" id="tax">
+  <section id="all">
+    <h2>전체 대조표 — 탭 · 안쪽 칸</h2>
+    <p class="sub">워시 v132(v134와 화면 같음) · 체크 v53 미리보기에서 탭을 하나씩 눌러 본 결과예요.</p>
+    <div class="tw"><table>
+      <thead><tr><th>탭</th><th>워시 (기준)</th><th>체크 지금</th><th>체크에서 바꿀 곳</th></tr></thead>
+      <tbody>
+        <tr><td><b>홈</b></td><td>숫자 칸: 오늘 입고차량 · 작업 중 · 오늘 출고차량 · 이번 달 청구 금액</td><td>숫자 칸: 이번 달 검사 건수 · 청구 합계 · 입금 · 입금 대기 / 청구처 표</td><td><span class="tag chg">체크 바꿈</span> 홈 차례를 워시와 같게(바로가기 → 할 일 → 숫자 칸 4 → 달력 · 이번 달 입금). 숫자 칸은 «오늘 검사 차량 · 작업 중 · 오늘 출고차량 · 이번 달 청구 금액»</td></tr>
+        <tr><td><b>일감</b></td><td>입고 · 출고 내역</td><td>탭 없음</td><td><span class="tag chg">체크 바꿈</span> 둘째 자리에 «일감» 탭(검사 차 목록). 이름은 대표님 확인 중</td></tr>
+        <tr><td><b>매출</b></td><td>안쪽 칸 없음 · 달별 표</td><td>매출 내역 · 자료 올리기</td><td><span class="tag chg">체크 바꿈</span> «자료 올리기»는 설정 맨 아래 체크 전용 묶음으로, 매출은 한 화면(워시 표 칸 차례)</td></tr>
+        <tr><td><b>월별 청구서</b></td><td>안쪽 칸 없음 · 딜러(받는 분) 표</td><td>월별 청구서 · 청구처 묶음 · 알림톡 템플릿</td><td><span class="tag chg">체크 바꿈</span> 표 칸을 워시 차례로(딜러 · 소속 상사 · 대수 · 작업 내역 · 세금계산서 · 총금액 · 입금 기한 · 받을 금액 · 보낼 번호 · 발송). «알림톡 템플릿»은 설정 › 알림으로. «청구처 묶음»은 <span class="tag own">체크 전용</span>(묶음 쓰는 법은 대표님 확인 중)</td></tr>
+        <tr><td><b>입·출금 내역</b></td><td>입금 · 출금 / 받을 금액</td><td>입금 내역 / 보험료 대조</td><td><span class="tag chg">체크 바꿈</span> 아래 «입·출금 내역» 표</td></tr>
+        <tr><td><b>세금계산서</b></td><td>안쪽 칸 없음</td><td>세금계산서 발행 / 달마다 장부</td><td><span class="tag chg">체크 바꿈</span> 아래 «세금계산서» 표</td></tr>
+        <tr><td><b>배달</b></td><td>출고 기록 · 목적지 · 문구 · 발송 설정</td><td>배달 기록 · 목적지별 · 목적지 관리 · 문구 · 발송 설정 · 기사 계정 · 휴지통</td><td><span class="tag chg">체크 바꿈</span> 아래 «배달» 표</td></tr>
+        <tr><td><b>설정</b></td><td>우리 사업장 · QR 코드 · 백업 · 기기 · 출고 지연 기준 · 거래처 · 직원 계정 · 작업 항목 · 단가표 · 입금 자동 확인 · 알림 · 보낸 기록</td><td>거래처 · 직원 계정 · 권한 · 단가표 · 검사자 수수료 · 팝빌 연동 · 문자 자동수집 · 알람 소리 · 설정 백업</td><td><span class="tag chg">체크 바꿈</span> 아래 «설정» 표</td></tr>
+        <tr><td><b>제품 전용 탭</b></td><td>자재</td><td>재검사 알림</td><td><span class="tag own">제품 전용</span> 세금계산서와 설정 사이 자리 그대로</td></tr>
+        <tr><td><b>머리말</b></td><td>로고 · 업체 · 공지 · 도움말 · 주소 · 새로고침 · 30초마다 · 연결됨 · 현장 화면 · 사람 단추</td><td>같음 (현장 화면만 없음)</td><td><span class="tag same">같음</span> 로고는 둘 다 공통 부품 1.10의 차곳간 CI로</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section id="tax">
     <h2>세금계산서</h2>
-    <p class="what">안쪽 칸 «발행 / 달마다 장부». 차례: 할 일 띠 → 도구줄 → 숫자 칸 4개(입금 완료만) → 표 → 아래 단추줄 → 보낸 계산서 → 접힌 도움.</p>
-    <div class="lbl">전 · 지금</div>
-    <div class="before">
-      <figure><figcaption>워시 v132 (v134와 같은 화면)</figcaption><div class="shot"><img src="before_wash_tax.png" alt="워시 세금계산서 지금 화면" loading="lazy"></div></figure>
-      <figure><figcaption>체크 v53</figcaption><div class="shot"><img src="before_check_tax.png" alt="체크 세금계산서 지금 화면" loading="lazy"></div></figure>
+    <div class="pair">
+      <figure><figcaption><i class="t-before">전</i>체크 v53 지금</figcaption><div class="shot"><img src="before_check_tax.png" alt="체크 세금계산서 지금" loading="lazy"></div></figure>
+      <figure><figcaption><i class="t-after">후</i>워시 모양 — 체크도 이대로</figcaption><div class="shot"><img src="before_wash_tax.png" alt="워시 세금계산서 (기준)" loading="lazy"></div></figure>
     </div>
-    <p class="diff"><b>다른 점</b> — 워시는 안쪽 칸이 없고 체크는 «세금계산서 발행 · 달마다 장부». 숫자 칸 이름(발급 대상 / 발급할 수 있는 곳), 표 칸 차례, 단추 이름(홈택스 일괄발급 엑셀 받기 / 양식 내려받기)이 달라요.</p>
-    <div class="lbl">후 · 한 모양</div>
-    <div class="opt" role="group" aria-label="세금계산서 안 고르기"><button type="button" data-s="tax" data-o="A" aria-pressed="true">안 A · 한 화면에 차례대로<span class="rec">추천</span></button><button type="button" data-s="tax" data-o="B" aria-pressed="false">안 B · «발급할 것 / 보낸 계산서» 칸 나누기</button></div>
-    <p class="optnote" data-n="tax"></p>
-    <div class="frame" data-f="tax"></div>
+    <div class="tw"><table>
+      <thead><tr><th>칸</th><th>체크 지금</th><th>바뀐 뒤 (워시와 같게)</th></tr></thead>
+      <tbody>
+        <tr><td>안쪽 칸</td><td>세금계산서 발행 · 달마다 장부</td><td><span class="tag chg">체크 바꿈</span> 발행 화면은 안쪽 칸 없이 한 화면. «달마다 장부»는 <span class="tag own">체크 전용</span> 칸으로 남김</td></tr>
+        <tr><td>제목 · 설명</td><td>세금계산서 / 청구서 한 장이 세금계산서 한 장…</td><td><span class="tag chg">체크 바꿈</span> «세금계산서» / «한 달치를 모아 홈택스에 올릴 엑셀을 만들어요. 팝빌을 쓰면 버튼 한 번으로 발급돼요.»</td></tr>
+        <tr><td>할 일 띠</td><td>빨간 글 «팝빌 회원아이디가 비어 있어요»</td><td><span class="tag chg">체크 바꿈</span> 주황 띠 «아직 발급 안 한 세금계산서 N건 [해결하러 가기]» + 팝빌 안내 띠 «팝빌 가입이 안 되어 있어… [해결하러 가기]»</td></tr>
+        <tr><td>작성일자 안내 카드</td><td>«작성일자는 청구한 달의 말일이에요» 큰 카드</td><td><span class="tag chg">체크 바꿈</span> 접힌 도움 카드 안으로</td></tr>
+        <tr><td>공급자 줄</td><td>오른쪽 작은 글 «공급자 예시 성능검사소»</td><td><span class="tag chg">체크 바꿈</span> «공급자(우리 사업장) 상호 · 사업자번호 · 대표 [설정 → 우리 사업장에서 고치기]» 줄</td></tr>
+        <tr><td>도구줄</td><td>청구 달(선택 상자) · 모두 2026-10-31로 · 새로고침</td><td><span class="tag chg">체크 바꿈</span> [2026년 10월] 달력 · 상사별로 한 장에 묶기 · 아직 작업 중인 차도 포함 · 거래처에 '계산서 없음'으로 적힌 곳은 빼기 · 적은 금액은 부가세 별도 · 청구(아직 못 받음)</td></tr>
+        <tr><td>숫자 칸</td><td>5칸(발급할 수 있는 곳 · 공급가액 · 부가세 · 합계 · 이미 발급·안 받음)</td><td><span class="tag chg">체크 바꿈</span> 4칸 «발급 대상 · 공급가액 · 세액 · 합계»</td></tr>
+        <tr><td>표 위</td><td>상태 탭(전체 · 발급 · 입금 뒤 발급돼요 …) · 선택 상자 · 단추 2개 · 검색</td><td><span class="tag chg">체크 바꿈</span> «차량 N대 · 이미 발급 N건» 한 줄 + 검색 «발행처·딜러 검색» + 보기 개수. 상태로 걸러 보기는 표의 «자동 발급» 칸 머리를 눌러 정렬로</td></tr>
+        <tr><td>표 칸</td><td>청구처 · 작성일자 · 공급받는자·사업자번호 · 합계 · 발급 상태 · 할 일</td><td><span class="tag chg">체크 바꿈</span> 발행처(공급받는자) · 딜러 · 사업자등록번호 · 구분 · 대수 · 합계 · 공급가액 · 세액 · 자동 발급 · 품목. 체크의 작성일자 칸과 «모두 2026-10-31로» 단추는 <span class="tag own">체크 전용</span>으로 맨 끝 칸 머리에. 입금 전 줄은 «입금 뒤 발급돼요»</td></tr>
+        <tr><td>아래 단추</td><td>홈택스 일괄발급 양식 내려받기 · 다른 양식 쓰기 · 팝빌로 발급</td><td><span class="tag chg">체크 바꿈</span> 홈택스 일괄발급 엑셀 받기 · 이 달 발행 완료로 표시 · 내역 CSV 받기 + «버튼 한 번으로 국세청까지 — 처음 한 번만 하는 준비»(팝빌 발급, 보내기 전 «누구에게 · 몇 건 · 얼마» 확인 창). «다른 양식 쓰기»는 접힌 도움 안으로</td></tr>
+        <tr><td>보낸 계산서</td><td>없음 (잘못 냈을 때 안내 상자)</td><td><span class="tag chg">체크 바꿈</span> «보낸 계산서» 표(보낸 때 · 받는 곳 · 사업자등록번호 · 합계 · 방식 · 결과 · 국세청 승인번호 …). 수정 계산서 안내는 접힌 도움으로</td></tr>
+      </tbody></table></div>
   </section>
 
-  <section class="scr" id="money">
+  <section id="money">
     <h2>입·출금 내역</h2>
-    <p class="what">탭 · 제목 모두 «입·출금 내역». 안쪽 칸 «입금·출금 / 받을 금액 / (체크만) 보험료 대조». 차례: 할 일 띠 → 도구줄(오늘 · 어제 · 7일 · 이번 달 · 지난 달 · 달력 · 가져오기) → 숫자 칸 4개 → 표 → 통장 연결 안내.</p>
-    <div class="lbl">전 · 지금</div>
-    <div class="before">
-      <figure><figcaption>워시 v132</figcaption><div class="shot"><img src="before_wash_money.png" alt="워시 입출금 지금 화면" loading="lazy"></div></figure>
-      <figure><figcaption>체크 v53</figcaption><div class="shot"><img src="before_check_money.png" alt="체크 입출금 지금 화면" loading="lazy"></div></figure>
+    <div class="pair">
+      <figure><figcaption><i class="t-before">전</i>체크 v53 지금</figcaption><div class="shot"><img src="before_check_money.png" alt="체크 입출금 지금" loading="lazy"></div></figure>
+      <figure><figcaption><i class="t-after">후</i>워시 모양 — 체크도 이대로</figcaption><div class="shot"><img src="before_wash_money.png" alt="워시 입출금 (기준)" loading="lazy"></div></figure>
     </div>
-    <p class="diff"><b>다른 점</b> — 안쪽 칸 이름(입금 · 출금 / 입금 내역), 숫자 칸, 기간 고르기 방식, 가져오기 단추 자리가 달라요.</p>
-    <div class="lbl">후 · 한 모양</div>
-    <div class="opt" role="group" aria-label="입출금 안 고르기"><button type="button" data-s="money" data-o="A" aria-pressed="true">안 A · 표 하나 + 상태 칸<span class="rec">추천</span></button><button type="button" data-s="money" data-o="B" aria-pressed="false">안 B · 표 + 오른쪽 받을 금액 칸</button></div>
-    <p class="optnote" data-n="money"></p>
-    <div class="frame" data-f="money"></div>
+    <div class="tw"><table>
+      <thead><tr><th>칸</th><th>체크 지금</th><th>바뀐 뒤 (워시와 같게)</th></tr></thead>
+      <tbody>
+        <tr><td>안쪽 칸</td><td>입금 내역 · 보험료 대조</td><td><span class="tag chg">체크 바꿈</span> «입금 · 출금 · 받을 금액» + <span class="tag own">체크 전용</span> «보험료 대조» 맨 끝</td></tr>
+        <tr><td>제목 · 설명</td><td>입금 내역 / 팝빌에서 들어온 돈을 가져와…</td><td><span class="tag chg">체크 바꿈</span> «입·출금 내역» / «통장에 들어오고 나간 금액을 한 표로 봐요. 청구서와 맞은 입금은 입금 완료로 표시돼요.»</td></tr>
+        <tr><td>할 일 띠</td><td>«누가 보낸 돈인지 확인할 입금 3건» [해결하러 가기]</td><td><span class="tag chg">체크 바꿈</span> 워시처럼 «받을 금액 2,926,000원 · 딜러 N명 [받을 금액 보기]». 확인할 입금은 숫자 칸 «확인 필요»를 누르면 걸러져요</td></tr>
+        <tr><td>도구줄</td><td>«입금 처리» 카드: 최근 7일(선택 상자) · 팝빌에서 가져오기 · 청구서와 다시 맞추기 · 알림 설정 · 엑셀 다운로드</td><td><span class="tag chg">체크 바꿈</span> 오늘 · 어제 · 최근 7일 · 이번 달 · 지난 달 · 기간(달력) · [검색]. 팝빌 가져오기 · 청구서와 다시 맞추기 · 엑셀 받기는 설정 › 입금 자동 확인으로, «알림 설정»은 설정 › 알림으로</td></tr>
+        <tr><td>숫자 칸</td><td>이번 달 입금 · 맞춘 건 · 확인 필요 · 입금 대기</td><td><span class="tag chg">체크 바꿈</span> «입금 금액 · 출금 금액 · 확인 필요 · 받을 금액»</td></tr>
+        <tr><td>표</td><td>입금자 · 거래 일시 · 갈래 · 계좌 · 금액 · 상태 (+ 상태 탭)</td><td><span class="tag chg">체크 바꿈</span> 워시 입출금 표와 같은 칸(입금자 · 거래 일시 · 입금/출금 · 계좌 · 금액 · 상태). «갈래»(검사비 · 정비비 · 보험료)는 <span class="tag own">체크 전용</span> 칸. 상태 걸러 보기는 숫자 칸 «확인 필요»를 눌러서</td></tr>
+        <tr><td>아래</td><td>통장 문자 · 시트 붙여넣기 / 은행 엑셀 가져오기 (접힘)</td><td><span class="tag chg">체크 바꿈</span> «통장을 먼저 연결해 주세요 [입금 자동 확인 화면으로 가기]» 안내 + 접힌 도움. 붙여넣기 · 엑셀 가져오기는 설정 › 입금 자동 확인 안으로</td></tr>
+      </tbody></table></div>
   </section>
 
-  <section class="scr" id="deliv">
+  <section id="deliv">
     <h2>배달</h2>
-    <p class="what">같은 표 · 같은 상태 이름 <b>대기 · 가는 중 · 도착 · 사진</b>. 안쪽 칸 «배달 기록 / 목적지 / 문구 · 발송 설정 / (체크만) 기사 계정».</p>
-    <div class="lbl">전 · 지금</div>
-    <div class="before">
-      <figure><figcaption>워시 v132</figcaption><div class="shot"><img src="before_wash_deliv.png" alt="워시 배달 지금 화면" loading="lazy"></div></figure>
-      <figure><figcaption>체크 v53</figcaption><div class="shot"><img src="before_check_deliv.png" alt="체크 배달 지금 화면" loading="lazy"></div></figure>
+    <div class="pair">
+      <figure><figcaption><i class="t-before">전</i>체크 v53 지금</figcaption><div class="shot"><img src="before_check_deliv.png" alt="체크 배달 지금" loading="lazy"></div></figure>
+      <figure><figcaption><i class="t-after">후</i>워시 모양 — 체크도 이대로</figcaption><div class="shot"><img src="before_wash_deliv.png" alt="워시 배달 (기준)" loading="lazy"></div></figure>
     </div>
-    <p class="diff"><b>다른 점</b> — 워시 «출고 기록 · 목적지», 체크 «배달 기록 · 목적지별 · 목적지 관리 · 기사 계정 · 휴지통». 상태 이름과 표 칸이 달라요.</p>
-    <div class="lbl">후 · 한 모양</div>
-    <div class="opt" role="group" aria-label="배달 안 고르기"><button type="button" data-s="deliv" data-o="A" aria-pressed="true">안 A · 표 + 상태 칸<span class="rec">추천</span></button><button type="button" data-s="deliv" data-o="B" aria-pressed="false">안 B · 상태별 네 칸 보드</button></div>
-    <p class="optnote" data-n="deliv"></p>
-    <div class="frame" data-f="deliv"></div>
+    <div class="tw"><table>
+      <thead><tr><th>칸</th><th>체크 지금</th><th>바뀐 뒤 (워시와 같게)</th></tr></thead>
+      <tbody>
+        <tr><td>안쪽 칸</td><td>배달 기록 · 목적지별 · 목적지 관리 · 문구 · 발송 설정 · 기사 계정 · 휴지통</td><td><span class="tag chg">체크 바꿈</span> «출고 기록 · 목적지 · 문구 · 발송 설정» 3칸. 목적지별 보기는 «목적지» 안 보기 바꾸기로, 기사 계정은 설정 › 직원 계정으로, 휴지통은 사람 단추 › 휴지통으로</td></tr>
+        <tr><td>숫자 칸 · 도구줄</td><td>제각각</td><td><span class="tag chg">체크 바꿈</span> 워시와 같게 숫자 칸 «출고 · 목적지 · 알림 보냄 · 못 보냄», 도구줄은 워시 배달 도구줄 그대로</td></tr>
+        <tr><td>알림 · 상태 글자</td><td>못 간 알림 · 마지막 … (제각각)</td><td><span class="tag chg">체크 바꿈</span> 워시 알림 칸 글자 그대로(예: «앱으로 보냄»). «대기 · 가는 중 · 도착 · 사진» 네 단계는 월요일 뒤 워시 작은 판에서 두 제품 함께 정해요</td></tr>
+        <tr><td>표 칸</td><td>딜러(기사가 적은 이름) · 휴대폰 · 상사 · 같은 이름 딜러 · 적은 기사 · 마지막 · 못 간 알림</td><td><span class="tag chg">체크 바꿈</span> 딜러 · 상사 · 차량번호 · 차종 · 목적지 · 출고시각 · 출고자(배달) · 입고한 사람 · 알림 · 연락처 · 사진 · 금액. 체크의 «같은 이름 딜러» 가려내기는 설정 › 거래처 안으로</td></tr>
+        <tr><td>단추</td><td>제각각</td><td><span class="tag chg">체크 바꿈</span> 워시 글자 그대로 «선택한 줄 지우기 · 선택항목 다시 보내기 · 엑셀 다운로드». 지우기 · 다시 보내기 앞에는 «누구에게 · 몇 건» 확인 창</td></tr>
+      </tbody></table></div>
   </section>
 
-  <section class="scr" id="set">
+  <section id="set">
     <h2>설정</h2>
-    <p class="what">항목 차례 · 이름을 두 제품 같게: 우리 사업장 · 거래처 · 단가표 · 직원 계정·권한 · 알림 · 연결(팝빌·통장·문자) · 자료 올리기 · 백업 · 도움말, 제품 전용 항목은 맨 아래 한 묶음. 항목 안 뼈대도 같게(제목 → 칸 → 저장).</p>
-    <div class="lbl">전 · 지금</div>
-    <div class="before">
-      <figure><figcaption>워시 v132</figcaption><div class="shot"><img src="before_wash_set.png" alt="워시 설정 지금 화면" loading="lazy"></div></figure>
-      <figure><figcaption>체크 v53</figcaption><div class="shot"><img src="before_check_set.png" alt="체크 설정 지금 화면" loading="lazy"></div></figure>
+    <div class="pair">
+      <figure><figcaption><i class="t-before">전</i>체크 v53 지금</figcaption><div class="shot"><img src="before_check_set.png" alt="체크 설정 지금" loading="lazy"></div></figure>
+      <figure><figcaption><i class="t-after">후</i>워시 모양 — 체크도 이대로</figcaption><div class="shot"><img src="before_wash_set.png" alt="워시 설정 (기준)" loading="lazy"></div></figure>
     </div>
-    <p class="diff"><b>다른 점</b> — 워시 10칸(우리 사업장 · QR 코드 · 백업 · 기기 …), 체크 8칸(거래처 · 직원 계정 · 권한 · 단가표 · 팝빌 연동 …). 차례와 이름이 모두 달라요.</p>
-    <div class="lbl">후 · 한 모양</div>
-    <div class="opt" role="group" aria-label="설정 안 고르기"><button type="button" data-s="set" data-o="A" aria-pressed="true">안 A · 왼쪽 항목 목록<span class="rec">추천</span></button><button type="button" data-s="set" data-o="B" aria-pressed="false">안 B · 위 칸 줄</button></div>
-    <p class="optnote" data-n="set"></p>
-    <div class="frame" data-f="set"></div>
+    <div class="tw"><table>
+      <thead><tr><th>워시 항목 (이 차례)</th><th>체크 지금</th><th>바뀐 뒤</th></tr></thead>
+      <tbody>
+        <tr><td>우리 사업장</td><td>없음 (공급자 정보가 화면마다 흩어짐)</td><td><span class="tag chg">체크 바꿈</span> 새로 둠 — 워시 글자 그대로: 상호 · 사업자등록번호 · 대표자 · 사업장주소 · 업태 · 종목 · 이메일 · 기본 품목 이름 · 업종 + «로고» · «문자에 넣을 연락처» 카드</td></tr>
+        <tr><td>백업 · 기기</td><td>설정 백업</td><td><span class="tag chg">체크 바꿈</span> 이름 «백업 · 기기», 셋째 자리로</td></tr>
+        <tr><td>거래처</td><td>거래처</td><td><span class="tag chg">체크 바꿈</span> 표 칸 · 단추를 워시와 같게(딜러 · 상사 · 휴대폰 · 세금계산서 · 청구서 받는 사람). 배달의 «같은 이름 딜러» 가려내기도 여기로</td></tr>
+        <tr><td>직원 계정</td><td>직원 계정 · 권한 + 배달의 기사 계정</td><td><span class="tag chg">체크 바꿈</span> 이름 «직원 계정». 권한 고르기와 기사 계정도 이 안으로</td></tr>
+        <tr><td>작업 항목 · 단가표</td><td>단가표</td><td><span class="tag chg">체크 바꿈</span> 이름 «작업 항목 · 단가표»</td></tr>
+        <tr><td>입금 자동 확인</td><td>팝빌 연동 · 문자 자동수집</td><td><span class="tag chg">체크 바꿈</span> 두 칸을 «입금 자동 확인» 하나로(팝빌 통장 · 통장 문자 · 엑셀 가져오기 · 청구서와 다시 맞추기). 팝빌 <b>세금계산서 발급용</b> 회원아이디는 세금계산서 화면 «처음 한 번만 하는 준비»로</td></tr>
+        <tr><td>알림</td><td>알람 소리 · (월별 청구서 › 알림톡 템플릿) · (입금 처리 › 알림 설정)</td><td><span class="tag chg">체크 바꿈</span> «알림» 하나에 알림톡 문구 · 알람 소리 · 입금 알림</td></tr>
+        <tr><td>보낸 기록</td><td>없음</td><td><span class="tag chg">체크 바꿈</span> 새로 둠 — 알림톡 · 문자 보낸 기록</td></tr>
+        <tr><td>QR 코드 · 출고 지연 기준</td><td>—</td><td><span class="tag own">워시 전용</span> 체크엔 없음</td></tr>
+        <tr><td>(체크 전용 묶음 · 맨 아래)</td><td>검사자 수수료 · (매출 › 자료 올리기)</td><td><span class="tag own">체크 전용</span> «검사자 수수료 · 자료 올리기»</td></tr>
+      </tbody></table></div>
   </section>
 
-  <p class="end"><b>고르신 뒤</b> — 고른 안을 공통 부품(cgg-j4)으로 만들어 워시 · 체크가 같은 파일을 붙여요. 폰에서도 같은 부품이 한 줄로 쌓여요. 체크만 있는 칸(보험료 대조 · 기사 계정 · 검사자 수수료 · 알람 소리)은 체크에서만 보여요.</p>
+  <p class="end"><b>확인 뒤</b> — 체크 방이 새 판 이름으로 따로 만들어 확인한 뒤 바꿔치기해요(지금 판은 그대로 두고 되돌리는 법 함께). 네 화면은 디자인 방이 공통 부품으로 묶어 워시 · 체크가 같은 파일을 붙여요. 워시는 이번에 바꾸지 않아요.</p>
 </div>
-
-<script src="cgg-j4-1.10.js"></script>
-<script>
-/* 미리보기 전용 — 지어낸 자료. 후 화면은 공통 부품 1.10(CGG.head · todoBand · monthPick · kpis · table · help)으로 그려요 */
-var E=CGG.esc, W=CGG.won;
-function subt(list,on){ return '<div class="subt">'+list.map(function(x,i){ return '<span class="'+(i===on?'on':'')+'">'+E(x)+'</span>'; }).join("")+'</div>'; }
-function tools(html){ return '<div class="cgg-tools">'+html+'</div>'; }
-function btn(t,pri,act){ return '<button type="button" class="cgg-btn'+(pri?' pri':'')+'"'+(act?' data-act="'+act+'"':'')+'>'+E(t)+'</button>'; }
-var ACT={issue:{title:"팝빌로 세금계산서를 발급할까요?",rows:[["누구에게","김민수 외 3명 (입금 완료만)"],["몇 건","4장"],["얼마","2,010,000원"]],ok:"4장 발급"},resend:{title:"도착 알림을 다시 보낼까요?",rows:[["누구에게","이정호 (가람모터스)"],["몇 건","1건"],["얼마","알림톡 1건"]],ok:"1건 보내기"}};
-document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-act]"); if(!b) return; var a=ACT[b.getAttribute("data-act")]; CGG.dialog({size:"confirm",title:a.title,desc:"보내면 되돌릴 수 없어요. 한 번 더 확인해 주세요.",rows:a.rows,ok:a.ok,cancel:"취소",onOk:function(){ CGG.toast("보냈어요 (미리보기)"); }}); });
-function chip(t,on){ return '<button type="button" class="cgg-fp'+(on?' on':'')+'">'+E(t)+'</button>'; }
-var DL=[["김민수","예시상사","000-00-00048"],["이정호","가람모터스","000-00-00053"],["박서준","누리상사","000-00-00015"],["최유진","다온카","000-00-00034"],["정하늘","샘플모터스","000-00-00021"],["한지우","새길자동차","000-00-00077"]];
-var ST={"입금 완료":"pay","입금 전":"chk","발급 완료":"done","발급 전":"run","입금 뒤 발급돼요":"chk","대기":"chk","가는 중":"run","도착":"done","사진":"pay","확인 필요":"chk","완료":"done"};
-function stt(v){ return {html:CGG.status(v,ST)}; }
-var NOTE={
-  tax:{A:"한 화면을 위에서 아래로 읽으면 끝나요. 지금 체크 화면과 가장 가까워서 검사장에서 바로 익숙해요.",B:"«보낸 계산서»를 안쪽 칸으로 떼어 화면이 짧아져요. 대신 보낸 것을 보려면 한 번 더 눌러야 해요."},
-  money:{A:"입금 · 출금을 한 표에 모으고 «확인 필요»만 따로 볼 수 있어요. 워시 · 체크 모두 같은 표예요.",B:"받을 금액이 늘 옆에 보여요. 화면이 좁아지면 아래로 내려가요."},
-  deliv:{A:"상태 칸 숫자로 «가는 중»이 몇 대인지 바로 보여요. 표라서 정렬 · 찾기 · 보기 개수가 그대로 돼요.",B:"한눈에 흐름이 보이지만, 표가 아니라서 정렬 · 찾기 · 보기 개수가 안 돼요(표 규칙에서 벗어나요). 차가 많으면 칸이 길어져요."},
-  set:{A:"PC에서 항목이 왼쪽에 늘 보여서 이리저리 옮겨 다니기 쉬워요. 폰에서는 목록 → 내용 차례로 보여요.",B:"내용 칸이 넓어요. 항목이 13개라 칸 줄이 길어져 옆으로 밀어야 해요."}
-};
-var R={
-  tax:{A:function(el){ el.innerHTML=subt(["발행","달마다 장부"],0)+'<div class="cgg-main">'+CGG.head({crumb:"세금계산서 › 발행",title:"이번 달 발급할 딜러 <em>4명</em>",desc:"입금이 끝난 청구서만 세금계산서로 나가요."})
-      +'<div data-band></div>'+tools('<div data-mp></div>'+chip("딜러별 한 장",true)+chip("상사별로 묶기")+'<span class="sp"></span>'+btn("새로고침"))+'<div data-kp></div><div data-tb></div>'
-      +'<div class="acts-row">'+btn("홈택스 일괄발급 양식 받기")+btn("팝빌로 발급",true,"issue")+'</div>'
-      +'<div class="box"><h3>보낸 계산서</h3><p>지금까지 발급한 계산서예요. 국세청 승인번호가 찍히면 끝난 거예요. (이번 달 3장)</p></div>'+CGG.help("입금 전 줄은 «입금 뒤 발급돼요»로 보여요. 고친 뒤 다시 발급하려면 «보낸 계산서»에서 수정 계산서를 내요.")+'</div>';
-      fill(el,"tax"); },
-    B:function(el){ el.innerHTML=subt(["발급할 것","보낸 계산서 3","달마다 장부"],0)+'<div class="cgg-main">'+CGG.head({crumb:"세금계산서 › 발급할 것",title:"이번 달 발급할 딜러 <em>4명</em>",desc:"입금이 끝난 청구서만 세금계산서로 나가요."})
-      +'<div data-band></div>'+tools('<div data-mp></div>'+chip("딜러별 한 장",true)+chip("상사별로 묶기")+'<span class="sp"></span>'+btn("새로고침"))+'<div data-kp></div><div data-tb></div>'
-      +'<div class="acts-row">'+btn("홈택스 일괄발급 양식 받기")+btn("팝빌로 발급",true,"issue")+'</div>'+CGG.help("보낸 계산서는 위 «보낸 계산서» 칸에 모여 있어요.")+'</div>';
-      fill(el,"tax"); } },
-  money:{A:function(el){ el.innerHTML=subt(["입금·출금","받을 금액","보험료 대조 (체크만)"],0)+'<div class="cgg-main">'+CGG.head({crumb:"입·출금 내역 › 입금·출금",title:"이번 달 입금 <em>3,300,000원</em>",desc:"통장에 들어온 돈을 청구서와 짝지어요. 맞지 않는 것만 확인하면 돼요."})
-      +'<div data-band></div>'+tools(chip("오늘")+chip("어제")+chip("7일")+chip("이번 달",true)+chip("지난 달")+'<div data-mp></div><span class="sp"></span>'+btn("팝빌 · 엑셀 가져오기"))+'<div data-kp></div><div data-tb></div>'
-      +'<div class="box"><h3>통장 연결</h3><p>팝빌로 통장을 이어 두면 들어온 돈이 저절로 들어와요. 설정 › 연결에서 한 번만 하면 돼요.</p></div></div>';
-      fill(el,"money"); },
-    B:function(el){ el.innerHTML=subt(["입금·출금","받을 금액","보험료 대조 (체크만)"],0)+'<div class="cgg-main">'+CGG.head({crumb:"입·출금 내역 › 입금·출금",title:"이번 달 입금 <em>3,300,000원</em>",desc:"통장에 들어온 돈을 청구서와 짝지어요."})
-      +'<div data-band></div>'+tools(chip("오늘")+chip("어제")+chip("7일")+chip("이번 달",true)+chip("지난 달")+'<div data-mp></div><span class="sp"></span>'+btn("팝빌 · 엑셀 가져오기"))+'<div data-kp></div>'
-      +'<div class="setg" style="grid-template-columns:minmax(0,1fr) 300px"><div data-tb></div><div class="box"><h3>받을 금액</h3><p style="margin-bottom:8px">아직 안 들어온 돈 · 딜러별</p>'+DL.slice(0,4).map(function(d,i){ return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line);font-size:14px"><span>'+E(d[0])+' · '+E(d[1])+'</span><b>'+W([990000,726000,594000,330000][i])+'원</b></div>'; }).join("")+'</div></div></div>';
-      fill(el,"money"); } },
-  deliv:{A:function(el){ el.innerHTML=subt(["배달 기록","목적지","문구 · 발송 설정","기사 계정 (체크만)"],0)+'<div class="cgg-main">'+CGG.head({crumb:"배달 › 배달 기록",title:"오늘 배달 <em>7대</em> · 가는 중 <em>2대</em>",desc:"출고한 차가 어디까지 갔는지 보여요. 도착하면 사진이 붙어요."})
-      +'<div data-band></div>'+tools('<div data-mp></div>'+btn("목적지 추가")+'<span class="sp"></span>'+btn("도착 알림 다시 보내기",false,"resend"))+'<div data-kp></div><div data-tb></div>'+CGG.help("상태는 대기 → 가는 중 → 도착 → 사진 차례로 바뀌어요. 기사가 도착 사진을 올리면 딜러에게 알림이 가요.")+'</div>';
-      fill(el,"deliv"); },
-    B:function(el){ var col=function(t,n,items){ return '<div class="col"><h4><span>'+E(t)+'</span>'+CGG.status(n+"대",{})+'</h4>'+items.map(function(x){ return '<div class="it"><b>'+E(x[0])+'</b>'+E(x[1])+'</div>'; }).join("")+'</div>'; };
-      el.innerHTML=subt(["배달 기록","목적지","문구 · 발송 설정","기사 계정 (체크만)"],0)+'<div class="cgg-main">'+CGG.head({crumb:"배달 › 배달 기록",title:"오늘 배달 <em>7대</em> · 가는 중 <em>2대</em>",desc:"출고한 차가 어디까지 갔는지 보여요."})
-      +'<div data-band></div>'+tools('<div data-mp></div>'+btn("목적지 추가")+'<span class="sp"></span>'+btn("도착 알림 다시 보내기",false,"resend"))
-      +'<div class="board">'+col("대기",2,[["12가 3407","김민수 · 예시상사"],["15가 3421","박서준 · 누리상사"]])+col("가는 중",2,[["17가 3435","이정호 · 가람모터스"],["13가 3414","최유진 · 다온카"]])+col("도착",2,[["14가 3442","정하늘 · 샘플모터스"],["16가 3428","한지우 · 새길자동차"]])+col("사진",1,[["18가 3400","김민수 · 예시상사"]])+'</div>'+CGG.help("상태는 대기 → 가는 중 → 도착 → 사진 차례로 바뀌어요.")+'</div>';
-      fill(el,"deliv",true); } },
-  set:{A:function(el){ el.innerHTML='<div class="cgg-main">'+CGG.head({crumb:"설정 › 우리 사업장",title:"우리 사업장",desc:"세금계산서 · 청구서에 찍히는 정보예요."})
-      +'<div class="setg"><div class="setnav">'+setItems().map(function(x,i){ return typeof x==="string"?'<small>'+E(x)+'</small>':'<button type="button"'+(i===0?' aria-current="true"':'')+'>'+E(x[0])+'</button>'; }).join("")+'</div>'+setBody()+'</div></div>'; },
-    B:function(el){ el.innerHTML=subt(setItems().filter(function(x){ return typeof x!=="string"; }).map(function(x){ return x[0]; }),0)+'<div class="cgg-main">'+CGG.head({crumb:"설정 › 우리 사업장",title:"우리 사업장",desc:"세금계산서 · 청구서에 찍히는 정보예요."})+setBody()+'</div>'; } }
-};
-function setItems(){ return [["우리 사업장"],["거래처"],["단가표"],["직원 계정·권한"],["알림"],["연결 (팝빌 · 통장 · 문자)"],["자료 올리기"],["백업"],["도움말"],"제품 전용 — 워시",["출고 지연 기준"],["QR 코드"],"제품 전용 — 체크",["검사자 수수료"],["알람 소리"]]; }
-function setBody(){ return '<div class="box"><div class="form2">'+[["상호","예시 광택"],["사업자번호","000-00-00091"],["대표","홍길동"],["업태 · 종목","서비스 · 광택"],["주소","경기도 성남시 (예시)"],["세금계산서 받을 메일","tax@example.com"]].map(function(f,i){ return '<label for="sf'+i+'">'+E(f[0])+'<input id="sf'+i+'" value="'+E(f[1])+'"></label>'; }).join("")+'</div><div class="acts-row">'+btn("저장",true)+'</div></div>'; }
-function fill(el,k,noTable){
-  var q=function(s){ return el.querySelector(s); };
-  if(k==="tax"){
-    CGG.todoBand(q("[data-band]"),{count:2,tone:"stop",text:"팝빌 아이디가 없어요 · 사업장 정보 1칸이 비어 있어요",onGo:function(){ CGG.toast("설정 › 연결로 가요 (미리보기)"); }});
-    CGG.monthPick(q("[data-mp]"),{y:2026,m:10,today:{y:2026,m:10},max:"2026-12",onPick:function(){}});
-    CGG.kpis(q("[data-kp]"),[{label:"발급할 곳",value:"4",unit:"곳"},{label:"공급가액",value:"1,827,273",unit:"원"},{label:"세액",value:"182,727",unit:"원"},{label:"합계",value:"2,010,000",unit:"원",color:"#0B2545"}]);
-    var rows=DL.map(function(d,i){ var paid=i<4; return [d[0],"2026-10-31",d[1]+" · "+d[2],[418000,726000,594000,272000,880000,330000][i],paid?"입금 완료":"입금 전",paid?(i===0?"발급 완료":"발급 전"):"입금 뒤 발급돼요"]; });
-    CGG.table(q("[data-tb]"),{cols:["청구처(딜러)","작성일자","공급받는자 · 사업자번호","합계","입금 상태","발급 상태"],kinds:["name","date","text","money","state","state"],rows:rows,stateMap:ST,
-      tabs:[["","전체"],["입금 완료","입금 완료"],["입금 전","입금 전"]],render:function(x,c){ if(c===5) return stt(x[5]); },find:"딜러 · 상사 · 사업자번호"});
-  } else if(k==="money"){
-    CGG.todoBand(q("[data-band]"),{count:3,text:"누구 돈인지 모르는 입금 3건 · 1,078,000원",onGo:function(){ CGG.toast("확인 필요만 보여요 (미리보기)"); }});
-    CGG.monthPick(q("[data-mp]"),{y:2026,m:10,today:{y:2026,m:10},onPick:function(){}});
-    CGG.kpis(q("[data-kp]"),[{label:"입금",value:"3,300,000",unit:"원",color:"#0B2545"},{label:"출금",value:"420,000",unit:"원",color:"#1E9E5A"},{label:"확인 필요",value:"3",unit:"건",color:"#B26B00"},{label:"받을 금액",value:"2,926,000",unit:"원",color:"#B26B00"}]);
-    var rows=[["김민수","10/18","입금","예시상사",418000,"완료"],["(이름 없음)","10/18","입금","—",594000,"확인 필요"],["광택약 주문","10/17","출금","—",-120000,"완료"],["이정호","10/17","입금","가람모터스",726000,"완료"],["박서준?","10/16","입금","누리상사",264000,"확인 필요"],["최유진","10/15","입금","다온카",330000,"완료"]];
-    CGG.table(q("[data-tb]"),{cols:["보낸 사람(딜러)","날짜","입금 · 출금","상사","금액","상태"],kinds:["name","date","text","text","money","state"],rows:rows,stateMap:ST,
-      tabs:[["","전체"],["확인 필요","확인 필요"],["완료","완료"]],render:function(x,c){ if(c===4) return (x[4]<0?"-":"")+W(Math.abs(x[4]))+"원"; },find:"딜러 · 상사 · 금액"});
-  } else if(k==="deliv"){
-    CGG.todoBand(q("[data-band]"),{count:1,text:"도착 알림을 못 보낸 차 1대",onGo:function(){ CGG.toast("못 보낸 것만 보여요 (미리보기)"); }});
-    CGG.monthPick(q("[data-mp]"),{y:2026,m:10,today:{y:2026,m:10},onPick:function(){}});
-    if(noTable) return;
-    CGG.kpis(q("[data-kp]"),[{label:"대기",value:"2",unit:"대",color:"#B26B00"},{label:"가는 중",value:"2",unit:"대",color:"#1668C4"},{label:"도착",value:"2",unit:"대",color:"#1E9E5A"},{label:"사진 붙음",value:"1",unit:"대",color:"#0B2545"}]);
-    var rows=[["12가 3407","김민수 · 예시상사","예시상사 매장","09:10","—","대기"],["15가 3421","박서준 · 누리상사","누리상사 2주차장","09:40","—","대기"],["17가 3435","이정호 · 가람모터스","가람모터스","10:05","기사 오세훈","가는 중"],["13가 3414","최유진 · 다온카","다온카","10:20","기사 오세훈","가는 중"],["14가 3442","정하늘 · 샘플모터스","샘플모터스","08:30","기사 한결","도착"],["18가 3400","김민수 · 예시상사","예시상사 매장","08:00","기사 한결","사진"]];
-    CGG.table(q("[data-tb]"),{cols:["차 번호","딜러 · 상사","목적지","출고","기사","상태"],kinds:["name","text","text","time","text","state"],rows:rows,stateMap:ST,
-      tabs:[["","전체"],["대기","대기"],["가는 중","가는 중"],["도착","도착"],["사진","사진"]],find:"차 번호 · 딜러 · 목적지"});
-  }
-}
-function show(s,o){ var f=document.querySelector('[data-f="'+s+'"]'); R[s][o](f); document.querySelector('[data-n="'+s+'"]').textContent=NOTE[s][o];
-  Array.prototype.forEach.call(document.querySelectorAll('[data-s="'+s+'"]'),function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-o")===o)); }); }
-Array.prototype.forEach.call(document.querySelectorAll(".opt button"),function(b){ b.onclick=function(){ show(b.getAttribute("data-s"),b.getAttribute("data-o")); }; });
-["tax","money","deliv","set"].forEach(function(s){ show(s,"A"); });
-</script>
