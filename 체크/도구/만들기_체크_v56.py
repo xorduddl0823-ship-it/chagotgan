@@ -205,13 +205,19 @@ function wireTable""", """  h+='</div>';
   if(opt.select===false){   /* 1.13.2 F18 고르기 칸 없는 표 */
     h=h.replace('<div class="tblk cgg-tblock"','<div class="tblk cgg-tblock nosel"').replace('<col style="width:56px">','')
        .replace(/<th class="fx0">[\\s\\S]*?<\\/th>/,'').replace(/<td class="fx0">[\\s\\S]*?<\\/td>/g,'')
-       .replace(/<input type="checkbox" data-all="1" aria-label="전체 선택"[^>]*>전체 선택/,'').replace(/<input type="checkbox" class="pk"[^>]*>/g,'');
+       .replace(/<input type="checkbox" data-all="1" aria-label="전체 선택"[^>]*>전체 선택/,'<span>정렬</span>').replace(/<input type="checkbox" class="pk"[^>]*>/g,'')
+       .replace(/class="fx1/g,'class="fx1 fx0less')   /* 1.13.2 — 이름 칸 고정을 맨 왼쪽(0)으로 */
+       .replace(/colspan="(\\d+)"/,function(_,n){ return 'colspan="'+(Number(n)-1)+'"'; })
+       .replace(/style="min-width:(\\d+)px"/,function(_,n){ return 'style="min-width:'+(Number(n)-56)+'px"'; });
   }
   return h;
 }
 function wireTable""")
     rep("    ], billShown(), {pick:true, mobileFields:[\"total\",\"left\",\"sendState\"],", "    ], billShown(), {pick:true, mobileFields:[\"total\",\"left\",\"sendState\"],")   # (그대로)
     rep("    ], DV, {pick:true,\n", "    ], DV, {pick:true, mobileFields:[\"plate\",\"car\",\"dest\",\"at\",\"tel\",\"alarm\"], mobileCols:1,   /* 1.13.2 F05 배달 기록 폰 칸 */\n")
+
+if V == "v56.3":   # 말 «발행» — 입금 자동 확인 설명 한 줄 (거래처 부품의 «계산서 미발급»은 워시와 같은 공통 부품이라 그대로 · 다음 판에 공통으로)
+    rep("세금계산서도 팝빌로 발급해요.", "세금계산서도 팝빌로 발행해요.")
 
 #@@끝
 

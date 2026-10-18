@@ -164,6 +164,12 @@ function listify(t){ return CGG.listify(t); }   /* v56.1: 공통 1.13 */
 var _tell=tell;
 function sameWord(x){ return String(x==null?"":x).replace(/«확인 대기»/g,"«확인 필요»").replace(/발급/g,"발행"); }   /* v56.3: 세금계산서 말 «발행» */   /* 상태 이름 하나로(표 · 글자 같게) */
 window.tell=tell=function(title, html, kind){ return _tell.call(this, sameWord(title), listify(sameWord(html)), kind); };
+var _ask=ask;   /* v56.3: 확인 창 글도 «발행» (세금계산서 발행 확인 창 등 · 보이는 글만) */
+window.ask=ask=function(o, done){ if(o&&typeof o==="object"){ var c={}; for(var k in o) c[k]=o[k];
+    ["title","sub","k1","v1","k2","v2","warn","yes","html","rowsTitle"].forEach(function(k){ if(typeof c[k]==="string") c[k]=sameWord(c[k]); });
+    if(Array.isArray(c.rows)) c.rows=c.rows.map(function(r){ return Array.isArray(r)?r.map(function(x){ return typeof x==="string"?sameWord(x):x; }):(typeof r==="string"?sameWord(r):r); });
+    o=c; }
+  return _ask.call(this, o, done); };
 var _bar=bar;
 window.bar=bar=function(text, kind, quiet){
   var t=sameWord(text), m=t.match(/^(.*?)((?:안 된 곳|등록 못 한|못 보낸 곳|못 지운)\s*[\d,]+\s*(?:곳|건|줄))\s*—\s*(.+)$/);
