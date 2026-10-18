@@ -40,7 +40,8 @@
   var h1=document.querySelector(".hero h1"), hp=document.querySelector(".hero p");
   if(h1&&hp){ var H=[[h1.innerHTML,hp.innerHTML],["차를 맡는 순간부터,<br>정산을 마치는 순간까지.","워시는 입고와 작업을, 체크는 성능점검을. 딜러는 내 차의 진행 상황을 확인해요. 각자의 일에 맞는 차곳간을 만나 보세요."],["차량 업무의 흐름,<br>차곳간으로 한눈에.","입고와 작업, 성능점검, 내 차의 진행 상황까지. 업체와 딜러, 각자의 역할에 맞는 화면을 만나 보세요."]];
     var pick=el('<div class="bor pickh" role="group" aria-label="첫 문구 고르기"><span class="bor-tag">첫 문구 후보 ⑦</span><b>첫 문구 고르기</b><button type="button" aria-pressed="true" data-h="0">지금 문구</button><button type="button" aria-pressed="false" data-h="1">시안 3 문구</button><button type="button" aria-pressed="false" data-h="2">시안 2 문구</button></div>');
-    if(/mark/.test(location.search+location.hash)) h1.parentNode.insertBefore(pick,h1);   /* F19 — 고르는 단추는 미리보기에서만 */
+    /* 대표님 확정(10/18): 첫 문구 = 시안 3 «차를 맡는 순간부터, 정산을 마치는 순간까지.» — 고르기 단추는 빼요 */
+    h1.innerHTML=H[1][0]; hp.innerHTML=H[1][1]; h1.setAttribute("data-chg","첫 문구(확정)");
     Array.prototype.forEach.call(pick.querySelectorAll("[data-h]"),function(b){ b.onclick=function(){ var i=+b.getAttribute("data-h"); h1.innerHTML=H[i][0]; hp.innerHTML=H[i][1]; Array.prototype.forEach.call(pick.querySelectorAll("[data-h]"),function(x){ x.setAttribute("aria-pressed",String(x===b)); }); }; }); }
   /* ⑨ 시안 3 한국어 소제목 — 지금 구역의 제목 글만 바꿔요(구역 차례 · 링크는 그대로) */
   [["#try .h2","설명보다 먼저, 화면으로 만나 보세요."],["#price .h2","우리 업체에 맞게, 필요한 만큼 시작하세요."]].forEach(function(x){ var e=document.querySelector(x[0]); if(e){ e.textContent=x[1]; e.setAttribute("data-chg","시안 3 소제목"); } });
@@ -71,7 +72,8 @@
   Array.prototype.forEach.call(document.querySelectorAll(".cmp3 .btn"),function(b){ var k=M[(b.textContent.match(/워시|체크|딜러/)||[])[0]]; if(k){ b.setAttribute("data-hp",k); b.onclick=function(e){ e.preventDefault(); go(k); }; } });
   /* F12 — 첫 화면 카드는 짧은 고르기 단추로(설명 줄 숨김) · 미리 써 보기는 바로 탭이 보이게(카드 3장 반복 없음) */
   document.documentElement.classList.add("cgg-roles");
-  function openFirst(){ var tv=document.getElementById("tryView"); if(tv&&tv.hidden){ press("wash"); window.scrollTo(0,0); } }
+  function openFirst(){ var tv=document.getElementById("tryView"); if(tv&&tv.hidden){ press("wash");
+      var id=(location.hash||"").replace(/^#/,""), t=id&&document.getElementById(id); if(t) t.scrollIntoView(); else window.scrollTo(0,0); } }   /* 주소에 구역(#try · #price · #ask)이 있으면 그 구역으로 */
   if(document.readyState==="complete") setTimeout(openFirst,0); else window.addEventListener("load",function(){ setTimeout(openFirst,0); });
   /* F11 — 예시 단추 · 성공처럼 보이는 글에 «예시» */
   var EX=[[/^결제 성공으로 보기$/,"예시: 결제가 끝난 뒤 화면 보기"],[/^결제가 완료되었습니다\.$/,"(예시) 결제가 끝나면 이렇게 보여요."],[/^회원가입이 완료되었습니다\. (.*)$/,"(예시) 가입이 끝나면: $1"],[/^(차곳간 .+가 열렸어요)$/,"(예시) $1"]];

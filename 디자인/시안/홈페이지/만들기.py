@@ -24,11 +24,12 @@ for k, v in rep.items():
     t = t.replace(k, v)
 assert "@@" not in t, "채우지 못한 자리 표시"
 assert "318-11" not in t
-if "charset" not in t[:300]: t = '<!doctype html>\n<meta charset="utf-8">\n' + t
+if "charset" not in t[:300]: t = '<!doctype html>\n<html lang="ko">\n<meta charset="utf-8">\n' + t
 if 'name="viewport"' not in t: t = t.replace("<style>", '<meta name="viewport" content="width=device-width,initial-scale=1"><style>', 1)
 io.open(os.path.join(HERE, "지금.html"), "w", encoding="utf-8").write(t)
 assert '<header class="top gut">' in t
 after = t.replace('<header class="top gut">', '<link rel="stylesheet" href="손본뒤.css">\n<header class="top gut">', 1)   # 틀의 <style> 뒤에 와야 덮어써요
 after = after.replace("</body>", '<script src="손본뒤.js"></script></body>', 1) if "</body>" in after else after + '<script src="손본뒤.js"></script>'
+after = after.replace("발급", "발행")   # 검수 3 F13 — 세금계산서는 «발행»(손본 뒤에서만)
 io.open(os.path.join(HERE, "손본뒤.html"), "w", encoding="utf-8").write(after)
 print("만듦: 지금.html", len(t.encode("utf-8")), "· 손본뒤.html", len(after.encode("utf-8")))
