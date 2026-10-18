@@ -4,7 +4,7 @@ import { store } from "./fake_supabase_check.ts";
 Deno.env.set("SUPABASE_URL", "http://fake.local");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake");
 Deno.env.set("POPBILL_LINKID", "LID"); Deno.env.set("POPBILL_SECRET", btoa("secret"));
-const SRC = Deno.env.get("CHECK_SRC") ?? "../2_차곳간체크_서버_check-api_v46.ts";
+const SRC = Deno.env.get("CHECK_SRC") ?? "../2_차곳간체크_서버_check-api_v47.ts";
 const day = new Date(Date.now() + 86400000).toISOString();
 let seq = 0;
 const car = (goods: string, extra: Record<string, unknown> = {}) => ({ id: "k" + (++seq), office_id: "o1", dealer_id: "d1",
@@ -74,7 +74,7 @@ check("taxList: 계산서 금액은 N 전산외(22,000) 뺀 121,000 · paid 0 ·
 check("입금 전이면 can=false · 까닭", th?.can === false && /입금 전/.test(th?.why), th);
 r = await call("taxIssue", [[hong.id, kim.id]]);
 check("입금 전 발급 거절 (서버에서도)", r.result?.ok === 0 && r.result.bad.length === 2 && r.result.bad.every((b: string) => /입금 전/.test(b)) && pop.length === 0, r);
-check("직원은 발급 못 함", !!(await call("taxIssue", [[hong.id], "", {}, { unpaidOk: [hong.id] }], "chk_stf")).__err && pop.length === 0);
+check("직원은 발급 못 함", !!(await call("taxIssue", [[hong.id]], "chk_stf")).__err && pop.length === 0);
 hong.paid_amount = 143000;
 r = await call("taxIssue", [[hong.id]]);
 check("다 입금된 홍딜러는 발급", r.result?.ok === 1 && pop.length === 1, r);
@@ -84,7 +84,11 @@ kim.paid_amount = 10000;
 r = await call("taxIssue", [[kim.id]]);
 check("일부만 입금된 김딜러는 거절", r.result?.ok === 0 && /남은 금액 23,000원/.test(r.result.bad[0]), r);
 r = await call("taxIssue", [[kim.id], "", {}, { unpaidOk: [kim.id] }]);
-check("대표가 «입금 전 발급»을 고르면 발급 · 표시·기록 남음", r.result?.ok === 1 && !!kim.tax_unpaid_ok_at && store.check_log.some((l: any) => l.what === "입금 전 발급"), r);
+if (/v46\.ts$/.test(SRC)) check("(v46) 대표가 «입금 전 발급»을 고르면 발급 · 표시·기록 남음", r.result?.ok === 1 && !!kim.tax_unpaid_ok_at && store.check_log.some((l: any) => l.what === "입금 전 발급"), r);
+else check("(v47~) 입금 전 예외 없음: unpaidOk 를 넘겨도 거절 · 표시·기록 없음", r.result?.ok === 0 && /입금 전/.test(r.result.bad[0]) && !kim.tax_unpaid_ok_at && pop.length === 1, r);
+kim.paid_amount = 33000;
+r = await call("taxIssue", [[kim.id]]);
+check("다 입금되면 발급", r.result?.ok === 1, r);
 
 console.log("④ 보험료 부가세 설정");
 r = await call("officeGet", []);
