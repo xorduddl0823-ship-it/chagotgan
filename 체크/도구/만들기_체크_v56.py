@@ -138,6 +138,10 @@ rep('  card("", "",\n    \'<div class="photobox" id="xlBox"', '  card("엑셀 �
 rep("<h3>엑셀로 한꺼번에 올리기</h3><p class=\"csub\">양식에 상사 · 딜러를 적어 올리면 한 번에 들어가요. 이미 있는 사람은 건너뛰어요.</p>",
     "<h3>엑셀로 한꺼번에 올리기</h3><p class=\"csub\">카모두 · 조합 전산에서 받은 명부를 그대로 올려도 돼요. 이미 있는 사람은 건너뛰어요.</p>")
 
+# «준비 중» 글 없애기 — 배달 문구 화면 상태 글
+rep('["문자 보낼 준비",DCONF.sms_ready===false?"아직 (차곳간 준비 중)":"됨"]', '["문자 보낼 준비",DCONF.sms_ready===false?"아직 안 켜짐 (차곳간에 알려 주세요)":"됨"]')
+rep('["번호판 읽기 준비",DCONF.ai_ready===false?"아직 (차곳간 준비 중)":"됨"]', '["번호판 읽기 준비",DCONF.ai_ready===false?"아직 안 켜짐 (차곳간에 알려 주세요)":"됨"]')
+
 #@@끝
 
 open(OUT, "w", encoding="utf-8").write(s)

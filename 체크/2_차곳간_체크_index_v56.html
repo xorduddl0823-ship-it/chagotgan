@@ -6284,8 +6284,8 @@ PAGE.delivmsg=function(){
     '</div>'+
     kvs([["카카오 채널","차곳간 (티와이컴퍼니)"],
          ["문자로 갈 때 보내는 번호",'<input type="text" id="dw-tel" value="'+esc(DCONF.from_tel||"")+'" style="width:190px">'],
-         ["문자 보낼 준비",DCONF.sms_ready===false?"아직 (차곳간 준비 중)":"됨"],
-         ["번호판 읽기 준비",DCONF.ai_ready===false?"아직 (차곳간 준비 중)":"됨"]])+
+         ["문자 보낼 준비",DCONF.sms_ready===false?"아직 안 켜짐 (차곳간에 알려 주세요)":"됨"],
+         ["번호판 읽기 준비",DCONF.ai_ready===false?"아직 안 켜짐 (차곳간에 알려 주세요)":"됨"]])+
     '<div class="tools"><button class="btn primary" id="dwSave">보내는 방법 저장</button></div>')+
   card("보낼 문구","«차량 도착» 알림이에요. 왼쪽을 고치면 오른쪽 모양이 바로 바뀌어요.",
     '<div class="sendgrid"><div>'+
@@ -9243,7 +9243,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
 .photobox{border-radius:14px;border:2px dashed #D0D5DD}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{background:var(--surface);color:var(--text);border-color:var(--line)}}
 :root[data-theme="dark"] .btn{background:var(--surface);color:var(--text);border-color:var(--line)}
-@media (max-width:600px){ .card{border-radius:14px} .btn{min-height:38px;font-size:13px;border-radius:10px} }
+@media (max-width:600px){ .card{border-radius:14px} .btn{min-height:42px;font-size:13px;border-radius:10px} }   /* 좁은 화면 42 (SKILL 4) */
 
 /* 옛 .wrap 틀을 공통 바깥 상자(.cgg-app)로 — 폭은 공통 .cgg-main 이 정해요 */
 #wrap.cgg-app{max-width:none;margin:0;padding-top:0;padding-right:0}
@@ -11717,7 +11717,7 @@ AFTER.home=function(){
   var tk=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0"), ms=[];
   try{ ms=chkMemos().filter(function(m){ return m.day===tk && !m.done; }); }catch(e){}
   TODOS=ms.slice(0,3).map(function(m){ return [(m.time||"메모"),"memo","오늘 메모 · "+m.text,(m.by?m.by+" 적음":""),"home"]; });
-  [[wait.length,"r","확인 필요 입금","deposit"],[notSent.length,"w","아직 안 보낸 청구서","bill"],[noTel.length,"r","보낼 번호가 없는 청구처","partner"],[taxWait.length,"","세금계산서 대상","hometax"]]
+  [[wait.length,"w","확인 필요 입금","deposit"],[notSent.length,"w","아직 안 보낸 청구서","bill"],[noTel.length,"r","보낼 번호가 없는 청구처","partner"],[taxWait.length,"","세금계산서 대상","hometax"]]
     .forEach(function(x){ if(Number(x[0])>0) TODOS.push([x[0],x[1],x[2],"",x[3]]); });
   function todoItem(x){ var memo=x[1]==="memo";
     return {tone:x[1]==="r"?"stop":x[1]==="w"?"chk":"run", icon:HOMEIC[x[4]]||"file", title:memo?x[2]:(x[2]+" "+won(x[0])+"건"), sub:x[3]||"눌러서 바로 처리해요"}; }
@@ -11743,8 +11743,7 @@ AFTER.home=function(){
   function calStep(dy){ var y=cy, m=cm+dy; if(dy===0){ y=now.getFullYear(); m=now.getMonth()+1; } while(m<1){ m+=12; y--; } while(m>12){ m-=12; y++; }
     var v=y+"-"+String(m).padStart(2,"0"); if(v===ST.ym) return; ST.ym=v; try{ set("cgg_ym",v); }catch(e){} refresh(); }
   var own=isOwner();
-  var title=own ? (left>0 ? '받을 금액 <em>'+esc(won(left))+'원</em>이 남아 있어요' : '받을 금액이 모두 들어왔어요')
-                : '이번 달 검사 <em>'+esc(won(cnt))+'대</em>가 있어요';
+  var title=left>0 ? '받을 금액 <em>'+esc(won(left))+'원</em>이 남아 있어요' : '받을 금액이 모두 들어왔어요';   /* sum 을 못 읽는 옛 부품용 */
   var ranks=[["성능점검 · 국산",dom],["성능점검 · 수입",imp],["재검 · 선납 · 가성능",etc]].filter(function(x){ return x[1]>0; }).sort(function(a,b){ return b[1]-a[1]; }), rmx=ranks.length?ranks[0][1]:1;
   CGG.home(el,{sum:{unsent:notSent.length, due:left}, title:title,   /* 1.12 확정: 홈 첫 줄은 두 제품 같은 규칙(sum) — title 은 옛 부품용 */
     desc:"오늘 "+(now.getMonth()+1)+"월 "+now.getDate()+"일 · "+String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0")+" 기준"+(thisMonth?"":" · "+ymText(ST.ym)+" 자료"),
@@ -11873,7 +11872,7 @@ function bundleConfirm(L, due){
   CGG.dialog({size:"confirm", title:"밀린 달 청구서를 보낼까요?", desc:"알림톡이 안 가면 문자로 대신 가요.",
     rows:[["누구에게",who],["몇 달",L.length>1?L.length+"명 · 모두 "+mn+"달":mn+"달 ("+L[0].months[0]+(mn>1?" ~ "+L[0].months[mn-1]:"")+")"],["얼마",won(sum)+"원"],["입금 기한",due||"확인 후 입금"]],
     body:'<div style="margin-top:10px"><button type="button" class="cgg-btn" id="bbTest">먼저 내 번호로 시험</button></div>',
-    ok:(L.length>1?L.length+"명에게":"")+" 보내기", cancel:"취소", onOk:function(){ setTimeout(function(){ bundleGo(L, due, false); },0); }});
+    ok:(L.length>1?L.length+"명에게 보내기":"보내기"), cancel:"취소", onOk:function(){ setTimeout(function(){ bundleGo(L, due, false); },0); }});
   var t=$("bbTest"); if(t) t.onclick=function(){ CGG.closeDialog(); bundleGo([L[0]], due, true); };
 }
 function bundleGo(L, due, test){
@@ -11939,6 +11938,39 @@ window.draw=draw=function(){ _dr.apply(this,arguments);
     var tn=/받을|대기|확인 필요|미수|안 된|못 /.test(lb)?"due":/입금|받은/.test(lb)?"in":"";
     if(tn && Number(v)===0) tn="zero"; if(tn) k.classList.add("t-"+tn); }); }catch(e){}
   try{ Array.prototype.forEach.call(document.querySelectorAll("#main .card > h3"),function(h){ if(OWN.test(String(h.textContent||"").trim())) h.parentNode.classList.add("chk-own"); }); }catch(e){}
+};
+
+/* ⑩ 입·출금 내역 › 받을 금액 — 워시 모양(대조표 05): 제목 «받을 금액 ○원» · 달 고르기 + «받은 건 숨기기» · 숫자 칸(남은 딜러) · 표에 입금 상태 */
+var RCV_HIDE=true;
+PAGE.recv=function(){
+  var ALL=(BILLS||[]).map(function(b){ return {id:b.id, name:b.name, comp:b.comp||"", ym:ST.ym, cnt:Number(b.cnt)||0, left:Math.max(0,Number(b.left)||0), paid:Number(b.paid)||0,
+      st:Number(b.left)>0?(Number(b.paid)>0?"일부 입금":"입금 대기"):"완료", _q:b.name+" "+(b.comp||"")}; });
+  var L=RCV_HIDE?ALL.filter(function(r){ return r.left>0; }):ALL;
+  var s=0, got=0, n=0; ALL.forEach(function(r){ s+=r.left; got+=r.paid; if(r.left>0) n++; });
+  var sentL=(BILLS||[]).filter(function(b){ return Number(b.left)>0 && (b.sentRaw||b.sent); }).sort(function(a,z){ return String(a.sentRaw||a.sent)<String(z.sentRaw||z.sent)?-1:1; });
+  var oldest=!n?"없음":(sentL.length?String(sentL[0].sent).slice(0,5):Number(String(ST.ym).slice(5,7))+"월분");
+  return head("받을 금액 <em>"+esc(won(s))+"원</em>","청구서를 보냈는데 아직 다 안 들어온 돈이에요. 입금이 들어오면 «입금 · 출금»에서 청구서와 맞춰요.")+
+    '<div class="cgg-tools">'+ymPicker("rcYm","청구 달")+'<span class="sp"></span><label class="chip"><input type="checkbox" id="rcHide"'+(RCV_HIDE?" checked":"")+'> 받은 건 숨기기</label></div>'+
+    sums([["받을 금액",won(s)+"원","warn"],["지금까지 받은 금액",won(got)+"원","good"],["가장 오래된 건",oldest],["남은 딜러",won(n)+"명"]])+
+    tableBlock("rcv",[
+      {k:"name",t:"딜러",name:true,fmt:function(v){ return '<b>'+esc(v)+'</b>'; }},
+      {k:"comp",t:"상사",fmt:function(v){ return esc(v||"—"); }},
+      {k:"ym",t:"청구 기간",kind:"id",fmt:function(v){ return esc(ymText(v)); }},
+      {k:"cnt",t:"대수",num:true,fmt:function(v){ return won(v)+"대"; }},
+      {k:"left",t:"받을 금액",num:true,fmt:function(v){ return won(v)+'원'; }},
+      {k:"st",t:"입금",state:true,fmt:tag}
+    ], L, {actions:function(r){ return r.left>0?[{key:"in",label:"입금 확인",attr:"data-rcgo",val:r.id}]:[]; }})+
+    CGG.help("«입금 확인»을 누르면 입·출금 내역으로 가요. 들어온 줄을 골라 «선택한 줄 청구서에 맞추기»를 누르면 여기서 빠져요.","이 화면 사용법");
+};
+var _ar=AFTER.recv;
+AFTER.recv=function(){ if(_ar) _ar.apply(this,arguments); var h=$("rcHide"); if(h) h.onchange=function(){ RCV_HIDE=h.checked; ts("rcv").page=1; draw(); }; };
+/* ⑪ «준비 중» 글 없애기 — 백업 · 기기는 지금 되는 것만 */
+var _pbk=PAGE.backup;
+PAGE.backup=function(){
+  var tmp=document.createElement("div"); tmp.innerHTML=_pbk.apply(this,arguments);
+  Array.prototype.forEach.call(tmp.querySelectorAll(".card"),function(c){ var h=c.querySelector("h3"); if(h&&/다음에 붙일 기능/.test(h.textContent)) c.remove(); });
+  var p=tmp.querySelector(".cgg-head p"); if(p) p.textContent="자료는 서버에 있어 PC · 폰 어디서 열어도 같아요. 화면 배치 · 글씨는 이름 단추 › 화면 설정에서 바꿔요.";
+  return tmp.innerHTML;
 };
 })();
 </script>

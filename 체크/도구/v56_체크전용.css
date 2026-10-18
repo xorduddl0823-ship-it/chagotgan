@@ -15,7 +15,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
 .photobox{border-radius:14px;border:2px dashed #D0D5DD}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{background:var(--surface);color:var(--text);border-color:var(--line)}}
 :root[data-theme="dark"] .btn{background:var(--surface);color:var(--text);border-color:var(--line)}
-@media (max-width:600px){ .card{border-radius:14px} .btn{min-height:38px;font-size:13px;border-radius:10px} }
+@media (max-width:600px){ .card{border-radius:14px} .btn{min-height:42px;font-size:13px;border-radius:10px} }   /* 좁은 화면 42 (SKILL 4) */
 
 /* 옛 .wrap 틀을 공통 바깥 상자(.cgg-app)로 — 폭은 공통 .cgg-main 이 정해요 */
 #wrap.cgg-app{max-width:none;margin:0;padding-top:0;padding-right:0}
