@@ -3508,7 +3508,7 @@ var CGG_CSVUP = (function(){
     return rows; }
   function hkey(s){ return String(s==null?"":s).replace(/\(.*?\)|\[.*?\]/g,"").replace(/[\s*·:._\/-]/g,"").toLowerCase(); }
   /* ⚠ 개인정보일 수 있는 칸 — 읽자마자 지우고 짝짓기에서도 못 골라요(카모두 «회사코드» = 13자리, 주민등록번호일 수 있음) */
-  function blocked(h){ var k=hkey(h); return /^(회사코드|업체코드|상사코드|법인등록번호|법인번호|생년월일|외국인등록번호)$/.test(k) || k.indexOf("주민")>=0; }
+  function blocked(h){ var k=hkey(h); return /^(업체코드|상사코드|법인번호)$/.test(k) || /주민|생년월일|외국인등록|법인등록|회사코드/.test(k); }
   function rrnLike(v){ return /^\d{6}\s*-?\s*[0-9]\d{6}$/.test(String(v||"").trim()); }
   /* 칸 이름 → 칸 번호 + 확실한지. 차곳간 칸 차례대로, 한 칸은 한 번만 씀
      확실 = 이름 · 비슷한 말과 똑같음 / 확실치 않음 = 이름을 품고 있음(예: «딜러 휴대폰») */
@@ -3650,7 +3650,8 @@ var CGG_CSVUP = (function(){
   function colName(i){ var s=""; i++; while(i>0){ var m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
   function preview(o, F, tab0){
     var ok=needOk(F.at, o), all=ok?recsOf(o, F):[], tab=tab0||"all", r={list:[]}, cnt={};
-    var groups=null; if(ok && F.at.comp!=null && o.filterBy){ groups={}; all.forEach(function(x){ var k=key(x.c.comp); if(!k) return; (groups[k]=groups[k]||{name:x.c.comp, n:0}).n++; }); }
+    var groups=null; if(ok && F.at.comp!=null && o.filterBy){ groups={}; all.forEach(function(x){ var k=key(x.c.comp), g=(groups[k]=groups[k]||{name:k?x.c.comp:"(상사 없음)", n:0});
+      if(!x.ex && (!x.c.stat || statOk(x.c.stat))) g.n++; }); }   /* 줄 수 = 넣을 수 있는 줄(퇴사 · 예시 빼고) */
     function warnOf(c){ var cur=F.at[c.k]; return (cur==null&&!ok&&(o.need||[]).indexOf(c.k)>=0)||(cur!=null&&!F.sure[c.k]); }
     var unsure=o.cols.filter(warnOf).length; if(unsure||!ok) F.open=true;
     function calc(){
@@ -3721,8 +3722,15 @@ var CGG_CSVUP = (function(){
         if(Object.keys(F.only).length===gList().length) F.only=null; refresh(); }; }); }
       fl.innerHTML=fListHtml(""); wireList();
       var fq=$id("csuFq"); fq.oninput=function(){ fl.innerHTML=fListHtml(fq.value); wireList(); };
-      dlg.querySelector("[data-csuall]").onclick=function(){ F.only=null; fl.innerHTML=fListHtml(fq.value); wireList(); refresh(); };
-      dlg.querySelector("[data-csunone]").onclick=function(){ F.only={}; fl.innerHTML=fListHtml(fq.value); wireList(); refresh(); };
+      /* 찾는 글자가 있으면 보이는 상사만 고르기 · 빼기 */
+      function bulk(on){ var qk=key(fq.value);
+        if(!qk) F.only=on?null:{};
+        else { if(!F.only){ F.only={}; gList().forEach(function(g){ F.only[g.k]=1; }); }
+          gList().forEach(function(g){ if(key(g.name).indexOf(qk)>=0){ if(on) F.only[g.k]=1; else delete F.only[g.k]; } });
+          if(Object.keys(F.only).length===gList().length) F.only=null; }
+        fl.innerHTML=fListHtml(fq.value); wireList(); refresh(); }
+      dlg.querySelector("[data-csuall]").onclick=function(){ bulk(true); };
+      dlg.querySelector("[data-csunone]").onclick=function(){ bulk(false); };
     }
     Array.prototype.forEach.call(dlg.querySelectorAll("[data-csut]"), function(b){ b.onclick=function(){ tab=b.getAttribute("data-csut");
       Array.prototype.forEach.call(dlg.querySelectorAll("[data-csut]"), function(x){ x.setAttribute("aria-pressed", String(x===b)); });
@@ -3790,7 +3798,7 @@ var CGG_CSVUP = (function(){
     var skips={};
     recs.forEach(function(x){ var c=x.c, tel=telDig(c.tel), no=dig(c.no), why=[], notes=[], ct=telDig(c.ctel);
       if(x.ex){ x.st="ex"; x.why="양식의 예시 줄이라 건너뛰어요."; list.push(x); return; }
-      if(c.stat && !statOk(c.stat)){ var sv=String(c.stat).trim().slice(0,10); skips[sv]=(skips[sv]||0)+1; x.st="skip"; x.why=sv+"(이)라 건너뛰어요."; list.push(x); return; }
+      if(c.stat && !statOk(c.stat)){ var sv=String(c.stat).trim().slice(0,10); skips[sv]=(skips[sv]||0)+1; x.st="skip"; x.why="재직 · 영업 칸이 «"+sv+"»라 건너뛰어요."; list.push(x); return; }
       if(ct && (ct.length<8 || ct.length>12)){ ct=""; notes.push("상사 전화가 맞지 않아 뺐어요"); }
       else if(ct && ct===dig(c.ctel)) ct=String(c.ctel).trim();   /* 0이 안 지워졌으면 적힌 모양(02-123-4567) 그대로 */
       var tax=taxOf(c.tax);
@@ -4832,7 +4840,7 @@ function wHdr(){
   var ps=$("pollSel"),opts=ps?Array.prototype.map.call(ps.options,function(o){return [o.value,o.textContent];}):[];
   var fieldOn=canPC()&&$("btnMode")&&!$("btnMode").hidden;
   var o={product:"워시",sub:pc?(isManager()?"입출고 관리":"광택 · 세차 정산"):"현장 화면",ver:(APP_VER.split(" ")[1]||""),
-    biz:{name:nm||appName(),line:sp.bizNo?("사업자 "+fmtBizNo(sp.bizNo)+(sp.ceo?(" · 대표 "+sp.ceo):"")):(sp.ceo?("대표 "+sp.ceo):(isOwner()?"설정 › 우리 사업장에서 넣어 주세요":""))},
+    biz:{name:nm||appName(),line:sp.bizNo?("사업자 "+fmtBizNo(sp.bizNo)+(sp.ceo?(" · 대표 "+sp.ceo):"")):(sp.ceo?("대표 "+sp.ceo):(isOwner()?"설정에서 사업자번호를 넣어 주세요":""))},
     find:pc?{mode:"nav",feats:wFeats(),onGo:goFeat}:null,   /* v132: 기능 찾기 = 메뉴 줄 오른쪽 끝(대표님 결정, 1.9 mode:"nav") */
     date:(APP_VER.match(/\d{4}-(\d{2})-(\d{2})/)||[]).slice(1).map(Number).join("/"),
     notice:function(){if(window.ccwNotice)window.ccwNotice();},

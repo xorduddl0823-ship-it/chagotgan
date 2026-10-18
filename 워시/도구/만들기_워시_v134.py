@@ -33,7 +33,7 @@ rep('''카모두에서 받은 명부를 올려 두면 찾아서 바로 딜러로
 # 기억 열쇠 — 우리 사업장 이름(기본값 «차곳간»이거나 비면 기억 안 함)
 rep('''var WPT={st:{}};''', '''var WPT={st:{}};
 function w134Store(){var n=String((S.cfg&&S.cfg.shopName)||"").trim();return (n&&n!=="차곳간")?n:"";}''')
-# 4) 머리말 둘째 줄(대표님 10/18 · 체크처럼): «사업자 000-00-00000 · 대표 ○○○» / 번호 없으면 «대표 ○○○» / 둘 다 없으면 대표에게만 «설정 › 우리 사업장에서 넣어 주세요»
+# 4) 머리말 둘째 줄(대표님 10/18 · 체크처럼): «사업자 000-00-00000 · 대표 ○○○» / 번호 없으면 «대표 ○○○» / 둘 다 없으면 대표에게만 «설정에서 사업자번호를 넣어 주세요»
 rep('''    biz:{name:nm||appName(),line:sp.bizNo?("사업자 "+fmtBizNo(sp.bizNo)+(sp.ceo?(" · 대표 "+sp.ceo):"")):""},''',
-'''    biz:{name:nm||appName(),line:sp.bizNo?("사업자 "+fmtBizNo(sp.bizNo)+(sp.ceo?(" · 대표 "+sp.ceo):"")):(sp.ceo?("대표 "+sp.ceo):(isOwner()?"설정 › 우리 사업장에서 넣어 주세요":""))},''')
+'''    biz:{name:nm||appName(),line:sp.bizNo?("사업자 "+fmtBizNo(sp.bizNo)+(sp.ceo?(" · 대표 "+sp.ceo):"")):(sp.ceo?("대표 "+sp.ceo):(isOwner()?"설정에서 사업자번호를 넣어 주세요":""))},''')
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
