@@ -10830,7 +10830,8 @@ function hometaxGo(other){
        warn:(other?"고른 양식 파일에 채워요.":"홈택스 공식 양식(일반) 그대로예요.")+" 홈택스 일괄발급 화면에서 이 파일을 불러와요(발급은 한 번에 50건씩)."+(parts>1?" 파일이 여러 개라 브라우저가 «여러 파일 내려받기»를 물으면 «허용»을 눌러요.":"")+(noBiz?" 사업자번호가 10자리가 아닌 곳 "+noBiz+"곳이 있어요.":""), yes:"내려받기"}, function(){
     var warn=[];
     try{ for(var i=0;i<parts;i++) makeFile(pick.slice(i*100,(i+1)*100), i+1, parts, warn, other); }
-    catch(e){ tell("양식을 만들지 못했어요","차곳간에 알려 주세요. ("+esc(String(e&&e.message||""))+")"); return; }
+    catch(e){ if(other){ tell("홈택스 일괄발급 양식이 아닌 것 같아요","작성일자 · 공급자/공급받는자 등록번호 · 공급가액 · 세액 · 품목 · 영수/청구 칸이 있어야 해요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요."); return; }
+      tell("양식을 만들지 못했어요","차곳간에 알려 주세요. ("+esc(String(e&&e.message||""))+")"); return; }
     bar("홈택스 양식 "+parts+"개("+pick.length+"건)를 내려받았어요."+(warn.length?" 길이가 넘쳐 줄인 칸 "+warn.length+"개 — "+warn.slice(0,2).join(" / "):""), warn.length?"info":"ok");
   });
 }
@@ -10840,6 +10841,7 @@ AFTER.hometax=function(){
   var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 양식 내려받기"; xl.onclick=function(){ hometaxGo(null); };
     if(!$("txXls2")){ var o=document.createElement("button"); o.type="button"; o.className="btn"; o.id="txXls2"; o.textContent="다른 양식 쓰기"; xl.parentNode.insertBefore(o, xl.nextSibling); }
     $("txXls2").onclick=function(){ var i=document.createElement("input"); i.type="file"; i.accept=".xls,.xlsx"; i.hidden=true; document.body.appendChild(i);
+      setTimeout(function(){ document.body.onfocus=function(){ document.body.onfocus=null; setTimeout(function(){ if(i.parentNode&&!(i.files&&i.files.length)) i.remove(); },800); }; },0);   /* «취소»면 숨은 칸 치우기 */
       i.onchange=function(){ var f=i.files&&i.files[0]; i.remove(); if(!f) return; var rd=new FileReader();
         rd.onload=function(){ var u=new Uint8Array(rd.result); try{ XLSX.read(u,{type:"array",bookSheets:true}); }catch(e){
             tell("이 양식은 열 수 없어요", /password/i.test(String(e&&e.message))?"암호가 걸린 파일이에요. 엑셀에서 열어 «다른 이름으로 저장»한 파일로 골라 주세요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요.":"엑셀 파일이 맞는지 봐 주세요."); return; }
