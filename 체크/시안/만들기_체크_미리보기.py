@@ -144,6 +144,12 @@ FAKE = r'''<script>
       /* v56 · 서버 check-api v51 밀린 달 한꺼번에 — 지어낸 밀린 달 셋 */
       case "billBundleList": return {dealerId:(a[0]||{}).dealerId, rows:[["2026-08",264000,0],["2026-09",330000,110000],["2026-10",418000,0]].map(function(x,i){
         return {id:"bb"+i, ym:x[0], total:x[1], paid:x[2], left:x[1]-x[2], sentAt:i<2?x[0]+"-28T09:00:00":""}; }), left:902000};
+      /* v56.2 · 서버 check-api v52 보낸 기록 — 지어낸 기록(번호는 가린 꼴) */
+      case "sendLogList": return {from:(a[0]||{}).from, to:(a[0]||{}).to, sums:{sent:5, sub:2, fail:1, wait:0, skip:1},
+        list:[["10-18 09:12","청구서","010-****-0010","알림톡","알림톡 도착",""],["10-18 09:12","청구서","010-****-0011","장문","문자 대체",""],
+              ["10-17 18:40","차량 도착 안내","010-****-0012","알림톡","알림톡 도착",""],["10-17 15:02","재검사 안내","010-****-0013","단문","실패","받는 번호가 올바르지 않아요 <b>원문</b>"],
+              ["10-16 09:00","입금 확인","010-****-0014","알림톡","알림톡 도착",""],["10-16 08:59","청구서","010-****-0015","알림톡","안 보냄","번호 없음"]].map(function(x,i){
+          return {createdAt:"2026-"+x[0], type:x[1], tpl:"check_bill", to:x[2], kind:x[3], status:x[4], err:x[5], ref:"r"+i}; })};
       case "billBundleSend": return {ok:true, how:(a[0]||{}).test?"ata":"ata", why:"", months:((a[0]||{}).ids||[]).length, left:902000};
       /* v44 · 서버 v34 거래처 창구 (체크/기획/2026-10-17_v44_거래처_창구_약속.md) */
       case "companies": return COMP.map(function(c,i){ return {id:"c"+i, name:c[0], biz_no:c[1], ceo:c[2]||"", tel:c[3]||"",

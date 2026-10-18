@@ -57,6 +57,7 @@ window.chkGoFeat=chkGoFeat=function(f){
   var g=String((f&&f.go)||"");
   try{ CGG.closeSheet(); }catch(e){}
   if(g==="hdr/link"){ $("btnLink").click(); return; }
+  if(f&&f.id==="outbox"){ go("sendlog"); return; }   /* v56.2: 보낸 기록 화면 */
   if(g==="hdr/help"){ $("btnHelp").click(); return; }
   if(g==="hdr/notice"){ if(window.ccwNotice) window.ccwNotice(); return; }
   if(g==="me/plan"){ try{ window.ccwPlanPay(); }catch(e){ bar("요금제는 마이페이지에서 봐요"); } return; }
@@ -280,7 +281,7 @@ window.draw=draw=function(){ _dr.apply(this,arguments);
   /* 숫자 칸 뜻 색(공통 1.12 tone · 대조표 A2) — sums 는 돈 코드 목록이라 안 고치고, 그린 뒤 이름표로 색만 입혀요: 입금 초록 · 받을 금액/대기/확인 필요 주황 · 0 회색 */
   try{ Array.prototype.forEach.call(document.querySelectorAll("#main .cgg-kpi"),function(k){ if(/\bt-(in|due|out|stop|zero)\b/.test(k.className)) return;
     var lb=String((k.querySelector("small")||{}).textContent||""), v=String((k.querySelector("strong")||{}).textContent||"").replace(/[^\d.\-]/g,"");
-    var tn=/받을|대기|확인 필요|미수|안 된|못 /.test(lb)?"due":/입금|받은/.test(lb)?"in":"";
+    var tn=/실패/.test(lb)?"stop":/받을|대기|확인 필요|미수|안 된|못 /.test(lb)?"due":/입금|받은/.test(lb)?"in":"";
     if(tn && Number(v)===0) tn="zero"; if(tn) k.classList.add("t-"+tn); }); }catch(e){}
   try{ Array.prototype.forEach.call(document.querySelectorAll("#main .card > h3"),function(h){ if(OWN.test(String(h.textContent||"").trim())) h.parentNode.classList.add("chk-own"); }); }catch(e){}
 };
@@ -333,5 +334,65 @@ PAGE.alarm=function(){
   [].slice.call(tmp.childNodes).forEach(function(n){ if(n.nodeType===1&&!out.contains(n)) out.appendChild(n); });   /* 남은 것은 뒤에 그대로 */
   return out.innerHTML;
 };
+
+/* ⑬ 설정 › 알림 › 보낸 기록 — 워시 v138 과 같은 모양(알림 맨 아래 카드 → «보낸 기록 열기» → 따로 화면). 서버 check-api v52 sendLogList (대표만 · 92일까지)
+   err 칸에 문자 업체 원문이 섞일 수 있어서 표는 글자 그대로(esc)만 보여 줘요 */
+var SL={rows:null, sums:null, from:"", to:"", err:"", days:7};
+function slYmd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function slLoad(){
+  var t=new Date(), f=new Date(t.getTime()-(SL.days-1)*864e5);
+  SL.from=slYmd(f); SL.to=slYmd(t); SL.err="";
+  return call("sendLogList",[{from:SL.from, to:SL.to}]).then(function(r){ r=r||{}; SL.rows=(r.list||[]).map(function(x,i){
+      return {id:"sl"+i, at:String(x.createdAt||""), type:String(x.type||""), to:String(x.to||""), kind:String(x.kind||""), st:String(x.status||""), err:String(x.err||"")}; });
+      SL.sums=r.sums||{}; })
+    .catch(function(e){ SL.rows=[]; SL.sums=null; SL.err=/sendLogList|unknown|없는 (기능|요청)|not found/i.test(String((e&&e.message)||""))?"old":String((e&&e.message)||""); });
+}
+function slTag(v){ var k=/실패/.test(v)?"stop":/대기/.test(v)?"run":/안 보냄/.test(v)?"chk":"done"; return '<span class="cgg-st '+k+'">'+esc(v||"—")+'</span>'; }
+PAGE.sendlog=function(){
+  var own=isOwner();
+  var h=head("보낸 기록","보낸 메시지와 못 보낸 메시지가 모두 남아요. 번호는 가려서 보여요.")+
+    '<div class="cgg-tools"><button type="button" class="btn" data-v56go="alarm">‹ 알림으로</button>'+
+    [[1,"오늘"],[7,"최근 7일"],[31,"최근 31일"],[92,"최근 92일"]].map(function(x){ return '<button type="button" class="cgg-fp'+(SL.days===x[0]?' on':'')+'" data-sld="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>';
+  if(!own) return h+card("보낸 기록은 대표만 볼 수 있어요","","");
+  if(SL.rows===null) return h+'<div class="card"><div class="loading">보낸 기록을 읽고 있어요…</div></div>';
+  if(SL.err==="old") return h+card("체크 서버를 v52로 올리면 보여요","보낸 기록은 서버 check-api v52부터 볼 수 있어요. 보내기는 지금도 그대로 돼요.","");
+  if(SL.err) return h+card("보낸 기록을 읽지 못했어요",esc(niceMsg(SL.err)),"");
+  var S=SL.sums||{};
+  return h+sums([["알림톡 도착",won(S.sent||0)+"건","good"],["문자로 대신",won(S.sub||0)+"건"],["실패",won(S.fail||0)+"건","bad"],["대기 · 안 보냄",won((S.wait||0)+(S.skip||0))+"건"]])+
+    tableBlock("sl",[
+      {k:"at",t:"보낸 시각",kind:"id"},
+      {k:"type",t:"종류"},
+      {k:"to",t:"받는 번호"},
+      {k:"kind",t:"보낸 방법"},
+      {k:"st",t:"결과",state:true,fmt:slTag},
+      {k:"err",t:"까닭"}
+    ], SL.rows, {tools:'<button class="btn">엑셀 다운로드</button>'})+
+    CGG.help("알림톡이 안 가면 문자로 대신 가요(«문자로 대신»). «실패»는 까닭을 보고 번호를 고친 뒤 그 화면에서 다시 보내요. 최근 92일까지 볼 수 있어요.","이 화면 사용법");
+};
+AFTER.sendlog=function(){
+  Array.prototype.forEach.call(document.querySelectorAll("#main [data-v56go]"),function(b){ b.onclick=function(){ go(b.getAttribute("data-v56go")); }; });
+  Array.prototype.forEach.call(document.querySelectorAll("#main [data-sld]"),function(b){ b.onclick=function(){ SL.days=Number(b.getAttribute("data-sld"))||7; SL.rows=null; draw(); }; });
+  if(isOwner() && SL.rows===null){ slLoad().then(function(){ if(page==="sendlog") draw(); }); return; }
+  if(SL.rows) wireTable("sl",function(){ draw(); });
+};
+/* 알림 맨 아래 «보낸 기록» 카드 */
+var _pa4=PAGE.alarm;
+PAGE.alarm=function(){
+  var S=SL.sums, f=S?(S.fail||0):0, n=S?((S.sent||0)+(S.sub||0)):0;
+  var base=_pa4.apply(this,arguments), card1='<div class="card" id="chkOutbox"><h3>보낸 기록'+(S?'<span class="rt">'+(f?'<span style="color:var(--stop)">못 보냄 '+won(f)+'건</span>':'보냄 '+won(n)+'건')+'</span>':'')+'</h3>'+
+    '<p class="csub">보낸 메시지를 보고, 못 보낸 것은 까닭을 봐요.</p><div class="tools"><button type="button" class="btn'+(f?' primary':'')+'" data-v56go="sendlog">보낸 기록 열기</button></div></div>';
+  var hi=base.lastIndexOf('<details class="cgg-help');   /* 워시처럼 알림 맨 아래(도움 카드 앞) */
+  return hi>=0 ? base.slice(0,hi)+card1+base.slice(hi) : base+card1;
+};
+var _aa4=AFTER.alarm;
+AFTER.alarm=function(){ if(_aa4) _aa4.apply(this,arguments);
+  Array.prototype.forEach.call(document.querySelectorAll("#main [data-v56go]"),function(b){ b.onclick=function(){ go(b.getAttribute("data-v56go")); }; });
+  if(isOwner() && SL.sums===null && !SL.err){ SL.err="loading"; slLoad().then(function(){ if(page==="alarm"&&SL.sums) draw(); }); }
+};
+var _g2=groupOf;
+window.groupOf=groupOf=function(p){ if(p==="sendlog") return ["set",SETS]; return _g2.apply(this,arguments); };
+var _cc2=chkCur;
+window.chkCur=chkCur=function(){ if(page==="sendlog") return "set/alarm"; return _cc2.apply(this,arguments); };
+CR.sendlog="설정 › 알림 › 보낸 기록";
 })();
 </script>
