@@ -14,6 +14,7 @@ const { buildLoginScript, LOGIN_PAGE_EXPR } = require('./src/auto-login');
 const cmPhoto = require('./src/photo-upload');
 const cmDealer = require('./src/carmodoo-dealer');
 const ciDealer = require('./src/carinfo-dealer');
+const safety = require('./src/core/safety');
 
 const SITES = {
   carmodoo: {
@@ -108,6 +109,11 @@ function createMainWindow() {
       nodeIntegration: false,
     },
   });
+  //  입력 화면은 프로그램 안의 파일만 띄운다. 다른 주소로 옮겨 가거나 새 창을 열지 못하게 막는다.
+  windows.main.webContents.on('will-navigate', (e, url) => {
+    if (!/^file:/i.test(String(url || ''))) e.preventDefault();
+  });
+  windows.main.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   windows.main.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
@@ -147,7 +153,8 @@ function siteWindow(id, show = true) {
    *  진짜 창으로 열면 form 의 target 이 제대로 걸려 사이트가 하던 대로 POST 한다.
    *  로그인 정보(session)는 연 창에서 그대로 물려받는다. */
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^javascript:/i.test(String(url || ''))) return { action: 'deny' };
+    //  javascript:·file:·data: 같은 모양은 막는다 (빈 창·http·https 만 허용 — src/core/safety.js)
+    if (!safety.popupAllowed(url)) return { action: 'deny' };
     /*  창 크기만 정해 주고 나머지는 연 창에서 그대로 물려받게 둔다.
      *  webPreferences 를 여기서 다시 쓰면 로그인 정보(session)까지 새로 잡혀
      *  팝업이 로그인 안 된 상태로 뜰 수 있다. */
@@ -192,6 +199,11 @@ function siteWindow(id, show = true) {
 }
 
 app.whenReady().then(() => {
+  //  사이트가 카메라·위치·알림 같은 권한을 달라고 하면 모두 거절한다 (이 일에 필요한 권한이 없다).
+  [session.defaultSession, ...Object.values(SITES).map((c) => session.fromPartition(c.partition))]
+    .forEach((ses) => {
+      try { ses.setPermissionRequestHandler((_wc, _perm, cb) => cb(false)); } catch {}
+    });
   createMainWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
@@ -590,9 +602,17 @@ ipcMain.handle('site:scrape', async (_e, id) => {
   }
 });
 
-ipcMain.handle('record:save', (_e, data) => {
+/*  전송 기록. 개인정보(고객명·연락처)와 사진 파일 위치는 남기지 않고,
+ *  보관 기간(config.recordDays, 기본 90일)이 지난 줄은 쓸 때마다 정리한다. */
+ipcMain.handle('record:save', (_e, rec) => {
   const file = userFile('records.jsonl');
-  fs.appendFileSync(file, JSON.stringify({ at: new Date().toISOString(), ...data }) + '\n', 'utf8');
+  const r = { ...(rec || {}) };
+  if (r.data) r.data = safety.sanitizeRecordData(r.data);
+  let lines = [];
+  try { lines = fs.readFileSync(file, 'utf8').split('\n'); } catch {}
+  lines = safety.pruneRecordLines(lines, loadConfig().recordDays || 90);
+  lines.push(JSON.stringify({ at: new Date().toISOString(), ...r }));
+  fs.writeFileSync(file, lines.join('\n') + '\n', 'utf8');
   return file;
 });
 
@@ -720,7 +740,10 @@ async function sendCarmodooPhotos(win, data) {
     }
   });
 
-  try { await runScript(win, cmPhoto.PHOTO_RESTORE_EXPR, 8000, '사진 뒷정리'); } catch {}
+  try {
+    const rs = await runScript(win, cmPhoto.PHOTO_RESTORE_EXPR, 8000, '사진 뒷정리');
+    cmPhoto.restoreAlerts(rs).forEach((m) => missing.push('사이트 안내(사진): ' + m));
+  } catch {}
   return { filled, missing };
 }
 
@@ -1550,7 +1573,10 @@ async function sendCarinfoPhotos(win, data) {
     }
   });
 
-  try { await runScript(pop.win, cmPhoto.PHOTO_RESTORE_EXPR, 8000, '사진 뒷정리'); } catch {}
+  try {
+    const rs = await runScript(pop.win, cmPhoto.PHOTO_RESTORE_EXPR, 8000, '사진 뒷정리');
+    cmPhoto.restoreAlerts(rs).forEach((m) => missing.push('사이트 안내(사진): ' + m));
+  } catch {}
   return { filled, missing };
 }
 
@@ -2003,6 +2029,15 @@ ipcMain.handle('creds:set', (_e, patch) => creds.save(credFile(), patch, safeSto
  */
 async function autoLogin(win, id) {
   if (!(await probe(win, LOGIN_PAGE_EXPR))) return { ok: true, skipped: '로그인 화면 아님' };
+
+  //  비밀번호는 진짜 그 사이트(https · 같은 주소)의 로그인 화면에만 넣는다.
+  //  다른 주소의 로그인 칸에는 절대 넣지 않는다.
+  let here = '';
+  try { here = win.webContents.getURL(); } catch {}
+  if (!SITES[id] || !safety.isSiteUrl(here, SITES[id].home)) {
+    return { ok: false, error: '지금 화면이 ' + ((SITES[id] && SITES[id].name) || id) +
+             ' 주소가 아니어서 자동 로그인을 하지 않았습니다. 창에서 직접 확인해 주세요.' };
+  }
 
   const c = creds.load(credFile(), id, safeStorage);
   if (!c) return { ok: false, error: '저장된 로그인 정보가 없습니다. 설정에서 아이디와 비밀번호를 넣어 주세요.' };

@@ -28,6 +28,14 @@
  *  부르지 않았으면 올리지 않고 알린다 — 엉뚱한 자리에 넣느니 멈추는 편이 낫다.
  */
 
+/*  사이트 alert 를 잠시 막되 내용은 모아 둔다 (뒷정리 PHOTO_RESTORE_EXPR 가 돌려준다).
+ *  화면이 새로 그려지면 모아 둔 것도 사라지므로, 앱은 확인할 때마다 이것을 다시 건다. */
+const ALERT_CATCH =
+  'if (!window.__ccAlert) { window.__ccAlert = window.alert;' +
+  ' window.__ccAlerts = window.__ccAlerts || [];' +
+  ' window.alert = function (m) { try { if (window.__ccAlerts.length < 20)' +
+  ' window.__ccAlerts.push(String(m == null ? "" : m).slice(0, 200)); } catch (e) {} }; }';
+
 /** 카인포: [사진등록] 을 눌러 사진 팝업을 띄운다 */
 const CI_OPEN_PHOTO_EXPR = `(function () {
   function norm(s) { return String(s || '').replace(/\\s+/g, ''); }
@@ -334,11 +342,10 @@ function buildPhotoPrepScript(which) {
   }
 
   /*  사이트가 alert 로 알리는 경우 페이지가 통째로 멈춘다.
-   *  올리는 동안에는 잠시 막아 둔다 (뒷정리에서 되돌린다). */
-  if (!window.__ccAlert) {
-    window.__ccAlert = window.alert;
-    window.alert = function () {};
-  }
+   *  올리는 동안에는 잠시 막아 둔다 (뒷정리에서 되돌린다).
+   *  막되 버리지는 않는다 — 내용을 모아 두었다가 뒷정리 때 앱에 알린다.
+   *  (예전에는 빈 함수로 바꿔 「용량 초과」 같은 오류도 아무도 못 봤다) */
+  ${ALERT_CATCH}
 
   var slot = findSlot(want);
   if (!slot) return { ok: false, error: want + ' 자리를 찾지 못했습니다.' };
@@ -427,8 +434,8 @@ function buildPhotoPrepScript(which) {
 function buildPhotoWatchScript(which) {
   return `(function () {
   ${COMMON}
-  //  사이트가 alert 로 알리면 페이지가 멈춘다. 화면이 새로 그려질 때마다 다시 막아 둔다.
-  if (!window.__ccAlert) { window.__ccAlert = window.alert; window.alert = function () {}; }
+  //  사이트가 alert 로 알리면 페이지가 멈춘다. 화면이 새로 그려질 때마다 다시 막아 둔다(내용은 모아 둔다).
+  ${ALERT_CATCH}
   var closed = false;
   try { closed = closeNotice(); } catch (e) {}
   return { sig: sigOf(${JSON.stringify(which)}), closed: closed };
@@ -496,8 +503,18 @@ const PHOTO_RESTORE_EXPR = `(function () {
     el.removeAttribute('data-cc-slot');
   });
   if (window.__ccAlert) { window.alert = window.__ccAlert; delete window.__ccAlert; }
-  return n;
+  //  막아 두는 동안 사이트가 알린 내용 (앱이 결과에 «사이트 안내»로 보여 준다)
+  var alerts = (window.__ccAlerts || []).slice();
+  delete window.__ccAlerts;
+  return { n: n, alerts: alerts };
 })()`;
+
+/** 뒷정리 결과에서 사이트 안내를 꺼낸다 (예전 모양: 숫자만 돌려주던 것도 받는다) */
+function restoreAlerts(r) {
+  return r && r.alerts && typeof r.alerts.length === 'number'
+    ? Array.from(r.alerts, (a) => String(a)).filter((a) => a.trim())
+    : [];
+}
 
 module.exports = {
   PHOTO_TAB_EXPR,
@@ -508,4 +525,6 @@ module.exports = {
   buildPhotoPrepScript,
   buildPhotoVerifyScript,
   buildPhotoWatchScript,
+  restoreAlerts,
+  ALERT_CATCH,
 };
