@@ -68,6 +68,134 @@ rep('''  CGG.home(host,{date:(now.getMonth()+1)+"월 "+now.getDate()+"일 "+"일
 '''  CGG.home(host,{date:(now.getMonth()+1)+"월 "+now.getDate()+"일 "+"일월화수목금토".charAt(now.getDay())+"요일",
     sum:mgr?null:{unsent:c.unsent||0,due:c.dueAmt||0},   /* v137 홈 첫 줄 = 체크와 같은 규칙 (매니저는 «작업 중인 차» 그대로) */''')
 
+# 0-4) 밀린 달 한꺼번에 (서버 sb26 · 공통 CGG.bundle 모양) — 돈 함수(buildBills · billCode · billVars · markBilled …)는 부르기만, 고치지 않아요
+rep("""    <button class="btn" id="bUnsend">선택항목 보냄 표시 지우기</button>""",
+"""    <button class="btn" id="bUnsend">선택항목 보냄 표시 지우기</button>
+    <button class="btn" id="bBundle" hidden>밀린 달 한꺼번에 (고른 딜러)</button>
+    <button class="btn" id="bBundleAll" hidden>미수 모아 보내기</button>""")
+rep("""  var list=B.made||buildBills();
+  B.made=list;
+  var totAmt=list.reduce(function(s,b){return s+b.amount;},0);""",
+"""  var list=B.made||buildBills();
+  B.made=list;
+  if($("bBundle")){$("bBundle").hidden=$("bBundleAll").hidden=!isOwner();}   /* v137 밀린 달 한꺼번에는 대표만 */
+  var totAmt=list.reduce(function(s,b){return s+b.amount;},0);""")
+rep("""$("bMake").onclick=function(){
+  B.unit=$("bUnit").value;""",
+"""/* ══════ v137 밀린 달 한꺼번에 (서버 sb26 «청구서 보기 밀린 달 목록» · 공통 CGG.bundle 창 — 체크 v56 과 같은 차례) ══════
+   딜러 한 명의 덜 받은 달(오래된 달부터) → 고르기 → «누구 · 몇 달 · 얼마» 확인 → 달마다 보기코드(viewBill) → 가장 최근 달 코드로 알림톡 한 통
+   (#{기간} «2026년 8~10월» · #{금액} 남은 합 · #{건수} 합) → 묶은 달마다 «보냄» 표시. 돈 셈은 buildBills 그대로(달마다 한 번씩 불러요) */
+function wbxMonths(who,company){
+  var seen={},ms=[];
+  S.records.forEach(function(r){var m=r.month||mKey(r.createdAt);
+    if(seen[m]||String(r.dealer||"").trim()!==who||(r.company||"")!==(company||""))return;
+    if(statusOf(r)!=="출고")return; seen[m]=1; ms.push(m);});
+  return ms.filter(function(m){return billableMonth(m);}).sort().slice(-24);
+}
+function wbxRows(who,company){
+  var keep={month:B.month,unit:B.unit,scope:B.scope,zero:B.zero,made:B.made}, rows=[];
+  try{
+    wbxMonths(who,company).forEach(function(m){
+      B.month=m;B.unit="dealer";B.scope="out";B.zero="hide";
+      var G=buildBills().filter(function(x){return x.who===who&&(x.company||"")===(company||"");})[0];
+      if(!G||!(G.due>0))return;
+      var st=wSent(m,who,company,!G.dup);
+      rows.push({id:m,label:periodLabel(m),sub:"청구 "+won(G.amount)+" · 받음 "+won(G.paid)+(st&&st.sentAt?" · "+fmtTime(st.sentAt)+" 보냄":" · 아직 안 보냄"),left:G.due,bill:G});
+    });
+  }finally{B.month=keep.month;B.unit=keep.unit;B.scope=keep.scope;B.zero=keep.zero;B.made=keep.made;}
+  return rows;
+}
+function wbxRange(ms){
+  if(!ms.length)return "";
+  var a=ms[0].split("-"),z=ms[ms.length-1].split("-");
+  if(ms.length===1)return periodLabel(ms[0]);
+  return a[0]===z[0]?(Number(a[0])+"년 "+Number(a[1])+"~"+Number(z[1])+"월"):(Number(a[0])+"년 "+Number(a[1])+"월~"+Number(z[0])+"년 "+Number(z[1])+"월");
+}
+function wbxOne(b){
+  if(!isOwner())return toast("대표만 쓸 수 있어요",true);
+  if(B.unit==="company")return toast("«딜러별» 청구서에서 써 주세요 (밀린 달은 딜러마다 모아요)",true);
+  if(b.dup&&b.who==="(딜러 없음)")return toast(b.name+" — 차에 딜러를 넣어야 밀린 달을 모을 수 있어요",true);
+  var rows=wbxRows(b.who,b.company||"");
+  if(!rows.length)return CGG.dialog({size:"confirm",title:"밀린 달이 없어요",desc:"«"+b.name+"» 딜러는 덜 받은 청구서가 없어요.",cancel:"확인"});
+  CGG.bundle.pick({name:b.name,rows:rows,due:(S.cfg&&S.cfg.billDueText)||"",
+    onNext:function(ids,sum,labels,due){
+      var pick=rows.filter(function(x){return ids.indexOf(String(x.id))>=0;});
+      wbxConfirm([{b:b,name:b.name,ids:ids,sum:sum,months:labels,rows:pick}],due);}});
+}
+function wbxMany(list){
+  if(!isOwner())return toast("대표만 쓸 수 있어요",true);
+  if(B.unit==="company")return toast("«딜러별» 청구서에서 써 주세요 (밀린 달은 딜러마다 모아요)",true);
+  var L=[],bad=[];
+  list.forEach(function(b){
+    if(b.who==="(딜러 없음)"){bad.push(b.name+"(딜러 없음)");return;}
+    var rows=wbxRows(b.who,b.company||"");if(!rows.length)return;
+    rows=rows.slice(-24);
+    L.push({b:b,name:b.name,ids:rows.map(function(x){return String(x.id);}),sum:rows.reduce(function(t,x){return t+x.left;},0),months:rows.map(function(x){return x.label;}),rows:rows});});
+  if(!L.length)return CGG.dialog({size:"confirm",title:"밀린 달이 없어요",desc:"고른 딜러는 덜 받은 청구서가 없어요.",cancel:"확인"});
+  if(bad.length)toast("빼고 보내요: "+bad.join(", "));
+  wbxConfirm(L,(S.cfg&&S.cfg.billDueText)||"");
+}
+function wbxConfirm(L,due){
+  CGG.bundle.confirm({list:L,due:due,onSend:function(test){wbxGo(test?[L[0]]:L,due,!!test);}});
+}
+/* 한 명 보내기 — 결과 {ok, why} */
+function wbxSend(x,due,test){
+  var useAta=(fmtOf("bill")==="ata"), b=x.b;
+  if(!(useAta?sendReady():canNotify()))return Promise.resolve({ok:false,why:"설정 → 알림에서 메시지 보내기를 먼저 준비해 주세요"});
+  var me=S.staff.filter(function(p){return p.id===(S.me&&S.me.id);})[0];
+  var to=test?(me&&me.phone):b.phone;
+  if(!to)return Promise.resolve({ok:false,why:test?"설정 → 직원 계정에서 본인 휴대폰을 넣어 주세요":"번호가 없어요"});
+  var rows=x.rows.slice().sort(function(p,q){return String(p.id).localeCompare(String(q.id));});
+  var codes=[];
+  /* 달마다 보기코드(오래된 달부터) — 마지막(가장 최근 달) 코드로 보내요 */
+  return rows.reduce(function(pr,r){return pr.then(function(){return billCode(r.bill).then(function(c){codes.push(c);});});},Promise.resolve())
+  .then(function(){
+    var code=codes[codes.length-1]||"";
+    if(!code)return {ok:false,why:"청구서 보기 주소를 만들지 못했어요"};
+    var last=rows[rows.length-1].bill;
+    var v=billVars(last,code);
+    v["기간"]=wbxRange(rows.map(function(r){return String(r.id);}));
+    v["금액"]=comma(rows.reduce(function(t,r){return t+r.left;},0));
+    v["건수"]=rows.reduce(function(t,r){return t+(r.bill.cars||0);},0);
+    v["입금기한"]=due||"확인 후 입금";   /* 확인 창(공통)과 같은 말 */
+    var text=CGG_ATATXT.fill(CGG_ATATXT.list.bill.sms,v);
+    var hq=(!useAta&&!HQATA.off)?{key:HQKEY.bill,vars:hqVars(onlyKeys(v,ATA_VARS.bill))}:null;
+    return queueSend({type:test?"밀린 달 청구 시험":"밀린 달 청구",to:to,text:text,kind:useAta?"ATA":"AUTO",forceAta:useAta,
+        ata:useAta?{key:"bill",vars:v}:null,hq:hq,ref:"bundle|"+(b.who||b.name)+"|"+rows.map(function(r){return r.id;}).join(",")})
+      .then(function(o){return sendNow(o);})
+      .then(function(o){
+        if(o.status!=="보냄"&&o.status!=="예약")return {ok:false,why:o.err||"보내지 못했어요"};
+        if(test)return {ok:true};
+        /* 묶은 달마다 «보냄» 표시 (billKey 가 B.month 를 봐서 달마다 잠깐 바꿔요) */
+        var keep={month:B.month,unit:B.unit};
+        return rows.reduce(function(pr,r){return pr.then(function(){B.month=String(r.id);B.unit="dealer";return markBilled(r.bill,true);});},Promise.resolve())
+          .then(function(){B.month=keep.month;B.unit=keep.unit;return {ok:true};},function(e){B.month=keep.month;B.unit=keep.unit;return {ok:true,why:"보냄 표시를 못 남겼어요"};});
+      });
+  });
+}
+function wbxGo(L,due,test){
+  CGG.bundle.run(L,function(x){return wbxSend(x,due,test);},function(out){
+    var ok=out.filter(function(r){return r.ok;}).length;
+    if(test){ if(ok)toast("내 번호로 시험 알림을 보냈어요. 휴대폰을 확인해 주세요."); else toast("시험 알림을 보내지 못했어요 — "+((out[0]&&out[0].why)||""),true); return; }
+    if(ok===out.length)toast(ok+"명에게 밀린 달 청구서를 보냈어요");
+    else CGG.dialog({size:"confirm",title:(out.length-ok)+"명에게 못 보냈어요",
+      body:CGG.list(out.filter(function(r){return !r.ok;}).map(function(r){return r.item.name+" — "+r.why;}))+(ok?'<p>'+ok+'명에게는 보냈어요.</p>':''),cancel:"확인"});
+    B.made=null;renderBill();
+  });
+}
+$("bBundle").onclick=function(){
+  var L=(B.made||[]).filter(function(b){return B.sel&&B.sel[b.name];});
+  if(L.length!==1)return CGG.dialog({size:"confirm",title:"딜러를 한 명만 골라 주세요",desc:"표 왼쪽 네모로 밀린 달을 모아 보낼 딜러 한 명을 골라 주세요. 여러 명이면 «미수 모아 보내기»를 눌러요.",cancel:"확인"});
+  wbxOne(L[0]);
+};
+$("bBundleAll").onclick=function(){
+  var L=(B.made||[]).filter(function(b){return B.sel&&B.sel[b.name];});
+  if(!L.length)L=(B.made||[]);
+  wbxMany(L);
+};
+$("bMake").onclick=function(){
+  B.unit=$("bUnit").value;""")
+
 # 1) 부품 넣기 — 거래처 부품 바로 뒤
 rep(CPT13, CPT13 + "\n" + ATA)
 
