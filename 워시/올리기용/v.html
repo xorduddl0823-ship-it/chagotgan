@@ -50,7 +50,7 @@ table{border-collapse:collapse;width:100%;min-width:420px;font-size:13.5px}
 th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{background:var(--bg);color:var(--muted);font-size:12.5px}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-table.upd{min-width:0;font-size:12.5px}table.upd th,table.upd td{padding:7px 6px}
+table.upd{min-width:0;font-size:12.5px}table.upd th,table.upd td{padding:7px 6px}table.upd a{color:var(--brand);font-weight:700;display:inline-block;padding:4px 0}
 .sum{display:flex;justify-content:space-between;align-items:baseline;font-weight:900;font-size:18px;padding-top:10px}
 .msg{text-align:center;padding:30px 16px}
 .msg b{display:block;font-size:17px;margin-bottom:6px}
@@ -240,7 +240,7 @@ table.upd{min-width:0;font-size:12.5px}table.upd th,table.upd td{padding:7px 6px
       var code=String(u.code||u.view||"");
       if(!/^[A-F0-9]{24}$/.test(code) && !/^k[a-z0-9]{18}$/.test(code)) code="";
       return {ym:u.month||u.ym, amt:amt, paid:paid, left:left, code:code};
-    }).filter(function(r){ return r.left>0; });
+    }).filter(function(r){ return r.left>0 && String(r.ym)!==String(curYm); });   /* 이번 달은 위 청구서에 있어요 — 두 번 더하지 않게 */
     if(!rows.length) return;
     rows.sort(function(a,b){ return String(a.ym).localeCompare(String(b.ym)); });
     var cur=Math.max(0,Number(curLeft)||0), sum=cur;
