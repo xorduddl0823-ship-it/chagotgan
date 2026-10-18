@@ -10678,10 +10678,15 @@ function taxGroups(){
   });
   return Object.keys(g).map(function(k){
     var G=g[k];
-    var v=splitVat(G.amount);G.sup=v.sup;G.vat=v.vat;
+    var tw=G.dealer?(S.dealers.filter(function(x){return x.name===G.dealer&&(!G.company||x.company===G.company);})[0]||S.dealers.filter(function(x){return x.name===G.dealer;})[0])
+                   :S.comps.filter(function(x){return x.name===G.company;})[0];
+    G.taxOn=taxIssues(tw);   /* v135 청구서와 같은 판단 — 안 끊는 곳은 청구서에 부가세가 없어 계산서를 낼 수 없어요 */
+    var v=splitVat(G.amount);
+    if(G.taxOn){var ba=billAmt(G.amount,true);v={sup:ba.supply,vat:ba.vat};}
+    G.sup=v.sup;G.vat=v.vat;
     G.itemList=Object.keys(G.items).map(function(x){return G.items[x];})
       .sort(function(a,b){return (b.price*b.qty)-(a.price*a.qty);});
-    G.issue=(G.issuer&&G.issuer.bizNo&&bizNoOk(G.issuer.bizNo));
+    G.issue=!!(G.taxOn&&G.issuer&&G.issuer.bizNo&&bizNoOk(G.issuer.bizNo));
     var pp=taxPayOf(G);G.paid=pp.paid;G.left=pp.left;G.unpaid=pp.left>0;   /* v135 입금 전이면 발급 안 함 */
     var d=S.dealers.filter(function(x){return x.name===G.dealer;})[0];
     G.taxType=(d&&d.taxType)||(G.issuer?"세금계산서 발행":"");
@@ -10793,10 +10798,11 @@ function renderTax(){
   if(testN)note.push("시험 발급 "+testN+"건");
   /* 막히는 이유를 셋으로 나눠 보여 줘요 (UI 1.0) */
   if(noBiz){
-    var rNone=0, rBad=0, rNoParty=0;
+    var rNone=0, rBad=0, rNoParty=0, rNoTax=0;
     gs.forEach(function(g){
       if(g.issue) return;
-      if(!g.issuer) rNoParty++;
+      if(!g.taxOn) rNoTax++;
+      else if(!g.issuer) rNoParty++;
       else if(!g.issuer.bizNo) rNone++;
       else rBad++;
     });
@@ -10804,6 +10810,7 @@ function renderTax(){
     if(rNone) why.push("사업자번호 없음 "+rNone+"건");
     if(rBad) why.push("번호가 틀림 "+rBad+"건");
     if(rNoParty) why.push("거래처 미등록 "+rNoParty+"건");
+    if(rNoTax) why.push("거래처에 «계산서 끊음»이 아님 "+rNoTax+"건 — 청구서에 부가세가 없어요");
     note.push('<b style="color:var(--danger)">세금계산서가 안 나가는 곳 '+noBiz+"건</b>"+
       (why.length?(" ("+why.join(" · ")+")"):""));
   }
@@ -10815,6 +10822,7 @@ function renderTax(){
     {k:"dealer",label:"딜러",html:function(g){return esc(g.dealer||"(상사 묶음)");}},
     {k:"bizNo",label:"사업자등록번호",val:function(g){return g.issuer?g.issuer.bizNo:"";},
       html:function(g){
+        if(!g.taxOn)return '<span style="color:var(--warn)">계산서 안 끊는 곳 — 거래처에서 «계산서 끊음»으로</span>';
         if(!g.issuer||!g.issuer.bizNo)return '<span style="color:var(--danger)">번호 없음 — 거래처에 넣어 주세요</span>';
         return esc(fmtBizNo(g.issuer.bizNo))+(bizNoOk(g.issuer.bizNo)?"":' <span style="color:var(--danger)">틀림</span>');}},
     {k:"from",label:"구분",val:function(g){return g.issuer?g.issuer.from:"";},
@@ -12593,12 +12601,15 @@ function pbIssueSelected(all){
   var done=gs.filter(function(g){var d=taxDoc(g);return d&&d.status==="발급"&&!d.test;});
   var bad=gs.filter(function(g){return !g.issue;});
   var go=gs.filter(function(g){return g.issue&&done.indexOf(g)<0;});
+  var noBill=go.filter(function(g){return !taxBillFor(g);}); go=go.filter(function(g){return noBill.indexOf(g)<0;});   /* v135 청구서 한 장 = 계산서 한 장 */
+  if(!go.length&&noBill.length)return toast("맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요",true);
   if(!go.length)return toast("발급할 수 있는 건이 없어요 (이미 발급됐거나 사업자번호 없음)",true);
   var warn=go.filter(function(g){return pbProblems(g).length;});
   ask((c.test?"[시험 모드] 진짜 발급은 되지 않아요.\n\n":"국세청으로 실제 발급해요. 되돌리려면 수정·취소 세금계산서를 따로 끊어야 해요.\n\n")+
       "받는 곳 · "+wWho(go.map(function(g){return g.issuerName;}))+"\n"+go.length+"건 · 합계 "+wonExact(go.reduce(function(s,g){return s+g.amount;},0))+
       (done.length?("\n이미 발급된 "+done.length+"건은 빼요."):"")+
       (bad.length?("\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+
+      (noBill.length?("\n맞는 청구서가 없는 "+noBill.length+"건은 빼요(상사별 묶기)."):"")+
       (warn.length?("\n\n확인 필요 "+warn.length+"건: "+warn.map(function(g){return g.issuerName+"("+pbProblems(g).join(", ")+")";}).join(" / ")):""),
     function(){ pbRun(go,c,sup,false); },c.test?"시험 발급":"실제 발급",!c.test);
 }

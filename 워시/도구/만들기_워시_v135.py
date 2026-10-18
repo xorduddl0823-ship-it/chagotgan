@@ -9,6 +9,7 @@
   5) «청구 / 영수» 고르는 칸 없앰(입금 완료만 발급하니 늘 영수)
   7) 부가세 셈 = 단가표 설정(청구서와 같음). «적은 금액은 부가세 별도» 칸 없앰
   8) 매출 화면: 이번 달 작은 항목 · 맨 위 해 칸 · 큰 숫자 이름 글씨 키움(모양 그대로)
+  9) 계산서 끊는 곳 · 부가세 판단 = 청구서와 같음(안 끊는 곳은 «계산서 끊음»으로 바꾸라고 안내) · 상사별 묶기면 팝빌 전에 뺌
   6) 할 일 띠 · 홈 «세금계산서 안 보낸 것»도 입금 완료만 셈
   워시는 «정산 기록» 큰 메뉴가 없어서 «달마다 장부»로 옮길 것은 없어요.
 운영 v111 · 시험판 v125 · v126 ~ v134 는 덮어쓰지 않는다.
@@ -104,6 +105,30 @@ rep('''    '<label class="chip"><input type="checkbox" id="tVat" style="width:18
 '''    '<span class="hint">부가세: 단가표 설정('+(vatMode()==="in"?"포함":"별도")+')대로 · 청구서와 같은 금액</span>'+''')
 rep('''  $("tVat").onchange=function(){S.cfg=Object.assign({},S.cfg);S.cfg.vatExcluded=this.checked;saveCfg();renderTax();};
 ''', '')
+# 3-3) 계산서 끊는 곳인지 · 부가세 = 청구서(buildBills · billAmt)와 같은 판단 — 딜러(같은 상사 먼저) → 상사별 묶음이면 상사
+rep('''    var v=splitVat(G.amount);G.sup=v.sup;G.vat=v.vat;''', '''    var tw=G.dealer?(S.dealers.filter(function(x){return x.name===G.dealer&&(!G.company||x.company===G.company);})[0]||S.dealers.filter(function(x){return x.name===G.dealer;})[0])
+                   :S.comps.filter(function(x){return x.name===G.company;})[0];
+    G.taxOn=taxIssues(tw);   /* v135 청구서와 같은 판단 — 안 끊는 곳은 청구서에 부가세가 없어 계산서를 낼 수 없어요 */
+    var v=splitVat(G.amount);
+    if(G.taxOn){var ba=billAmt(G.amount,true);v={sup:ba.supply,vat:ba.vat};}
+    G.sup=v.sup;G.vat=v.vat;''')
+rep('''    G.issue=(G.issuer&&G.issuer.bizNo&&bizNoOk(G.issuer.bizNo));
+''', '''    G.issue=!!(G.taxOn&&G.issuer&&G.issuer.bizNo&&bizNoOk(G.issuer.bizNo));
+''')
+rep('''      if(!g.issuer) rNoParty++;''', '''      if(!g.taxOn) rNoTax++;
+      else if(!g.issuer) rNoParty++;''')
+rep('''    if(rNoParty) why.push("거래처 미등록 "+rNoParty+"건");''', '''    if(rNoParty) why.push("거래처 미등록 "+rNoParty+"건");
+    if(rNoTax) why.push("거래처에 «계산서 끊음»이 아님 "+rNoTax+"건 — 청구서에 부가세가 없어요");''')
+rep('''    var rNone=0, rBad=0, rNoParty=0;''', '''    var rNone=0, rBad=0, rNoParty=0, rNoTax=0;''')
+rep('''        if(!g.issuer||!g.issuer.bizNo)return '<span style="color:var(--danger)">번호 없음 — 거래처에 넣어 주세요</span>';''',
+'''        if(!g.taxOn)return '<span style="color:var(--warn)">계산서 안 끊는 곳 — 거래처에서 «계산서 끊음»으로</span>';
+        if(!g.issuer||!g.issuer.bizNo)return '<span style="color:var(--danger)">번호 없음 — 거래처에 넣어 주세요</span>';''')
+# 3-4) 팝빌 — 맞는 청구서가 없는 묶음(상사별 묶기)은 확인 창 전에 빼고 알려요
+rep('''  var go=gs.filter(function(g){return g.issue&&done.indexOf(g)<0;});''', '''  var go=gs.filter(function(g){return g.issue&&done.indexOf(g)<0;});
+  var noBill=go.filter(function(g){return !taxBillFor(g);}); go=go.filter(function(g){return noBill.indexOf(g)<0;});   /* v135 청구서 한 장 = 계산서 한 장 */
+  if(!go.length&&noBill.length)return toast("맞는 청구서가 없어요 — «상사별로 한 장에 묶기»를 끄고 발급하거나 홈택스 양식을 써 주세요",true);''')
+rep('''      (bad.length?("\\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+''', '''      (bad.length?("\\n사업자번호가 없는 "+bad.length+"건은 빼요."):"")+
+      (noBill.length?("\\n맞는 청구서가 없는 "+noBill.length+"건은 빼요(상사별 묶기)."):"")+''')
 # 4-1) 할 일 띠 · 홈 «세금계산서 안 보낸 것» — 입금 완료만 셈
 rep('''  if(tab==="tax"){var n=0;try{n=taxGroups().filter(function(g){var d=taxDoc(g);return g.issue&&!(d&&d.status==="발급");}).length;}catch(e){}
     return {count:n,text:"아직 발급 안 한 세금계산서 "+n+"건",''', '''  if(tab==="tax"){var n=0,u=0;try{taxGroups().forEach(function(g){var d=taxDoc(g);if(!g.issue||(d&&d.status==="발급"))return;if(g.unpaid)u++;else n++;});}catch(e){}
