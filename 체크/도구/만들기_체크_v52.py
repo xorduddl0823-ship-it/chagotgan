@@ -39,7 +39,7 @@ rep('TXFIL==="bad"  ? (!t.can && !t.skip)', 'TXFIL==="bad"  ? (!t.can && !t.skip
 rep('busy(false); clearPick("bill"); bar(won((r&&r.n)||L.length)+"곳 청구서를 지웠어요.","ok"); refresh(["bill"]);',
     'busy(false); clearPick("bill"); var kp=(r&&r.kept)||[]; bar(won((r&&r.n)||0)+"곳 청구서를 지웠어요."+(kp.length?" 못 지운 "+kp.length+"곳 — "+kp.slice(0,2).map(function(x){ return (x.name||"")+"("+(x.why||"")+")"; }).join(" / "):""), kp.length?"err":"ok"); refresh(["bill"]);')
 rep("""<script>
-/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", open(BASE + "체크/도구/v52_세금계산서.js", encoding="utf-8").read() + open(BASE + "체크/도구/v52_나스맞춤.js", encoding="utf-8").read() + """
+/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", "<script>\n/* 홈택스 전자세금계산서 일괄발급 공식 양식(일반) — 대표님이 주신 운영/자료/홈택스_전자세금계산서_일괄발급_양식_일반.xls 의 기본 암호(VelvetSweatshop)만 푼 것 = 체크/부품/홈택스_일괄발급_양식_일반_1.0.xls */\nwindow.HTX_TPL_B64=\"" + __import__("base64").b64encode(open(BASE + "체크/부품/홈택스_일괄발급_양식_일반_1.0.xls","rb").read()).decode() + "\";\n</script>\n" + open(BASE + "체크/도구/v52_세금계산서.js", encoding="utf-8").read() + open(BASE + "체크/도구/v52_나스맞춤.js", encoding="utf-8").read() + """
 <script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */""")
 

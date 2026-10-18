@@ -2,7 +2,7 @@
 /* ═══ v52 — 세금계산서 «입금한 곳만 발급» (대표님 «매우매우 중요» 10/18)
    · 받을 금액이 남은 청구서는 발급 대상 · 전체 선택 · 팝빌 발급 · 홈택스 양식에서 빠지고 «입금 전 — 발급 안 함»(회색 · 체크 안 됨)
    · 예외: 줄마다 «입금 전에 발급» → 가운데 확인 창(누구에게 · 얼마 · 아직 입금 안 됨) → 그 한 장만 발급 (서버 v46 taxIssue opt.unpaidOk)
-   · 홈택스 일괄발급: 우리 마음대로 만든 엑셀 대신, 대표님이 홈택스에서 받은 «공식 양식 파일»을 골라 그 칸 이름대로 채워 내려받기
+   · 홈택스 일괄발급: 대표님이 주신 홈택스 공식 양식(일반 · 운영/자료)을 화면 안에 넣어 두고 그 칸 이름대로 채워 .xls 로 내려받기 (100건씩 · 길이 제한 · 영수 01)
    받은 금액은 서버 taxList 의 paid · left(v46~), 없으면 같은 달 청구서(BILLS)의 받은 금액으로 셈 ═══ */
 (function(){
 function endOf(ym){ var y=Number(String(ym).slice(0,4)), m=Number(String(ym).slice(5,7)); if(!y||!m) return ""; return new Date(Date.UTC(y,m,0)).toISOString().slice(0,10); }
@@ -60,7 +60,7 @@ function readHead(ws){
   for(var r2=0;r2<=maxR;r2++){ var j=nz(grid[r2].join("|")); if(j.indexOf("작성일자")>=0 && (j.indexOf("공급받는자")>=0||j.indexOf("등록번호")>=0)){ hr=r2; break; } }
   if(hr<0) return null;
   /* 칸 이름 = 위 두 줄(묶음 이름) + 그 줄 */
-  var labels=grid[hr].map(function(x,c){ var up=[hr-2,hr-1].filter(function(q){ return q>=0; }).map(function(q){ return grid[q][c]; }).join("");
+  var labels=grid[hr].map(function(x,c){ var up=[hr-2,hr-1].filter(function(q){ return q>=0; }).map(function(q){ return grid[q][c]; }).filter(function(v){ return String(v).length<=20; }).join("");   /* 긴 위 줄은 안내 글이라 빼요 */
     return nz(up)+"|"+nz(String(x).replace(/\([^)]*\)/g,"")); });   /* 괄호 안 설명(예: «(2자리, 작성년월 제외)»)은 빼고 읽어요 */
   return {hr:hr, labels:labels, maxC:R.e.c, R:R};
 }
@@ -100,51 +100,47 @@ function valOf(f, t, d){
     "item:일자":ymd.slice(6,8), "item:품목":"자동차 성능점검 수수료", "item:규격":"", "item:수량":"", "item:단가":"", "item:공급가액":t.supply, "item:세액":t.tax, "item:비고":""};
   return V.hasOwnProperty(f)?V[f]:"";
 }
-function fill(file){
-  var rd=new FileReader();
-  rd.onload=function(){
-    try{
-      var wb=XLSX.read(new Uint8Array(rd.result),{type:"array",cellStyles:true}), sh=null, H=null;
-      for(var i=0;i<wb.SheetNames.length&&!H;i++){ var w=wb.Sheets[wb.SheetNames[i]]; var h=readHead(w); if(h){ sh=w; H=h; } }
-      if(!H){ tell("홈택스 양식이 아닌 것 같아요","«작성일자» · «공급받는자 등록번호» 칸을 찾지 못했어요. 홈택스 › 전자(세금)계산서 › 일괄발급에서 받은 양식 파일을 그대로 골라 주세요."); return; }
-      var F=H.labels.map(fieldOf), need=["date","s:biz","b:biz","supply","tax"], miss=need.filter(function(k){ return F.indexOf(k)<0; });
-      if(miss.length){ tell("양식에서 칸을 다 찾지 못했어요","못 찾은 칸: "+esc(miss.join(", "))+". 홈택스에서 받은 양식을 고치지 않고 그대로 골라 주세요."); return; }
-      var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); });
-      var ids=picked("htx"), pick=ids.length?able.filter(function(t){ return ids.indexOf(t.id)>=0; }):able;
-      if(!pick.length){ tell("넣을 곳이 없어요","입금 완료 · 아직 발급 안 한 곳이 없어요."); return; }
-      /* 제목 줄 아래 첫 빈 줄부터 (예시 줄이 있으면 그 아래) */
-      var used=F.map(function(f,c){ return f?c:-1; }).filter(function(c){ return c>=0; }), r=H.hr+1;
-      function empty(row){ return used.every(function(c){ var x=sh[XLSX.utils.encode_cell({r:row,c:c})]; return !x||x.v===""||x.v==null; }); }
-      while(r<=H.R.e.r && !empty(r)) r++;
-      pick.forEach(function(t){ var d=wd(t);
-        F.forEach(function(f,c){ if(!f) return; var v=valOf(f,t,d), ad=XLSX.utils.encode_cell({r:r,c:c});
-          sh[ad]=(typeof v==="number")?{t:"n",v:v}:{t:"s",v:String(v)}; });
-        r++; });
-      var rg=XLSX.utils.decode_range(sh["!ref"]); if(r-1>rg.e.r){ rg.e.r=r-1; sh["!ref"]=XLSX.utils.encode_range(rg); }
-      var ext=/\.xls$/i.test(file.name)?"xls":"xlsx";
-      XLSX.writeFile(wb, "홈택스_일괄발급_"+ST.ym+"_"+pick.length+"건."+ext, {bookType:ext==="xls"?"biff8":"xlsx"});
-      bar("홈택스 양식에 "+pick.length+"건(입금 완료)을 채웠어요. 홈택스 › 일괄발급 › 파일 불러오기로 올려 주세요.","ok");
-    }catch(e){ tell("양식을 읽지 못했어요","파일이 열려 있으면 닫고 다시 골라 주세요. ("+esc(String(e&&e.message||""))+")"); }
-  };
-  rd.readAsArrayBuffer(file);
+/* 항목설명 시트의 길이 제한(바이트 · 한글 2) — 넘치면 잘라서 알려 드려요 */
+var LIM={"s:name":70,"s:ceo":30,"s:addr":150,"s:upte":40,"s:jong":60,"s:mail":40,"b:name":70,"b:ceo":30,"b:addr":150,"b:upte":40,"b:jong":60,"b:mail":40,"b:mail2":40,memo:150,"item:품목":100,"item:규격":60,"item:비고":100};
+function bytes(v){ var n=0; String(v).split("").forEach(function(ch){ n+=ch.charCodeAt(0)>127?2:1; }); return n; }
+function cut(v,max){ var o="", n=0; String(v).split("").some(function(ch){ var w=ch.charCodeAt(0)>127?2:1; if(n+w>max) return true; n+=w; o+=ch; return false; }); return o; }
+/* 화면 안에 넣어 둔 홈택스 공식 양식(일반 · 운영/자료 · 암호 풀어 둔 것) — 시트 4장 · 6줄 칸 이름 · 59칸 · 7줄부터 · 100건까지 */
+function makeFile(pick, part, parts, warn){
+  var wb=XLSX.read(window.HTX_TPL_B64,{type:"base64"}), sh=wb.Sheets["엑셀업로드양식"], H=sh&&readHead(sh);
+  if(!H) throw new Error("양식 칸을 찾지 못했어요");
+  var F=H.labels.map(fieldOf), need=["kind","date","s:biz","b:biz","supply","tax","item:일자","item:품목","pay"], miss=need.filter(function(k){ return F.indexOf(k)<0; });
+  if(miss.length) throw new Error("양식 칸 "+miss.join(", "));
+  var r=H.hr+1;
+  pick.forEach(function(t){ var d=wd(t);
+    F.forEach(function(f,c){ if(!f) return; var v=valOf(f,t,d);
+      if(LIM[f] && bytes(v)>LIM[f]){ warn.push((t.name||"")+" · "+f.replace(/^[sb]:/,"").replace("item:","")+" "+LIM[f]+"바이트로 줄임"); v=cut(v,LIM[f]); }
+      if(v===""||v==null) return;
+      sh[XLSX.utils.encode_cell({r:r,c:c})]=(typeof v==="number")?{t:"n",v:v}:{t:"s",v:String(v)}; });
+    r++; });
+  var rg=XLSX.utils.decode_range(sh["!ref"]); if(r-1>rg.e.r){ rg.e.r=r-1; sh["!ref"]=XLSX.utils.encode_range(rg); }
+  XLSX.writeFile(wb, "홈택스_일괄발급_"+ST.ym+(parts>1?"_"+part+"of"+parts:"")+"_"+pick.length+"건.xls", {bookType:"biff8"});
 }
 function hometaxGo(){
   if(typeof XLSX==="undefined"){ bar("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.","err"); return; }
   var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); });
-  if(!able.length){ tell("넣을 곳이 없어요","입금 완료 · 아직 발급 안 한 곳이 없어요. 입금 전인 곳은 줄마다 «입금 전에 발급»으로 따로 해요."); return; }
-  CGG.dialog({size:"form", title:"홈택스 일괄발급 양식 채우기",
-    desc:"홈택스에서 받은 공식 양식 파일을 고르면 입금 완료된 곳만 그 칸대로 채워 드려요.",
-    body:'<ol style="margin:0 0 12px;padding-left:18px;line-height:1.8;font-size:13.5px"><li>홈택스 › 전자(세금)계산서 › <b>일괄발급</b>에서 엑셀 양식을 한 번 받아 둬요.</li><li>아래 단추로 그 파일을 골라요(고치지 않은 그대로).</li><li>채워진 파일을 홈택스 일괄발급 화면에 올려요.</li></ol>'+
-      '<button type="button" class="cgg-btn pri" id="htxPick">양식 파일 고르기</button> <span class="note">'+able.length+'곳 · 고른 줄이 있으면 고른 곳만</span>',
-    cancel:"닫기"});
-  var b=document.getElementById("htxPick");
-  if(b) b.onclick=function(){ var i=document.createElement("input"); i.type="file"; i.accept=".xls,.xlsx"; i.hidden=true; document.body.appendChild(i);
-    i.onchange=function(){ var f=i.files&&i.files[0]; i.remove(); if(f){ CGG.closeDialog(); fill(f); } }; i.click(); };
+  var ids=picked("htx"), pick=ids.length?able.filter(function(t){ return ids.indexOf(t.id)>=0; }):able;
+  if(!pick.length){ tell("넣을 곳이 없어요","입금 완료 · 아직 발급 안 한 곳이 없어요. 입금 전인 곳은 줄마다 «입금 전에 발급»으로 따로 해요."); return; }
+  var noBiz=pick.filter(function(t){ return digits(t.biz).length!==10; }).length;
+  if(!digits((OFFICE||{}).popbill_corp||(OFFICE||{}).biz_no)){ tell("우리 사업장 사업자번호가 비어 있어요","설정 › 거래처 › 우리 사업장에서 사업자등록번호를 먼저 넣어 주세요."); return; }
+  var parts=Math.ceil(pick.length/100), tot=pick.reduce(function(a,t){ return a+(Number(t.total)||0); },0);
+  ask({title:"홈택스 일괄발급 양식을 내려받을까요?\n"+ymText(ST.ym)+"분 · 입금 완료만 · 영수(01)",
+       k1:"몇 건", v1:pick.length+"건"+(parts>1?" (100건씩 파일 "+parts+"개)":""), k2:"얼마", v2:won(tot)+"원 (부가세 포함)",
+       warn:"홈택스 공식 양식(일반) 그대로예요. 홈택스 › 전자(세금)계산서 › 일괄발급에서 이 파일을 올려요(발급은 한 번에 50건씩)."+(noBiz?" 사업자번호가 10자리가 아닌 곳 "+noBiz+"곳이 있어요.":""), yes:"내려받기"}, function(){
+    var warn=[];
+    try{ for(var i=0;i<parts;i++) makeFile(pick.slice(i*100,(i+1)*100), i+1, parts, warn); }
+    catch(e){ tell("양식을 만들지 못했어요","차곳간에 알려 주세요. ("+esc(String(e&&e.message||""))+")"); return; }
+    bar("홈택스 양식 "+parts+"개("+pick.length+"건)를 내려받았어요."+(warn.length?" 길이가 넘쳐 줄인 칸 "+warn.length+"개 — "+warn.slice(0,2).join(" / "):""), warn.length?"info":"ok");
+  });
 }
 var _a=AFTER.hometax;
 AFTER.hometax=function(){
   if(_a) _a.apply(this,arguments);
-  var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 양식 채우기"; xl.onclick=hometaxGo; }
+  var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 양식 내려받기"; xl.onclick=hometaxGo; }
   document.querySelectorAll("[data-txearly]").forEach(function(b){ b.onclick=function(){ early(b.getAttribute("data-txearly")); }; });
   /* 입금 전 줄은 체크 안 됨 */
   TAXES.forEach(function(t){ if(!t.unpaid) return;
