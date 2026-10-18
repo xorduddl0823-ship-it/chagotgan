@@ -23,7 +23,10 @@ rep("window.perSet=function(id,k){ var r=rangeOf(k); PER[id]={k:k, f:r[0], t:r[1
     "window.perSet=function(id,k){ var r=rangeOf(k); PER[id]=window.chkPer[id]={k:k, f:r[0], t:r[1]};")
 rep('PER[id]={k:"", f:f, t:t}; var x=ts(id); if(x) x.page=1; draw();',
     'PER[id]=window.chkPer[id]={k:"", f:f, t:t}; var x=ts(id); if(x) x.page=1; refresh([id==="dep"?"dep":"deliv"]);   /* v55.1: 고른 기간까지 다시 받아 와요 */')
-rep('perSet(v[0],v[1]); draw();', 'perSet(v[0],v[1]); refresh([v[0]==="dep"?"dep":"deliv"]);   /* v55.1 */')
+# 검사 일꾼: 120일보다 앞을 고르면 말없이 빠졌어요 → 시작 날짜를 120일 안으로 맞추고 한 줄 알려요
+rep('if(f&&t&&f>t){ var z=f; f=t; t=z; } PER[id]=window.chkPer[id]={k:"", f:f, t:t};',
+    'if(f&&t&&f>t){ var z=f; f=t; t=z; } var lim=ymd(new Date(kst().getTime()-119*864e5)); if(f && f<lim){ f=lim; try{ CGG.toast("최근 120일까지만 볼 수 있어요 — 시작 날짜를 "+lim+"로 맞췄어요"); }catch(e){} }   /* v55.1 */\n    PER[id]=window.chkPer[id]={k:"", f:f, t:t};')
+rep('perSet(v[0],v[1]); draw();','perSet(v[0],v[1]); refresh([v[0]==="dep"?"dep":"deliv"]);   /* v55.1 */')
 
 # ① 배달: 고른 기간까지
 rep("""function delivRange(){
@@ -32,13 +35,17 @@ rep("""function delivRange(){
 }""", """function delivRange(){   /* v55.1: 기간 칸에서 고른 기간까지 받아 와요(최소 최근 30일) */
   var to=new Date(), from=new Date(Date.now()-30*86400000), P=(window.chkPer||{}).drv||{};
   var a=ymd(from), b=ymd(to);
-  if(P.f && P.f<a) a=P.f;
+  var lim=ymd(new Date(Date.now()-119*86400000));   /* 서버는 3000줄까지만 줘요 → 최대 120일 */
+  if(P.f && P.f<a) a=P.f<lim?lim:P.f;
   if(P.t && P.t>b) b=P.t;
   return [a, b];
 }""")
 # ② 입금: 고른 기간까지(최소 62일 · 서버 한도 120일)
 rep('return call("depositList",[{days:62}]).then(function(list){',
     'return call("depositList",[{days:(function(){ var P=(window.chkPer||{}).dep||{}, d=P.f?Math.ceil((Date.now()-Date.parse(P.f+"T00:00:00+09:00"))/864e5)+1:0; return Math.min(120,Math.max(62,d||0)); })()}]).then(function(list){   /* v55.1 */')
+
+# 검사 일꾼 참고: 옛 자리 이름
+rep('<small>매출 → 자료 올리기</small>', '<small>설정 › 자료 올리기</small>')
 
 open(BASE + "체크/2_차곳간_체크_index_v55.1.html", "w", encoding="utf-8").write(s)
 print("만듦: 체크/2_차곳간_체크_index_v55.1.html", len(s))
