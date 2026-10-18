@@ -5,6 +5,8 @@
   안: index.html(v55.1 — 배달 · 입금 기간만큼 받아 오기) · driver/index.html(v28) · r/index.html · d/index.html · v/index.html · _headers · _redirects
   zip 맨 위에 바로 index.html · 시각 1980-01-01 고정 · 차례 고정(같은 파일이면 지문이 늘 같아요)
   BASE 는 이 파일 자리 기준(보안 방 의견)
+  10/18 밤 총괄: Workers 대시보드는 _redirects 가 든 묶음을 Deploy 못 해요(세 번 실패) → _redirects 빼요.
+  링크는 /r/?c=열쇠 · /d/?c= · /v/?c= 모양(서버 v49.2) — 폴더 index.html 이 바로 열려요.
 """
 import hashlib, os, zipfile
 BASE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")) + "/"
@@ -27,7 +29,6 @@ headers = open(ADD + "_headers", encoding="utf-8").read().rstrip("\n") + """
 FILES = [
     ("index.html", open(BASE + "체크/2_차곳간_체크_index_v55.1.html", "rb").read()),
     ("_headers", headers.encode("utf-8")),
-    ("_redirects", redirects.encode("utf-8")),
     ("d/index.html", open(NEW + "d/index.html", "rb").read()),
     ("driver/index.html", open(BASE + "체크/driver/index_v28.html", "rb").read()),
     ("r/index.html", open(ADD + "r/index.html", "rb").read()),
