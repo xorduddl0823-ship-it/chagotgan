@@ -142,7 +142,7 @@ AFTER.home=function(){
       ], late, {pick:true, tools:'<button class="btn">엑셀 다운로드</button>'}))+
     card("성능보증보험료","매매상사 앞으로 청구하는 몫이라 따로 봐요.",
       '<div class="tools"><button type="button" class="btn" data-v56go="unpaid">보험료 맞춰 보기</button></div>');
-  Array.prototype.forEach.call(box.querySelectorAll(".card"),function(c){ c.classList.add("chk-own"); });
+  Array.prototype.forEach.call(box.querySelectorAll(".card"),function(c,i){ if(i>0) c.classList.add("chk-own"); });   /* v56.1: «어디까지 왔나»는 공통 기능(워시 v138) — 체크 전용 표시 없음 */
   var hp=el.querySelector(".cgg-help"); while(box.firstChild) el.insertBefore(box.firstChild, hp||null);
   wireTable("fo",function(){ draw(); });
   Array.prototype.forEach.call(el.querySelectorAll("[data-v56go]"),function(b){ b.onclick=function(){ go(b.getAttribute("data-v56go")); }; });
@@ -313,6 +313,22 @@ PAGE.backup=function(){
   Array.prototype.forEach.call(tmp.querySelectorAll(".card"),function(c){ var h=c.querySelector("h3"); if(h&&/다음에 붙일 기능/.test(h.textContent)) c.remove(); });
   var p=tmp.querySelector(".cgg-head p"); if(p) p.textContent="자료는 서버에 있어 PC · 폰 어디서 열어도 같아요. 화면 배치 · 글씨는 이름 단추 › 화면 설정에서 바꿔요.";
   return tmp.innerHTML;
+};
+
+/* ⑫ 설정 › 알림 — 워시 v137 차례: 메시지 발송 연동(보내는 번호) → 카카오 알림톡(문구 보기) → PC 알림창 · 소리 (보낸 기록은 서버 창구가 생기면) */
+var _pa3=PAGE.alarm;
+PAGE.alarm=function(){
+  var tmp=document.createElement("div"); tmp.innerHTML=_pa3.apply(this,arguments);
+  var head=tmp.querySelector(".cgg-head"), cards=[].slice.call(tmp.querySelectorAll(":scope > .card")), help=tmp.querySelector(":scope > .cgg-help");
+  function find(re){ return cards.filter(function(c){ var h=c.querySelector("h3"); return h&&re.test(h.textContent); }); }
+  var send=find(/발신번호|보내는 번호/), ata=find(/알림톡 문구/), snd=cards.filter(function(c){ return send.indexOf(c)<0&&ata.indexOf(c)<0; });
+  send.forEach(function(c){ var h=c.querySelector("h3"); if(h) h.textContent="메시지 발송 연동 — 보내는 번호(발신번호)"; });
+  ata.forEach(function(c){ var h=c.querySelector("h3"); if(h) h.textContent="카카오 알림톡"; });
+  snd.forEach(function(c){ var h=c.querySelector("h3"); if(h&&/^전체 소리/.test(h.textContent)) h.textContent="PC 알림창 · 소리"; });
+  var out=document.createElement("div"); if(head) out.appendChild(head);
+  send.concat(ata, snd).forEach(function(c){ out.appendChild(c); }); if(help) out.appendChild(help);
+  [].slice.call(tmp.childNodes).forEach(function(n){ if(n.nodeType===1&&!out.contains(n)) out.appendChild(n); });   /* 남은 것은 뒤에 그대로 */
+  return out.innerHTML;
 };
 })();
 </script>
