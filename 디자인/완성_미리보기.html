@@ -1,12 +1,13 @@
 <meta charset="utf-8">
 <title>통합 완성 화면 미리보기</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
 html,body{margin:0;background:var(--bg)}
 body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;color:var(--text);word-break:keep-all}
 </style>
-<link rel="stylesheet" href="공통/cgg-j4-1.12.css">
+<link rel="stylesheet" href="공통/cgg-j4-1.13.css">
 <style>
 /* 미리보기 고르기 줄(실제 화면에는 없어요): 워시 / 체크 · 가로 / 세로 */
 .pv{background:#FFF7E6;color:#5B3A00;font-size:13px;border-bottom:1px solid #F3DDB0}
@@ -29,7 +30,7 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .bx h3 small{font-size:12px;font-weight:700;color:var(--muted);margin-left:6px}
 .bx p.d{margin:0 0 12px;color:var(--muted);font-size:13.5px}
 .bx.own{border:1.5px dashed var(--ln2)}
-.bx.own h3::after{content:"제품 전용";font-size:11px;font-weight:800;margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--tabon);color:var(--blue);vertical-align:2px}
+.bx.own h3::after{content:none;display:none;font-size:11px;font-weight:800;margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--tabon);color:var(--blue);vertical-align:2px}
 .fm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
 .fm label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
 .fm input,.fm select{height:var(--ctl);box-sizing:border-box;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:0 12px;font:inherit;font-size:14px;background:var(--surface);color:var(--text);min-width:0}
@@ -39,6 +40,10 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .rng{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px;font-weight:700;color:var(--muted)}
 .rng input{height:var(--ctl);box-sizing:border-box;min-width:150px;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:0 10px;font:inherit;font-weight:600;background:var(--surface);color:var(--text)}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sec-gap)}
+.two.two21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.qr{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.qr svg{width:180px;height:180px;background:#fff;border-radius:12px;padding:10px;box-shadow:0 0 0 1px var(--line)}
+.qr p{margin:0;color:var(--muted);font-size:13.5px}
 .msgpv{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:13.5px;white-space:pre-line}
 .mcard .mh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .mcard h3 small,.mcard h4 small{font-size:12px;font-weight:700;color:var(--muted);margin-left:6px}
@@ -60,11 +65,11 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .lay{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .lay button{border:1.5px solid var(--ln2);border-radius:12px;background:var(--surface);padding:12px;font:inherit;font-weight:700;cursor:pointer;color:var(--text)}
 .lay button[aria-pressed="true"]{border-color:var(--blue);background:var(--tabon);color:var(--blue)}
-@media (max-width:760px){ .fm,.fm.four,.two,.big3{grid-template-columns:1fr} .small6{grid-template-columns:repeat(2,minmax(0,1fr))} .big3>div+div{border-left:0} .small6>div:nth-child(odd){border-left:0} .big3 b{font-size:26px} .lay{grid-template-columns:1fr} }
+@media (max-width:760px){ .bx{padding:14px 14px;margin-bottom:12px} .fm,.fm.four,.two,.two.two21,.big3{grid-template-columns:1fr} .small6{grid-template-columns:repeat(2,minmax(0,1fr))} .big3>div+div{border-left:0} .small6>div:nth-child(odd){border-left:0} .big3 b{font-size:26px} .lay{grid-template-columns:1fr} }
 </style>
 
 <div class="pv" role="region" aria-label="미리보기 고르기"><div class="in">
-  <b>미리보기</b><span>추천안(대조표 74줄)대로 만든 완성 화면이에요. 지어낸 자료예요.</span>
+  <b>미리보기</b><span>추천안(대조표 74줄)대로 만든 완성 화면이에요. 지어낸 자료예요. 점선 상자는 제품마다 다른 칸이에요.</span>
   <span class="seg" aria-label="제품"><a id="pW" href="#wash">워시</a><a id="pC" href="#check">체크</a></span>
   <span class="seg" aria-label="메뉴 모양"><a id="lT" href="#wash">가로(위)</a><a id="lS" href="#wash-side">세로(왼쪽)</a></span>
 </div></div>
@@ -73,7 +78,7 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
   <main class="cgg-main" id="main"></main>
   <nav class="cgg-tbar" id="tbar"></nav>
 </div>
-<script src="공통/cgg-j4-1.12.js"></script>
+<script src="공통/cgg-j4-1.13.js"></script>
 <script src="메뉴지도/워시_메뉴.js"></script>
 <script src="메뉴지도/체크_메뉴.js"></script>
 <script>
@@ -109,7 +114,8 @@ function tools(h){ return '<div class="cgg-tools">'+h+'</div>'; }
 function btn(t,pri,id){ return '<button type="button" class="cgg-btn'+(pri?' pri':'')+'"'+(id?' id="'+id+'"':'')+'>'+E(t)+'</button>'; }
 function chip(t,on){ return '<button type="button" class="cgg-fp'+(on?' on':'')+'">'+E(t)+'</button>'; }
 function periods(){ return chip("오늘")+chip("어제")+chip("최근 7일")+chip("이번 달",true)+chip("지난 달"); }
-function fm(fields){ return '<div class="fm">'+fields.map(function(f,i){ return '<label for="f'+cur.replace(/\W/g,"")+i+'">'+E(f[0])+'<input id="f'+cur.replace(/\W/g,"")+i+'"'+(f[2]?' type="'+f[2]+'" autocomplete="off"':'')+' value="'+E(f[1])+'"></label>'; }).join("")+'</div>'; }
+var FMN=0;   /* 칸 번호 — 화면을 그릴 때마다 0부터. 한 화면에 입력 묶음이 여럿이어도 id 가 겹치지 않아요 */
+function fm(fields){ return '<div class="fm">'+fields.map(function(f){ var id='fm'+(FMN++); return '<label for="'+id+'">'+E(f[0])+'<input id="'+id+'"'+(f[2]?' type="'+f[2]+'" autocomplete="off"':'')+' value="'+E(f[1])+'"></label>'; }).join("")+'</div>'; }
 function bx(t,d,body,own){ return '<section class="bx'+(own?' own':'')+'"><h3>'+E(t)+'</h3>'+(d?'<p class="d">'+E(d)+'</p>':'')+body+'</section>'; }
 function slot(id){ return '<div id="'+id+'"></div>'; }
 function q(id){ return document.getElementById(id); }
@@ -130,17 +136,17 @@ function tbl(id,o){ CGG.table(q(id),o); }
 var V={};
 /* ── 홈 ── */
 V.home=function(m){
-  var c=W?{title:'받을 금액 <em>730,000원</em>이 남아 있어요',todos:[{tone:"stop",icon:"box",title:"자재가 부족해요 2건",sub:"광택약, 휠크리너 — 주문하세요"},{tone:"run",icon:"car",title:"작업 중 · 아직 출고 안 됨 4건",sub:"출고하면 입금 대상이 돼요"},{tone:"chk",icon:"wallet",title:"입금 대상 8건",sub:"합계 730,000원"}],
+  var B=BILL(), c=W?{title:'받을 금액 <em>730,000원</em>이 남아 있어요',todos:[{tone:"stop",icon:"box",title:"자재가 부족해요 2건",sub:"광택약, 휠크리너 — 주문하세요"},{tone:"run",icon:"car",title:"작업 중 · 아직 출고 안 됨 4건",sub:"출고하면 입금 대상이 돼요"},{tone:"chk",icon:"wallet",title:"입금 대상 8건",sub:"합계 730,000원"}],
      kpis:[{label:"이번 달 차량",value:"60",unit:"대",delta:"+6대",vs:"지난달보다",spark:[41,44,47,50,52,55,60]},{label:"이번 달 청구",value:"1,570,000",unit:"원",delta:"+12%",vs:"지난달보다",spark:[2,2.4,2.9,3.1,3.6,4.2,4.8]},{label:"이번 달 입금",value:"840,000",unit:"원",delta:"+4%",vs:"지난달보다",spark:[.6,.65,.7,.72,.76,.8,.84]},{label:"받을 금액",value:"730,000",unit:"원",delta:"+9%",down:true,vs:"지난달보다",spark:[.5,.55,.6,.62,.66,.7,.73]}],
      cal:{legend:[["in","입고","run"],["out","출고","done"]],amtLabel:"그날 청구",days:{1:{amt:220000,marks:[["in",3],["out",2]]},6:{amt:330000,marks:[["in",4],["out",3]]},13:{amt:270000,marks:[["in",3],["out",3]]},16:{amt:410000,marks:[["in",5],["out",4]]},18:{marks:[["in",7]]}}},
-     money:{big:840000,bar:{done:840000,total:1570000},legend:[["받은 것",840000,"done"],["받을 것",730000,"chk"]],rows:[["청구한 딜러","9명 (상사 6곳)"]]},
-     rank:{sub:"작업 항목별 · 많은 차례",items:[{label:"광택 · 국산 중형",value:"14대",pct:1},{label:"실내세차",value:"9대",pct:.64},{label:"유리막코팅",value:"5대",pct:.36}]}}
-    :{title:'청구서 보낼 딜러 <em>4명</em>, 입금 대기 <em>2,926,000원</em>이 있어요',todos:[{tone:"chk",icon:"wallet",title:"확인 필요 입금 3건",sub:"눌러서 바로 처리해요"},{tone:"run",icon:"file",title:"아직 안 보낸 청구서 4건",sub:"10월분"},{tone:"stop",icon:"wallet",title:"입금 기한 지난 딜러 2명",sub:"김민수(예시상사) 외 1명"}],
+     money:{big:840000,bar:{done:840000,total:1570000},legend:[["받은 것",840000,"done"],["받을 것",730000,"chk"]],rows:[["청구한 딜러",B.rows.length+"명 (상사 6곳)"]]},
+     rank:{sub:"작업 항목별 · 많은 순",items:[{label:"광택 · 국산 중형",value:"14대",pct:1},{label:"실내세차",value:"9대",pct:.64},{label:"유리막코팅",value:"5대",pct:.36}]}}
+    :{title:'청구서 보낼 딜러 <em>4명</em>, 입금 대기 <em>2,926,000원</em>이 있어요',todos:[{tone:"chk",icon:"wallet",title:"확인 필요 입금 3건",sub:"눌러서 바로 처리해요"},{tone:"run",icon:"file",title:"아직 안 보낸 청구서 "+B.unsent.length+"건",sub:"10월분"},{tone:"stop",icon:"wallet",title:"입금 기한 지난 딜러 2명",sub:"김민수(예시상사) 외 1명"}],
      kpis:[{label:"이번 달 차량",value:"163",unit:"대",delta:"+21대",vs:"지난달보다",spark:[120,131,128,140,142,150,163]},{label:"이번 달 청구",value:"6,226,000",unit:"원",delta:"+8%",vs:"지난달보다",spark:[4.9,5.1,5.4,5.2,5.8,6,6.2]},{label:"이번 달 입금",value:"3,300,000",unit:"원",delta:"+5%",vs:"지난달보다",spark:[2.4,2.6,2.9,3,3.1,3.2,3.3]},{label:"받을 금액",value:"2,926,000",unit:"원",delta:"+3%",down:true,vs:"지난달보다",spark:[2.5,2.6,2.7,2.8,2.8,2.9,2.9]}],
      cal:{legend:[["chk","검사","run"],["re","재검사 기한","chk"]],amtLabel:"그날 검사비",days:{1:{amt:396000,marks:[["chk",12]]},6:{amt:495000,marks:[["chk",15],["re",2]]},13:{amt:429000,marks:[["chk",13]]},16:{amt:396000,marks:[["chk",12],["re",3]]},18:{marks:[["chk",5]]}}},
-     money:{big:3300000,bar:{done:3300000,total:6226000},legend:[["받은 것",3300000,"done"],["받을 것",2926000,"chk"]],rows:[["청구한 딜러","8명 (상사 6곳)"]]},
-     rank:{sub:"작업 항목별 · 많은 차례",items:[{label:"성능점검 · 국산",value:"133대",pct:1},{label:"성능점검 · 수입",value:"21대",pct:.16},{label:"정비 확인",value:"9대",pct:.07}]}};
-  CGG.home(m,{date:"10월 18일 일요일",sum:W?{unsent:4,due:730000}:{unsent:4,due:2926000},desc:"오늘 10월 18일 · 09:12 기준",
+     money:{big:3300000,bar:{done:3300000,total:6226000},legend:[["받은 것",3300000,"done"],["받을 것",2926000,"chk"]],rows:[["청구한 딜러",B.rows.length+"명 (상사 6곳)"]]},
+     rank:{sub:"작업 항목별 · 많은 순",items:[{label:"성능점검 · 국산",value:"133대",pct:1},{label:"성능점검 · 수입",value:"21대",pct:.16},{label:"정비 확인",value:"9대",pct:.07}]}};
+  CGG.home(m,{date:"10월 18일 일요일",sum:{unsent:B.unsent.length,due:B.due},desc:"오늘 10월 18일 · 09:12 기준",
     quick:{feats:D.feats,key:D.quickKey+"_merge_pv",defs:D.quickDefault,onGo:goFeat},
     todo:{items:c.todos,total:W?9:4,onPick:toast("그 화면으로"),onAll:toast("할 일 모두 보기")},
     kpis:c.kpis,cal:Object.assign({y:2026,m:10,today:18,onMove:toast("달 옮기기"),onDay:toast("그날 자세히")},c.cal),
@@ -159,44 +165,58 @@ V.sales=function(m){
    +tools(chip("부가세 별도",true)+chip("부가세 포함")+'<span class="sp"></span>'+btn("엑셀 다운로드"))+slot("k")
    +'<section class="bx mcard"><div class="mh"><h3>2026년 10월 <small>가장 최근 달</small></h3><span class="row" style="margin:0">'+btn("‹ 앞 달")+btn("뒤 달 ›")+'</span></div>'
    +'<div class="big3">'+[["들어온 차",cm,"대","지난달 대비 "+(cm-N.mon[8]>=0?"+":"")+(cm-N.mon[8])+"대"],["매출 합계 (부가세 별도)",won(ct),"원","지난달 · 지난해 같은 달 —"],["차 한 대 평균",won(Math.round(ct/cm)),"원","매출을 들어온 차로 나눈 값"]].map(function(x){ return '<div><span>'+E(x[0])+'</span><b>'+E(String(x[1]))+'<small>'+x[2]+'</small></b><em>'+E(x[3])+'</em></div>'; }).join("")+'</div>'
-   +'<div class="small6">'+[["거래 상사 · 딜러","6 · 9","곳 · 명"],["청구한 딜러",W?"9":"8","명"],["입금",won(ci),"원"],["받을 금액",won(ct-ci),"원"],["작업 건수",String(cm+9),"건"],["차 한 대 작업","1.2","건"]].map(function(x){ return '<div><span>'+E(x[0])+'</span><b>'+E(x[1])+'<small>'+x[2]+'</small></b></div>'; }).join("")+'</div>'
+   +'<div class="small6">'+[["거래처","상사 6곳 · 딜러 9명",""],["청구한 딜러",String(BILL().rows.length),"명"],["입금",won(ci),"원"],["받을 금액",won(ct-ci),"원"],["작업 건수",String(cm+9),"건"],["차 한 대 작업","1.2","건"]].map(function(x){ return '<div><span>'+E(x[0])+'</span><b>'+E(x[1])+'<small>'+x[2]+'</small></b></div>'; }).join("")+'</div>'
    +'<h4>최근 12달 매출 <small>막대를 누르면 그 달이 위에 떠요</small></h4><div class="bars">'+B.map(function(b,i){ return '<button type="button" class="bar'+(i===11?' on':'')+'" aria-label="'+b[1]+' '+won(Math.round(b[0]*1e6))+'원"><i style="height:'+Math.round(b[0]/mx*96)+'px"></i><span>'+b[2]+'</span></button>'; }).join("")+'</div></section>'
-   +bx("월별 매출","한 줄이 한 달이에요.",slot("t"))+bx("년별 매출","1월부터 그해 마지막 달까지 더한 값이에요.",slot("t2"))
+   +bx("월별 매출","한 줄이 한 달이에요.",slot("t"))+bx("연도별 매출","1월부터 그해 마지막 달까지 더한 값이에요.",slot("t2"))
    +(W?"":bx("검사비 · 정비비 나눠 보기","체크는 청구가 검사비 · 정비비 · 전산외로 나뉘어서, 같은 달을 갈래별로 한 번 더 봐요.",slot("t3")+'<p class="d" style="margin-top:10px">나스에서 받은 전산외 청구 · 정비비 엑셀은 설정 › 자료 올리기에서 올려요.</p>',true))
-   +CGG.help("월별 · 년별 표에서 칸 머리를 누르면 정렬돼요. 작업마다 금액이 달라 항목별로 쪼개지 않고 총 금액으로 봐요.");
+   +CGG.help("월별 · 연도별 표에서 칸 머리를 누르면 정렬돼요. 작업마다 금액이 달라 항목별로 쪼개지 않고 총 금액으로 봐요.");
   CGG.kpis(q("k"),[{label:"2026년 들어온 차",value:won(N.car),unit:"대"},{label:"2026년 매출",value:won(N.tot),unit:"원"},{label:"2026년 입금",value:won(N.inn),unit:"원",tone:"in"},{label:"2026년 받을 금액",value:won(N.tot-N.inn),unit:"원",tone:"due"}]);
   m.querySelectorAll(".bar").forEach(function(b){ b.onclick=function(){ CGG.toast(b.getAttribute("aria-label")+" — 위에 띄워요 (미리보기)"); }; });
-  var rows=[9,8,7,6,5,4].map(function(i){ var c=N.mon[i], t=i===9?ct:Math.round(N.amt[i]*1e6/1000)*1000, inn=i===9?ci:t; return ["2026년 "+(i<9?"0":"")+(i+1)+"월",c+"대","6 · 9",inn,t-inn,t,won(Math.round(t/c))+"원",(c+9)+"건"]; });
-  tbl("t",{cols:["달","들어온 차","상사 · 딜러","입금","받을 금액","합계","한 대 평균","작업 건수"],kinds:["name","text","text","money","money","money","text","text"],rows:rows,find:"달 찾기"});
+  var rows=[9,8,7,6,5,4].map(function(i){ var c=N.mon[i], t=i===9?ct:Math.round(N.amt[i]*1e6/1000)*1000, inn=i===9?ci:t; return ["2026년 "+(i<9?"0":"")+(i+1)+"월",c+"대","상사 6곳 · 딜러 9명",inn,t-inn,t,won(Math.round(t/c))+"원",(c+9)+"건"]; });
+  tbl("t",{cols:["달","들어온 차","거래처","입금","받을 금액","합계","한 대 평균","작업 건수"],kinds:["name","text","text","money","money","money","text","text"],rows:rows,find:"달 찾기"});
   tbl("t2",{cols:["해","들어온 차","입금","받을 금액","합계","한 대 평균"],kinds:["name","text","money","money","money","text"],rows:[["2026년",won(N.car)+"대",N.inn,N.tot-N.inn,N.tot,won(Math.round(N.tot/N.car))+"원"]],find:"해 찾기"});
   if(!W) tbl("t3",{cols:["달","검사비","전산외","정비비","합계"],kinds:["name","money","money","money","money"],rows:rows.map(function(r){ var t=r[5]; return [r[0],Math.round(t*.82/1000)*1000,Math.round(t*.06/1000)*1000,t-Math.round(t*.82/1000)*1000-Math.round(t*.06/1000)*1000,t]; }),find:"달 찾기"});
 };
 /* ── 월별 청구서 (밀린 달 함께 보내기 포함) ── */
-V.bill=function(m){
-  m.innerHTML=head("10월 청구서 <em>"+(W?"9명":"8명")+"</em> · <em>"+(W?"1,570,000원":"6,226,000원")+"</em>","한 달치를 딜러 한 명씩 청구서로 만들고, 그대로 알림톡으로 보내요.")+slot("b")
+/* 청구서 예시 자료는 여기 한 곳 — 홈 첫 줄 · 띠 · 숫자 칸 · 표 · 보내기 창이 모두 이걸로 셈해요 (검수 R09 · R10) */
+function BILL(){ var A=W?[[360000,360000,"안 보냄",2],[120000,0,"열어봄",1],[350000,0,"보냄",1],[240000,240000,"안 보냄",2],[370000,130000,"보냄",2],[130000,0,"보냄",1]]
+                       :[[990000,990000,"안 보냄",30],[726000,0,"열어봄",22],[594000,594000,"안 보냄",18],[1452000,0,"보냄",44],[1122000,0,"보냄",34],[1342000,1342000,"보냄",41]];
+  var rows=A.map(function(a,i){ return [DL[i][0],DL[i][1],a[3]+"대",JOB[i],a[0],"10/31",a[1],a[2]]; });
+  var S=function(f,k){ return rows.filter(f).reduce(function(t,r){ return t+r[k]; },0); }, unsent=rows.filter(function(r){ return r[7]==="안 보냄"; });
+  return {rows:rows,total:S(function(){ return true; },4),due:S(function(){ return true; },6),unsent:unsent,unsentAmt:S(function(r){ return r[7]==="안 보냄"; },4),sent:rows.length-unsent.length,
+    late:{"김민수":120000,"박서준":310000}}; }
+V.bill=function(m){ var B=BILL(), SEL=[], lateN=Object.keys(B.late).length, lateAmt=Object.keys(B.late).reduce(function(t,k){ return t+B.late[k]; },0);
+  m.innerHTML=head("10월 청구서 <em>"+B.rows.length+"명</em> · <em>"+won(B.total)+"원</em>","한 달치를 딜러 한 명씩 청구서로 만들고, 그대로 알림톡으로 보내요.")+slot("b")
    +bx("1. 청구서 만들기","",'<div class="row">'+slot("mp")+chip("딜러 한 명씩",true)+chip("금액 없는 것 빼기",true)+btn("청구서 만들기",true)+'</div>')
    +(W?bx("거르기","","<div class=\"row\" style=\"margin:0\">"+chip("출고된 차만",true)+chip("작업 중인 차도 넣기")+"</div>",true)
-      :bx("자료 점검 · 청구 합계","청구서를 만들기 전에 빠진 자료가 없는지 먼저 봐요.",'<div class="small6" style="border:1px solid var(--line);border-radius:12px;overflow:hidden">'+[["검사비","5,511,000","원"],["전산외","0","원"],["정비비","715,000","원"],["청구 합계","6,226,000","원"],["딜러 빠짐","0","건"],["금액 빠짐","2","건"]].map(function(x){ return '<div><span>'+x[0]+'</span><b>'+x[1]+'<small>'+x[2]+'</small></b></div>'; }).join("")+'</div>'
+      :bx("자료 점검 · 청구 합계","청구서를 만들기 전에 빠진 자료가 없는지 먼저 봐요.",'<div class="small6" style="border:1px solid var(--line);border-radius:12px;overflow:hidden">'+[["검사비",won(Math.round(B.total*.885/1000)*1000),"원"],["전산외","0","원"],["정비비",won(B.total-Math.round(B.total*.885/1000)*1000),"원"],["청구 합계",won(B.total),"원"],["딜러 빠짐","0","건"],["금액 빠짐","0","건"]].map(function(x){ return '<div><span>'+x[0]+'</span><b>'+x[1]+'<small>'+x[2]+'</small></b></div>'; }).join("")+'</div>'
         +'<div class="row">'+btn("엑셀 (명세 포함)",false,"cx1")+btn("고른 청구서 → 다른 청구서로",false,"cx2")+btn("보냄 표시 지우기",false,"cx3")+'</div>',true))
    +slot("k")+slot("t")
-   +'<div class="two">'+bx("2. 청구서 보내기","보낼 딜러를 고르고 문구 · 계좌 · 기한을 확인해요.",
-      '<label class="ck"><input type="checkbox" id="late" checked> <span><b>밀린 달 함께 보내기</b> — 9월에 덜 받은 금액이 있는 딜러 3명은 9월분을 한 장에 더해 보내요 (9월 미수 430,000원)</span></label>'
+   +'<div class="two">'+bx("2. 청구서 보내기","표에서 보낼 딜러를 고르고 문구 · 계좌 · 기한을 확인해요.",
+      '<label class="ck"><input type="checkbox" id="late" checked> <span><b>밀린 달 함께 보내기</b> — 9월에 덜 받은 금액이 있는 딜러 '+lateN+'명은 9월분을 한 장에 더해 보내요 (9월 미수 '+won(lateAmt)+'원)</span></label>'
       +fm([["입금 계좌","예시은행 000-000000-00 (예시)"],["입금 기한","2026-10-31"]])
-      +'<div class="row">'+btn("문구 · 보내는 방식 바꾸기")+btn("내 번호로 시험")+btn("예약 발송",false,"rsv")+btn("4명에게 청구서 보내기",true,"send")+'</div>')
-     +bx("알림톡 미리보기","김민수 님께 가는 글이에요.",'<div class="msgpv">[차곳간 '+(W?"워시":"체크")+'] 10월 청구서\n받는 분: 김민수 (예시상사)\n10월분 '+(W?"3대 · 610,000원":"12건 · 396,000원")+'\n+ 9월 밀린 금액 120,000원\n합계 '+(W?"730,000원":"516,000원")+'\n입금 기한 10월 31일\n▶ 청구 내역 보기</div>')+'</div>'
+      +'<div class="row">'+btn("문구 · 보내는 방식 바꾸기")+btn("내 번호로 시험")+btn("예약 발송",false,"rsv")+btn("청구서 보내기",true,"send")+'</div><p class="d" id="selhint" style="margin:8px 0 0">먼저 표에서 보낼 딜러를 골라 주세요.</p>')
+     +bx("알림톡 미리보기",B.rows[0][0]+" 님께 가는 글이에요.",'<div class="msgpv" id="msgpv"></div>')+'</div>'
    +CGG.help("청구는 딜러 한 명씩이에요. «밀린 달 함께 보내기»를 켜면 지난달에 덜 받은 금액을 이번 청구서에 함께 적어 보내요.");
-  band("b",{count:4,text:"보낼 수 있는 청구서 4명 · "+(W?"1,023,000원":"2,926,000원"),onGo:toast("보낼 청구서만 보기")});
+  band("b",B.unsent.length?{count:B.unsent.length,text:"보낼 수 있는 청구서 "+B.unsent.length+"명 · "+won(B.unsentAmt)+"원",onGo:toast("보낼 청구서만 보기")}:{count:0});
   month("mp");
-  CGG.kpis(q("k"),[{label:"청구처",value:W?"9":"8",unit:"명"},{label:"총 청구액",value:W?"1,570,000":"6,226,000",unit:"원"},{label:"받을 금액",value:W?"730,000":"2,926,000",unit:"원",tone:"due"},{label:"보낸 건",value:"5",unit:"건"}]);
-  var rows=DL.slice(0,6).map(function(d,i){ return [d[0],d[1],W?(i%3+1)+"대":(12+i)+"대",JOB[i],AMT[i]*(W?2:12),"10/31",i<2?AMT[i]*(W?2:12):0,["안 보냄","보냄","열어봄","안 보냄","보냄","보냄"][i]]; });
-  tbl("t",Object.assign({cols:["딜러(받는 분)","소속 상사","대수","작업 내역","총금액","입금 기한","받을 금액","발송"],kinds:["name","text","text","text","money","date","money","state"],rows:rows,stateMap:{"안 보냄":"chk","보냄":"run","열어봄":"done"},
-    tabs:[["","전체"],["안 보냄","안 보냄"],["보냄","보냄"],["열어봄","열어봄"]],find:"딜러 · 상사"},bulk(rows,0,[{key:"pv",label:"청구서 미리보기 · 인쇄"},{key:"jpg",label:"JPG로 받기"}])));
-  var base=W?1023000:2926000, LATE=430000;
-  q("send").onclick=function(){ var l=q("late").checked; CGG.dialog({size:"confirm",title:"청구서를 보낼까요?",desc:"보내면 되돌릴 수 없어요.",rows:[["누구에게","김민수 외 3명"],["몇 건","4장"+(l?" (9월 밀린 금액 3명 포함)":"")],["얼마",won(base+(l?LATE:0))+"원"+(l?" (9월분 "+won(LATE)+"원 포함)":"")]],ok:"4명에게 보내기",cancel:"취소",onOk:toast("보냈어요")}); };
-  q("rsv").onclick=function(){ var l=q("late").checked; ask("예약 발송","김민수 외 3명","4장 · 10월 20일 오전 9시",won(base+(l?LATE:0))+"원"); };
+  CGG.kpis(q("k"),[{label:"청구처",value:String(B.rows.length),unit:"명"},{label:"총 청구액",value:won(B.total),unit:"원"},{label:"받을 금액",value:won(B.due),unit:"원",tone:"due"},{label:"보낸 건",value:String(B.sent),unit:"건"}]);
+  function plan(){ var l=q("late").checked, R=SEL.map(function(i){ return B.rows[i]; }).filter(Boolean), lt=l?R.filter(function(r){ return B.late[r[0]]; }):[];
+    return {R:R,l:l,lt:lt,amt:R.reduce(function(t,r){ return t+r[4]; },0)+lt.reduce(function(t,r){ return t+B.late[r[0]]; },0)}; }
+  function sync(){ var P=plan(), n=P.R.length, sb=q("send"), rb=q("rsv");
+    sb.disabled=rb.disabled=!n; sb.textContent=n?n+"명에게 청구서 보내기":"청구서 보내기";
+    q("selhint").textContent=n?"고른 딜러 "+n+"명 · "+won(P.amt)+"원"+(P.lt.length?" (9월분 "+P.lt.length+"명 포함)":""):"먼저 표에서 보낼 딜러를 골라 주세요.";
+    var r0=B.rows[0], l0=q("late").checked&&B.late[r0[0]]?B.late[r0[0]]:0;
+    q("msgpv").textContent="[차곳간 "+(W?"워시":"체크")+"] 10월 청구서\n받는 분: "+r0[0]+" ("+r0[1]+")\n10월분 "+r0[2]+" · "+won(r0[4])+"원"+(l0?"\n+ 9월 밀린 금액 "+won(l0)+"원":"")+"\n합계 "+won(r0[4]+l0)+"원\n입금 기한 10월 31일\n▶ 청구 내역 보기"; }
+  tbl("t",Object.assign({cols:["딜러(받는 분)","소속 상사","대수","작업 내역","총금액","입금 기한","받을 금액","발송"],kinds:["name","text","text","text","money","date","money","state"],rows:B.rows,stateMap:{"안 보냄":"chk","보냄":"run","열어봄":"done"},
+    mobileFields:[[4,"청구액"],[6,"받을 금액"],[5,"기한"],[7,"발송"]],find:"딜러 · 상사",onSelect:function(ids){ SEL=ids; sync(); }},bulk(B.rows,0,[{key:"pv",label:"청구서 미리보기 · 인쇄"},{key:"jpg",label:"JPG로 받기"}])));
+  q("late").onchange=sync; sync();
+  function who(P){ return P.R[0][0]+(P.R.length>1?" 외 "+(P.R.length-1)+"명":""); }
+  q("send").onclick=function(){ var P=plan(); if(!P.R.length) return; CGG.dialog({size:"confirm",title:"청구서를 보낼까요?",desc:"보내면 되돌릴 수 없어요.",rows:[["누구에게",who(P)],["몇 건",P.R.length+"장"+(P.lt.length?" (9월 밀린 금액 "+P.lt.length+"명 포함)":"")],["얼마",won(P.amt)+"원"]],ok:P.R.length+"명에게 보내기",cancel:"취소",onOk:toast("보냈어요")}); };
+  q("rsv").onclick=function(){ var P=plan(); if(!P.R.length) return; ask("예약 발송",who(P),P.R.length+"장 · 10월 20일 오전 9시",won(P.amt)+"원"); };
   if(!W){ q("cx1").onclick=toast("명세 포함 엑셀을 받았어요"); q("cx2").onclick=function(){ ask("다른 청구서로 옮기기","고른 청구서","1장"); }; q("cx3").onclick=function(){ ask("보냄 표시 지우기","고른 청구서","1장"); }; }
 };
-V.billgroup=function(m){ m.innerHTML=head("받는 곳 합치기","기본은 딜러 한 명씩이에요. 꼭 한 장으로 받겠다는 곳만 묶어요.")+bx("지금 걸려 있는 묶음","","",true)+slot("t")+CGG.help("묶음은 예외예요. 묶지 않으면 딜러마다 따로 청구서가 나가요.");
+V.billgroup=function(m){ m.innerHTML=head("청구처 묶음","기본은 딜러 한 명씩이에요. 꼭 한 장으로 받겠다는 곳만 묶어요.")+bx("지금 걸려 있는 묶음","","",true)+slot("t")+CGG.help("묶음은 예외예요. 묶지 않으면 딜러마다 따로 청구서가 나가요.");
   var rows=[["예시상사","000-00-00048","김민수 · 오세훈","적용 중"],["누리상사","000-00-00015","박서준","적용 중"]];
   tbl("t",Object.assign({cols:["청구 받는 분","발행처(사업자)","함께 묶이는 딜러","적용"],kinds:["name","id","text","state"],rows:rows,stateMap:{"적용 중":"done"},find:"상사 찾기"},bulk(rows,0))); };
 /* ── 입·출금 내역 ── */
@@ -249,7 +269,7 @@ V.tax=function(m){
   q("issue").onclick=function(){ CGG.dialog({size:"confirm",title:"팝빌로 세금계산서를 발급할까요?",desc:"발급하면 국세청으로 바로 가요.",rows:[["누구에게","예시상사 외 1곳"],["몇 건","2장"],["얼마","860,000원"]],ok:"2장 발급",cancel:"취소",onOk:toast("발급했어요")}); };
   q("gobiz").onclick=function(){ go(W?"settings/biz":"set/biz"); };
 };
-V.ledger=function(m){ m.innerHTML=head("달마다 장부","달마다 만든 청구서와 입금 · 세금계산서 결과를 모아 두는 장부예요.")+slot("k")+slot("t")+CGG.help("예전 «정산 기록»이에요.");
+V.ledger=function(m){ m.innerHTML=head("월별 장부","달마다 만든 청구서와 입금 · 세금계산서 결과를 모아 두는 장부예요.")+slot("k")+slot("t")+CGG.help("예전 «정산 기록»이에요.");
   CGG.kpis(q("k"),[{label:"청구 합계",value:"38,420,000",unit:"원"},{label:"입금 합계",value:"35,494,000",unit:"원",tone:"in"},{label:"남은 금액",value:"2,926,000",unit:"원",tone:"due"},{label:"기록한 달",value:"6",unit:"달"}]);
   var rows=[10,9,8,7].map(function(mm,i){ return ["2026년 "+(mm<10?"0":"")+mm+"월",i?"발급 끝":"일부 발급",163-i*4,6226000-i*80000,i?6226000-i*80000:3300000,i?0:2926000]; });
   tbl("t",Object.assign({cols:["청구 달","세금계산서","대수","청구","입금","남은 금액"],kinds:["name","state","text","money","money","money"],rows:rows,stateMap:{"발급 끝":"done","일부 발급":"chk"},find:"달 찾기"},bulk(rows,0))); };
@@ -258,7 +278,7 @@ V.deliv=function(m){
   m.innerHTML=head("오늘 배달 <em>7대</em>","차가 어디로 갔는지, 딜러에게 알림이 나갔는지 봐요.")+slot("b")+tools(periods())+slot("k")
    +(W?"":bx("딜러 등록 대기 2건","기사가 적은 이름이 거래처에 없어요. 딜러로 등록하면 알림을 다시 보내요.",'<div class="row">'+btn("고른 줄 등록하고 다시 보내기",true,"rg")+btn("등록 안 함")+btn("빈 차명 채우기",false,"fl")+btn("선택한 줄 취소 표시",false,"cn")+'</div>',true))
    +slot("t")+CGG.help("배달 문구와 보내는 방식은 «문구 · 발송 설정»에서 바꿔요.");
-  band("b",{count:0});
+  band("b",{count:1,tone:"stop",text:"못 보낸 배달 알림 1건 — 골라서 다시 보내요",go:"못 보낸 것만 보기",onGo:toast("못 보낸 것만 보기")});
   CGG.kpis(q("k"),[{label:"배달",value:"7",unit:"대"},{label:"목적지",value:"4",unit:"곳"},{label:"알림 보냄",value:"6",unit:"건",tone:"in"},{label:"못 보냄",value:"1",unit:"건",tone:"stop"}]);
   var rows=DL.map(function(d,i){ return [d[0],d[1],CAR[i],["아반떼","그랜저","BMW 5","쏘렌토","벤츠 E","K5","카니발"][i],["예시상사 매장","가람 2주차장","누리상사","다온카","샘플모터스","새길자동차","미래카"][i],"10-18 "+(9+i)+":10",(W?"직원 ":"기사 ")+["A","B"][i%2],i===3?"못 보냄":"보냄","010-****-00"+(10+i),i<4?"있음":"—"]; });
   tbl("t",Object.assign({cols:["딜러","상사","차량번호","차종","목적지","출고시각","보낸 사람","알림","연락처","사진"],kinds:["name","text","id","text","text","time","text","state","text","text"],rows:rows,stateMap:{"보냄":"done","못 보냄":"stop"},find:"딜러 · 차량번호 · 목적지"},
@@ -310,7 +330,7 @@ V.party=function(m){ m.innerHTML=head("거래처 관리","딜러 · 매매상사
   var rows=DL.map(function(d,i){ return [d[0],d[1],"010-****-00"+(10+i),i===2?"정보 빠짐":"본인 사업자",i===1?"사무장 김예시":d[0],"10-"+(18-i)]; });
   tbl("t",Object.assign({cols:["딜러","상사","휴대폰","세금계산서","청구서 받는 사람","마지막 거래"],kinds:["name","text","text","state","text","date"],rows:rows,stateMap:{"정보 빠짐":"chk","본인 사업자":"done"},find:"딜러 · 상사 · 휴대폰"},bulk(rows,0))); };
 V.staff=function(m){ m.innerHTML=head("직원 계정","들어올 수 있는 사람과 권한을 정해요.")
-   +'<div class="two">'+'<div>'+slot("t")+'</div>'+bx("직원 추가","",fm([["이름",""],["4자리 코드",""],["휴대폰",""],["권한","직원"]])+'<div class="row">'+btn("직원 추가",true)+'</div>')+'</div>'+CGG.help("대표는 모든 화면, 직원은 일감 · 배달만 봐요."+(W?"":" 기사 계정은 배달 › 기사 계정에 있어요."));
+   +'<div class="two two21">'+'<div>'+slot("t")+'</div>'+bx("직원 추가","",fm([["이름",""],["4자리 코드",""],["휴대폰",""],["권한","직원"]])+'<div class="row">'+btn("직원 추가",true)+'</div>')+'</div>'+CGG.help("대표는 모든 화면, 직원은 일감 · 배달만 봐요."+(W?"":" 기사 계정은 배달 › 기사 계정에 있어요."));
   var rows=[["김대표","010-****-0001","대표","쓰는 중","10-18 09:12"],["직원 A","010-****-0002","직원","쓰는 중","10-18 08:40"],["직원 B","010-****-0003","직원","멈춤","10-10 17:00"]];
   tbl("t",Object.assign({cols:["이름","휴대폰","권한","사용","마지막 로그인"],kinds:["name","text","text","state","time"],rows:rows,stateMap:{"쓰는 중":"done","멈춤":"chk"},find:"이름 찾기"},bulk(rows,0,[{key:"login",label:"로그인 만들기",needSel:true},{key:"reset",label:"비밀번호 초기화",needSel:true}]))); };
 V.price=function(m){ m.innerHTML=head("작업 항목 · 단가표","단가는 적용 시작일별로 쌓여요. 바뀌어도 지난달 청구서는 그때 단가로 계산돼요.")
@@ -331,10 +351,14 @@ V.alarm=function(m){ m.innerHTML=head("알림","메시지와 PC 알림 소리를
    +bx("PC 알림창 · 소리","입금이 들어오거나 배달이 도착하면 PC에 알려 줘요. 이 PC에만 저장돼요.",'<div class="fm">'+[["입금 알림","딩동"],["확인 필요 알림","띵"],["배달 도착 알림","똑똑"]].concat(W?[["입고 알림 (워시 전용)","딩동"],["출고 알림 (워시 전용)","띵"]]:[]).map(function(f,i){ return '<label for="snd'+i+'">'+E(f[0])+'<input id="snd'+i+'" value="'+E(f[1])+'"></label>'; }).join("")+'</div><div class="row">'+btn("소리만 들어보기")+btn("알림 시험해 보기")+btn("알림 설정 저장",true)+'</div>')
    +bx("보낸 기록","메시지를 보낸 기록이에요. 실패한 건은 골라서 다시 보내요.",slot("k")+slot("t"))
    +CGG.help("알림톡이 승인되기 전에는 문자로 대신 가요.");
-  CGG.kpis(q("k"),[{label:"보낸 수",value:"128",unit:"건",tone:"in"},{label:"발송 실패",value:"2",unit:"건",tone:"stop"},{label:"예약",value:"1",unit:"건"},{label:"남은 문자",value:"872",unit:"건"}]);
+  CGG.kpis(q("k"),[{label:"보낸 수",value:"128",unit:"건",tone:"in"},{label:"발송 실패",value:"1",unit:"건",tone:"stop"},{label:"예약",value:"1",unit:"건"},{label:"남은 문자",value:"872",unit:"건"}]);
   var rows=[["10-18 09:10","배달 도착","010-****-0010","알림톡","보냄"],["10-17 18:00","청구서","010-****-0011","문자","실패"]];
   tbl("t",Object.assign({cols:["만든 시각","종류","받는 번호","방식","상태"],kinds:["time","name","text","text","state"],rows:rows,stateMap:{"보냄":"done","실패":"stop"},find:"번호 · 종류"},bulk(rows,1,[{key:"resend",label:"선택항목 다시 보내기",needSel:true}]))); };
-V.qr=function(m){ m.innerHTML=head("QR 코드","직원에게 이 화면을 보여 주세요. 폰으로 찍으면 현장 화면이 열려요.")+bx("QR 코드","",'<div class="row">'+btn("인쇄하기")+btn("사진 저장")+btn("링크 복사")+'</div>',true); };
+/* 미리보기용 QR 모양 그림 — 고정 무늬라 아무 주소도 담기지 않아요 */
+function qrArt(){ var n=25, c='', fin=function(x,y){ return '<rect x="'+x+'" y="'+y+'" width="7" height="7" fill="#101828"/><rect x="'+(x+1)+'" y="'+(y+1)+'" width="5" height="5" fill="#fff"/><rect x="'+(x+2)+'" y="'+(y+2)+'" width="3" height="3" fill="#101828"/>'; };
+  for(var y=0;y<n;y++) for(var x=0;x<n;x++){ if((x<8&&y<8)||(x>16&&y<8)||(x<8&&y>16)) continue; if(((x*7+y*13+x*y)%5)<2) c+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="#101828"/>'; }
+  return '<svg viewBox="0 0 25 25" role="img" aria-label="예시 QR 그림" shape-rendering="crispEdges">'+c+fin(0,0)+fin(18,0)+fin(0,18)+'</svg>'; }
+V.qr=function(m){ m.innerHTML=head("QR 코드","직원에게 이 화면을 보여 주세요. 폰으로 찍으면 현장 화면이 열려요.")+bx("QR 코드","",'<div class="qr">'+qrArt()+'<p>예시 그림이에요. 실제 화면에서는 우리 업체 현장 화면 주소가 담긴 QR 이 나와요.</p></div><div class="row">'+btn("인쇄하기")+btn("사진 저장")+btn("링크 복사")+'</div>',true); };
 V.caropt=function(m){ m.innerHTML=head("출고 지연 기준","입고 뒤 이 날수가 지나도 안 나간 차를 알려요.")+bx("출고 지연 기준","",fm([["지연으로 볼 날수","2일"],["주차 구역","A · B · C"]])+'<div class="row">'+btn("출고 설정 저장",true)+'</div>',true); };
 V.fee=function(m){ m.innerHTML=head("검사자 수수료","수수료를 주기 시작할 때 켜면 돼요.")+bx("사용 여부","지금은 꺼져 있어요.",'<label class="ck"><input type="checkbox"> 검사자 수수료 쓰기</label><div class="row">'+btn("＋ 규칙 추가")+'</div>',true); };
 V.upload=function(m){ m.innerHTML=head("자료 올리기","카모두 접수리스트 · 나스 엑셀을 여기서 올려요. 상사명부 · 딜러명부는 설정 › 거래처에서 올려요.")+bx("카모두 접수리스트 올리기","한 달 검사 자료예요. 올리면 매출 · 청구서가 바로 채워져요.",'<div class="row">'+btn("접수리스트 파일 고르기",true)+'</div>',true)+bx("나스 엑셀 올리기 — 전산외 청구 · 정비비","",'<div class="row">'+btn("전산외청구 파일 고르기")+btn("정비비 파일 고르기")+'</div>',true)+slot("t");
@@ -344,7 +368,7 @@ function draw(){
   CGG.nav(document.getElementById("nav"), D.groups, cur, go, {find:{feats:D.feats,onGo:goFeat}});
   CGG.tabbar(document.getElementById("tbar"), D.tabs, tabKey(), function(k){ if(k==="__all"){ if(!CGG.closeSheet()) CGG.allMenu(D.groups, cur, go, D.feats, goFeat); return; } CGG.closeSheet(); go(k); });
   var m=document.getElementById("main"), f=V[SCR[cur]];
-  m.innerHTML=""; if(f) f(m); else m.innerHTML=head(E(crumb()),"미리보기에 없는 화면이에요.");
+  m.innerHTML=""; FMN=0; if(f) f(m); else m.innerHTML=head(E(crumb()),"미리보기에 없는 화면이에요.");
   Array.prototype.forEach.call(m.querySelectorAll("[data-lay]"),function(b){ b.onclick=function(){ var L=b.getAttribute("data-lay"); location.hash=P+(L==="top"?"":"-"+L); }; });
 }
 CGG.layout.init(document.getElementById("app"), "cgg_merge_pv_layout", SIDE?"side":"top"); CGG.layout.set(ICON?"icon":SIDE?"side":"top");   /* 미리보기는 주소(#…-side · -icon)가 정해요 */

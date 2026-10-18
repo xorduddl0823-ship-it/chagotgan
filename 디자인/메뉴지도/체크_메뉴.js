@@ -2,7 +2,7 @@
    차곳간 체크 — 메뉴 · 기능 목록 확정본 (2026-10-18, 디자인 방 · 체크 방 확인 v44)
    대표님 결정(10/18) «메뉴 찾기 쉽게 = A 메뉴 아래 칸 늘 보임(가로 기본 · 세로는 왼쪽 펼침) + C 기능 찾기(메뉴 줄 오른쪽 끝) + D 홈 바로가기», 배달은 큰 메뉴(운영/06 O)
    10/18 대표님 확정: 탭 차례 홈 → 일감 → 매출 → 월별 청구서 → 입·출금 내역 → 세금계산서 → (제품 전용) → 설정
-   cgg-j4 1.12 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.12 JS 바로 뒤에 붙여요.
+   cgg-j4 1.13 의 CGG.nav · CGG.allMenu · CGG.find · CGG.quick 에 그대로 넘겨요. 이 파일 내용은 cgg-j4 1.13 JS 바로 뒤에 붙여요.
    go = "묶음/칸" 이름표. 체크 화면 열쇠로 잇는 표는 디자인/메뉴지도/README.md «체크 열쇠 표»
    spot = 그 화면 안에서 빛낼 칸의 id (체크 방이 그 칸에 id 를 붙여요. 없으면 화면 맨 위만 열려요)
    ═══════════════════════════════════════════════════════════════════ */
@@ -11,9 +11,9 @@ var CGG_MENU_CHECK = {
   groups: [
     {key:"home",     label:"홈",          icon:"home"},
     {key:"sales",    label:"매출",        icon:"chart"},
-    {key:"bill",     label:"월별 청구서", icon:"file",    subs:[{key:"month",label:"청구서 목록"},{group:"체크 전용"},{key:"group",label:"받는 곳 합치기"}]},
+    {key:"bill",     label:"월별 청구서", icon:"file",    subs:[{key:"month",label:"청구서 목록"},{group:"체크 전용"},{key:"group",label:"청구처 묶음"}]},
     {key:"deposit",  label:"입·출금 내역", icon:"wallet",  subs:[{key:"in",label:"입금 · 출금"},{key:"due",label:"받을 금액"},{group:"체크 전용"},{key:"ins",label:"보험료 맞춰 보기"}]},
-    {key:"hometax",  label:"세금계산서",  icon:"receipt", subs:[{key:"issue",label:"세금계산서 발행"},{group:"체크 전용"},{key:"ledger",label:"달마다 장부"}]},
+    {key:"hometax",  label:"세금계산서",  icon:"receipt", subs:[{key:"issue",label:"세금계산서 발행"},{group:"체크 전용"},{key:"ledger",label:"월별 장부"}]},
     {key:"delivery", label:"배달",        icon:"truck",   isNew:true, subs:[{key:"log",label:"배달 기록"},{key:"dest",label:"목적지"},{key:"msg",label:"문구 · 발송 설정"},{group:"체크 전용"},{key:"driver",label:"기사 계정"}]},
     {key:"remind",   label:"재검사 알림", icon:"bell"},
     {key:"set",      label:"설정",        icon:"gear",    subs:[{key:"biz",label:"우리 사업장"},{key:"backup",label:"백업 · 기기"},{key:"partner",label:"거래처"},{key:"staff",label:"직원 계정"},{key:"price",label:"작업 항목 · 단가표"},
@@ -24,10 +24,10 @@ var CGG_MENU_CHECK = {
   feats: [
     {id:"sales",        label:"매출 보기",              path:"매출 › 매출 내역",                    go:"sales"     ,       words:"매출 실적 월별 년별 통계"},
     {id:"upload",       label:"엑셀 자료 올리기",       path:"설정 › 자료 올리기",                  go:"set/upload",     words:"엑셀 업로드 올리기 카모두 접수리스트 전산외 정비비 나스 양식"},
-    {id:"history",      label:"달마다 장부",              path:"세금계산서 › 달마다 장부",                           go:"hometax/ledger",          words:"정산 기록 월별 기록 홈택스 대조"},
+    {id:"history",      label:"월별 장부",              path:"세금계산서 › 월별 장부",                           go:"hometax/ledger",          words:"달마다 장부 정산 기록 월별 기록 홈택스 대조"},
     {id:"bill-make",    label:"청구서 만들기",          path:"월별 청구서 › 청구서 목록",                go:"bill/month",       words:"월별 청구서 정산서 청구 만들기 명세 요금 엑셀"},
     {id:"bill-send",    label:"청구서 보내기",          path:"월별 청구서 › 청구서 목록 › 2. 청구서 보내기", go:"bill/month",   words:"청구서 발송 알림톡 문자 보내기 시험", spot:"#billSendCard"},
-    {id:"bill-group",   label:"받는 곳 합치기",            path:"월별 청구서 › 받는 곳 합치기",                go:"bill/group",       words:"묶음 딜러 묶기 한 곳으로 청구처"},
+    {id:"bill-group",   label:"청구처 묶음",            path:"월별 청구서 › 청구처 묶음",                go:"bill/group",       words:"받는 곳 합치기 묶음 딜러 묶기 한 곳으로 청구처"},
     {id:"tpl",          label:"알림톡 문구",          path:"설정 › 알림",              go:"set/alarm",         words:"알림톡 템플릿 카카오 등록 문구 승인"},
     {id:"deposit",      label:"입금 확인",  path:"입·출금 내역 › 입금 · 출금",                  go:"deposit/in",       words:"입금 들어온 돈 통장 팝빌 가져오기 입금 처리 미수 미수금 입금 대기 못 받은 돈 받을 금액 수금 계좌 입금 내역 입금 처리 입금 확인 수금"},
     {id:"insurance",    label:"보험료 맞춰 보기",            path:"입·출금 내역 › 보험료 맞춰 보기",                go:"deposit/ins",      words:"보험료 보험사 대조 성능보증 보험료 대조"},
