@@ -196,6 +196,9 @@ $("bBundleAll").onclick=function(){
 $("bMake").onclick=function(){
   B.unit=$("bUnit").value;""")
 
+# 0-5) 공통 1.13 의 «.cgg-dlg label{flex-direction:column}» 가 밀린 달 고르기 줄(.cgg-bbrow)까지 세로로 세워요 → 디자인 방에 알림 · 고쳐질 때까지 워시에서만 바로잡기
+rep('''<style id="cgg-j4-wash-done">\n''', '''<style id="cgg-j4-wash-done">\n/* v137 공통 1.13 고쳐질 때까지: 밀린 달 고르기 줄은 가로 한 줄 (체크 v56 .chk-bb 와 같은 모양) */\n.cgg-dlg label.cgg-bbrow{flex-direction:row;text-align:left;font-size:14px;font-weight:400;color:var(--text)}\n''')
+
 # 1) 부품 넣기 — 거래처 부품 바로 뒤
 rep(CPT13, CPT13 + "\n" + ATA)
 
