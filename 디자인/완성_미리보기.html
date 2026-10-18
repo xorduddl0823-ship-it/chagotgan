@@ -7,7 +7,7 @@
 html,body{margin:0;background:var(--bg)}
 body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;color:var(--text);word-break:keep-all}
 </style>
-<link rel="stylesheet" href="공통/cgg-j4-1.13.css">
+<link rel="stylesheet" href="공통/cgg-j4-1.13.1.css">
 <style>
 /* 미리보기 고르기 줄(실제 화면에는 없어요): 워시 / 체크 · 가로 / 세로 */
 .pv{background:#FFF7E6;color:#5B3A00;font-size:13px;border-bottom:1px solid #F3DDB0}
@@ -130,7 +130,7 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
   <nav class="cgg-tbar" id="tbar"></nav>
 </div>
 <div id="siteRoot" class="site" hidden></div>
-<script src="공통/cgg-j4-1.13.js"></script>
+<script src="공통/cgg-j4-1.13.1.js"></script>
 <script src="메뉴지도/워시_메뉴.js"></script>
 <script src="메뉴지도/체크_메뉴.js"></script>
 <script src="완성_미리보기_더.js"></script>
@@ -206,8 +206,11 @@ V.home=function(m){
     money:Object.assign({title:"이번 달 입금",link:{label:"입·출금 내역",onClick:function(){ go(W?"money":"deposit"); }}},c.money),
     rank:Object.assign({title:"이번 달 일감",link:{label:"매출",onClick:function(){ go("sales"); }}},c.rank),
     help:"홈 차례는 두 제품이 같아요: 자주 쓰는 기능 → 오늘 할 일 → 숫자 칸 4개 → 일정 · 이번 달 입금 · 이번 달 일감."});
-  if(!W){ var x=document.createElement("div"); x.innerHTML=bx("이번 달 어디까지 왔나","왼쪽부터 차례대로 하시면 돼요.",'<div class="fm four">'+["1. 자료 올리기 · 끝","2. 청구서 만들기 · 끝","3. 청구서 보내기 · "+B.unsent.length+"장 남음","4. 입금 확인 · 53%"].map(function(t){ return '<div class="msgpv">'+E(t)+'</div>'; }).join("")+'</div>',true)+bx("성능보증보험료","매매상사 앞으로 청구하는 몫을 따로 봐요. 이번 달 청구 대상 12건 · 396,000원",'<div class="row">'+btn("보험료 청구서 만들기",true)+'</div>',true);
-    var h=m.querySelector(".cgg-help"); m.insertBefore(x,h); }
+  /* «이번 달 어디까지 왔나» — 두 제품 공통(04 결정 · 규칙 3-9) · 공통 부품 CGG.steps */
+  var sx=document.createElement("div"), hh=m.querySelector(".cgg-help"); m.insertBefore(sx,hh);
+  CGG.steps(sx,[{label:W?"입고 · 출고 정리":"자료 올리기",state:"done"},{label:"청구서 만들기",state:"done"},{label:"청구서 보내기",state:"now",note:B.unsent.length+"장 남음"},{label:"입금 확인",state:"todo",note:Math.round((B.total-B.due)/B.total*100)+"%"}],{title:"이번 달 어디까지 왔나",desc:"왼쪽부터 차례대로 하시면 돼요."});
+  if(!W){ var x=document.createElement("div"); x.innerHTML=bx("성능보증보험료","매매상사 앞으로 청구하는 몫을 따로 봐요. 이번 달 청구 대상 12건 · 396,000원",'<div class="row">'+btn("보험료 청구서 만들기",true)+'</div>',true);
+    m.insertBefore(x,hh); }
 };
 /* ── 매출 ── */
 V.sales=function(m){
