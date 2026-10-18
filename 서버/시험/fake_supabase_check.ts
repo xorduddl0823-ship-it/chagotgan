@@ -118,6 +118,9 @@ function bump(r: Row) {
 
 /* SQL 함수 흉내 */
 function rpc(fn: string, a: any) {
+  /* 시험마다 따로 흉내 낼 SQL 함수 (store.__rpc[이름] = (인자) => 값) */
+  const own = (store as any).__rpc?.[fn];
+  if (own) return { data: own(a), error: null };
   /* SQL 11 check_rate_bump 흉내 — store.check_rate 가 없으면 «SQL 11 전» (함수 없음) */
   if (fn === "check_rate_bump") {
     if (!store.check_rate) return { data: null, error: { message: "function check_rate_bump does not exist" } };
