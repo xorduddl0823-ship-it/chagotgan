@@ -7,7 +7,8 @@
   ④ 할 일 띠 + [해결하러 가기] (CGG.todoBand): 월별 청구서 · 입금 내역
   ⑤ 월별 청구서: 숫자 칸 5 → 4 (세금계산서 안 끊음은 띠로) · 아래 단추 줄(인쇄 · 그림 · 엑셀) → 표 위 · «청구 내역 보기» 설명 카드는 접힘
   ⑥ 입금 내역: 도구줄 → 숫자 칸 → 표 차례 · 은행 엑셀 카드 접힘 · 버튼 없는 붙여넣기 카드 뺌
-  ⑦ «준비 중» 단추는 통합 판에서 뺌 (data-soon 이 붙는 단추는 보이지 않게 + 청구서 · 입금의 준비 중 단추 글 지움)
+  ⑦ «준비 중» 단추를 실제로 되게 (대표님 10/18 고침 — v50_단추.js). 화면만 · 이미 있는 서버 창구로 되는 것은 바로,
+     서버 새 창구가 필요한 것은 가능한 데까지 하고 서버 방 요청서로 묶음. 그래도 동작이 안 붙은 단추는 «준비 중» 글 없이 숨김
   ⑧ 설정 › «직원 계정 · 권한» 칸을 «설정 백업»에서 꺼내 따로
 기능(서버 부르기 · 저장 · 입금 처리 · 청구서 만들기 · 보내기)은 v48.1 과 같아요. 매출 화면 모양 그대로.
 """
@@ -79,7 +80,8 @@ BANDS.bill=function(){
     onGo:function(){ var b=$("bMake"); if(b) CGG.spot(b); }};
   var ns=BILLS.filter(function(x){ return !x.sent; }).length, up=BILLS.filter(function(x){ return x.left>0; }).length,
       nt=BILLS.filter(function(x){ return x.tax==="안 끊음"; }).length, tx=nt?" · 세금계산서 안 끊음 "+nt+"곳":"";
-  return {count:ns+up, text:"안 보낸 곳 "+ns+"곳 · 입금 대기 "+up+"곳"+tx, empty:"모두 보냈고 입금도 다 됐어요"+tx,
+  if(!ns&&!up&&nt) return {count:nt, tone:"run", text:"세금계산서를 안 끊는 곳 "+nt+"곳 — 맞는지 거래처에서 봐요", go:"거래처 보기", onGo:function(){ go("partner"); }};
+  return {count:ns+up, text:"안 보낸 곳 "+ns+"곳 · 입금 대기 "+up+"곳"+tx, empty:"모두 보냈고 입금도 다 됐어요",
     onGo:function(){ BILL_F=ns?"notsent":"unpaid"; ts("bill").page=1; draw(); var t=$("bill-blk"); if(t) CGG.spot(t); }};
 };
 BANDS.deposit=function(){
@@ -98,7 +100,9 @@ rep('''                .map(function(o){ return '<option value="'+o[0]+'"'+(BILL
       tools:'<button class="btn">선택한 줄 지우기</button>'})+''',
     '''                .map(function(o){ return '<option value="'+o[0]+'"'+(BILL_F===o[0]?" selected":"")+'>'+o[1]+'</option>'; }).join("")+'</select>',
       tools:'<button class="btn" id="bPrint">미리보기 · 인쇄</button><button class="btn" id="bPng">그림으로 받기</button>'+   /* v50: 아래 단추 줄 → 표 위 */
-            '<button class="btn" id="bXls">엑셀 (요약)</button><button class="btn" id="bXlsAll">엑셀 (명세 포함)</button>'})+''')
+            '<button class="btn" id="bXls">엑셀 (요약)</button><button class="btn" id="bXlsAll">엑셀 (명세 포함)</button>'+
+            '<button class="btn" id="bMove">고른 청구서 → 다른 청구처로</button><button class="btn" id="bUnsend">선택한 곳 보냄 표시 지우기</button>'+
+            '<button class="btn danger" id="bDel">선택한 줄 지우기</button>'})+''')
 rep('''    billDetail()+
     '<div class="tools" style="margin:12px 0 0">'+
       '<button class="btn primary" id="bPrint">청구서 미리보기 · 인쇄</button>'+
@@ -126,13 +130,31 @@ kpi = s[a + len('  subTabs("deposit")+\n'):b]
 s = s[:a] + '  subTabs("deposit")+\n' + s[b:]
 rep('''      '<button class="btn">알림 설정</button>'+
       '<button class="btn">이 기간 엑셀 다운로드</button>'+
-''', '')
+''', '''      '<button class="btn" id="depAlarm">알림 설정</button>'+
+      '<button class="btn" id="depXlsDown">이 기간 엑셀 다운로드</button>'+
+''')
 rep('''  card("들어온 금액","",
     tableBlock("dep",[''', kpi + '''  card("들어온 금액","",
     tableBlock("dep",[''')
 a = s.find('  card("수집함에서 붙여넣기"'); b = s.find('btns([["가져오기","primary"],["지우기",""]]))+\n', a)
 if a < 0 or b < 0 or b - a > 600: raise SystemExit("붙여넣기 카드 자리 못 찾음")
-s = s[:a] + s[b + len('btns([["가져오기","primary"],["지우기",""]]))+\n'):]
+PASTE = """  '<details class="chk-fold" id="depPasteFold"><summary>통장 문자 · 시트 줄 붙여넣기 · 펼쳐 보기</summary>'+
+  card("통장 문자 · 시트 줄 붙여넣기","받은 입금 문자나 구글 시트 줄을 그대로 붙여 넣어요. 문자는 빈 줄로 나눠 여러 개를 한 번에 넣어요.",
+    '<textarea id="depPaste" style="width:100%;min-height:120px" placeholder="[신한] 10/08 14:21 123-456-789012 입금 1,243,000 홍길동"></textarea>'+
+    '<div class="tools"><button class="btn primary" id="depPasteGo">가져오기</button><button class="btn" id="depPasteClr">지우기</button></div>')+'</details>'+
+"""
+s = s[:a] + PASTE + s[b + len('btns([["가져오기","primary"],["지우기",""]]))+\n'):]
+# 입금 내역 설명 한두 줄로
+a = s.find('  return head("입금 내역","'); b = s.find('")+', a)
+if a < 0 or b < 0 or b - a > 400: raise SystemExit("입금 설명 자리 못 찾음")
+s = s[:a] + '  return head("입금 내역","팝빌에서 들어온 돈을 가져와 청구서와 자동으로 맞춰요. 애매한 것만 «확인 필요»로 남겨요.' + s[b:]
+# 배달 안쪽 탭은 공통 메뉴(메뉴 밑 줄 · 폰 작은 탭)에만 — 화면 안에서 두 번 그리지 않음
+rep('''function delivTabs(now){ return subBar(DELIVSUB, now); }''', '''function delivTabs(now){ return ""; }   /* v50: 공통 메뉴에 이미 보여요 */''')
+# 휴지통(지운 입금) — 서버 depositTrash 목록
+rep('''  var T=[];
+  return head("지운 내역"''', '''  var T=(typeof TRASHDEP!=="undefined"&&TRASHDEP)||[];   /* v50: 서버 depositTrash (v50_단추.js) */
+  return head("지운 내역"''')
+rep('''  remind:["remind","set"],''', '''  remind:["remind","set"], sms:["pop"],''')
 rep('''  card("은행 거래내역 엑셀 가져오기",''',
     '''  '<details class="chk-fold" id="depXlsFold"><summary>은행 거래내역 엑셀 가져오기 · 펼쳐 보기</summary>'+
   card("은행 거래내역 엑셀 가져오기",''')
@@ -169,7 +191,7 @@ rep('''</style>
 <style id="chk-v50">
 /* v50 — 작은 탭(#cggSub)은 폰에서만: 넓은 화면은 공통 메뉴 밑 줄 · 왼쪽 펼침에 같은 칸 */
 @media (min-width:601px){ #cggSub{display:none!important} }
-/* 시안 ③ «준비 중» 단추는 통합 판에서 빼요 */
+/* «준비 중» 글은 없애요 — 동작이 안 붙은 단추가 혹시 남으면 보이지 않게 (v50_단추.js 가 모두 붙여요) */
 button[data-soon],select[data-soon]{display:none!important}
 /* 접힌 카드 (도움 · 설명 · 자주 안 쓰는 칸) */
 .chk-fold{margin:0 0 16px}
@@ -185,6 +207,12 @@ button[data-soon],select[data-soon]{display:none!important}
 @media (min-width:1000px){ .lay-side .cgg-hb.cgg-conn.chk-off,.lay-icon .cgg-hb.cgg-conn.chk-off{color:var(--stop)} }
 </style>
 
+<script>
+/* ===== 체크 v24 — 공통 부품 부르기 ===== */''')
+
+# «준비 중» 단추를 동작하게 (v50_단추.js) — 맨 끝 공통 부품 부르기 바로 앞
+rep('''<script>
+/* ===== 체크 v24 — 공통 부품 부르기 ===== */''', open(BASE + "체크/도구/v50_단추.js", encoding="utf-8").read() + '''
 <script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */''')
 

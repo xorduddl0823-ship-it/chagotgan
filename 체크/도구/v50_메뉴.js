@@ -118,7 +118,7 @@ function drawTabs(){
 }
 /* ═══ v50 머리말 — 공통 부품 CGG.header 가 차례 · 크기를 그려요 (워시 v132 와 같은 방식)
    예전 단추(#hdrOld, 숨김)는 그대로 두고 눌린 것을 넘겨요 — 단추 동작 코드는 바꾸지 않아요 ═══ */
-var CHK_H=null, CHK_SIG="", CHK_CONN=null;
+var CHK_H=null, CHK_SIG="", CHK_CONN=null, CHK_OBS=false, CHK_SV="";
 function chkMeItems(){
   var owner=(ST&&ST.role)==="owner";
   return [{key:"me",icon:"user",label:"마이페이지",note:"요금제 · 사용량"}]
@@ -140,6 +140,8 @@ function chkHdr(){
   var off=$("hdOff"), b=off&&off.querySelector("b"), sm=off&&off.querySelector("small");
   var ps=$("pollSel"), opts=ps?Array.prototype.map.call(ps.options,function(o){ return [o.value,o.textContent]; }):[];
   var nm=b?String(b.textContent||"").trim():"", ln=sm?String(sm.textContent||"").replace(/ /g," ").trim():"";
+  /* 규칙 2: 업체 줄 = «사업자 000-00-00000 · 대표 ○○○» (거래처 › 우리 사업장 값이 있으면) */
+  try{ if(typeof OFFICE!=="undefined"&&OFFICE&&OFFICE.biz_no) ln="사업자 "+OFFICE.biz_no+(OFFICE.owner_name?" · 대표 "+OFFICE.owner_name:""); }catch(e){}
   var who=(ST&&ST.who)||"내 정보";
   var sig=[nm,ln,who,(ST&&ST.role)||"",ps?ps.value:""].join("|");
   if(CHK_H && CHK_SIG===sig && $("hdrTop").firstChild){ chkHdrSync(); return; }
@@ -154,8 +156,9 @@ function chkHdr(){
     auto:ps?{value:ps.value, options:opts, onChange:function(v){ ps.value=v; if(ps.onchange) ps.onchange(); }}:null,
     saved:chkSaved(),
     me:{name:who, role:(ST&&ST.role)==="owner"?"대표":"직원", sub:"마이페이지 · 휴지통", items:chkMeItems, onPick:chkMePick}});
-  if(!CHK_H.__obs && window.MutationObserver && $("hdrOld")){
-    CHK_H.__obs=1;
+  CHK_SV="";
+  if(!CHK_OBS && window.MutationObserver && $("hdrOld")){
+    CHK_OBS=true;
     var t=null, mo=new MutationObserver(function(){ clearTimeout(t); t=setTimeout(function(){ try{ chkHdr(); }catch(e){} },30); });
     mo.observe($("hdrOld"),{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["hidden"]});
   }
@@ -165,7 +168,7 @@ function chkHdr(){
 function chkHdrSync(){
   if(!CHK_H||!$("hdrTop")) return;
   var top=$("hdrTop");
-  try{ CHK_H.saved(CHK_CONN===true?"연결됨":chkSaved()); var se=top.querySelector('[data-hb="saved"]'); if(se) se.classList.toggle("chk-off",CHK_CONN!==true); }catch(e){}
+  try{ var sv=CHK_CONN===true?"연결됨":chkSaved(); if(sv!==CHK_SV){ CHK_SV=sv; CHK_H.saved(sv); } var se=top.querySelector('[data-hb="saved"]'); if(se) se.classList.toggle("chk-off",CHK_CONN!==true); }catch(e){}
   var nb=top.querySelector('[data-hb="notice"]'), od=document.querySelector("#ccwNotiBtn .ntDot");
   if(nb){ var dt=nb.querySelector(".ntDot");
     if(od){ if(!dt){ dt=document.createElement("i"); dt.className="ntDot"; nb.appendChild(dt); } dt.textContent=od.textContent; dt.title="안 읽은 공지 "+od.textContent+"건"; }
