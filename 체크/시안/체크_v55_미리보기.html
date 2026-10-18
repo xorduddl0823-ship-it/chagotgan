@@ -3286,7 +3286,7 @@ function cggAllMenu(focus){
   try{ CGG.allMenu(chkGroups(), chkCur(), chkPick, chkFeats(), chkGoFeat, {focus:!!focus}); }catch(e){}
 }
 /* 보험료 미납 대조는 «입·출금 내역» 안쪽 작은 탭으로 들어갑니다 */
-var DEPSUB=[["deposit","입금·출금"],["recv","받을 금액"],["unpaid","보험료 대조"]];
+var DEPSUB=[["deposit","입금 · 출금"],["recv","받을 금액"],["unpaid","보험료 대조"]];
 /* 월별 청구서 + 청구서 발송은 «월별 청구서» 하나로 묶고 안쪽 탭으로 나눕니다 */
 var BILLSUB=[["bill","월별 청구서"],["billgrp","청구처 묶음"],["billtpl","알림톡 템플릿"]];
 var TAXSUB=[["hometax","발행"],["history","달마다 장부"]];
@@ -3331,8 +3331,8 @@ function chkFeats(){
     {id:"billgrp",label:"청구처 묶음 (받는 곳 합치기)",path:"월별 청구서 › 청구처 묶음",go:"bill/billgrp",words:"청구처 묶음 받는 곳 합치기 대표 딜러 청구서 받는 사람"},
     {id:"billtpl",label:"알림톡 템플릿",path:"월별 청구서 › 알림톡 템플릿",go:"bill/billtpl",words:"알림톡 문구 템플릿 카카오 메시지"},
     {id:"recv",label:"받을 금액 (안 들어온 돈)",path:"입·출금 내역 › 받을 금액",go:"deposit/recv",words:"받을 금액 미수 안 들어온 돈 입금 대기 외상"},
-    {id:"deposit",label:"입금 · 출금 · 청구서와 맞추기",path:"입·출금 내역 › 입금·출금",go:"deposit/deposit",words:"입금 출금 통장 수금 맞추기 되돌리기 팝빌 계좌 입출금"},
-    {id:"dep-xls",label:"은행 거래내역 엑셀 가져오기",path:"입·출금 내역 › 입금·출금 › 아래쪽",go:"deposit/deposit",words:"은행 엑셀 거래내역 인터넷뱅킹 가져오기"},
+    {id:"deposit",label:"입금 · 출금 · 청구서와 맞추기",path:"입·출금 내역 › 입금 · 출금",go:"deposit/deposit",words:"입금 출금 통장 수금 맞추기 되돌리기 팝빌 계좌 입출금"},
+    {id:"dep-xls",label:"은행 거래내역 엑셀 가져오기",path:"입·출금 내역 › 입금 · 출금 › 아래쪽",go:"deposit/deposit",words:"은행 엑셀 거래내역 인터넷뱅킹 가져오기"},
     {id:"unpaid",label:"보험료 대조",path:"입·출금 내역 › 보험료 대조",go:"deposit/unpaid",words:"보험료 성능보증보험 미납 상사 대조"},
     {id:"hometax",label:"세금계산서 발행",path:"세금계산서",go:"hometax",words:"세금계산서 계산서 홈택스 발행 국세청 팝빌 부가세"},
     {id:"deliv",label:"차량 배달 기록",path:"배달 › 배달 기록",go:"deliv/deliv",words:"배달 탁송 기사 배달 기록 알림"},
@@ -3506,7 +3506,7 @@ function loadBill(){
         biz:(v.issuer_name||"")+(v.issuer_biz?" "+v.issuer_biz:"") || "(미등록)",
         tax: v.tax_issue ? "끊음" : "안 끊음",
         tel: telOf[v.bill_to_name]||"",
-        sent: shortTs(v.sent_at), seen: shortTs(v.view_at), view: v.view_key||"",
+        sent: shortTs(v.sent_at), sentRaw: String(v.sent_at||""), seen: shortTs(v.view_at), view: v.view_key||"",
         dom:v.dom_n||0, imp:v.imp_n||0, etc:v.etc_n||0, rows:null };
       b.state = b.left<=0 ? "완납" : (paid>0 ? "일부" : "미납");
       b.sendState = !v.sent_at ? "안 보냄" : (v.view_at ? "열어봄" : "보냄");
@@ -4222,7 +4222,7 @@ PAGE.home=function(){
       })())+
 
     /* 워시와 같은 꼴 — 큰 숫자 + 막대 + 한 줄 요약 (UI 1.0) */
-    card('이번 달 입금 <span class="rt">입금 내역 ›</span>',"",
+    card('이번 달 입금 <span class="rt">입·출금 내역 ›</span>',"",
       '<div style="font-size:24px;font-weight:900;letter-spacing:-.04em">'+won(totPaid)+
         '원 <span style="font-size:13px;color:var(--muted);font-weight:600">입금</span></div>'+
       '<div class="prog"><i style="width:'+pct+'%"></i></div>'+
@@ -4476,7 +4476,7 @@ PAGE.sales=function(){
       }).join("")+'</div></div>'):'')+'</section>';
 
   return head("매출","올린 엑셀이 곧 자료예요. 청구서를 만들지 않아도 달마다 몇 대 · 얼마인지 바로 보여요.")+
-  (empty?'<div class="msg info">아직 올라온 자료가 없어요. 매출 › 자료 올리기에서 접수리스트 엑셀을 올려 주세요.</div>':'')+
+  (empty?'<div class="msg info">아직 올라온 자료가 없어요. 설정 › 자료 올리기에서 접수리스트 엑셀을 올려 주세요.</div>':'')+
   '<div class="tools">'+
     '<div class="seg"><button type="button" id="vOut" aria-pressed="'+(!VATIN)+'">부가세 별도</button>'+
     '<button type="button" id="vIn" aria-pressed="'+VATIN+'">부가세 포함</button></div>'+
@@ -4568,7 +4568,7 @@ PAGE.deposit=function(){
       '<button class="btn primary" id="depPull">팝빌에서 가져오기</button>'+
       '<button class="btn" id="depMatch">청구서와 다시 맞추기</button>'+
       '<button class="btn" id="depAlarm">알림 설정</button>'+
-      '<button class="btn" id="depXlsDown">이 기간 엑셀 다운로드</button>'+
+      '<button class="btn" id="depXlsDown">엑셀 다운로드</button>'+
     '</div>'+
     '')+
   (function(){
@@ -4583,8 +4583,8 @@ PAGE.deposit=function(){
   })()+
   card("입금 · 출금","위 기간에 들어오고 나간 돈이에요.",
     tableBlock("dep",[
-      {k:"sender",t:"거래처",name:true,fmt:function(v){return '<b>'+esc(v)+'</b>';}},
-      {k:"at",t:"거래 일시"},
+      {k:"at",t:"거래 일시",name:true},
+      {k:"sender",t:"거래처",kind:"id",fmt:function(v){return '<b>'+esc(v)+'</b>';}},
       {k:"amount",t:"금액",num:true,fmt:function(v){ var n=Number(v)||0; return '<b style="color:'+(n<0?'var(--danger)':'var(--good)')+'">'+(n<0?'-':'+')+won(Math.abs(n))+'</b>'; }},   /* v55: 워시처럼 + 초록 · - 빨강 */
       {k:"kind",t:"갈래"},
       {k:"bank",t:"계좌"},
@@ -4602,7 +4602,7 @@ PAGE.deposit=function(){
       '<input type="file" id="depXls" accept=".xlsx,.xls,.csv" hidden><div id="depXlsBox"></div>'
     : '<p class="note">엑셀 가져오기는 대표만 할 수 있어요.</p>')+'</details>'+
   (OFFICE.popbill_ready?'':card("통장을 먼저 연결해 주세요","팝빌로 통장을 이어 두면 들어온 돈이 저절로 들어와요. 설정 › 입금 자동 확인에서 한 번만 하면 돼요.",
-    '<div class="tools"><button type="button" class="btn" id="depBankGo">입금 자동 확인 화면으로 가기</button></div>'))+
+    '<div class="tools"><button type="button" class="btn primary" id="depBankGo">입금 자동 확인 화면으로 가기</button></div>'))+
   CGG.help("기간을 고르면 숫자 칸과 표가 그 기간으로 바뀌어요. «확인 필요»는 누가 보낸 돈인지 모르는 입금이에요 — 줄을 골라 «선택한 줄 청구서에 맞추기»를 눌러요.","이 화면 사용법");
 };
 AFTER.deposit=function(){
@@ -4954,7 +4954,7 @@ PAGE.bill=function(){
     var b=BSTATE||{};
     if(!b.cars){
       return '<div class="msg err"><b>'+esc(ymText(ST.ym))+' 에 올라온 차가 없어요.</b> '+
-        '매출 › 자료 올리기에서 접수리스트 엑셀을 먼저 올려 주세요. '+
+        '설정 › 자료 올리기에서 접수리스트 엑셀을 먼저 올려 주세요. '+
         '(엑셀에 그 달 검사일이 들어 있어야 해요)</div>';
     }
     if(b.noDealer){
@@ -5539,16 +5539,19 @@ PAGE.hometax=function(){
   return head("세금계산서","한 달치를 모아 홈택스에 올릴 엑셀을 만들어요. 팝빌을 쓰면 버튼 한 번으로 발급돼요. 입금이 끝난 청구서만 나가요.")+
   (OFFICE.popbill_test?'<div class="msg ok"><b>지금은 시험 모드예요</b> — 국세청으로 가지 않아요. 마음 놓고 시험해 보세요.</div>':'')+
 
+  '<div class="card" style="padding:12px 16px"><div class="tools" style="margin:0;align-items:center">'+   /* v55: 워시처럼 공급자 줄 따로 */
+    '<span style="font-weight:800">공급자(우리 사업장)</span>'+
+    (OFFICE.name?('<span>'+esc(OFFICE.popbill_corp_name||OFFICE.name)+(OFFICE.biz_no?(' · '+esc(OFFICE.biz_no)):"")+(OFFICE.owner_name?(' · 대표 '+esc(OFFICE.owner_name)):"")+'</span>')
+      :'<span style="color:var(--danger);font-weight:700">아직 등록 안 됨 — 세금계산서를 만들 수 없어요</span>')+
+    '<button type="button" class="btn" data-v55go="office" style="margin-left:auto">설정 → 우리 사업장에서 '+(OFFICE.name?"고치기":"등록하기")+'</button></div></div>'+
   '<div class="tools">'+ymPicker("txYm","청구 달")+
     '<button class="btn" id="txEnd">모두 '+endDay+'로</button>'+
     '<button class="btn" id="txReload">새로고침</button>'+
     '<span style="font-size:12.5px;color:var(--muted)">작성일자 = 청구한 달의 말일 <b>'+endDay+'</b> (줄마다 바꿀 수 있어요)</span>'+
     '<span style="flex:1"></span>'+
-    '<span style="font-size:12.5px;color:var(--muted)">공급자(우리 사업장) <b>'+
-      esc(OFFICE.popbill_corp_name||OFFICE.name||"—")+'</b> · '+esc(OFFICE.biz_no||"사업자번호 없음")+' · '+esc(OFFICE.owner_name||"")+'</span>'+
-      '<button type="button" class="btn small" data-v55go="office">설정 → 우리 사업장에서 고치기</button></div>'+
+    '</div>'+
 
-  sums([["발급 대상",won(able.length)+"곳"],["공급가액",won(sup)+"원"],
+  sums([["발급 대상",won(able.length)+"건"],["공급가액",won(sup)+"원"],
         ["세액",won(vat)+"원"],["합계",won(sup+vat)+"원"]])+
 
   card("발급할 곳","왼쪽 네모로 고르고 표 아래 «팝빌로 발급»을 누르면 확인 창이 한 번 더 떠요. 입금 전 줄은 «입금 뒤 발급돼요».",
@@ -5584,7 +5587,7 @@ PAGE.hometax=function(){
       tools:'<button class="btn" id="txAll">발급할 수 있는 곳 전체 선택</button>'+
             '<button class="btn" id="txState">발급 상태 다시 읽기</button>'})+
     '<div class="tfoot"><div class="picked" id="txPicked">왼쪽 네모로 발급할 곳을 고르세요</div>'+
-      '<div class="acts"><button class="btn" id="txXls">홈택스 일괄발급 양식 받기</button>'+
+      '<div class="acts"><button class="btn" id="txXls">홈택스 일괄발급 엑셀 받기</button>'+
       '<button class="btn primary" id="txIssue">팝빌로 발급</button></div></div>'+
     (bad.length?'<p class="note">못 하는 곳 '+won(bad.length)+'곳 — '+
       esc(bad.slice(0,6).map(function(t){return t.name;}).join(" · "))+
@@ -5830,7 +5833,7 @@ PAGE.unpaid=function(){
   (todo? '<div class="ckbar" style="border-left-color:var(--danger)"><div class="l">'+
       '<b>아직 맞춰 보지 않은 줄이 '+won(todo)+'건 있어요</b>'+
       '<small>위쪽 <b>«다시 대조하기»</b> 를 한 번 눌러 주세요. '+
-      '그래도 «우리 자료에 없음» 이 많으면, 매출 › 자료 올리기에 '+
+      '그래도 «우리 자료에 없음» 이 많으면, 설정 › 자료 올리기에 '+
       '<b>carCheckList(카모두) 엑셀</b>이 아직 안 올라간 것이에요.</small>'+
       '</div><div class="r">눌러 주세요</div></div>' : '')+
 
@@ -6537,7 +6540,7 @@ AFTER.delivtrash=function(){
 
 /* ── 설정 › 자료 올리기 ── */
 PAGE.files=function(){
-  return head("자료 올리기","업무 시작할 때와 끝낼 때 한 번씩만 올려 두면 돼요. 엑셀은 여기서만 올려요. 올린 엑셀은 서버에 보관되고, 화면을 열 때마다 청구서 · 보험료 · 미납 대조에 자동으로 들어가요.")+
+  return head("자료 올리기","카모두 명부 · 접수리스트 · 나스 엑셀을 여기서 올려요.")+
   card("", "",
     '<div class="photobox" id="xlBox" style="padding:30px 16px;cursor:pointer">'+
       '<div style="font-weight:800;font-size:15px;margin-bottom:5px">엑셀 여러 개를 한꺼번에 끌어다 놓기</div>'+
@@ -7282,7 +7285,7 @@ PAGE.sms=function(){
   card("3단계 · 카카오뱅크 알림 방식","카카오뱅크는 입금 문자를 보내지 않고 앱 푸시 알림으로 알려 줘요. 그래서 문자 대신 알림을 읽어 보내요.",btns([["본문 복사",""]]))+
   card("문자 해석 시험","실제로 받은 입금 문자를 붙여 넣어 보세요. 금액과 입금자명을 제대로 읽는지 바로 확인할 수 있어요.",
     '<textarea placeholder="[신한] 10/08 14:21 123-456-789012 입금 1,243,000 홍길동"></textarea>'+
-    btns([["해석해 보기","primary"],["이 문자를 입금 내역에 담기",""]]));
+    btns([["해석해 보기","primary"],["이 문자를 입·출금 내역에 담기",""]]));
 };
 
 /* ── 설정 › 알림 설정 ── */
@@ -7318,7 +7321,7 @@ AFTER.trash=function(){ wireTable("trs",function(){ draw(); }); };
 PAGE.backup=function(){
   /* v25: 예전 카드 다섯 장은 글자만 박힌 가짜였습니다(버튼을 눌러도 아무 일 없음). 진짜 값만 남기고 나머지는 「준비 중」으로 */
   var ver=String(ST.ver||"").match(/v[\d.]+/i);
-  return head("백업 · 기기","차곳간체크는 자료를 서버에 두기 때문에 PC끼리 따로 맞출 일이 없어요. 회사 PC에서 고치면 집 PC에도 그대로 보여요.")+
+  return head("백업 · 기기","자료는 서버에 있어 PC · 폰 어디서 열어도 같아요. 백업 파일 받기 · 접속 기기 목록은 준비 중이에요.")+
   card("지금 연결","",
     kvs([["검사소",esc((ST.shopName||"—")+(ST.officeCode?" ("+ST.officeCode+")":""))],
          ["서버",esc(ver?ver[0]:"확인 중")],["주소",esc(location.host||"—")]]))+
@@ -7421,7 +7424,7 @@ PAGE.popbill=function(){
       : ['<b>아직 안 붙었어요.</b>'+(POP.why?' — '+esc(POP.why):''),"err"];
 
   return head("입금 자동 확인",
-    "입금 내역(계좌조회)과 세금계산서를 팝빌로 주고받아요.")+
+    "통장에 입금이 들어오면 청구서와 맞춰 자동으로 입금 완료로 바꿔요. 세금계산서도 팝빌로 발급해요.")+
 
   '<div class="msg '+band[1]+'">'+band[0]+'</div>'+
 
@@ -7493,7 +7496,7 @@ PAGE.popbill=function(){
         '다른 번호로 두면 세금계산서가 그 회사 이름으로 나가요.')+'</p>'+
     '<div id="pbMsg" class="hide"></div>')+
 
-  card("3. 계좌 — 입금 내역에 쓸 계좌","계좌 등록은 <b>팝빌 홈페이지에서 직접</b> 하셔야 해요(은행 인증이 필요해서예요). "+
+  card("3. 계좌 — 입·출금 내역에 쓸 계좌","계좌 등록은 <b>팝빌 홈페이지에서 직접</b> 하셔야 해요(은행 인증이 필요해서예요). "+
     "등록을 마치고 «팝빌에서 계좌 불러오기»를 누르면 목록이 나와요.",
     '<div class="tools"><button class="btn primary" id="pbBanks">팝빌에서 계좌 불러오기</button>'+
       '<button class="btn" id="pbOpen">팝빌 홈페이지 열기</button></div>'+
@@ -10160,7 +10163,7 @@ function on(t, f){ btnByText(t).forEach(function(b){ if(!b.onclick) b.onclick=f;
 function after(p, f){ var a=AFTER[p]; AFTER[p]=function(){ if(a) a.apply(this,arguments); try{ f(); }catch(e){ bar((e&&e.message)||"처리하지 못했어요.","err"); } }; }
 function noSrv(e){ return /지원하지 않는 기능|unknown|없는 기능/i.test(String((e&&e.message)||"")); }
 
-/* ── 1. 매출 › 자료 올리기 › 양식 다운로드 (화면만) — 서버(excelPut)가 읽는 열 이름 그대로 ── */
+/* ── 1. 설정 › 자료 올리기 › 양식 다운로드 (화면만) — 서버(excelPut)가 읽는 열 이름 그대로 ── */
 var FORMS={
   "접수리스트":{cols:["성능번호","차대번호","차량번호","차명","검사일","회사명","신청인","상품명","금액","성능보험료","보험료납부"],
     ex:["2026-1018-0001","KMHxxxxxxxxxxxxxx","12가3456","그랜저","2026-10-18","예시모터스","홍길동","국산 성능점검","33000","12000","N"],
@@ -10403,13 +10406,13 @@ after("sms", function(){
   on("+ 계좌 추가", function(){ go("popbill"); setTimeout(function(){ var a=$("bkAdd"); if(a&&CGG.spot) CGG.spot(a.closest(".card")||a); },400); });
   on("서버에 저장", function(){ bar("계좌는 넣을 때마다 서버에 바로 저장돼요. 지금 목록이 서버와 같아요.","ok"); });
   on("서버에서 새로고침", function(){ refresh(["pop"]); });
-  function needCode(){ tell("수집함 코드는 차곳간이 검사소마다 만들어 드려요","차곳간(총괄)에 «문자 수집함 코드 요청»이라고 알려 주시면 이 칸에 넣어 드려요. 그 전에는 입금 문자를 아래 «문자 해석 시험» 칸이나 입·출금 내역 › 입금·출금 › «통장 문자 붙여넣기»에 붙여 넣어 넣을 수 있어요."); }
+  function needCode(){ tell("수집함 코드는 차곳간이 검사소마다 만들어 드려요","차곳간(총괄)에 «문자 수집함 코드 요청»이라고 알려 주시면 이 칸에 넣어 드려요. 그 전에는 입금 문자를 아래 «문자 해석 시험» 칸이나 입·출금 내역 › 입금 · 출금 › «통장 문자 붙여넣기»에 붙여 넣어 넣을 수 있어요."); }
   on("코드 복사", needCode); on("코드 펼치기", needCode); on("본문 복사", needCode);
   var ta=document.querySelector("#main textarea");
   on("해석해 보기", function(){ var P=smsParse(ta?ta.value:"");
     if(!P.rows.length){ tell("읽지 못했어요","금액(«입금 1,243,000»)과 날짜(«10/08»)가 들어 있는지 봐 주세요."); return; }
     tell("이렇게 읽었어요", P.rows.map(function(r){ return esc(r.tx_at.slice(0,16).replace("T"," "))+" · <b>"+esc(r.sender)+"</b> · "+won(r.amount)+"원"; }).join("<br>")+(P.bad?"<br>(못 읽은 줄 "+P.bad+"개)":"")); });
-  on("이 문자를 입금 내역에 담기", function(){ importRows(smsParse(ta?ta.value:""), function(){ if(ta) ta.value=""; }); });
+  on("이 문자를 입·출금 내역에 담기", function(){ importRows(smsParse(ta?ta.value:""), function(){ if(ta) ta.value=""; }); });
 });
 
 /* ── 8. 설정 › 알람 소리 — 전체 크기 · 소리 시험 (이 PC에만) ── */
@@ -10439,7 +10442,7 @@ after("trash", function(){
     var ids=picked("trs"); if(!ids.length){ tell("고른 줄이 없어요","표 왼쪽 네모로 되살릴 입금을 골라 주세요."); return; }
     var L=(TRASHDEP||[]).filter(function(d){ return ids.indexOf(d.id)>=0; });
     ask({title:"입금 "+L.length+"건을 되살릴까요?", k1:"합계", v1:won(L.reduce(function(t,d){ return t+d.amount; },0))+"원", k2:"보낸 분", v2:L.slice(0,3).map(function(d){ return d.sender; }).join(", ")+(L.length>3?" 외 "+(L.length-3)+"건":""), yes:"되살리기"}, function(){
-      busy(true); call("depositRestore",[{ids:ids}]).then(function(r){ busy(false); clearPick("trs"); TRASHDEP=null; bar(won((r&&r.n)||0)+"건을 입금 내역으로 되살렸어요.","ok"); refresh(["dep"]); }).catch(fail); });
+      busy(true); call("depositRestore",[{ids:ids}]).then(function(r){ busy(false); clearPick("trs"); TRASHDEP=null; bar(won((r&&r.n)||0)+"건을 입·출금 내역으로 되살렸어요.","ok"); refresh(["dep"]); }).catch(fail); });
   });
 });
 
@@ -11083,7 +11086,7 @@ function expGo(){
   billLoadRows(BILLS.slice()).then(function(){
     busy(false); bar("");
     var L=[]; BILLS.forEach(function(b){ (b.rows||[]).forEach(function(r){ if(r.car_id && EXP.test(String(r.item||""))) L.push({b:b, r:r}); }); });
-    if(!L.length){ tell("수출 가성능 차가 없어요", esc(ymText(ST.ym))+" 청구서에 수출 가성능 줄이 없어요. 딜러가 이어지지 않은 차는 매출 › 자료 올리기에서 딜러를 먼저 이어 주세요."); return; }
+    if(!L.length){ tell("수출 가성능 차가 없어요", esc(ymText(ST.ym))+" 청구서에 수출 가성능 줄이 없어요. 딜러가 이어지지 않은 차는 설정 › 자료 올리기에서 딜러를 먼저 이어 주세요."); return; }
     var seq={};
     CGG.dialog({size:"form", title:"수출 가성능 검사비 넣기", desc:ymText(ST.ym)+" · "+L.length+"대 · 금액은 부가세 별도 · 비운 칸은 그대로 둬요",
       body:'<div style="display:grid;gap:8px;max-height:52vh;overflow:auto">'+L.map(function(x,i){
@@ -11235,14 +11238,14 @@ function hometaxGo(other){
   var ids=picked("htx"), pick=ids.length?able.filter(function(t){ return ids.indexOf(t.id)>=0; }):able;
   if(!pick.length){ tell("넣을 곳이 없어요","입금 완료 · 아직 발급 안 한 곳이 없어요. 입금 전인 곳은 입금 뒤 발급돼요."); return; }
   var noBiz=pick.filter(function(t){ return digits(t.biz).length!==10; }).length;
-  if(!digits((OFFICE||{}).popbill_corp||(OFFICE||{}).biz_no)){ tell("우리 사업장 사업자번호가 비어 있어요","설정 › 거래처 › 우리 사업장에서 사업자등록번호를 먼저 넣어 주세요."); return; }
+  if(!digits((OFFICE||{}).popbill_corp||(OFFICE||{}).biz_no)){ tell("우리 사업장 사업자번호가 비어 있어요","설정 › 우리 사업장에서 사업자등록번호를 먼저 넣어 주세요."); return; }
   var parts=Math.ceil(pick.length/100), tot=pick.reduce(function(a,t){ return a+(Number(t.total)||0); },0);
-  ask({title:"홈택스 일괄발급 양식을 내려받을까요?", sub:ymText(ST.ym)+"분 · 입금 완료만 · 영수(01)"+(other?" · 고른 양식에 채움":""),
+  ask({title:"홈택스 일괄발급 엑셀을 받을까요?", sub:ymText(ST.ym)+"분 · 입금 완료만 · 영수(01)"+(other?" · 고른 양식에 채움":""),
        k1:"몇 건", v1:pick.length+"건"+(parts>1?" (100건씩 파일 "+parts+"개)":""), k2:"얼마", v2:won(tot)+"원 (부가세 포함)",
        warn:(other?"고른 양식 파일에 채워요.":"홈택스 공식 양식(일반) 그대로예요.")+" 홈택스 일괄발급 화면에서 이 파일을 불러와요(발급은 한 번에 50건씩)."+(parts>1?" 파일이 여러 개라 브라우저가 «여러 파일 내려받기»를 물으면 «허용»을 눌러요.":"")+(noBiz?" 사업자번호가 10자리가 아닌 곳 "+noBiz+"곳이 있어요.":""), yes:"내려받기"}, function(){
     var warn=[];
     try{ for(var i=0;i<parts;i++) makeFile(pick.slice(i*100,(i+1)*100), i+1, parts, warn, other); }
-    catch(e){ if(other){ tell("홈택스 일괄발급 양식이 아닌 것 같아요","작성일자 · 공급자/공급받는자 등록번호 · 공급가액 · 세액 · 품목 · 영수/청구 칸이 있어야 해요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요."); return; }
+    catch(e){ if(other){ tell("홈택스 일괄발급 양식이 아닌 것 같아요","작성일자 · 공급자/공급받는자 등록번호 · 공급가액 · 세액 · 품목 · 영수/청구 칸이 있어야 해요. 기본 양식은 «홈택스 일괄발급 엑셀 받기»를 쓰면 돼요."); return; }
       tell("양식을 만들지 못했어요","차곳간에 알려 주세요. ("+esc(String(e&&e.message||""))+")"); return; }
     bar("홈택스 양식 "+parts+"개("+pick.length+"건)를 내려받았어요."+(warn.length?" 길이가 넘쳐 줄인 칸 "+warn.length+"개 — "+warn.slice(0,2).join(" / "):""), warn.length?"info":"ok");
   });
@@ -11250,14 +11253,14 @@ function hometaxGo(other){
 var _a=AFTER.hometax;
 AFTER.hometax=function(){
   if(_a) _a.apply(this,arguments);
-  var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 양식 받기"; xl.onclick=function(){ hometaxGo(null); };
+  var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 엑셀 받기"; xl.onclick=function(){ hometaxGo(null); };
     if(!$("txXls2")){ var o=document.createElement("button"); o.type="button"; o.className="btn"; o.id="txXls2"; o.textContent="다른 양식 쓰기"; xl.parentNode.insertBefore(o, xl.nextSibling); }
     $("txXls2").onclick=function(){ var i=document.createElement("input"); i.type="file"; i.accept=".xls,.xlsx"; i.hidden=true; document.body.appendChild(i);
       setTimeout(function(){ document.body.onfocus=function(){ document.body.onfocus=null; setTimeout(function(){ if(i.parentNode&&!(i.files&&i.files.length)) i.remove(); },800); }; },0);   /* «취소»면 숨은 칸 치우기 */
       i.onchange=function(){ var f=i.files&&i.files[0]; i.remove(); if(!f) return; var rd=new FileReader();
         rd.onload=function(){ var u=new Uint8Array(rd.result), okH=false; try{ var w0=XLSX.read(u,{type:"array"}); okH=w0.SheetNames.some(function(n){ var h=readHead(w0.Sheets[n]); return h&&h.labels.map(fieldOf).indexOf("b:biz")>=0; }); }catch(e){
-            tell("이 양식은 열 수 없어요", /password/i.test(String(e&&e.message))?"암호가 걸린 파일이에요. 엑셀에서 열어 «다른 이름으로 저장»한 파일로 골라 주세요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요.":"엑셀 파일이 맞는지 봐 주세요."); return; }
-          if(!okH){ tell("홈택스 일괄발급 양식이 아닌 것 같아요","작성일자 · 공급받는자 등록번호 칸이 있는 양식이어야 해요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요."); return; }
+            tell("이 양식은 열 수 없어요", /password/i.test(String(e&&e.message))?"암호가 걸린 파일이에요. 엑셀에서 열어 «다른 이름으로 저장»한 파일로 골라 주세요. 기본 양식은 «홈택스 일괄발급 엑셀 받기»를 쓰면 돼요.":"엑셀 파일이 맞는지 봐 주세요."); return; }
+          if(!okH){ tell("홈택스 일괄발급 양식이 아닌 것 같아요","작성일자 · 공급받는자 등록번호 칸이 있는 양식이어야 해요. 기본 양식은 «홈택스 일괄발급 엑셀 받기»를 쓰면 돼요."); return; }
           hometaxGo(u); };
         rd.readAsArrayBuffer(f); }; i.click(); }; }
   /* 입금 전 줄은 체크 안 됨 */
@@ -11514,7 +11517,7 @@ BANDS.hometax=function(){
   if(!(OFFICE.popbill_userid && OFFICE.biz_no)) return {count:1, tone:"stop", text:"팝빌 회원아이디나 사업자번호가 비어 있어요", go:"연결 · 팝빌로", onGo:function(){ go("popbill"); }};
   var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); }), tot=0;
   able.forEach(function(t){ tot+=Number(t.total)||0; });
-  return {count:able.length, text:"발급할 곳 "+able.length+"곳 · "+won(tot)+"원", empty:"발급할 곳이 없어요 — 입금이 끝나면 여기에 떠요",
+  return {count:able.length, text:"발급할 곳 "+able.length+"건 · "+won(tot)+"원", empty:"발급할 곳이 없어요 — 입금이 끝나면 여기에 떠요",
     onGo:function(){ var t=$("htx-blk"); if(t) CGG.spot(t); }};
 };
 BANDS.deposit=function(){
@@ -11588,10 +11591,13 @@ AFTER.deliv=function(){ if(av) av.apply(this,arguments); perWire(); };
 PAGE.recv=function(){   /* 워시 «받을 금액»과 같은 칸 */
   var L=(BILLS||[]).filter(function(b){ return Number(b.left)>0; }).map(function(b){
     return {id:b.id, name:b.name, comp:b.comp||b.issuer||"", ym:ST.ym, cnt:Number(b.cnt)||0, left:Number(b.left)||0, paid:Number(b.paid)||0, _q:b.name+" "+(b.comp||"")}; });
-  var s=0, got=0; L.forEach(function(r){ s+=r.left; }); (BILLS||[]).forEach(function(b){ got+=Number(b.paid)||0; });
-  return head("받을 금액","청구서를 보냈는데 아직 다 안 들어온 돈이에요. 입금이 들어오면 «입금·출금»에서 청구서와 맞춰요.")+
+  var s=0, got=0; L.forEach(function(r){ s+=r.left; });
+  /* 가장 오래된 건 = 남은 청구서 가운데 가장 먼저 보낸 날(안 보낸 것만 있으면 청구 달) */
+  var sentL=(BILLS||[]).filter(function(b){ return Number(b.left)>0 && (b.sentRaw||b.sent); }).sort(function(a,z){ return String(a.sentRaw||a.sent)<String(z.sentRaw||z.sent)?-1:1; });
+  var oldest=!L.length?"없음":(sentL.length?String(sentL[0].sent).slice(0,5):Number(String(ST.ym).slice(5,7))+"월분"); (BILLS||[]).forEach(function(b){ got+=Number(b.paid)||0; });
+  return head("받을 금액","청구서를 보냈는데 아직 다 안 들어온 돈이에요. 입금이 들어오면 «입금 · 출금»에서 청구서와 맞춰요.")+
     '<div class="tools">'+ymPicker("rcYm","청구 달")+'</div>'+
-    sums([["받을 금액",won(s)+"원","warn"],["지금까지 받은 금액",won(got)+"원","good"],["가장 오래된 건",L.length?Number(String(ST.ym).slice(5,7))+"월":"없음"],["남은 건수",won(L.length)+"건"]])+
+    sums([["받을 금액",won(s)+"원","warn"],["지금까지 받은 금액",won(got)+"원","good"],["가장 오래된 건",oldest],["남은 건수",won(L.length)+"건"]])+
     card("받을 곳","",
       tableBlock("rcv",[
         {k:"name",t:"딜러",name:true,fmt:function(v){ return '<b>'+esc(v)+'</b>'; }},
@@ -11620,7 +11626,7 @@ PAGE.partner=function(){
 PAGE.office=function(){
   var c=splitPartner().cards, out="";
   for(var i=1;i<c.length;i++) out+=c[i].outerHTML;
-  return head("우리 사업장","세금계산서 · 청구서에 찍히는 정보예요. 상호는 맨 위 이름 · 알림 보내는 이름에도 쓰여요.")+out;
+  return head("우리 사업장","상호 · 사업자번호 · 대표자를 넣어요. 청구서와 세금계산서에 이 내용이 찍혀요.")+out;
 };
 NEEDS.office=NEEDS.partner;
 AFTER.office=function(){ if(AFTER.partner) AFTER.partner.apply(this,arguments); };

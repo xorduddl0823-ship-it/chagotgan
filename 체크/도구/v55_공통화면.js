@@ -9,7 +9,7 @@ BANDS.hometax=function(){
   if(!(OFFICE.popbill_userid && OFFICE.biz_no)) return {count:1, tone:"stop", text:"팝빌 회원아이디나 사업자번호가 비어 있어요", go:"연결 · 팝빌로", onGo:function(){ go("popbill"); }};
   var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); }), tot=0;
   able.forEach(function(t){ tot+=Number(t.total)||0; });
-  return {count:able.length, text:"발급할 곳 "+able.length+"곳 · "+won(tot)+"원", empty:"발급할 곳이 없어요 — 입금이 끝나면 여기에 떠요",
+  return {count:able.length, text:"발급할 곳 "+able.length+"건 · "+won(tot)+"원", empty:"발급할 곳이 없어요 — 입금이 끝나면 여기에 떠요",
     onGo:function(){ var t=$("htx-blk"); if(t) CGG.spot(t); }};
 };
 BANDS.deposit=function(){
@@ -83,10 +83,13 @@ AFTER.deliv=function(){ if(av) av.apply(this,arguments); perWire(); };
 PAGE.recv=function(){   /* 워시 «받을 금액»과 같은 칸 */
   var L=(BILLS||[]).filter(function(b){ return Number(b.left)>0; }).map(function(b){
     return {id:b.id, name:b.name, comp:b.comp||b.issuer||"", ym:ST.ym, cnt:Number(b.cnt)||0, left:Number(b.left)||0, paid:Number(b.paid)||0, _q:b.name+" "+(b.comp||"")}; });
-  var s=0, got=0; L.forEach(function(r){ s+=r.left; }); (BILLS||[]).forEach(function(b){ got+=Number(b.paid)||0; });
-  return head("받을 금액","청구서를 보냈는데 아직 다 안 들어온 돈이에요. 입금이 들어오면 «입금·출금»에서 청구서와 맞춰요.")+
+  var s=0, got=0; L.forEach(function(r){ s+=r.left; });
+  /* 가장 오래된 건 = 남은 청구서 가운데 가장 먼저 보낸 날(안 보낸 것만 있으면 청구 달) */
+  var sentL=(BILLS||[]).filter(function(b){ return Number(b.left)>0 && (b.sentRaw||b.sent); }).sort(function(a,z){ return String(a.sentRaw||a.sent)<String(z.sentRaw||z.sent)?-1:1; });
+  var oldest=!L.length?"없음":(sentL.length?String(sentL[0].sent).slice(0,5):Number(String(ST.ym).slice(5,7))+"월분"); (BILLS||[]).forEach(function(b){ got+=Number(b.paid)||0; });
+  return head("받을 금액","청구서를 보냈는데 아직 다 안 들어온 돈이에요. 입금이 들어오면 «입금 · 출금»에서 청구서와 맞춰요.")+
     '<div class="tools">'+ymPicker("rcYm","청구 달")+'</div>'+
-    sums([["받을 금액",won(s)+"원","warn"],["지금까지 받은 금액",won(got)+"원","good"],["가장 오래된 건",L.length?Number(String(ST.ym).slice(5,7))+"월":"없음"],["남은 건수",won(L.length)+"건"]])+
+    sums([["받을 금액",won(s)+"원","warn"],["지금까지 받은 금액",won(got)+"원","good"],["가장 오래된 건",oldest],["남은 건수",won(L.length)+"건"]])+
     card("받을 곳","",
       tableBlock("rcv",[
         {k:"name",t:"딜러",name:true,fmt:function(v){ return '<b>'+esc(v)+'</b>'; }},
@@ -115,7 +118,7 @@ PAGE.partner=function(){
 PAGE.office=function(){
   var c=splitPartner().cards, out="";
   for(var i=1;i<c.length;i++) out+=c[i].outerHTML;
-  return head("우리 사업장","세금계산서 · 청구서에 찍히는 정보예요. 상호는 맨 위 이름 · 알림 보내는 이름에도 쓰여요.")+out;
+  return head("우리 사업장","상호 · 사업자번호 · 대표자를 넣어요. 청구서와 세금계산서에 이 내용이 찍혀요.")+out;
 };
 NEEDS.office=NEEDS.partner;
 AFTER.office=function(){ if(AFTER.partner) AFTER.partner.apply(this,arguments); };

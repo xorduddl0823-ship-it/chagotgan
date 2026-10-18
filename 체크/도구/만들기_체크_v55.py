@@ -87,7 +87,7 @@ rep('''    '<button class="btn" id="txReload">새로고침</button>'+
 rep('''  sums([["발급할 수 있는 곳",won(able.length)+"곳"],["공급가액",won(sup)+"원"],
         ["부가세",won(vat)+"원"],["합계",won(sup+vat)+"원"],
         ["이미 발급 · 안 받음",won(done.length)+" · "+won(skip.length)+"곳"]],"c5")+''',
-    '''  sums([["발급 대상",won(able.length)+"곳"],["공급가액",won(sup)+"원"],
+    '''  sums([["발급 대상",won(able.length)+"건"],["공급가액",won(sup)+"원"],
         ["세액",won(vat)+"원"],["합계",won(sup+vat)+"원"]])+''')
 rep('''  card("발급 대상","왼쪽 네모로 고르고 표 아래 «팝빌로 발급»을 누르면 확인 창이 한 번 더 떠요.",''',
     '''  card("발급할 곳","왼쪽 네모로 고르고 표 아래 «팝빌로 발급»을 누르면 확인 창이 한 번 더 떠요. 입금 전 줄은 «입금 뒤 발급돼요».",''')
@@ -108,10 +108,14 @@ rep('''      '<span style="font-size:12px;color:var(--muted);font-weight:700">�
     '</div></div></details>'+
   CGG.help("입금 전 줄은 «입금 뒤 발급돼요»로 보여요. 낸 계산서는 지울 수 없고 «수정세금계산서»로 바로잡아요.","이 화면 사용법");''')
 
+rep('''  '<div class="tools">'+ymPicker("txYm","청구 달")+''', '''  '<div class="card" style="padding:12px 16px"><div class="tools" style="margin:0;align-items:center">'+   /* v55: 워시처럼 공급자 줄 따로 */
+    '<span style="font-weight:800">공급자(우리 사업장)</span>'+
+    (OFFICE.name?('<span>'+esc(OFFICE.popbill_corp_name||OFFICE.name)+(OFFICE.biz_no?(' · '+esc(OFFICE.biz_no)):"")+(OFFICE.owner_name?(' · 대표 '+esc(OFFICE.owner_name)):"")+'</span>')
+      :'<span style="color:var(--danger);font-weight:700">아직 등록 안 됨 — 세금계산서를 만들 수 없어요</span>')+
+    '<button type="button" class="btn" data-v55go="office" style="margin-left:auto">설정 → 우리 사업장에서 '+(OFFICE.name?"고치기":"등록하기")+'</button></div></div>'+
+  '<div class="tools">'+ymPicker("txYm","청구 달")+''')
 rep('''    '<span style="font-size:12.5px;color:var(--muted)">공급자 <b>'+
-      esc(OFFICE.popbill_corp_name||OFFICE.name||"—")+'</b></span></div>'+''', '''    '<span style="font-size:12.5px;color:var(--muted)">공급자(우리 사업장) <b>'+
-      esc(OFFICE.popbill_corp_name||OFFICE.name||"—")+'</b> · '+esc(OFFICE.biz_no||"사업자번호 없음")+' · '+esc(OFFICE.owner_name||"")+'</span>'+
-      '<button type="button" class="btn small" data-v55go="office">설정 → 우리 사업장에서 고치기</button></div>'+''')
+      esc(OFFICE.popbill_corp_name||OFFICE.name||"—")+'</b></span></div>'+''', '''    '</div>'+''')
 
 # ── 입·출금 내역 ──
 rep('''PAGE.deposit=function(){
@@ -135,15 +139,15 @@ rep('''  card("들어온 금액","",
       {k:"at",t:"거래 일시"},''',
     '''  card("입금 · 출금","위 기간에 들어오고 나간 돈이에요.",
     tableBlock("dep",[
-      {k:"sender",t:"거래처",name:true,fmt:function(v){return '<b>'+esc(v)+'</b>';}},
-      {k:"at",t:"거래 일시"},''')
+      {k:"at",t:"거래 일시",name:true},
+      {k:"sender",t:"거래처",kind:"id",fmt:function(v){return '<b>'+esc(v)+'</b>';}},''')
 rep('''    ], DEPS, {pick:true,
       tools:'<button class="btn primary" id="depApply">''', '''    ], perFilter("dep",DEPS), {pick:true,
       tools:'<button class="btn primary" id="depApply">''')
 rep('''    : '<p class="note">엑셀 가져오기는 대표만 할 수 있어요.</p>')+'</details>';
 };''', '''    : '<p class="note">엑셀 가져오기는 대표만 할 수 있어요.</p>')+'</details>'+
   (OFFICE.popbill_ready?'':card("통장을 먼저 연결해 주세요","팝빌로 통장을 이어 두면 들어온 돈이 저절로 들어와요. 설정 › 입금 자동 확인에서 한 번만 하면 돼요.",
-    '<div class="tools"><button type="button" class="btn" id="depBankGo">입금 자동 확인 화면으로 가기</button></div>'))+
+    '<div class="tools"><button type="button" class="btn primary" id="depBankGo">입금 자동 확인 화면으로 가기</button></div>'))+
   CGG.help("기간을 고르면 숫자 칸과 표가 그 기간으로 바뀌어요. «확인 필요»는 누가 보낸 돈인지 모르는 입금이에요 — 줄을 골라 «선택한 줄 청구서에 맞추기»를 눌러요.","이 화면 사용법");
 };''')
 
@@ -157,9 +161,7 @@ rep('''    var inM=0,ok=0,wait=0;
       if(d.state==="확인 대기") wait++; else ok++;
     });''')
 
-rep('''      {k:"at",t:"거래 일시"},
-      {k:"amount",t:"금액",num:true,fmt:function(v){return won(v);}},''', '''      {k:"at",t:"거래 일시"},
-      {k:"amount",t:"금액",num:true,fmt:function(v){ var n=Number(v)||0; return '<b style="color:'+(n<0?'var(--danger)':'var(--good)')+'">'+(n<0?'-':'+')+won(Math.abs(n))+'</b>'; }},   /* v55: 워시처럼 + 초록 · - 빨강 */''', 2)   # 입금 표 · 지운 입금 표
+rep('''      {k:"amount",t:"금액",num:true,fmt:function(v){return won(v);}},''', '''      {k:"amount",t:"금액",num:true,fmt:function(v){ var n=Number(v)||0; return '<b style="color:'+(n<0?'var(--danger)':'var(--good)')+'">'+(n<0?'-':'+')+won(Math.abs(n))+'</b>'; }},   /* v55: 워시처럼 + 초록 · - 빨강 */''', 2)   # 입금 표 · 지운 입금 표
 
 # ── 배달 ──
 rep('''PAGE.deliv=function(){
@@ -222,6 +224,27 @@ rep('''  return head("차량 배달 알림",''', '''  return head((DELIVSUB.filt
 rep("""<script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */""", open(BASE + "체크/도구/v55_공통화면.js", encoding="utf-8").read() + """<script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */""")
+
+import re as _re
+def allrep(a, b, need=1):
+    global s
+    if s.count(a) < need: raise SystemExit("못 찾음: " + a[:60])
+    s = s.replace(a, b)
+allrep("매출 › 자료 올리기", "설정 › 자료 올리기", 4)
+allrep("이 기간 엑셀 다운로드", "엑셀 다운로드")
+allrep("이 문자를 입금 내역에 담기", "이 문자를 입·출금 내역에 담기", 2)   # 단추 글자 · 연결 글자 같이
+allrep("입금 내역으로 되살렸어요", "입·출금 내역으로 되살렸어요")
+allrep("""card('이번 달 입금 <span class="rt">입금 내역 ›</span>'""", """card('이번 달 입금 <span class="rt">입·출금 내역 ›</span>'""")
+allrep("입금 내역(계좌조회)과 세금계산서를 팝빌로 주고받아요.", "통장에 입금이 들어오면 청구서와 맞춰 자동으로 입금 완료로 바꿔요. 세금계산서도 팝빌로 발급해요.")
+allrep("홈택스 일괄발급 양식 받기", "홈택스 일괄발급 엑셀 받기", 2)
+allrep("입금·출금", "입금 · 출금", 3)
+allrep("홈택스 일괄발급 양식 내려받기", "홈택스 일괄발급 엑셀 받기", 3)
+allrep("홈택스 일괄발급 양식을 내려받을까요?", "홈택스 일괄발급 엑셀을 받을까요?")
+allrep("3. 계좌 — 입금 내역에 쓸 계좌", "3. 계좌 — 입·출금 내역에 쓸 계좌")
+allrep("설정 › 거래처 › 우리 사업장", "설정 › 우리 사업장")
+allrep("sent: shortTs(v.sent_at)", "sent: shortTs(v.sent_at), sentRaw: String(v.sent_at||\"\")")   # 받을 금액 «가장 오래된 건»을 해까지 보고 셈
+s = _re.sub(r'return head\("백업 · 기기","[^"]*"\)', 'return head("백업 · 기기","자료는 서버에 있어 PC · 폰 어디서 열어도 같아요. 백업 파일 받기 · 접속 기기 목록은 준비 중이에요.")', s, count=1)
+s = _re.sub(r'return head\("자료 올리기","[^"]*"\)', 'return head("자료 올리기","카모두 명부 · 접수리스트 · 나스 엑셀을 여기서 올려요.")', s, count=1)
 
 open(BASE + "체크/2_차곳간_체크_index_v55.html", "w", encoding="utf-8").write(s)
 print("만듦: 체크/2_차곳간_체크_index_v55.html", len(s))
