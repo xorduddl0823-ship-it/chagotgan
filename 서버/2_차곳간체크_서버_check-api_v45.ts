@@ -1365,15 +1365,15 @@ async function confPut(ctx: Ctx, patch: Record<string, unknown>) {
   if (error) throw new Error(/check_office_conf/.test(S(error.message)) ? "서버를 준비하는 중입니다(SQL 19). 차곳간(010-9559-3663)으로 알려 주세요." : "저장하지 못했습니다. 잠시 뒤 다시 해 주세요.");
 }
 const FEE_HOW = ["한 대마다", "검사비 %"];
-/** ④ 검사자 수수료 — 인자 없으면 불러오기(로그인한 누구나) · {on, rules} 를 주면 저장(대표만) */
+/** ④ 검사자 수수료 — 인자 없으면 불러오기 · {on, rules} 를 주면 저장 (둘 다 대표만 · 보안 낮음 권고) */
 async function feeRules(ctx: Ctx, opt?: any) {
+  bossOnly(ctx);
   const save = opt && typeof opt === "object" && ("on" in opt || "rules" in opt);
   if (!save) {
     const c: any = await confRow(ctx);
     const f = (c.fee_rules && typeof c.fee_rules === "object") ? c.fee_rules : {};
     return { on: f.on === true, rules: Array.isArray(f.rules) ? f.rules : [] };
   }
-  bossOnly(ctx);
   const raw: any[] = Array.isArray(opt.rules) ? opt.rules : [];
   if (raw.length > 50) throw new Error("수수료 규칙은 50개까지 넣을 수 있습니다.");
   const rules = raw.map((r, k) => {
@@ -1391,14 +1391,14 @@ async function feeRules(ctx: Ctx, opt?: any) {
   await log(ctx, "수수료 규칙 저장", { on: fee_rules.on, n: rules.length });
   return { ok: true, ...fee_rules };
 }
-/** ⑤ 문자 수집함 — 인자 없으면 불러오기(비밀번호는 «넣음» 표시만) · {url, pw} 저장(대표만 · pw 를 빼면 그대로 · 빈 글이면 지움) */
+/** ⑤ 문자 수집함 — 인자 없으면 불러오기(비밀번호는 «넣음» 표시만) · {url, pw} 저장 (둘 다 대표만 · pw 를 빼면 그대로 · 빈 글이면 지움) */
 async function smsConf(ctx: Ctx, opt?: any) {
+  bossOnly(ctx);
   const save = opt && typeof opt === "object" && ("url" in opt || "pw" in opt);
   if (!save) {
     const c: any = await confRow(ctx);
     return { url: S(c.sms_url), pwSet: !!S(c.sms_pw) };
   }
-  bossOnly(ctx);
   const patch: Record<string, unknown> = {};
   if ("url" in opt) {
     const url = S(opt.url);

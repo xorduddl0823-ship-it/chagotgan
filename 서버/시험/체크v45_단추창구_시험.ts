@@ -74,15 +74,17 @@ check("방법·금액·비율 틀리면 거절", !!(await call("feeRules", [{ on
   !!(await call("feeRules", [{ on: true, rules: [{ who: "", how: "한 대마다", amt: 1 }] }])).__err);
 r = await call("feeRules", [{ on: true, rules: [{ who: "김검사<b>", how: "한 대마다", amt: 3000 }, { who: "이검사", how: "검사비 %", amt: 12.5 }] }]);
 check("대표 저장 → {ok} · 이름 글자 거름", r.result?.ok === true && r.result.rules.length === 2 && !/[<>]/.test(r.result.rules[0].who), r);
-r = await call("feeRules", [], "chk_stf");
-check("직원도 불러오기는 됨", r.result?.on === true && r.result.rules[1].amt === 12.5, r);
+check("직원은 불러오기도 못 함", !!(await call("feeRules", [], "chk_stf")).__err);
+r = await call("feeRules", []);
+check("대표 불러오기", r.result?.on === true && r.result.rules[1].amt === 12.5, r);
 
 console.log("⑤ smsConf");
 check("http(https 아님)·이상한 주소 거절", !!(await call("smsConf", [{ url: "http://x.com" }])).__err && !!(await call("smsConf", [{ url: "javascript:alert(1)" }])).__err);
 check("직원은 저장 못 함", !!(await call("smsConf", [{ url: "https://script.google.com/macros/s/AB/exec" }], "chk_stf")).__err);
 r = await call("smsConf", [{ url: "https://script.google.com/macros/s/AB/exec", pw: "secret-pw-123" }]);
 check("저장 → 비밀번호는 «넣음»만 돌려줌", r.result?.ok === true && r.result.pwSet === true && !JSON.stringify(r).includes("secret-pw-123"), r);
-r = await call("smsConf", [], "chk_stf");
+check("직원은 수집함 설정도 못 봄", !!(await call("smsConf", [], "chk_stf")).__err);
+r = await call("smsConf", []);
 check("불러오기에도 비밀번호 글 없음", r.result?.url === "https://script.google.com/macros/s/AB/exec" && r.result.pwSet === true && !JSON.stringify(r).includes("secret-pw-123"), r);
 check("기록에도 비밀번호 글 없음", !JSON.stringify(store.check_log).includes("secret-pw-123"));
 r = await call("smsConf", [{ url: "https://script.google.com/macros/s/CD/exec" }]);
