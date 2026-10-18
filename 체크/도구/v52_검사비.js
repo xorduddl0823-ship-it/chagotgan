@@ -43,7 +43,8 @@ function expGo(){
       onOk:function(){
         var e=$("exErr"), go=[];
         for(var i=0;i<L.length;i++){ var inp=document.querySelector('[data-ex="'+i+'"]'), typed=String(inp?inp.value:"").trim(), raw=typed.replace(/[^0-9]/g,"");
-          if(!typed||typed===inp.getAttribute("data-was")) continue;   /* 빈칸 · 그대로인 칸은 안 보냄 (0 을 쳤으면 0원으로 보냄) */
+          if(!typed||typed===inp.getAttribute("data-was")) continue;
+          if(!raw){ e.hidden=false; e.textContent=(i+1)+"번째 칸에 숫자로 넣어 주세요."; return false; }   /* 빈칸 · 그대로인 칸은 안 보냄 (0 을 쳤으면 0원으로 보냄) */
           var fee=raw===""?0:Number(raw); if(!(fee>=0&&fee<=10000000)){ e.hidden=false; e.textContent=(i+1)+"번째 금액을 0~10,000,000원으로 넣어 주세요."; return false; }
           go.push({carId:String(L[i].r.car_id), fee:fee}); }
         if(!go.length){ CGG.closeDialog(); return; }

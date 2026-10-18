@@ -10,7 +10,9 @@
 window.insMoney=function(v){ return (typeof OFFICE!=="undefined"&&OFFICE&&OFFICE.ins_vat==="포함")?vmoney(v):Math.round(Number(v)||0); };
 function band(id, text, tone){ if(!text||$(id)) return; var h=$("main").querySelector(".cgg-head"); if(!h) return;
   var b=document.createElement("div"); b.id=id; b.className="msg info"; b.style.margin="0 0 12px"; b.textContent=text;
-  var bd=$("chkBand"); h.parentNode.insertBefore(b,(bd&&bd.parentNode===h.parentNode)?bd.nextSibling:h.nextSibling); }
+  /* 할 일 띠(chkBand · v52Sales)가 먼저, 안내 한 줄은 그 아래 */
+  var last=h; ["chkBand","v52Sales","v51Gaon"].forEach(function(k){ var x=$(k); if(x&&x.parentNode===h.parentNode) last=x; });
+  h.parentNode.insertBefore(b,last.nextSibling); }
 var as=AFTER.sales;
 AFTER.sales=function(){ if(as) as.apply(this,arguments);
   band("v52Nas","나스(가온 정산)와 견줄 때는 «부가세 포함»으로 봐요. 보험료는 "+((OFFICE&&OFFICE.ins_vat==="포함")?"부가세 포함 설정이에요.":"엑셀 금액 그대로예요(보험료 부가세 미포함).")); };
@@ -118,6 +120,8 @@ PAGE.history=function(){
     return {id:r.ym, ym:r.ym, n:r.n, bill:Number(r.bill)||0, got:Number(r.got)||0, left:Math.max(0,(Number(r.bill)||0)-(Number(r.got)||0)), tax:r.taxN!=null?r.taxN+"장":"보기 ›", _q:r.ym}; });
   return head("정산 기록","달마다 만든 청구서와 입금 · 세금계산서 결과를 모아 두는 장부예요.")+
   (H.length?"":'<div class="msg info">월별 청구서에서 청구서를 만들면 여기에 쌓여요.</div>')+
+  (function(){ var b=0,g=0; H.forEach(function(r){ b+=r.bill; g+=r.got; });
+    return sums([["청구 합계",won(b)+"원"],["입금 합계",won(g)+"원"],["남은 금액",won(Math.max(0,b-g))+"원",b>g?"bad":"good"],["기록한 달",won(H.length)+"달"]]); })()+
   card("달마다 장부","달을 누르면 그 달 청구서로 가요. 금액은 부가세 포함이에요.",
     tableBlock("his",[
       {k:"ym",t:"청구 달",name:true,fmt:function(v){ return '<a href="#" data-hisym="'+esc(v)+'"><b>'+esc(ymText(v))+'</b></a>'; }},
@@ -126,7 +130,8 @@ PAGE.history=function(){
       {k:"got",t:"입금",num:true,fmt:function(v){ return won(v); }},
       {k:"left",t:"남은 금액",num:true,fmt:function(v){ return v>0?'<span style="color:var(--danger);font-weight:800">'+won(v)+'</span>':'0'; }},
       {k:"tax",t:"세금계산서",fmt:function(v,r){ return '<a href="#" data-histax="'+esc(r.ym)+'">'+esc(v)+'</a>'; }}
-    ], H, {tools:'<button class="btn">기록 전체 엑셀 다운로드</button>'}));
+    ], H, {tools:'<button class="btn">기록 전체 엑셀 다운로드</button>'}))+
+  CGG.help("청구는 그 달에 만든 청구서 합계, 입금은 그 청구서에 맞춘 돈이에요. 세금계산서 칸을 누르면 그 달 세금계산서 화면으로 가요.","이 화면 사용법");
 };
 NEEDS.history=["sales"];
 AFTER.history=function(){ wireTable("his",function(){ draw(); });
@@ -155,12 +160,14 @@ var aS=AFTER.sms;
 AFTER.sms=function(){ if(aS) aS.apply(this,arguments);
   if(!isOwner()) return;
   var u=document.querySelector('#main input[type=text]'), p=document.querySelector('#main input[type=password]');
+  if(p){ p.value=""; }   /* 예시 점(••••)이 비밀번호로 저장되지 않게 늘 비워 둬요 */
+  if(u&&/\.\.\./.test(u.value)) u.value="";
   call("smsConf",[]).then(function(r){ if(!r) return; if(u&&r.url) u.value=r.url; if(p&&r.pwSet) p.placeholder="저장돼 있어요 (바꿀 때만 넣어요)"; }).catch(function(){});
   var ok=Array.prototype.filter.call(document.querySelectorAll("#main button"),function(b){ return String(b.textContent).trim()==="연결 확인"; })[0];
   if(ok){ var ping=ok.onclick; ok.onclick=function(){
     var url=String((u||{}).value||"").trim(), pw=String((p||{}).value||"");
-    if(!/^https:\/\//.test(url)){ if(ping) ping.apply(this,arguments); return; }
-    var body={url:url}; if(pw) body.pw=pw;
+    if(!/^https:\/\//.test(url)||/\.\.\./.test(url)){ if(ping) ping.apply(this,arguments); return; }   /* 예시 주소(…)는 저장 안 함 */
+    var body={url:url}; if(pw && !/^[•·*]+$/.test(pw)) body.pw=pw;
     call("smsConf",[body]).then(function(){ if(p) p.value=""; bar("수집함 주소를 서버에 저장했어요.","ok"); }).catch(function(e){ bar(niceMsg(e&&e.message),"err"); });
     if(ping) ping.apply(this,arguments); }; }
 };

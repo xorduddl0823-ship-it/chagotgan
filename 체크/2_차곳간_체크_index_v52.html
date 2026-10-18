@@ -3408,7 +3408,7 @@ function loadTax(){
     TAXES = !TXFIL ? all : all.filter(function(t){
       return TXFIL==="skip" ? t.skip
            : TXFIL==="done" ? /발급|전송/.test(t.state)
-           : TXFIL==="bad"  ? (!t.can && !t.skip)
+           : TXFIL==="bad"  ? (!t.can && !t.skip && !/입금 전/.test(t.why||""))
            : (t.can && !t.skip && !/발급|전송/.test(t.state));
     });
   });
@@ -10665,7 +10665,8 @@ function expGo(){
       onOk:function(){
         var e=$("exErr"), go=[];
         for(var i=0;i<L.length;i++){ var inp=document.querySelector('[data-ex="'+i+'"]'), typed=String(inp?inp.value:"").trim(), raw=typed.replace(/[^0-9]/g,"");
-          if(!typed||typed===inp.getAttribute("data-was")) continue;   /* 빈칸 · 그대로인 칸은 안 보냄 (0 을 쳤으면 0원으로 보냄) */
+          if(!typed||typed===inp.getAttribute("data-was")) continue;
+          if(!raw){ e.hidden=false; e.textContent=(i+1)+"번째 칸에 숫자로 넣어 주세요."; return false; }   /* 빈칸 · 그대로인 칸은 안 보냄 (0 을 쳤으면 0원으로 보냄) */
           var fee=raw===""?0:Number(raw); if(!(fee>=0&&fee<=10000000)){ e.hidden=false; e.textContent=(i+1)+"번째 금액을 0~10,000,000원으로 넣어 주세요."; return false; }
           go.push({carId:String(L[i].r.car_id), fee:fee}); }
         if(!go.length){ CGG.closeDialog(); return; }
@@ -10705,7 +10706,7 @@ function leftOf(t){
 /* 그릴 때마다 입금 여부를 다시 붙여요 (발급된 것 · 안 받음은 그대로) */
 function mark(){
   TAXES.forEach(function(t){
-    if(t._can0===undefined) t._can0=t.can;
+    if(t._can0===undefined) t._can0=t.can || (/입금 전/.test(t.why||"") && Number(t.left)>0);   /* 서버 v46: 입금 전이면 can:false + why «아직 입금 전입니다» */
     var p=leftOf(t); t.paid=p.paid; t.left=p.left;
     var done=/발급|전송/.test(t.state||"");
     t.unpaid=!!(t._can0 && !t.skip && !done && p.left>0);
@@ -10724,7 +10725,7 @@ function early(id){
   var d=wd(t);
   ask({title:"아직 입금 전이에요. 그래도 발급할까요?\n"+ymText(ST.ym)+"분 · 작성일자 "+d,
        k1:"누구에게", v1:t.name+(t.members?" + "+t.members:"")+" · "+(t.issuer||t.comp||""),
-       k2:"얼마", v2:won(t.total)+"원 (받은 "+won(t.paid||0)+"원 · 남은 "+won(t.left||0)+"원)",
+       k2:"몇 건 · 얼마", v2:"1건 · "+won(t.total)+"원 (받은 "+won(t.paid||0)+"원 · 남은 "+won(t.left||0)+"원)",
        warn:(OFFICE.popbill_test?"지금은 시험 모드예요 — 국세청으로 가지 않아요.":"실제로 국세청에 발급돼요. 입금이 안 되면 수정세금계산서로 바로잡아야 해요."),
        warnKind:OFFICE.popbill_test?"ok":"bad", yes:"입금 전에 발급"}, function(){
     var dates={}; dates[t.id]=d;
@@ -10750,15 +10751,15 @@ function readHead(ws){
   if(hr<0) return null;
   /* 칸 이름 = 위 두 줄(묶음 이름) + 그 줄 */
   var labels=grid[hr].map(function(x,c){ var up=[hr-2,hr-1].filter(function(q){ return q>=0; }).map(function(q){ return grid[q][c]; }).join("");
-    return nz(up)+"|"+nz(x); });
+    return nz(up)+"|"+nz(String(x).replace(/\([^)]*\)/g,"")); });   /* 괄호 안 설명(예: «(2자리, 작성년월 제외)»)은 빼고 읽어요 */
   return {hr:hr, labels:labels, maxC:R.e.c, R:R};
 }
 function fieldOf(L){
   var all=L.replace("|",""), own=L.split("|")[1]||"";
   var buyer=/공급받는/.test(all), sup=/공급자/.test(all)&&!buyer;
-  var item=/\d$/.test(own) && /^(일자|품목|규격|수량|단가|공급가액|세액|비고)/.test(own) ? own.replace(/\d+$/,"") : "";
-  var idx=item?Number(own.match(/(\d+)$/)[1]):0;
-  if(item) return idx===1?"item:"+item:"";
+  /* 품목 칸은 «일자1(2자리, 작성년월 제외)»처럼 뒤에 설명이 붙어도 — 낱말 바로 뒤 숫자로 알아봐요 */
+  var im=own.match(/^(일자|품목명?|규격|수량|단가|공급가액|세액|비고)(\d+)/);
+  if(im) return Number(im[2])===1?"item:"+im[1].replace("품목명","품목"):"";
   if(/종류/.test(own)&&!/품목/.test(own)) return "kind";
   if(/작성일자/.test(own)) return "date";
   if(/영수/.test(all)&&/청구/.test(all)) return "pay";
@@ -10853,7 +10854,9 @@ AFTER.hometax=function(){
 window.insMoney=function(v){ return (typeof OFFICE!=="undefined"&&OFFICE&&OFFICE.ins_vat==="포함")?vmoney(v):Math.round(Number(v)||0); };
 function band(id, text, tone){ if(!text||$(id)) return; var h=$("main").querySelector(".cgg-head"); if(!h) return;
   var b=document.createElement("div"); b.id=id; b.className="msg info"; b.style.margin="0 0 12px"; b.textContent=text;
-  var bd=$("chkBand"); h.parentNode.insertBefore(b,(bd&&bd.parentNode===h.parentNode)?bd.nextSibling:h.nextSibling); }
+  /* 할 일 띠(chkBand · v52Sales)가 먼저, 안내 한 줄은 그 아래 */
+  var last=h; ["chkBand","v52Sales","v51Gaon"].forEach(function(k){ var x=$(k); if(x&&x.parentNode===h.parentNode) last=x; });
+  h.parentNode.insertBefore(b,last.nextSibling); }
 var as=AFTER.sales;
 AFTER.sales=function(){ if(as) as.apply(this,arguments);
   band("v52Nas","나스(가온 정산)와 견줄 때는 «부가세 포함»으로 봐요. 보험료는 "+((OFFICE&&OFFICE.ins_vat==="포함")?"부가세 포함 설정이에요.":"엑셀 금액 그대로예요(보험료 부가세 미포함).")); };
@@ -10961,6 +10964,8 @@ PAGE.history=function(){
     return {id:r.ym, ym:r.ym, n:r.n, bill:Number(r.bill)||0, got:Number(r.got)||0, left:Math.max(0,(Number(r.bill)||0)-(Number(r.got)||0)), tax:r.taxN!=null?r.taxN+"장":"보기 ›", _q:r.ym}; });
   return head("정산 기록","달마다 만든 청구서와 입금 · 세금계산서 결과를 모아 두는 장부예요.")+
   (H.length?"":'<div class="msg info">월별 청구서에서 청구서를 만들면 여기에 쌓여요.</div>')+
+  (function(){ var b=0,g=0; H.forEach(function(r){ b+=r.bill; g+=r.got; });
+    return sums([["청구 합계",won(b)+"원"],["입금 합계",won(g)+"원"],["남은 금액",won(Math.max(0,b-g))+"원",b>g?"bad":"good"],["기록한 달",won(H.length)+"달"]]); })()+
   card("달마다 장부","달을 누르면 그 달 청구서로 가요. 금액은 부가세 포함이에요.",
     tableBlock("his",[
       {k:"ym",t:"청구 달",name:true,fmt:function(v){ return '<a href="#" data-hisym="'+esc(v)+'"><b>'+esc(ymText(v))+'</b></a>'; }},
@@ -10969,7 +10974,8 @@ PAGE.history=function(){
       {k:"got",t:"입금",num:true,fmt:function(v){ return won(v); }},
       {k:"left",t:"남은 금액",num:true,fmt:function(v){ return v>0?'<span style="color:var(--danger);font-weight:800">'+won(v)+'</span>':'0'; }},
       {k:"tax",t:"세금계산서",fmt:function(v,r){ return '<a href="#" data-histax="'+esc(r.ym)+'">'+esc(v)+'</a>'; }}
-    ], H, {tools:'<button class="btn">기록 전체 엑셀 다운로드</button>'}));
+    ], H, {tools:'<button class="btn">기록 전체 엑셀 다운로드</button>'}))+
+  CGG.help("청구는 그 달에 만든 청구서 합계, 입금은 그 청구서에 맞춘 돈이에요. 세금계산서 칸을 누르면 그 달 세금계산서 화면으로 가요.","이 화면 사용법");
 };
 NEEDS.history=["sales"];
 AFTER.history=function(){ wireTable("his",function(){ draw(); });
@@ -10998,12 +11004,14 @@ var aS=AFTER.sms;
 AFTER.sms=function(){ if(aS) aS.apply(this,arguments);
   if(!isOwner()) return;
   var u=document.querySelector('#main input[type=text]'), p=document.querySelector('#main input[type=password]');
+  if(p){ p.value=""; }   /* 예시 점(••••)이 비밀번호로 저장되지 않게 늘 비워 둬요 */
+  if(u&&/\.\.\./.test(u.value)) u.value="";
   call("smsConf",[]).then(function(r){ if(!r) return; if(u&&r.url) u.value=r.url; if(p&&r.pwSet) p.placeholder="저장돼 있어요 (바꿀 때만 넣어요)"; }).catch(function(){});
   var ok=Array.prototype.filter.call(document.querySelectorAll("#main button"),function(b){ return String(b.textContent).trim()==="연결 확인"; })[0];
   if(ok){ var ping=ok.onclick; ok.onclick=function(){
     var url=String((u||{}).value||"").trim(), pw=String((p||{}).value||"");
-    if(!/^https:\/\//.test(url)){ if(ping) ping.apply(this,arguments); return; }
-    var body={url:url}; if(pw) body.pw=pw;
+    if(!/^https:\/\//.test(url)||/\.\.\./.test(url)){ if(ping) ping.apply(this,arguments); return; }   /* 예시 주소(…)는 저장 안 함 */
+    var body={url:url}; if(pw && !/^[•·*]+$/.test(pw)) body.pw=pw;
     call("smsConf",[body]).then(function(){ if(p) p.value=""; bar("수집함 주소를 서버에 저장했어요.","ok"); }).catch(function(e){ bar(niceMsg(e&&e.message),"err"); });
     if(ping) ping.apply(this,arguments); }; }
 };

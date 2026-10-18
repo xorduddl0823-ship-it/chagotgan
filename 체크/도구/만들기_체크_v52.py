@@ -34,6 +34,7 @@ rep(""": [{key:"skip",label:(r.skip?"다시 받기":"안 받음"),attr:"data-txs
     """: (r.unpaid?[{key:"early",label:"입금 전에 발급",attr:"data-txearly",val:r.id}]:[]).concat([{key:"skip",label:(r.skip?"다시 받기":"안 받음"),attr:"data-txskip",val:r.id}]); },""")
 rep("""          : '<span class="tag" style="background:var(--danger-soft);color:var(--danger)">'+esc(r.why)+'</span>';""",
     """          : '<span class="tag" style="'+(r.unpaid?'background:var(--line);color:var(--muted)':'background:var(--danger-soft);color:var(--danger)')+'">'+esc(r.why)+'</span>';""")
+rep('TXFIL==="bad"  ? (!t.can && !t.skip)', 'TXFIL==="bad"  ? (!t.can && !t.skip && !/입금 전/.test(t.why||""))')   # «못 함» 거르기에 입금 전 줄은 빼요
 # 서버 v45 invoiceDel — 못 지운 곳(발급 · 입금된 청구서) 까닭
 rep('busy(false); clearPick("bill"); bar(won((r&&r.n)||L.length)+"곳 청구서를 지웠어요.","ok"); refresh(["bill"]);',
     'busy(false); clearPick("bill"); var kp=(r&&r.kept)||[]; bar(won((r&&r.n)||0)+"곳 청구서를 지웠어요."+(kp.length?" 못 지운 "+kp.length+"곳 — "+kp.slice(0,2).map(function(x){ return (x.name||"")+"("+(x.why||"")+")"; }).join(" / "):""), kp.length?"err":"ok"); refresh(["bill"]);')

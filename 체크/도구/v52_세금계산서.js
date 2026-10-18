@@ -16,7 +16,7 @@ function leftOf(t){
 /* 그릴 때마다 입금 여부를 다시 붙여요 (발급된 것 · 안 받음은 그대로) */
 function mark(){
   TAXES.forEach(function(t){
-    if(t._can0===undefined) t._can0=t.can;
+    if(t._can0===undefined) t._can0=t.can || (/입금 전/.test(t.why||"") && Number(t.left)>0);   /* 서버 v46: 입금 전이면 can:false + why «아직 입금 전입니다» */
     var p=leftOf(t); t.paid=p.paid; t.left=p.left;
     var done=/발급|전송/.test(t.state||"");
     t.unpaid=!!(t._can0 && !t.skip && !done && p.left>0);
@@ -35,7 +35,7 @@ function early(id){
   var d=wd(t);
   ask({title:"아직 입금 전이에요. 그래도 발급할까요?\n"+ymText(ST.ym)+"분 · 작성일자 "+d,
        k1:"누구에게", v1:t.name+(t.members?" + "+t.members:"")+" · "+(t.issuer||t.comp||""),
-       k2:"얼마", v2:won(t.total)+"원 (받은 "+won(t.paid||0)+"원 · 남은 "+won(t.left||0)+"원)",
+       k2:"몇 건 · 얼마", v2:"1건 · "+won(t.total)+"원 (받은 "+won(t.paid||0)+"원 · 남은 "+won(t.left||0)+"원)",
        warn:(OFFICE.popbill_test?"지금은 시험 모드예요 — 국세청으로 가지 않아요.":"실제로 국세청에 발급돼요. 입금이 안 되면 수정세금계산서로 바로잡아야 해요."),
        warnKind:OFFICE.popbill_test?"ok":"bad", yes:"입금 전에 발급"}, function(){
     var dates={}; dates[t.id]=d;
@@ -61,15 +61,15 @@ function readHead(ws){
   if(hr<0) return null;
   /* 칸 이름 = 위 두 줄(묶음 이름) + 그 줄 */
   var labels=grid[hr].map(function(x,c){ var up=[hr-2,hr-1].filter(function(q){ return q>=0; }).map(function(q){ return grid[q][c]; }).join("");
-    return nz(up)+"|"+nz(x); });
+    return nz(up)+"|"+nz(String(x).replace(/\([^)]*\)/g,"")); });   /* 괄호 안 설명(예: «(2자리, 작성년월 제외)»)은 빼고 읽어요 */
   return {hr:hr, labels:labels, maxC:R.e.c, R:R};
 }
 function fieldOf(L){
   var all=L.replace("|",""), own=L.split("|")[1]||"";
   var buyer=/공급받는/.test(all), sup=/공급자/.test(all)&&!buyer;
-  var item=/\d$/.test(own) && /^(일자|품목|규격|수량|단가|공급가액|세액|비고)/.test(own) ? own.replace(/\d+$/,"") : "";
-  var idx=item?Number(own.match(/(\d+)$/)[1]):0;
-  if(item) return idx===1?"item:"+item:"";
+  /* 품목 칸은 «일자1(2자리, 작성년월 제외)»처럼 뒤에 설명이 붙어도 — 낱말 바로 뒤 숫자로 알아봐요 */
+  var im=own.match(/^(일자|품목명?|규격|수량|단가|공급가액|세액|비고)(\d+)/);
+  if(im) return Number(im[2])===1?"item:"+im[1].replace("품목명","품목"):"";
   if(/종류/.test(own)&&!/품목/.test(own)) return "kind";
   if(/작성일자/.test(own)) return "date";
   if(/영수/.test(all)&&/청구/.test(all)) return "pay";
