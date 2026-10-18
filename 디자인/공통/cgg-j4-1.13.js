@@ -529,9 +529,11 @@ var CGG = (function(){
     if(o.quick) quick(q("quick"), o.quick.feats, o.quick.key, o.quick.defs, o.quick.onGo); else q("quick").remove();
     todoBlock(q("todo"), (o.todo&&o.todo.items)||[], o.todo&&o.todo.total, o.todo&&o.todo.onPick, o.todo&&o.todo.onAll);
     kpis(q("kpi"), o.kpis||[]);
-    calendar(q("cal"), o.cal||{y:2026,m:1});
-    moneyCard(q("money"), o.money||{});
-    rankCard(q("rank"), o.rank||{});
+    /* 1.13 — cal · money · rank 에 false 를 주면 그 카드를 빼요(딜러앱처럼 일정 · 입금 카드가 필요 없는 홈). 셋 다 빼면 아래 칸도 없어요 */
+    if(o.cal===false) q("cal").remove(); else calendar(q("cal"), o.cal||{y:2026,m:1});
+    if(o.money===false) q("money").remove(); else moneyCard(q("money"), o.money||{});
+    if(o.rank===false) q("rank").remove(); else rankCard(q("rank"), o.rank||{});
+    if(o.cal===false&&o.money===false&&o.rank===false){ var g=el.querySelector(".cgg-homegrid"); if(g) g.remove(); }
   }
 
   /* ═════════ ⑩ 1.10 — 차곳간 대표 CI (디자인/공통/ci/ 의 SVG 를 그대로 담았어요 · 바깥 주소 없음) ═════════ */
