@@ -3265,7 +3265,7 @@ var JOBS=[["home","홈"],["sales","매출"],["bill","월별 청구서"],
 /* 설정 안 — 자료 올리기는 «매출» 안으로, 휴지통은 마이페이지 안으로, 도움말은 머리말로 옮겼습니다 (「가」안)
    v50: «직원 계정 · 권한»을 «설정 백업»에서 꺼내 따로 칸으로 */
 var SETS=[["office","우리 사업장"],["partner","거래처"],["price","단가표"],["staff","직원 계정 · 권한"],
-  ["popbill","연결 · 팝빌"],["sms","연결 · 문자 수집"],["roster","자료 올리기"],["backup","백업"],
+  ["popbill","연결 · 팝빌"],["sms","연결 · 문자 수집"],["roster","명부 올리기"],["backup","백업"],
   ["fee","검사자 수수료"],["alarm","알람 소리"]];   /* v55: 공통 시안 차례 · 체크 전용은 맨 아래 */
 var SETLBL={office:"사업장 · 거래처",price:"정산 기준",popbill:"연결",roster:"자료",fee:"체크 전용"};
 var SALESUB=[["sales","매출 내역"],["files","자료 올리기"]];
@@ -3341,13 +3341,13 @@ function chkFeats(){
     {id:"delivdriver",label:"기사 계정 · 기사 화면 주소",path:"배달 › 기사 계정",go:"deliv/delivdriver",words:"기사 추가 기사 계정 기사 화면 주소 비밀번호"},
     {id:"remind",label:"재검사 알림",path:"재검사 알림",go:"remind",words:"재검사 재검 알림 다시 검사"},
     {id:"partner",label:"딜러 · 상사 추가",path:"설정 › 거래처",go:"set/partner",words:"거래처 딜러 상사 추가 명함 사업자등록증 세금계산서 정보"},
-    {id:"roster",label:"카모두 딜러명부 · 상사명부 올리기",path:"설정 › 자료 올리기",go:"set/roster",words:"카모두 명부 딜러명부 상사명부 딜러리스트 상사리스트 엑셀 올리기 거래처 한꺼번에 처음"},
+    {id:"roster",label:"카모두 딜러명부 · 상사명부 올리기",path:"설정 › 명부 올리기",go:"set/roster",words:"카모두 명부 딜러명부 상사명부 딜러리스트 상사리스트 엑셀 올리기 거래처 한꺼번에 처음"},
     {id:"office",label:"우리 사업장 · 계좌",path:"설정 › 우리 사업장",go:"set/office",words:"공급자 사업자 상호 대표 계좌 입금 계좌 우리 검사소"},
     {id:"staff",label:"직원 계정 · 권한",path:"설정 › 직원 계정 · 권한",go:"set/staff",words:"직원 계정 권한 추가 비밀번호 초기화 대표"},
     {id:"price",label:"단가표 고치기",path:"설정 › 단가표",go:"set/price",words:"단가 검사비 가격 요금 구간"},
     {id:"fee",label:"검사자 수수료",path:"설정 › 검사자 수수료",go:"set/fee",words:"수수료 검사자"},
-    {id:"popbill",label:"팝빌 연동",path:"설정 › 연결 · 팝빌",go:"set/popbill",words:"팝빌 연동 계좌 조회 세금계산서 연결"},
-    {id:"sms",label:"문자 자동수집",path:"설정 › 연결 · 문자 수집",go:"set/sms",words:"문자 수집 입금 문자"},
+    {id:"popbill",label:"연결 · 팝빌",path:"설정 › 연결 · 팝빌",go:"set/popbill",words:"팝빌 연동 계좌 조회 세금계산서 연결"},
+    {id:"sms",label:"연결 · 문자 수집",path:"설정 › 연결 · 문자 수집",go:"set/sms",words:"문자 수집 입금 문자"},
     {id:"alarm",label:"알람 소리",path:"설정 › 알람 소리",go:"set/alarm",words:"알람 소리 알림음"},
     {id:"backup",label:"설정 백업",path:"설정 › 설정 백업",go:"set/backup",words:"백업 연결 서버"},
     {id:"me",label:"마이페이지 · 요금제",path:"사람 단추 ▾ › 마이페이지",go:"me/me",words:"내 정보 요금제 결제 사용량 비밀번호"},
@@ -4558,10 +4558,9 @@ AFTER.sales=function(){
 
 /* ── 입금 내역 ── */
 PAGE.deposit=function(){
-  var inM0=0; DEPS.forEach(function(d){ if(String(d.day).slice(0,7)===ST.ym) inM0+=d.amount; });
-  return head("이번 달 입금 <em>"+won(inM0)+"원</em>","통장에 들어온 돈을 청구서와 짝지어요. 맞지 않는 것만 «확인 필요»로 남아요.")+
+  return head("입·출금 내역","통장에 들어오고 나간 금액을 한 표로 봐요. 청구서와 맞은 입금은 «완료»로 표시돼요.")+   /* v55: 워시 v134 입·출금 내역과 같게 */
   subTabs("deposit")+
-  depChips()+
+  perBox("dep")+
   card("가져오기 · 맞추기","팝빌에서 계좌 거래내역을 가져와 청구서와 맞춰요.",
     '<div class="tools">'+
       '<select id="depDays"><option value="3">최근 3일</option><option value="7" selected>최근 7일</option>'+
@@ -4573,16 +4572,16 @@ PAGE.deposit=function(){
     '</div>'+
     '')+
   (function(){
-    var inM=0,ok=0,wait=0;
-    DEPS.forEach(function(d){
-      if(String(d.day).slice(0,7)===ST.ym) inM+=d.amount;
+    var inM=0,outM=0,ok=0,wait=0;   /* v55: 고른 기간 안에서 */
+    perFilter("dep",DEPS).forEach(function(d){ var a=Number(d.amount)||0;
+      if(a>=0) inM+=a; else outM+=-a;
       if(d.state==="확인 대기") wait++; else ok++;
     });
     var left=0; BILLS.forEach(function(b){ left+=Math.max(0,b.left); });
-    return sums([["이번 달 입금",won(inM)+"원"],["확인 필요",won(wait)+"건",wait?"bad":""],
-                 ["맞춘 건",won(ok)+"건","good"],["받을 금액",won(left)+"원"]]);
+    return sums([["입금 금액",won(inM)+"원","good"],["출금 금액",won(outM)+"원"],
+                 ["확인 필요",won(wait)+"건",wait?"bad":""],["받을 금액",won(left)+"원"]]);
   })()+
-  card("입금 · 출금","위 기간 칩으로 표를 거를 수 있어요.",
+  card("입금 · 출금","위 기간에 들어오고 나간 돈이에요.",
     tableBlock("dep",[
       {k:"sender",t:"보낸 사람",name:true,fmt:function(v){return '<b>'+esc(v)+'</b>';}},
       {k:"at",t:"날짜"},
@@ -4590,7 +4589,7 @@ PAGE.deposit=function(){
       {k:"kind",t:"갈래"},
       {k:"bank",t:"계좌"},
       {k:"state",t:"상태",state:true,fmt:tag}
-    ], depRange(DEPS), {pick:true,
+    ], perFilter("dep",DEPS), {pick:true,
       tools:'<button class="btn primary" id="depApply">선택한 줄 청구서에 맞추기</button><button class="btn" id="depUndo">선택한 줄 되돌리기</button>'+
             '<button class="btn" id="depKind">선택한 줄 갈래 바꾸기</button>'+(isOwner()?'<button class="btn danger" id="depDel">선택한 줄 지우기</button>':'')}))+
   '<details class="chk-fold" id="depPasteFold"><summary>통장 문자 · 시트 줄 붙여넣기 · 펼쳐 보기</summary>'+
@@ -5527,7 +5526,7 @@ AFTER.remind=function(){
 
 /* ── 세금계산서 ── */
 PAGE.hometax=function(){
-  var able=TAXES.filter(function(t){ return t.can && !/발급|전송/.test(t.state); });
+  var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state); });   /* v55: «안 받음»은 빼고 (할 일 띠와 같게) */
   var done=TAXES.filter(function(t){ return /발급|전송/.test(t.state); });
   var skip=TAXES.filter(function(t){ return t.skip; });
   var bad =TAXES.filter(function(t){ return !t.can && !t.skip && !t.unpaid; });
@@ -5536,7 +5535,7 @@ PAGE.hometax=function(){
   var endDay=(function(){ var y=Number(ST.ym.slice(0,4)), m=Number(ST.ym.slice(5,7));
     return new Date(Date.UTC(y,m,0)).toISOString().slice(0,10); })();
 
-  return head("이번 달 발급할 곳 <em>"+won(able.length)+"곳</em>","입금이 끝난 청구서만 세금계산서로 나가요. 묶음 청구는 대표 사업자 한 곳으로 한 장만 나가요.")+
+  return head(ymText(ST.ym)+" 발급할 곳 <em>"+won(able.length)+"곳</em>","입금이 끝난 청구서만 세금계산서로 나가요. 묶음 청구는 대표 사업자 한 곳으로 한 장만 나가요.")+
   (OFFICE.popbill_test?'<div class="msg ok"><b>지금은 시험 모드예요</b> — 국세청으로 가지 않아요. 마음 놓고 시험해 보세요.</div>':'')+
 
   '<div class="tools">'+ymPicker("txYm","청구 달")+
@@ -6256,21 +6255,22 @@ function pendWire(){
   };
 }
 PAGE.deliv=function(){
-  var n=DRIVES.length;
-  var sent=DRIVES.filter(function(d){return d.alarm==="보냄";}).length;
-  var fail=DRIVES.filter(function(d){return d.alarm==="못 보냄";}).length;
-  var test=DRIVES.filter(function(d){return d.alarm==="안 보냄";}).length;
-  var dest={}; DRIVES.forEach(function(d){ dest[d.dest]=1; });
-  var cancel=DRIVES.filter(function(d){return d.alarm==="취소";}).length;
-  return head("최근 30일 배달 <em>"+won(n)+"대</em>"+(fail?" · 못 보냄 <em>"+won(fail)+"대</em>":""),"기사가 폰으로 차 사진을 찍고 목적지를 누르면, 번호판을 읽어 딜러에게 도착 알림을 보내요.")+delivTabs("deliv")+
-    ('<div class="tools">'+
+  var DV=perFilter("drv",DRIVES);   /* v55: 워시 출고 기록과 같게 — 고른 기간만 */
+  var n=DV.length;
+  var sent=DV.filter(function(d){return d.alarm==="보냄";}).length;
+  var fail=DV.filter(function(d){return d.alarm==="못 보냄";}).length;
+  var test=DV.filter(function(d){return d.alarm==="안 보냄";}).length;
+  var dest={}; DV.forEach(function(d){ dest[d.dest]=1; });
+  var cancel=DV.filter(function(d){return d.alarm==="취소";}).length;
+  return head("배달 기록","차가 어디로 갔는지 · 딜러에게 알림이 나갔는지 한눈에 봐요.")+delivTabs("deliv")+perBox("drv")+
+    ('<div class="tools" hidden>'+
       '<button class="btn primary" id="dRe">새로고침</button>'+
       '<span style="font-size:12.5px;color:var(--muted)">서버 '+esc(DCONF.ver||"")+
       ' · 지금 보내는 방법 <b>'+(DCONF.way==="ata"?"알림톡":"문자")+'</b>'+
       ' · 사진 붙여 보내기 <b>'+(DCONF.photo_on!==false?"켬":"끔")+'</b></span>'+
     '</div>')+
-  sums([["배달",won(n)+"대"],["알림 보냄",won(sent)+"대","good"],
-        ["보내지 못함",won(fail)+"대",fail?"bad":""],["취소 표시",won(cancel)+"대"]])+pendCard()+
+  sums([["배달",won(n)+"대"],["목적지",Object.keys(dest).length+"곳"],
+        ["알림 보냄",won(sent)+"건","good"],["못 보냄",won(fail)+"건",fail?"bad":""]])+pendCard()+
   card("배달 기록","",
     tableBlock("drv",[
       {k:"dealer",t:"딜러",name:true,fmt:function(v,r){
@@ -6288,14 +6288,14 @@ PAGE.deliv=function(){
       {k:"how",t:"방법",fmt:function(v){return '<span class="chip" style="padding:3px 9px;font-size:11.5px">'+esc(v)+'</span>';}},
       {k:"tel",t:"연락처",fmt:function(v){return v?esc(v):'<span style="color:var(--danger);font-weight:700">번호 없음</span>';}},
       {k:"ocr",t:"번호판"},{k:"pos",t:"위치"},{k:"photo",t:"사진"},{k:"memo",t:"메모"}
-    ], DRIVES, {pick:true,
+    ], DV, {pick:true,
       tools:'<button class="btn" data-dact="fill">빈 차명 채우기</button>'+
             '<button class="btn" data-dact="resend">선택한 줄 다시 보내기</button>'+
             '<button class="btn" data-dact="cancel">선택한 줄 취소 표시</button>'+
             '<button class="btn danger" data-dact="trash">선택한 줄 지우기</button>'})+
     '<p class="note">딜러 이름이나 차량번호를 누르면 <b>그 차가 어디로 갔는지 · 도착 사진</b>이 작은 창으로 열려요.</p>'+
     delivDetail())+
-  CGG.help("알림은 보냄 · 못 보냄 · 안 보냄(시험) · 취소로 나뉘어요. 목적지 "+Object.keys(dest).length+"곳 · 휴지통 "+won(DCONF.trashN||0)+"건은 위 안쪽 칸에서 봐요.","이 화면 사용법");
+  CGG.help("알림은 보냄 · 못 보냄 · 안 보냄(시험) · 취소로 나뉘어요. 취소 표시 "+won(cancel)+"건 · 휴지통 "+won(DCONF.trashN||0)+"건. 지금 보내는 방법 «"+(DCONF.way==="ata"?"알림톡":"문자")+"» · 사진 붙여 보내기 «"+(DCONF.photo_on!==false?"켬":"끔")+"».","이 화면 사용법");
 };
 AFTER.deliv=function(){
   wireTable("drv",function(){ draw(); }); wireSub(); pendWire();
@@ -7267,7 +7267,7 @@ PAGE.fee=function(){
 
 /* ── 설정 › 문자 자동수집 ── */
 PAGE.sms=function(){
-  return head("문자 자동수집","입금은 팝빌 실시간 계좌조회로 받아요. 이 화면은 휴대폰에 오는 입금 문자를 보조로 모아 두는 설정이에요. 한 번만 만들어 두면 그 뒤로는 손댈 일이 없어요.")+
+  return head("연결 · 문자 수집","입금은 팝빌 실시간 계좌조회로 받아요. 이 화면은 휴대폰에 오는 입금 문자를 보조로 모아 두는 설정이에요. 한 번만 만들어 두면 그 뒤로는 손댈 일이 없어요.")+
   card("수집함 연결","차곳간이 알려 드린 수집함 주소와 비밀번호를 넣어 주세요.",
     '<div class="fld"><label class="f">수집함 주소</label><input type="text" value="https://script.google.com/macros/s/.../exec"></div>'+
     '<div class="fld"><label class="f">비밀번호</label><input type="password" value="••••••••••"></div>'+
@@ -7316,7 +7316,7 @@ AFTER.trash=function(){ wireTable("trs",function(){ draw(); }); };
 PAGE.backup=function(){
   /* v25: 예전 카드 다섯 장은 글자만 박힌 가짜였습니다(버튼을 눌러도 아무 일 없음). 진짜 값만 남기고 나머지는 「준비 중」으로 */
   var ver=String(ST.ver||"").match(/v[\d.]+/i);
-  return head("설정 백업","차곳간체크는 자료를 서버에 두기 때문에 PC끼리 따로 맞출 일이 없어요. 회사 PC에서 고치면 집 PC에도 그대로 보여요.")+
+  return head("백업","차곳간체크는 자료를 서버에 두기 때문에 PC끼리 따로 맞출 일이 없어요. 회사 PC에서 고치면 집 PC에도 그대로 보여요.")+
   card("지금 연결","",
     kvs([["검사소",esc((ST.shopName||"—")+(ST.officeCode?" ("+ST.officeCode+")":""))],
          ["서버",esc(ver?ver[0]:"확인 중")],["주소",esc(location.host||"—")]]))+
@@ -7418,7 +7418,7 @@ PAGE.popbill=function(){
       ? ['<b>아직 팝빌 회원이 아니에요.</b> 아래 «2번»에서 티와이컴퍼니 밑으로 추가하시면 돼요.',"err"]
       : ['<b>아직 안 붙었어요.</b>'+(POP.why?' — '+esc(POP.why):''),"err"];
 
-  return head("팝빌 연동",
+  return head("연결 · 팝빌",
     "입금 내역(계좌조회)과 세금계산서를 팝빌로 주고받아요.")+
 
   '<div class="msg '+band[1]+'">'+band[0]+'</div>'+
@@ -11486,17 +11486,26 @@ AFTER.bill=function(){ if(ab) ab.apply(this,arguments);
 })();
 </script>
 <script>
-/* ═══ v55 — 디자인 방 공통 화면 시안(워시 = 기준 · 화면마다 추천 A안)에 맞춘 네 화면
-   세금계산서(발행 / 달마다 장부) · 입·출금 내역(입금·출금 / 받을 금액 / 보험료 대조) · 배달 · 설정(왼쪽 항목 목록)
+/* ═══ v55 — 공통 화면(대표님 10/18 결정 · 운영/04)
+   세금계산서 = 시안 A안 + 체크 전용 기능 그대로 · 입·출금 내역 · 배달 = 워시 v134 지금 화면과 같게(체크 전용 칸은 체크에만)
+   설정 = 항목 차례 · 이름만 시안대로(항목 목록 모양은 사용자가 고른 메뉴 모양 — 가로 위 / 세로 왼쪽 — 을 따라요)
    단추 · 창구 · 셈은 v54 그대로 — 차례 · 이름 · 숫자 칸 · 할 일 띠만 바꿔요 ═══ */
 (function(){
 /* ── 할 일 띠 ── */
 BANDS.hometax=function(){
-  if(!(OFFICE.popbill_userid && OFFICE.biz_no)) return {count:1, tone:"stop", text:"팝빌 회원아이디나 사업자번호가 비어 있어요", go:"팝빌 연동으로", onGo:function(){ go("popbill"); }};
+  if(!(OFFICE.popbill_userid && OFFICE.biz_no)) return {count:1, tone:"stop", text:"팝빌 회원아이디나 사업자번호가 비어 있어요", go:"연결 · 팝빌로", onGo:function(){ go("popbill"); }};
   var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); }), tot=0;
   able.forEach(function(t){ tot+=Number(t.total)||0; });
   return {count:able.length, text:"발급할 곳 "+able.length+"곳 · "+won(tot)+"원", empty:"발급할 곳이 없어요 — 입금이 끝나면 여기에 떠요",
     onGo:function(){ var t=$("htx-blk"); if(t) CGG.spot(t); }};
+};
+BANDS.deposit=function(){
+  var w=DEPS.filter(function(d){ return d.state==="확인 대기"; });
+  if(w.length) return {count:w.length, text:"누가 보낸 돈인지 확인할 입금 "+w.length+"건 · "+won(w.reduce(function(t,d){ return t+(Number(d.amount)||0); },0))+"원",
+    onGo:function(){ perSet("dep","all"); var x=ts("dep"); x.tf="확인 필요"; x.page=1; draw(); var t=$("dep-blk"); if(t) CGG.spot(t); }};
+  var L=(BILLS||[]).filter(function(b){ return Number(b.left)>0; }), s=0; L.forEach(function(b){ s+=Number(b.left)||0; });
+  return {count:L.length, tone:"run", text:"받을 금액 "+won(s)+"원 · "+L.length+"곳", go:"받을 금액 보기", empty:"받을 금액도 확인할 입금도 없어요",
+    onGo:function(){ go("recv"); }};
 };
 BANDS.deliv=function(){
   var f=DRIVES.filter(function(d){ return d.alarm==="못 보냄"; }).length;
@@ -11515,24 +11524,39 @@ AFTER.hometax=function(){ if(ah) ah.apply(this,arguments);
   var b=$("txDoneOnly"); if(b) b.onclick=function(){ TXFIL="done"; var f=$("txFil"); if(f) f.value="done"; refresh(["tax"]); };
 };
 
-/* ── 입·출금 내역 › 기간 칩 (표만 거름 · 가져오기는 그대로) ── */
-window.DEPR=window.DEPR||"month";
+/* ── 기간 칸 — 워시 입·출금 내역 · 출고 기록과 같은 모양: 오늘 · 어제 · 최근 7일 · 이번 달 · 지난 달 · 날짜 ~ 날짜 · 검색 (표만 거름) ── */
+function kst(){ return new Date(Date.now()+9*3600e3); }
 function ymd(d){ return d.toISOString().slice(0,10); }
-window.depRange=function(L){
-  var now=new Date(Date.now()+9*3600e3), t=ymd(now), y=ymd(new Date(now.getTime()-864e5)), w=ymd(new Date(now.getTime()-6*864e5));
-  var m=t.slice(0,7), pm=ymd(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0))).slice(0,7);
-  return (L||[]).filter(function(d){ var day=String(d.day||d.at||"").slice(0,10);
-    return DEPR==="today"?day===t : DEPR==="yday"?day===y : DEPR==="7"?day>=w&&day<=t : DEPR==="month"?day.slice(0,7)===m : DEPR==="prev"?day.slice(0,7)===pm : true; });
-};
-window.depChips=function(){
-  return '<div class="tools" id="depRange" role="group" aria-label="기간">'+[["today","오늘"],["yday","어제"],["7","7일"],["month","이번 달"],["prev","지난 달"],["all","전체"]].map(function(x){
-    return '<button type="button" class="cgg-fp'+(DEPR===x[0]?' on':'')+'" data-depr="'+x[0]+'" aria-pressed="'+(DEPR===x[0])+'">'+x[1]+'</button>'; }).join("")+'</div>';
-};
+function rangeOf(k){
+  var n=kst(), t=ymd(n), y=ymd(new Date(n.getTime()-864e5)), w=ymd(new Date(n.getTime()-6*864e5));
+  var m1=t.slice(0,8)+"01", pe=ymd(new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), 0))), p1=pe.slice(0,8)+"01";
+  return k==="today"?[t,t] : k==="yday"?[y,y] : k==="7"?[w,t] : k==="month"?[m1,t] : k==="prev"?[p1,pe] : k==="30"?[ymd(new Date(n.getTime()-29*864e5)),t] : ["",""];
+}
+var PER={dep:{k:"month"}, drv:{k:"30"}};
+window.perSet=function(id,k){ var r=rangeOf(k); PER[id]={k:k, f:r[0], t:r[1]}; if(ts(id==="dep"?"dep":"drv")) ts(id==="dep"?"dep":"drv").page=1; };
+perSet("dep","month"); perSet("drv","30");
+function dayOf(d){ var m=String(d.day||d.at||"").match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/); return m?m[1]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[3]).slice(-2):""; }
+window.perFilter=function(id,L){ var P=PER[id]||{}; if(!P.f&&!P.t) return (L||[]).slice();
+  return (L||[]).filter(function(d){ var x=dayOf(d); return x && (!P.f||x>=P.f) && (!P.t||x<=P.t); }); };
+window.perBox=function(id){ var P=PER[id]||{};
+  return '<div class="card v55-per"><div class="tools" role="group" aria-label="기간">'+[["today","오늘"],["yday","어제"],["7","최근 7일"],["month","이번 달"],["prev","지난 달"]].map(function(x){
+    return '<button type="button" class="btn'+(P.k===x[0]?' on':'')+'" data-per="'+id+'|'+x[0]+'" aria-pressed="'+(P.k===x[0])+'">'+x[1]+'</button>'; }).join("")+
+    '<input type="date" id="pf-'+id+'" value="'+esc(P.f||"")+'" aria-label="시작 날짜"><span class="v55-tilde">~</span><input type="date" id="pt-'+id+'" value="'+esc(P.t||"")+'" aria-label="끝 날짜">'+
+    '<button type="button" class="btn primary" data-pergo="'+id+'">검색</button></div></div>'; };
+function perWire(){
+  document.querySelectorAll("[data-per]").forEach(function(b){ b.onclick=function(){ var v=b.getAttribute("data-per").split("|"); perSet(v[0],v[1]); draw(); }; });
+  document.querySelectorAll("[data-pergo]").forEach(function(b){ b.onclick=function(){ var id=b.getAttribute("data-pergo"), f=($("pf-"+id)||{}).value||"", t=($("pt-"+id)||{}).value||"";
+    if(f&&t&&f>t){ var z=f; f=t; t=z; } PER[id]={k:"", f:f, t:t}; var x=ts(id); if(x) x.page=1; draw(); }; });
+}
 var ad=AFTER.deposit;
-AFTER.deposit=function(){ if(ad) ad.apply(this,arguments);
-  document.querySelectorAll("[data-depr]").forEach(function(b){ b.onclick=function(){ DEPR=b.getAttribute("data-depr"); ts("dep").page=1; draw(); }; });
+AFTER.deposit=function(){ if(ad) ad.apply(this,arguments); perWire();
   var c=$("depBankGo"); if(c) c.onclick=function(){ go("popbill"); };
+  /* 워시처럼 표 아래로: 팝빌에서 가져오기 칸 */
+  var pull=$("depPull"), pc=pull&&pull.closest(".card"), bank=$("depBankGo"), bc=bank&&bank.closest(".card");
+  if(pc&&bc&&bc.parentNode){ bc.parentNode.insertBefore(pc, bc); var h=pc.querySelector("h3"); if(h) h.textContent="팝빌에서 가져오기 · 다시 맞추기"; }
 };
+var av=AFTER.deliv;
+AFTER.deliv=function(){ if(av) av.apply(this,arguments); perWire(); };
 
 /* ── 입·출금 내역 › 받을 금액 ── */
 PAGE.recv=function(){
@@ -11578,8 +11602,8 @@ AFTER.office=function(){ if(AFTER.partner) AFTER.partner.apply(this,arguments); 
 /* ── 설정 › 자료 올리기 (카모두 명부 · 첫날 쓰는 순서) ── */
 PAGE.roster=function(){
   var own=isOwner();
-  return head("자료 올리기","카모두에서 받은 명부와 엑셀을 올려요. 처음 쓰는 날은 아래 «첫날 쓰는 순서»대로 하면 돼요.")+
-  card("카모두 상사명부 · 딜러명부","카모두 전산에서 받은 «상사리스트» · «딜러리스트» 엑셀(.xlsx)이나 CSV를 그대로 올려요. 상사명부는 영업 중인 곳만, 딜러명부는 재직 중인 사람만 들어가요. 회사코드 칸은 읽지 않아요(개인정보일 수 있어요). 이미 있는 이름은 덮지 않고 미리보기에서 «이미 있음»으로 보여 줘요.",
+  return head("명부 올리기","카모두에서 받은 상사 · 딜러 명부를 올려요. 처음 쓰는 날은 아래 «첫날 쓰는 순서»대로 하면 돼요.")+
+  card("카모두 상사명부 · 딜러명부","카모두 상사리스트 · 딜러리스트 엑셀을 그대로 올려요. 영업 · 재직만 들어가고, 이미 있는 이름은 건너뛰어요.",
     own?'<div class="tools"><button type="button" class="btn primary" id="rsComp">① 상사명부 올리기</button><button type="button" class="btn primary" id="rsDealer">② 딜러명부 올리기</button><button type="button" class="btn" id="rsTpl">거래처 양식 받기 (CSV)</button></div>'
        :'<p class="note">명부 올리기는 대표만 할 수 있어요.</p>')+
   card("접수리스트 · 나스 엑셀","카모두 접수리스트와 나스 전산외 · 정비비 엑셀은 매출 › 자료 올리기에서 올려요.",
@@ -11589,54 +11613,28 @@ PAGE.roster=function(){
     '<li><b>카모두 상사명부</b> 올리기 — 위 «① 상사명부 올리기»</li>'+
     '<li><b>카모두 딜러명부</b> 올리기 — 위 «② 딜러명부 올리기»</li>'+
     '<li><b>단가표</b> «가온 규칙으로 맞추기» <button type="button" class="btn small" data-v55go="price">단가표로</button></li>'+
-    '<li><b>접수리스트 10월</b> 올리기 <button type="button" class="btn small" data-v55go="files">자료 올리기로</button></li>'+
-    '<li><b>청구서</b> 확인 — 10월 35곳 · 3,927,000원(부가세 포함)이면 맞아요 <button type="button" class="btn small" data-v55go="bill">월별 청구서로</button></li>'+
+    '<li><b>접수리스트</b> 올리기 (청구할 달) <button type="button" class="btn small" data-v55go="files">매출 › 자료 올리기로</button></li>'+
+    '<li><b>청구서</b> 확인 — 청구처 수 · 총계가 나스 «가온 정산»과 같으면 맞아요 <button type="button" class="btn small" data-v55go="bill">월별 청구서로</button></li>'+
     '</ol>');
 };
 NEEDS.roster=["set"];
 AFTER.roster=function(){
-  var o=function(){ if(COMPS===null){ tell("거래처를 불러오는 중이에요","잠시 뒤 다시 눌러 주세요."); return; } if(window.chkCsvOpen) chkCsvOpen(); };
+  var o=function(){ if(COMPS===null){ tell("아직 쓸 수 없어요","서버를 새로 올려야 쓸 수 있어요(체크 서버 v34). 차곳간에 알려 주세요."); return; } if(window.chkCsvOpen) chkCsvOpen(); };
   var a=$("rsComp"); if(a) a.onclick=o; var b=$("rsDealer"); if(b) b.onclick=o;
   var t=$("rsTpl"); if(t) t.onclick=function(){ if(window.chkCsvTpl) chkCsvTpl(); };
   var f=$("rsFiles"); if(f) f.onclick=function(){ go("files"); };
   document.querySelectorAll("[data-v55go]").forEach(function(x){ x.onclick=function(){ go(x.getAttribute("data-v55go")); }; });
 };
 
-/* ── 설정 › 왼쪽 항목 목록 (넓은 화면 · 폰은 위 작은 칸) ── */
-function setNav(){
-  var m=$("main"); if(!m||$("v55SetNav")) return;
-  if(!SETS.some(function(x){ return x[0]===page; })) return;
-  var h=m.querySelector(".cgg-head"); if(!h) return;
-  var g=document.createElement("div"); g.className="v55-setg";
-  var nav=document.createElement("nav"); nav.id="v55SetNav"; nav.className="v55-setnav"; nav.setAttribute("aria-label","설정 항목");
-  nav.innerHTML=SETS.map(function(s){ return (SETLBL[s[0]]?'<small>'+esc(SETLBL[s[0]])+'</small>':'')+
-    '<button type="button" data-v55set="'+s[0]+'"'+(s[0]===page?' aria-current="page"':'')+'>'+esc(s[1])+'</button>'; }).join("");
-  var body=document.createElement("div"); body.className="v55-setbody";
-  var bd=$("chkBand"), start=(bd&&bd.parentNode===h.parentNode)?bd.nextSibling:h.nextSibling;
-  var mv=[]; for(var n=start;n;n=n.nextSibling) mv.push(n);
-  mv.forEach(function(n){ body.appendChild(n); });
-  g.appendChild(nav); g.appendChild(body); h.parentNode.appendChild(g);
-  nav.querySelectorAll("[data-v55set]").forEach(function(b){ b.onclick=function(){ go(b.getAttribute("data-v55set")); }; });
-}
-SETS.forEach(function(s){ var a=AFTER[s[0]]; AFTER[s[0]]=function(){ if(a) a.apply(this,arguments); setNav(); }; });
-/* 넓은 화면 설정은 왼쪽 목록이 있어 위 작은 칸 줄은 숨겨요 (폰은 그대로) */
-var dt=window.drawTabs;
-if(dt) window.drawTabs=drawTabs=function(){ dt.apply(this,arguments); try{ document.body.classList.toggle("v55-setpg", SETS.some(function(x){ return x[0]===page; })); }catch(e){} };
 })();
 </script>
 <style>
-/* v55 설정 왼쪽 항목 목록 — 워시 공통 시안 A */
-.v55-setg{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;align-items:start}
-.v55-setnav{display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;position:sticky;top:12px}
-.v55-setnav small{font-size:12px;font-weight:800;color:var(--muted);padding:10px 10px 4px}
-.v55-setnav button{all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;font-size:15px;font-weight:700;color:var(--text);min-height:24px}
-.v55-setnav button:hover{background:var(--chip)}
-.v55-setnav button[aria-current="page"]{background:var(--brand-soft);color:var(--brand);font-weight:800}
-.v55-setnav button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
-.v55-setbody{min-width:0}
-@media (min-width:761px){ body.v55-setpg #cggSub, body.v55-setpg .cgg-navsub{display:none !important} }
-@media (max-width:760px){ .v55-setg{display:block} .v55-setnav{display:none} }
-#depRange{gap:6px}
+/* v55 기간 칸 (워시와 같게) */
+.v55-per .tools{margin:0;flex-wrap:wrap;align-items:center}
+.v55-per .btn.on{background:var(--brand-soft);color:var(--brand);border-color:var(--brand)}
+.v55-per input[type=date]{width:auto;min-width:150px}
+.v55-tilde{color:var(--muted);padding:0 2px}
+
 .v55-steps{margin:0;padding-left:22px;display:grid;gap:10px;font-size:15px}
 .v55-steps li{line-height:1.6}
 .v55-steps .btn{margin-left:8px}
