@@ -539,7 +539,7 @@ async function companySave(ctx: Ctx, row: any) {
   return { id: data.id, name: S(data.name) };
 }
 /** v49: 상사명부·딜러명부 한꺼번에 넣기 — 대표만 · 줄마다 정한 칸만 읽음(회사코드·그 밖의 칸은 버림)
- *  companies:[{name, biz_no|bizNo, ceo, tel, addr, email, upte, jongmok}] · dealers:[{name, tel|phone, company}]
+ *  companies:[{name, biz_no|bizNo, ceo, tel, addr}] · dealers:[{name, tel|phone, company}] (회사코드·주민번호 등 다른 칸은 버림)
  *  이미 있는 상사(이름 같음)·딜러(이름+상사 같음)는 빈 칸만 채움 · 없는 상사 이름이 딜러에 있으면 상사도 만듦 · dryRun 이면 세기만 */
 async function partnerImport(ctx: Ctx, opt: any) {
   bossOnly(ctx);
@@ -585,13 +585,14 @@ async function partnerImport(ctx: Ctx, opt: any) {
       if (error) throw new Error("상사를 넣지 못했습니다. 잠시 뒤 다시 해 주세요.");
       for (const c of data ?? []) { const h = cBy.get(S(c.name)); if (h) h.id = c.id; }
     }
-    for (const f of cFill) await db.from("check_company").update(f.patch).eq("office_id", oid).eq("id", f.id);
+    for (let k = 0; k < cFill.length; k += 20)                 // 보안 참고: 20개씩 함께 (서버 시간 제한)
+      await Promise.all(cFill.slice(k, k + 20).map((f) => db.from("check_company").update(f.patch).eq("office_id", oid).eq("id", f.id)));
   }
   /* ② 딜러 */
   const { data: ds0 } = await db.from("check_dealer").select("id,name,company_id,tel,active").eq("office_id", oid);
   const dKey = (name: string, cid: string) => name + "|" + cid;
   const dBy = new Map<string, any>((ds0 ?? []).filter((d: any) => d.active !== false).map((d: any) => [dKey(S(d.name), S(d.company_id)), d]));
-  const dAdd: any[] = [];
+  const dAdd: any[] = [], dFill: { id: string; tel: string }[] = [];
   for (const d of dRows) {
     if (!d.name) { out.dealers.bad.push({ row: d.i + 1, why: "딜러 이름이 비어 있음" }); continue; }
     let tel = d.tel;
@@ -599,7 +600,7 @@ async function partnerImport(ctx: Ctx, opt: any) {
     const cid = d.company ? S(cBy.get(d.company)?.id) : "";
     const have = dBy.get(dKey(d.name, cid));
     if (have) {
-      if (tel && !S(have.tel)) { if (!dry) await db.from("check_dealer").update({ tel }).eq("office_id", oid).eq("id", have.id); have.tel = tel; out.dealers.fill++; }
+      if (tel && !S(have.tel)) { if (have.id) dFill.push({ id: S(have.id), tel }); have.tel = tel; out.dealers.fill++; }
       else out.dealers.same++;
       continue;
     }
@@ -610,9 +611,14 @@ async function partnerImport(ctx: Ctx, opt: any) {
     const { error } = await db.from("check_dealer").insert(dAdd.slice(k, k + 500));
     if (error) throw new Error("딜러를 넣지 못했습니다. 잠시 뒤 다시 해 주세요.");
   }
+  if (!dry) for (let k = 0; k < dFill.length; k += 20)        // 보안 참고: 20개씩 함께
+    await Promise.all(dFill.slice(k, k + 20).map((f) => db.from("check_dealer").update({ tel: f.tel }).eq("office_id", oid).eq("id", f.id)));
   out.companies.bad = out.companies.bad.slice(0, 100); out.dealers.bad = out.dealers.bad.slice(0, 100);
   if (!dry) await log(ctx, "거래처 한꺼번에 넣음", { c: { add: out.companies.add, fill: out.companies.fill }, d: { add: out.dealers.add, fill: out.dealers.fill } });
-  return { ok: true, dryRun: dry, ...out };
+  /* 체크 v55 약속 이름도 함께: made(새로 넣음) · skipped(이미 있어 건너뜀 = 채움 + 같음) */
+  const made = out.companies.add + out.dealers.add;
+  const skipped = out.companies.fill + out.companies.same + out.dealers.fill + out.dealers.same;
+  return { ok: true, dryRun: dry, made, skipped, ...out };
 }
 /** 매매상사 지우기 — 대표만 · 이 검사소 것만(섞이면 전체 거절) · 쓰는 딜러가 있으면 지우지 않고 kept 로.
     지운(쉬는) 딜러만 남은 상사는 그 딜러들의 상사 칸을 비우고 지움 (지난 청구서는 상사 이름을 따로 갖고 있어 그대로) */
