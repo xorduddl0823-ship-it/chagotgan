@@ -2408,8 +2408,17 @@ var CGG = (function(){
   }
   /* 홈 차례 (두 제품 같음): ② 화면 머리 → 알림 띠(있으면) → D 바로가기 → 할 일 3장 → 숫자 칸 4개 → [일정 달력 | 이번 달 입금 · 이번 달 일감] → 도움 카드
      o = {date, title(HTML — 숫자는 <em>, 사용자 글은 CGG.esc), desc, notice(HTML), quick:{feats,key,defs,onGo}, todo:{items,total,onPick,onAll}, kpis:[…], cal:{…}, money:{…}, rank:{…}, help} */
+  /* 1.12 (대표님 10/18) 홈 첫 줄은 두 제품이 같은 규칙 · 같은 문장 — o.sum:{unsent:안 보낸 청구서 딜러 수, due:받을 금액}
+     ① 안 보낸 청구서가 있으면 «청구서 보낼 딜러 N명이 있어요» ② 받을 돈이 남으면 «받을 금액 ○원이 남아 있어요» ③ 다 들어왔으면 «받을 금액이 모두 들어왔어요».
+     숫자는 기본 글자색(파란 강조 없음). o.title 은 sum 이 없을 때만 써요(옛 화면 호환). */
+  function homeTitle(s){ var n=Number(s.unsent), d=Number(s.due);
+    if(!isFinite(n)||!isFinite(d)) return null;   /* 숫자가 아니면 «다 들어왔어요»로 잘못 보이지 않게 — 옛 제목(o.title)을 써요 */
+    n=Math.max(0,Math.floor(n)); d=Math.max(0,Math.round(d));
+    if(n>0) return '청구서 보낼 딜러 <em>'+n+'명</em>이 있어요';
+    if(d>0) return '받을 금액 <em>'+won(d)+'원</em>이 남아 있어요';
+    return '받을 금액이 모두 들어왔어요'; }
   function home(el, o){ if(!el) return; o=o||{};
-    el.innerHTML=head({crumb:"홈", date:o.date, hi:true, title:o.title, desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
+    el.innerHTML=head({crumb:"홈", date:o.date, title:(o.sum&&homeTitle(o.sum))||o.title||"", desc:o.desc})+(o.notice?'<div class="cgg-notice">'+o.notice+'</div>':'')
       +'<div data-h="quick"></div><div data-h="todo"></div><div data-h="kpi"></div>'
       +'<div class="cgg-homegrid"><div data-h="cal"></div><div class="cgg-homeside"><div data-h="money"></div><div data-h="rank"></div></div></div>'+(o.help?help(o.help):'');
     function q(k){ return el.querySelector('[data-h="'+k+'"]'); }
@@ -2506,7 +2515,7 @@ var CGG_MENU_CHECK = {
   tabs: [{key:"home",icon:"home",label:"홈"},{key:"bill",icon:"file",label:"청구서"},{key:"delivery",icon:"truck",label:"배달"},{key:"deposit",icon:"wallet",label:"입·출금"},{key:"__all",icon:"more",label:"전체"}],
   feats: [
     {id:"sales",        label:"매출 보기",              path:"매출 › 매출 내역",                    go:"sales"     ,       words:"매출 실적 월별 년별 통계"},
-    {id:"upload",       label:"엑셀 자료 올리기",       path:"설정 › 자료 올리기",                  go:"set/upload",     words:"엑셀 업로드 올리기 접수리스트 전산외 정비비 양식"},
+    {id:"upload",       label:"엑셀 자료 올리기",       path:"설정 › 자료 올리기",                  go:"set/upload",     words:"엑셀 업로드 올리기 카모두 접수리스트 전산외 정비비 나스 양식"},
     {id:"history",      label:"달마다 장부",              path:"세금계산서 › 달마다 장부",                           go:"hometax/ledger",          words:"정산 기록 월별 기록 홈택스 대조"},
     {id:"bill-make",    label:"청구서 만들기",          path:"월별 청구서 › 청구서 목록",                go:"bill/month",       words:"월별 청구서 정산서 청구 만들기 명세 요금 엑셀"},
     {id:"bill-send",    label:"청구서 보내기",          path:"월별 청구서 › 청구서 목록 › 2. 청구서 보내기", go:"bill/month",   words:"청구서 발송 알림톡 문자 보내기 시험", spot:"#billSendCard"},
@@ -2523,10 +2532,12 @@ var CGG_MENU_CHECK = {
     {id:"dest-add",     label:"목적지 추가",            path:"배달 › 목적지",                  go:"delivery/dest",    words:"목적지 도착지 주소 추가 관리"},
     {id:"deliv-msg",    label:"배달 문구 · 발송 설정",  path:"배달 › 문구 · 발송 설정",             go:"delivery/msg",     words:"배달 문자 문구 알림톡 보내는 방법 사진 카톡 발송 예약"},
     {id:"driver",       label:"기사 계정",              path:"배달 › 기사 계정",                    go:"delivery/driver",  words:"기사 배달 기사 계정 추가 로그인"},
+    {id:"roster",       label:"카모두 상사명부 · 딜러명부 올리기", path:"설정 › 거래처",           go:"set/partner",      words:"카모두 명부 상사명부 딜러명부 엑셀 한꺼번에 올리기 업로드 거래처 채우기"},
     {id:"company-add",  label:"상사 추가",              path:"설정 › 거래처 › 아래쪽",              go:"set/partner",      words:"매매상사 상사 등록 거래처 추가 사업자등록증", spot:"#ptCompanies"},
     {id:"dealer-add",   label:"딜러 추가",              path:"설정 › 거래처 › 아래쪽 딜러",         go:"set/partner",      words:"딜러 등록 딜러 넣기 명함 연락처 한꺼번에", spot:"#ptDealers"},
     {id:"dealer-del",   label:"딜러 · 상사 지우기",     path:"설정 › 거래처 › 아래쪽",              go:"set/partner",      words:"딜러 지우기 상사 지우기 삭제", spot:"#ptDealers"},
     {id:"biz",          label:"공급자 · 우리 사업장",   path:"설정 › 우리 사업장",               go:"set/biz",      words:"공급자 우리 사업장 상호 사업자번호 계좌 대표", spot:"#ptSupplier"},
+    {id:"sms",          label:"메시지 설정",            path:"설정 › 알림",              go:"set/alarm",         words:"문자 알림톡 메시지 보내는 방식 발송 연동 시험 발송"},
     {id:"sender",       label:"보내는 번호(발신번호)",               path:"설정 › 알림", go:"set/alarm", words:"발신번호 보내는 번호 문자 번호 보내는 번호", spot:"#smsFrom"},
     {id:"price",        label:"단가표",                 path:"설정 › 작업 항목 · 단가표",                       go:"set/price",        words:"단가 가격 검사비 구간 부가세"},
     {id:"fee",          label:"검사자 수수료",          path:"설정 › 검사자 수수료",                go:"set/fee",          words:"수수료 검사자 규칙"},
@@ -4044,9 +4055,8 @@ function sums(list,cls){
     var box=document.createElement("div");
     CGG.kpis(box, list.map(function(x){
       var t=String(x[1]).replace(/<[^>]+>/g,""), m=t.match(/^([\d,.\-−+]+)\s*(.*)$/);
-      var lb=String(x[0]).replace(/<[^>]+>/g,"");   /* v56: 뜻 색 tone (공통 1.12) */
-      var tn=(x[2]==="bad"||x[2]==="warn"||/받을|대기|확인 필요|미수|안 된|못 /.test(lb))?"due":(x[2]==="good"||/입금|받은/.test(lb))?"in":"";
-      return {label:lb, value:m?m[1]:t, unit:m?m[2]:"", tone:tn, zeroMuted:true}; }));
+      return {label:String(x[0]).replace(/<[^>]+>/g,""), value:m?m[1]:t, unit:m?m[2]:"",
+              color: x[2]==="bad"?"#D64545":(x[2]==="good"?"#1E9E5A":(x[2]==="warn"?"#B26B00":"#1668C4"))}; }));
     return box.outerHTML;
   }
   return '<div class="sums '+(cls||"")+'">'+list.map(function(x){
@@ -9701,7 +9711,7 @@ button[data-soon],select[data-soon]{display:none!important}
 .cgg-head .hello{min-width:0;flex:1 1 320px}
 .cgg-head .hello small{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
 .cgg-head .hello h1{margin:0;font-size:28px;font-weight:900;letter-spacing:-.8px;line-height:1.3;text-wrap:balance}
-.cgg-head .hello h1 em{font-style:normal;color:inherit} .cgg-head.hi .hello h1 em{color:var(--blue)}  /* 1.12 대표님 10/18: 화면 제목 숫자는 기본 글자색 — 파란 강조는 홈 첫 줄만 */
+.cgg-head .hello h1 em{font-style:normal;color:inherit} .cgg-head.hi .hello h1 em{color:var(--blue)}  /* 1.12 대표님 10/18: 화면 제목 숫자는 홈까지 모두 기본 글자색 — 파랑은 head({hi:true})일 때만(지금 쓰는 곳 없음) */
 .cgg-head .hello p{margin:6px 0 0;font-size:14px;color:var(--muted)}
 .cgg-head .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 /* 버튼 — 높이 43 · 모서리 12 · 파란 버튼은 한 화면에 하나 */
@@ -11950,7 +11960,7 @@ AFTER.home=function(){
   var title=own ? (left>0 ? '받을 금액 <em>'+esc(won(left))+'원</em>이 남아 있어요' : '받을 금액이 모두 들어왔어요')
                 : '이번 달 검사 <em>'+esc(won(cnt))+'대</em>가 있어요';
   var ranks=[["성능점검 · 국산",dom],["성능점검 · 수입",imp],["재검 · 선납 · 가성능",etc]].filter(function(x){ return x[1]>0; }).sort(function(a,b){ return b[1]-a[1]; }), rmx=ranks.length?ranks[0][1]:1;
-  CGG.home(el,{title:title,
+  CGG.home(el,{sum:{unsent:notSent.length, due:left}, title:title,   /* 1.12 확정: 홈 첫 줄은 두 제품 같은 규칙(sum) — title 은 옛 부품용 */
     desc:"오늘 "+(now.getMonth()+1)+"월 "+now.getDate()+"일 · "+String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0")+" 기준"+(thisMonth?"":" · "+ymText(ST.ym)+" 자료"),
     quick:{feats:chkFeats(), key:M.quickKey+":"+(ST.shop||"")+":"+(ST.who||""), defs:M.quickDefault, onGo:chkGoFeat},
     todo:{items:TODOS.slice(0,3).map(todoItem), total:TODOS.length, onPick:function(i){ var t=TODOS[i]; if(t&&t[4]&&t[4]!=="home") go(t[4]); }, onAll:homeAll},
@@ -12137,6 +12147,11 @@ Object.keys(BANDS).forEach(function(k){ var f=BANDS[k]; BANDS[k]=function(){ var
 var OWN=/^(팝빌에서 가져오기|\d{4}년 \d+월 청구 합계|딜러 등록 대기|수출 가성능|거래처에 없는 신청인|작성일자|다른 양식|카모두 상사명부|첫날 쓰는 순서|나스 엑셀|검사비 · 정비비 받는 계좌|쓰는 항목|성능보증보험료)/;
 var _dr=draw;
 window.draw=draw=function(){ _dr.apply(this,arguments);
+  /* 숫자 칸 뜻 색(공통 1.12 tone · 대조표 A2) — sums 는 돈 코드 목록이라 안 고치고, 그린 뒤 이름표로 색만 입혀요: 입금 초록 · 받을 금액/대기/확인 필요 주황 · 0 회색 */
+  try{ Array.prototype.forEach.call(document.querySelectorAll("#main .cgg-kpi"),function(k){ if(/\bt-(in|due|out|stop|zero)\b/.test(k.className)) return;
+    var lb=String((k.querySelector("small")||{}).textContent||""), v=String((k.querySelector("strong")||{}).textContent||"").replace(/[^\d.\-]/g,"");
+    var tn=/받을|대기|확인 필요|미수|안 된|못 /.test(lb)?"due":/입금|받은/.test(lb)?"in":"";
+    if(tn && Number(v)===0) tn="zero"; if(tn) k.classList.add("t-"+tn); }); }catch(e){}
   try{ Array.prototype.forEach.call(document.querySelectorAll("#main .card > h3"),function(h){ if(OWN.test(String(h.textContent||"").trim())) h.parentNode.classList.add("chk-own"); }); }catch(e){}
 };
 })();

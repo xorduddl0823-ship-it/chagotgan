@@ -71,12 +71,7 @@ s = s[:i] + r'''  /* v56 아래 쪽 — 처음 · 이전 · 1 / N · 모두 N줄
   return h;
 }
 ''' + s[j:]
-# ═══ ③-A2 숫자 칸 = 공통 1.12(워시 모양): 점 없음 · 단위 같은 크기 · 뜻 색(입금 초록 · 받을 금액/확인 필요 주황 · 0 회색) ═══
-rep('''      return {label:String(x[0]).replace(/<[^>]+>/g,""), value:m?m[1]:t, unit:m?m[2]:"",
-              color: x[2]==="bad"?"#D64545":(x[2]==="good"?"#1E9E5A":(x[2]==="warn"?"#B26B00":"#1668C4"))}; }));''',
-'''      var lb=String(x[0]).replace(/<[^>]+>/g,"");   /* v56: 뜻 색 tone (공통 1.12) */
-      var tn=(x[2]==="bad"||x[2]==="warn"||/받을|대기|확인 필요|미수|안 된|못 /.test(lb))?"due":(x[2]==="good"||/입금|받은/.test(lb))?"in":"";
-      return {label:lb, value:m?m[1]:t, unit:m?m[2]:"", tone:tn, zeroMuted:true}; }));''')
+# ③-A2 숫자 칸 뜻 색은 sums(돈 코드 목록 · 안 고침) 대신 그린 뒤 v56_통합.js 가 입혀요
 
 # ═══ ② 덧댄 조각 걷어내기 → 체크 전용 몫 한 곳(chk-v56, 공통 부품 앞) ═══
 cut('<style id="chk-j4">', '</style>')

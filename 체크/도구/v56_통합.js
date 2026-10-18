@@ -108,7 +108,7 @@ AFTER.home=function(){
   var title=own ? (left>0 ? '받을 금액 <em>'+esc(won(left))+'원</em>이 남아 있어요' : '받을 금액이 모두 들어왔어요')
                 : '이번 달 검사 <em>'+esc(won(cnt))+'대</em>가 있어요';
   var ranks=[["성능점검 · 국산",dom],["성능점검 · 수입",imp],["재검 · 선납 · 가성능",etc]].filter(function(x){ return x[1]>0; }).sort(function(a,b){ return b[1]-a[1]; }), rmx=ranks.length?ranks[0][1]:1;
-  CGG.home(el,{title:title,
+  CGG.home(el,{sum:{unsent:notSent.length, due:left}, title:title,   /* 1.12 확정: 홈 첫 줄은 두 제품 같은 규칙(sum) — title 은 옛 부품용 */
     desc:"오늘 "+(now.getMonth()+1)+"월 "+now.getDate()+"일 · "+String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0")+" 기준"+(thisMonth?"":" · "+ymText(ST.ym)+" 자료"),
     quick:{feats:chkFeats(), key:M.quickKey+":"+(ST.shop||"")+":"+(ST.who||""), defs:M.quickDefault, onGo:chkGoFeat},
     todo:{items:TODOS.slice(0,3).map(todoItem), total:TODOS.length, onPick:function(i){ var t=TODOS[i]; if(t&&t[4]&&t[4]!=="home") go(t[4]); }, onAll:homeAll},
@@ -295,6 +295,11 @@ Object.keys(BANDS).forEach(function(k){ var f=BANDS[k]; BANDS[k]=function(){ var
 var OWN=/^(팝빌에서 가져오기|\d{4}년 \d+월 청구 합계|딜러 등록 대기|수출 가성능|거래처에 없는 신청인|작성일자|다른 양식|카모두 상사명부|첫날 쓰는 순서|나스 엑셀|검사비 · 정비비 받는 계좌|쓰는 항목|성능보증보험료)/;
 var _dr=draw;
 window.draw=draw=function(){ _dr.apply(this,arguments);
+  /* 숫자 칸 뜻 색(공통 1.12 tone · 대조표 A2) — sums 는 돈 코드 목록이라 안 고치고, 그린 뒤 이름표로 색만 입혀요: 입금 초록 · 받을 금액/대기/확인 필요 주황 · 0 회색 */
+  try{ Array.prototype.forEach.call(document.querySelectorAll("#main .cgg-kpi"),function(k){ if(/\bt-(in|due|out|stop|zero)\b/.test(k.className)) return;
+    var lb=String((k.querySelector("small")||{}).textContent||""), v=String((k.querySelector("strong")||{}).textContent||"").replace(/[^\d.\-]/g,"");
+    var tn=/받을|대기|확인 필요|미수|안 된|못 /.test(lb)?"due":/입금|받은/.test(lb)?"in":"";
+    if(tn && Number(v)===0) tn="zero"; if(tn) k.classList.add("t-"+tn); }); }catch(e){}
   try{ Array.prototype.forEach.call(document.querySelectorAll("#main .card > h3"),function(h){ if(OWN.test(String(h.textContent||"").trim())) h.parentNode.classList.add("chk-own"); }); }catch(e){}
 };
 })();
