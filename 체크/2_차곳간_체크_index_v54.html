@@ -1520,6 +1520,15 @@ td.amt .b{display:block;font-size:11.5px;color:var(--muted);font-weight:700;marg
 .hero .facts .k{font-size:12px;color:var(--muted);font-weight:700;margin:0 0 3px}
 .hero .facts .v{font-size:16px;font-weight:800}
 .hero .facts .v em{font-style:normal;font-size:12.5px;font-weight:700;color:var(--muted);margin-left:4px}
+/* v54: 워시 v135 와 같게 매출 화면 글씨 키움 (모양 그대로) */
+#vSales .hero .big3 .k{font-size:15px}
+#vSales .hero .facts > div{padding:14px 20px}
+#vSales .hero .facts .k{font-size:15px;margin:0 0 5px}
+#vSales .hero .facts .v{font-size:23px;font-weight:900;letter-spacing:-.02em;line-height:1.15}
+#vSales .hero .facts .v em{font-size:15px;font-weight:800}
+#vSales .sum span{font-size:14.5px}
+#vSales .sum b{font-size:22px}
+@media (max-width:760px){ #vSales .hero .facts .v{font-size:20px} #vSales .sum b{font-size:19px} #vSales .hero .facts .k,#vSales .sum span{font-size:14px} }
 .delta{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;
   font-size:12px;font-weight:800}
 .delta.up{background:var(--good-soft);color:var(--good)}
@@ -4228,8 +4237,8 @@ PAGE.sales=function(){
         '<button class="btn small" id="hPrev"'+((empty||HERO>=SALES.length-1)?" disabled":"")+'>‹ 앞 달</button>'+
         '<button class="btn small" id="hNext"'+((empty||HERO<=0)?" disabled":"")+'>뒤 달 ›</button></span></div>'+
     '<div class="big3">'+
-      '<div><p class="k">검사 대수</p><div class="v">'+won(r.n)+'<small>대</small></div>'+
-        '<div class="d">지난달 대비 '+pct(r.momN)+'</div></div>'+
+      '<div><p class="k">검사 대수 (국산 · 수입)</p><div class="v">'+won((r.dom||0)+(r.imp||0))+'<small>대</small></div>'+
+        '<div class="d">재검 등 '+won(Math.max(0,(r.n||0)-(r.dom||0)-(r.imp||0)))+'대 · 총 '+won(r.n)+'대 · 지난달 대비 '+pct(r.momN)+'</div></div>'+
       '<div><p class="k">매출 합계 '+(VATIN?"(부가세 포함)":"(부가세 별도)")+'</p>'+
         '<div class="v">'+won(vmoney(r.total))+'<small>원</small></div>'+
         '<div class="d">지난달 '+pct(r.mom)+' · 지난해 같은 달 '+pct(r.yoy)+'</div></div>'+
@@ -4268,11 +4277,11 @@ PAGE.sales=function(){
         [thisY+"년 정비비",won(vmoney(ty.rep||0))+"원"],[thisY+"년 합계",won(vmoney(ty.total||0))+"원"],
         ["지난해 대비", yGrow==null?"—":pct(yGrow)]],"c5")+
   hero+
-  card("월별 매출","한 줄이 한 달이에요. 막대는 검사비 · 정비비 · 보험료를 이어 붙인 것이에요.",
+  card("월별 매출","한 줄이 한 달이에요. 검사 대수는 «국산·수입 + 재검 등 = 모두»예요. 막대는 검사비 · 정비비 · 보험료를 이어 붙인 것이에요.",
     tableBlock("sal",[
       {k:"ym",t:"달",name:true,fmt:function(v){return '<b>'+esc(ymText(v))+'</b>';}},
       {k:"n",t:"검사 대수",num:true,fmt:function(v,r2){
-        return '<span class="nn">'+won(v)+'<em>대</em></span>'+growTag(r2.momN);}},
+        return '<span class="nn">'+won((r2.dom||0)+(r2.imp||0))+' <span style="color:var(--muted)">+ '+won(Math.max(0,(r2.n||0)-(r2.dom||0)-(r2.imp||0)))+'</span><em> = '+won(v)+'대</em></span>'+growTag(r2.momN);}},
       {k:"dom",t:"국산 · 수입 · 그 밖",num:true,fmt:function(v,r2){
         return '<span style="font-weight:700">'+won(r2.dom)+'<span style="color:var(--muted)"> · </span>'+
           won(r2.imp)+'<span style="color:var(--muted)"> · </span>'+won(r2.etc)+'</span>';}},
@@ -10003,22 +10012,32 @@ function billDel(){
   ask({title:"고른 청구서를 지울까요?", k1:"누구", v1:whoTxt(L), k2:"몇 곳 · 얼마", v2:L.length+"곳 · "+won(sum)+"원",
        warn:"지운 청구서는 «청구서 만들기»를 다시 누르면 다시 생겨요. 아예 빼려면 그 딜러의 차를 다른 청구처로 옮기거나 거래처에서 정리해 주세요.", yes:"지우기"}, function(){
     busy(true);
-    var ym=ST.ym, all=L.length>=BILLS.length;
-    call("invoiceDel",[{ids:L.map(function(b){ return b.id; }), ym:ym}]).then(function(r){
-      busy(false); clearPick("bill"); r=r||{};
+    var ym=ST.ym, all=L.length>=BILLS.length, want=L.map(function(b){ return String(b.id); });
+    call("invoiceDel",[{ids:want, ym:ym}]).then(function(r){
+      r=r||{};
       var n=Number(r.n)||0, kp=Array.isArray(r.kept)?r.kept:[], ms=Number(r.missing)||0;
-      if(n && all && !kp.length && window.chkNoAutoSet) chkNoAutoSet(ym,true);   /* v54: 다 지운 달은 저절로 다시 만들지 않게 */
-      var lines=[];
-      if(kp.length) lines.push("못 지운 "+kp.length+"곳 — "+kp.slice(0,5).map(function(x){ return esc(x.name||"")+"("+esc(x.why||"")+")"; }).join(" / "));
-      if(ms) lines.push("못 찾은 "+ms+"곳 — 이미 지워졌거나 다른 달 청구서예요. «새로고침»을 눌러 주세요.");
-      if(!n) tell("청구서를 지우지 못했어요", lines.join("<br>")||"지울 수 있는 청구서가 없었어요.");
-      else if(lines.length) tell(n+"곳만 지웠어요", lines.join("<br>"));
-      else bar(n+"곳 청구서를 지웠어요."+(all?" «청구서 만들기»를 누르면 다시 생겨요.":""),"ok");
-      refresh(["bill"]);
+      var keptIds=kp.map(function(x){ return String(x.id||""); });
+      /* v54: 서버 대답만 믿지 않고 그 달 목록을 다시 읽어 정말 없어졌는지 봐요 (저절로 만들기 끄고 읽기) */
+      return call("invoiceList",[ym,false]).then(function(list){
+        busy(false); clearPick("bill");
+        var have=(list||[]).map(function(v){ return String(v.id); });
+        var left=want.filter(function(id){ return keptIds.indexOf(id)<0 && have.indexOf(id)>=0; });
+        if(n && all && !kp.length && !left.length && window.chkNoAutoSet) chkNoAutoSet(ym,true);   /* 다 지운 달은 저절로 다시 만들지 않게 */
+        var lines=[];
+        if(kp.length) lines.push("못 지운 "+kp.length+"곳 — "+kp.slice(0,5).map(function(x){ return esc(x.name||"")+"("+esc(x.why||"")+")"; }).join(" / "));
+        if(ms) lines.push("못 찾은 "+ms+"곳 — 이미 지워졌거나 다른 달 청구서예요.");
+        if(left.length) lines.push("서버는 지웠다고 했는데 아직 남아 있는 "+left.length+"곳 — 이 창을 사진으로 찍어 체크 방에 보내 주세요.");
+        var gone=want.length-left.length-kp.length-ms;
+        if(gone<=0) tell("청구서를 지우지 못했어요", lines.join("<br>")||"지울 수 있는 청구서가 없었어요.");
+        else if(lines.length) tell(gone+"곳만 지웠어요", lines.join("<br>"));
+        else bar(gone+"곳 청구서를 지웠어요."+(all?" «청구서 만들기»를 누르면 다시 생겨요.":""),"ok");
+        refresh(["bill"]);
+      }, function(){ busy(false); clearPick("bill");   /* 다시 읽기만 실패 — 지우기는 됐어요 */
+        bar((n||0)+"곳 지웠어요. 남았는지 확인을 못 했어요. 새로고침해 주세요.","info"); refresh(["bill"]); });
     }).catch(function(er){ busy(false);
-      if(!noSrv(er)){ fail(er); return; }
       /* v54: 화면에서만 빼던 것 없앰 — 새로고침하면 다시 보여서 «안 지워진다»로 보였어요 */
-      tell("아직 지울 수 없어요","지금 서버가 예전 판이라 청구서를 지울 수 없어요. 아무것도 지우지 않았어요.<br>새 서버를 올리면 바로 돼요.");
+      if(noSrv(er)) tell("아직 지울 수 없어요","지금 서버가 예전 판이라 청구서를 지울 수 없어요. 아무것도 지우지 않았어요.<br>새 서버를 올리면 바로 돼요.");
+      else tell("청구서를 지우지 못했어요", esc(niceMsg(er&&er.message))+"<br>아무것도 바뀌지 않았으면 이 창을 사진으로 찍어 체크 방에 보내 주세요.");
     });
   });
 }
@@ -11026,6 +11045,10 @@ AFTER.sms=function(){ if(aS) aS.apply(this,arguments);
 })();
 </script>
 
+<script>
+/* v54: 매출 화면을 #vSales 로 감싸 글씨 크기를 매출 화면에만 */
+(function(){ var p=PAGE.sales; PAGE.sales=function(){ return '<div id="vSales">'+p.apply(this,arguments)+'</div>'; }; })();
+</script>
 <script>
 /* ═══ v54 — 대표님 TEST(10/18) 고침
    ② 월별 청구서: 거래처에 없는 «신청인»의 차는 청구서에 안 들어가요(서버 invoiceBuild 는 딜러가 이어진 차만 셈)
