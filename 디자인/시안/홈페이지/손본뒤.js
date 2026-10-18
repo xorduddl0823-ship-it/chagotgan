@@ -22,18 +22,28 @@
         +'<table><thead><tr><th>차량번호</th><th>차종</th><th>'+(k==="dealer"?"업체":"작업")+'</th><th>상태</th></tr></thead><tbody>'+d[2].map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><span class="st '+r[4]+'">'+r[3]+'</span></td></tr>'; }).join("")+'</tbody></table>'; }
     Array.prototype.forEach.call(box.querySelectorAll("[data-mk]"),function(b){ b.onclick=function(){ show(b.getAttribute("data-mk")); }; }); show("wash");
   /* ③ 4단계 흐름 */
-    tryS.parentNode.insertBefore(sec("flow4",false,"③","차 한 대의 흐름을, 더 또렷하게","업무 단계마다 필요한 정보를 정리하고, 딜러는 자기 차 정보를 확인해요.",
+    tryS.parentNode.insertBefore(sec("flow4",false,"③","차가 들어와서 돈 받기까지","업무 단계마다 필요한 정보를 정리하고, 딜러는 자기 차 정보를 확인해요.",
       '<ol class="flow4"><li><b>차량 입고 · 접수</b><span>어떤 차가, 누구에게서 왔는지.</span></li><li><b>작업 · 점검</b><span>진행 중인 일과 상태를 정리해요.</span></li><li><b>출고 · 진행 확인</b><span>맡긴 차의 다음 단계를 확인해요.</span></li><li><b>청구 · 입금 확인</b><span>차량별 내역을 정산까지 이어가요.</span></li></ol><p class="note">서비스마다 보이는 기능과 정보 범위는 달라요. 위 흐름은 이해를 돕는 예시예요.</p>'), tryS.nextSibling); }
   /* ④ 자주 묻는 질문 */
-  var Q=[["워시 · 체크 · 딜러는 어떻게 다른가요?","워시는 광택 · 세차 업체의 입고 · 작업 · 정산, 체크는 성능점검 업체의 업무, 딜러앱은 맡긴 차의 진행 상황과 청구서를 확인하는 데 맞춰져 있어요."],
-         ["가입하지 않고 화면을 볼 수 있나요?","네. 위 «미리 써 보기»에서 예시 자료로 실제 화면을 눌러 볼 수 있어요."],
-         ["딜러는 무엇을 확인할 수 있나요?","내 차의 진행 상황, 작업 이력, 업체별 청구서를 확인해요. 보이는 범위는 업체가 연결한 정보에 따라요."],
+  var Q=[["워시 · 체크 · 딜러는 어떻게 다른가요?","워시는 광택 · 세차 등 업체의 입고 · 작업 · 정산, 체크는 성능점검 업체의 업무, 딜러앱은 맡긴 차의 진행 상황과 청구 정보를 확인하는 데 맞춰져 있어요."],
+         ["가입하지 않고 화면을 볼 수 있나요?","네. 위 «미리 써 보기»에서 예시 자료로 실제 화면을 눌러 볼 수 있어요. 보이는 차량과 금액은 예시예요."],
+         ["딜러는 무엇을 확인할 수 있나요?","내 차의 진행 상황, 작업 이력, 업체별 청구서를 확인해요. 보이는 범위는 계정 권한과 업체가 연결한 정보에 따라요."],
          ["결제는 어떻게 하나요?","30일 단위로 카드로 결제해요. 표시 금액은 부가세 별도예요."]];
   if(ask) ask.parentNode.insertBefore(sec("faq",true,"④","궁금한 점을 먼저 확인하세요","처음 차곳간을 살펴보는 분들을 위해 정리했어요.",'<div class="faq">'+Q.map(function(q){ return '<details><summary>'+q[0]+'</summary><p>'+q[1]+'</p></details>'; }).join("")+'</div>'), ask);
-  /* ⑤ 시작 3단계 + 남색 시작 띠 */
-  if(foot) foot.parentNode.insertBefore(sec("start",false,"⑤","먼저 둘러보고, 내 업무에 맞게 시작해요","",
-    '<ol class="start3"><li><b>화면 먼저 둘러보기</b><span>워시 · 체크 · 딜러 화면에서 무엇을 볼 수 있는지 살펴보세요.</span></li><li><b>맞는 서비스 고르기</b><span>업종과 맡은 역할에 맞는 제품을 고르고, 필요한 요금제를 확인하세요.</span></li><li><b>가입하고 시작하기</b><span>휴대폰 인증으로 가입하고 결제하면 바로 열려요.</span></li></ol>'
-    +'<div class="ctaband"><h2>내일의 업무가 조금 더 또렷해지도록, 차곳간을 먼저 만나 보세요.</h2><p>워시 · 체크 · 딜러, 내 역할에 맞는 화면부터 시작하세요.</p><div class="cta"><a class="btn p" href="#try">가입 없이 미리 써 보기</a><a class="btn g" href="/join.html">회원가입</a></div></div>'), foot);
+  /* ⑤ 남색 시작 띠 — 시작 단계는 새로 만들지 않고, 요금제 아래 기존 «가입 · 로그인 → 결제 → 바로 사용» 3단계를 띠 위로 옮겨 하나로(총괄 10/18) */
+  if(foot){ var st=sec("start",false,"⑤","이렇게 시작해요","",'<div class="ctaband"><h2>내일의 업무가 조금 더 또렷해지도록, 차곳간을 먼저 만나 보세요.</h2><p>워시 · 체크 · 딜러, 내 역할에 맞는 화면부터 시작하세요.</p><div class="cta"><a class="btn p" href="#try">가입 없이 미리 써 보기</a><a class="btn g" href="/join.html">회원가입</a></div></div>');
+    foot.parentNode.insertBefore(st, foot);
+    var s3=document.querySelector("#price .steps3"), bandEl=st.querySelector(".ctaband"); if(s3&&bandEl) bandEl.parentNode.insertBefore(s3, bandEl); }
+  /* ⑦ 첫 문구 고르기 — 지금 문구 / 시안 2 문구를 바꿔 보며 대표님이 골라요 */
+  var h1=document.querySelector(".hero h1"), hp=document.querySelector(".hero p");
+  if(h1&&hp){ var H=[[h1.innerHTML,hp.innerHTML],["차량 업무의 흐름,<br>차곳간으로 한눈에.","입고와 작업, 성능점검, 내 차의 진행 상황까지. 업체와 딜러, 각자의 역할에 맞는 화면을 만나 보세요."]];
+    var pick=el('<div class="bor pickh" role="group" aria-label="첫 문구 고르기"><span class="bor-tag">첫 문구 후보 ⑦</span><b>첫 문구 고르기</b><button type="button" aria-pressed="true" data-h="0">지금 문구</button><button type="button" aria-pressed="false" data-h="1">시안 2 문구</button></div>');
+    h1.parentNode.insertBefore(pick,h1);
+    Array.prototype.forEach.call(pick.querySelectorAll("[data-h]"),function(b){ b.onclick=function(){ var i=+b.getAttribute("data-h"); h1.innerHTML=H[i][0]; hp.innerHTML=H[i][1]; Array.prototype.forEach.call(pick.querySelectorAll("[data-h]"),function(x){ x.setAttribute("aria-pressed",String(x===b)); }); }; }); }
+  /* ⑧ 요금제 칸 모양 — 시안 2 처럼 이름 아래 «누구에게 맞는지» 한 줄(금액은 지금 홈페이지 그대로) */
+  var PD={"베이직":"기본 업무를 차근차근 정리하고 싶다면","스탠다드":"업체의 업무와 정산을 함께 관리하려면","프로":"우리 업체에 맞는 구성이 필요하다면"};
+  function pdesc(){ Array.prototype.forEach.call(document.querySelectorAll("#price .plan h3"),function(h){ var t=h.textContent.trim(); if(PD[t]&&!(h.nextElementSibling&&h.nextElementSibling.classList.contains("pdesc"))){ var d=document.createElement("p"); d.className="pdesc"; d.textContent=PD[t]; h.parentNode.insertBefore(d,h.nextSibling); h.parentNode.classList.add("bor"); } }); }
+  pdesc(); var pr=document.getElementById("price"); if(pr) new MutationObserver(pdesc).observe(pr,{childList:true,subtree:true});
   /* ⑥ 폰 메뉴 · 초점 테두리 · 움직임 줄이기 — 메뉴 단추에 표시만(동작은 지금 것 그대로) */
   var bg=document.querySelector(".burger"); if(bg) bg.classList.add("bor");
 })();
@@ -44,5 +54,5 @@
   function tag(){ var L=[[".logo","로고"],["nav.mn a","메뉴 44px"],[".burger","메뉴 단추 44px"],[".ptabs button","탭 44px"],[".trybar button","탭 44px"],[".plan .member","링크 44px"],[".links a",""],[".chk input","체크칸 22px"],[".panel input","입력칸"],[".panel select","입력칸"],["footer.site a","링크 44px"]];
     L.forEach(function(x){ Array.prototype.forEach.call(document.querySelectorAll(x[0]),function(e){ e.setAttribute("data-chg",x[1]||"1"); }); }); }
   if(/mark/.test(location.search+location.hash)){ document.documentElement.classList.add("cgg-mk"); tag(); new MutationObserver(tag).observe(document.body,{childList:true,subtree:true});
-    var d=document.createElement("div"); d.className="cgg-mklegend"; d.textContent="빨간 점선 = 바뀐 곳 · 보라 띠 = 참고 시안에서 빌려 온 칸 ①~⑥"; document.body.appendChild(d); }
+    var d=document.createElement("div"); d.className="cgg-mklegend"; d.textContent="빨간 점선 = 바뀐 곳 · 보라 띠 = 참고 시안 1 · 2 에서 빌려 온 칸 ①~⑧"; document.body.appendChild(d); }
 })();
