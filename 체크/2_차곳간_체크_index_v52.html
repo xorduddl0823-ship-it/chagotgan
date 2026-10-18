@@ -10799,12 +10799,15 @@ var LIM={"s:name":70,"s:ceo":30,"s:addr":150,"s:upte":40,"s:jong":60,"s:mail":40
 function bytes(v){ var n=0; String(v).split("").forEach(function(ch){ n+=ch.charCodeAt(0)>127?2:1; }); return n; }
 function cut(v,max){ var o="", n=0; String(v).split("").some(function(ch){ var w=ch.charCodeAt(0)>127?2:1; if(n+w>max) return true; n+=w; o+=ch; return false; }); return o; }
 /* 화면 안에 넣어 둔 홈택스 공식 양식(일반 · 운영/자료 · 암호 풀어 둔 것) — 시트 4장 · 6줄 칸 이름 · 59칸 · 7줄부터 · 100건까지 */
-function makeFile(pick, part, parts, warn){
-  var wb=XLSX.read(window.HTX_TPL_B64,{type:"base64"}), sh=wb.Sheets["엑셀업로드양식"], H=sh&&readHead(sh);
+function makeFile(pick, part, parts, warn, other){
+  /* other = «다른 양식 쓰기»로 고른 파일(바이트) — 칸 이름이 있는 시트를 찾아요 */
+  var wb=other?XLSX.read(other,{type:"array"}):XLSX.read(window.HTX_TPL_B64,{type:"base64"}), sh=wb.Sheets["엑셀업로드양식"], H=sh&&readHead(sh);
+  for(var si=0;!H&&si<wb.SheetNames.length;si++){ sh=wb.Sheets[wb.SheetNames[si]]; H=readHead(sh); }
   if(!H) throw new Error("양식 칸을 찾지 못했어요");
   var F=H.labels.map(fieldOf), need=["kind","date","s:biz","b:biz","supply","tax","item:일자","item:품목","pay"], miss=need.filter(function(k){ return F.indexOf(k)<0; });
   if(miss.length) throw new Error("양식 칸 "+miss.join(", "));
-  var r=H.hr+1;
+  var used=F.map(function(f,c){ return f?c:-1; }).filter(function(c){ return c>=0; }), r=H.hr+1;
+  while(r<=H.R.e.r && !used.every(function(c){ var x=sh[XLSX.utils.encode_cell({r:r,c:c})]; return !x||x.v===""||x.v==null; })) r++;   /* 다른 양식에 예시 줄이 있으면 그 아래부터 */
   pick.forEach(function(t){ var d=wd(t);
     F.forEach(function(f,c){ if(!f) return; var v=valOf(f,t,d);
       if(LIM[f] && bytes(v)>LIM[f]){ warn.push((t.name||"")+" · "+f.replace(/^[sb]:/,"").replace("item:","")+" "+LIM[f]+"바이트로 줄임"); v=cut(v,LIM[f]); }
@@ -10814,7 +10817,7 @@ function makeFile(pick, part, parts, warn){
   var rg=XLSX.utils.decode_range(sh["!ref"]); if(r-1>rg.e.r){ rg.e.r=r-1; sh["!ref"]=XLSX.utils.encode_range(rg); }
   XLSX.writeFile(wb, "홈택스_일괄발급_"+ST.ym+(parts>1?"_"+part+"of"+parts:"")+"_"+pick.length+"건.xls", {bookType:"biff8"});
 }
-function hometaxGo(){
+function hometaxGo(other){
   if(typeof XLSX==="undefined"){ bar("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.","err"); return; }
   var able=TAXES.filter(function(t){ return t.can && !t.skip && !/발급|전송/.test(t.state||""); });
   var ids=picked("htx"), pick=ids.length?able.filter(function(t){ return ids.indexOf(t.id)>=0; }):able;
@@ -10822,11 +10825,11 @@ function hometaxGo(){
   var noBiz=pick.filter(function(t){ return digits(t.biz).length!==10; }).length;
   if(!digits((OFFICE||{}).popbill_corp||(OFFICE||{}).biz_no)){ tell("우리 사업장 사업자번호가 비어 있어요","설정 › 거래처 › 우리 사업장에서 사업자등록번호를 먼저 넣어 주세요."); return; }
   var parts=Math.ceil(pick.length/100), tot=pick.reduce(function(a,t){ return a+(Number(t.total)||0); },0);
-  ask({title:"홈택스 일괄발급 양식을 내려받을까요?", sub:ymText(ST.ym)+"분 · 입금 완료만 · 영수(01)",
+  ask({title:"홈택스 일괄발급 양식을 내려받을까요?", sub:ymText(ST.ym)+"분 · 입금 완료만 · 영수(01)"+(other?" · 고른 양식에 채움":""),
        k1:"몇 건", v1:pick.length+"건"+(parts>1?" (100건씩 파일 "+parts+"개)":""), k2:"얼마", v2:won(tot)+"원 (부가세 포함)",
-       warn:"홈택스 공식 양식(일반) 그대로예요. 홈택스 일괄발급 화면에서 이 파일을 불러와요(발급은 한 번에 50건씩)."+(parts>1?" 파일이 여러 개라 브라우저가 «여러 파일 내려받기»를 물으면 «허용»을 눌러요.":"")+(noBiz?" 사업자번호가 10자리가 아닌 곳 "+noBiz+"곳이 있어요.":""), yes:"내려받기"}, function(){
+       warn:(other?"고른 양식 파일에 채워요.":"홈택스 공식 양식(일반) 그대로예요.")+" 홈택스 일괄발급 화면에서 이 파일을 불러와요(발급은 한 번에 50건씩)."+(parts>1?" 파일이 여러 개라 브라우저가 «여러 파일 내려받기»를 물으면 «허용»을 눌러요.":"")+(noBiz?" 사업자번호가 10자리가 아닌 곳 "+noBiz+"곳이 있어요.":""), yes:"내려받기"}, function(){
     var warn=[];
-    try{ for(var i=0;i<parts;i++) makeFile(pick.slice(i*100,(i+1)*100), i+1, parts, warn); }
+    try{ for(var i=0;i<parts;i++) makeFile(pick.slice(i*100,(i+1)*100), i+1, parts, warn, other); }
     catch(e){ tell("양식을 만들지 못했어요","차곳간에 알려 주세요. ("+esc(String(e&&e.message||""))+")"); return; }
     bar("홈택스 양식 "+parts+"개("+pick.length+"건)를 내려받았어요."+(warn.length?" 길이가 넘쳐 줄인 칸 "+warn.length+"개 — "+warn.slice(0,2).join(" / "):""), warn.length?"info":"ok");
   });
@@ -10834,7 +10837,14 @@ function hometaxGo(){
 var _a=AFTER.hometax;
 AFTER.hometax=function(){
   if(_a) _a.apply(this,arguments);
-  var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 양식 내려받기"; xl.onclick=hometaxGo; }
+  var xl=$("txXls"); if(xl){ xl.textContent="홈택스 일괄발급 양식 내려받기"; xl.onclick=function(){ hometaxGo(null); };
+    if(!$("txXls2")){ var o=document.createElement("button"); o.type="button"; o.className="btn"; o.id="txXls2"; o.textContent="다른 양식 쓰기"; xl.parentNode.insertBefore(o, xl.nextSibling); }
+    $("txXls2").onclick=function(){ var i=document.createElement("input"); i.type="file"; i.accept=".xls,.xlsx"; i.hidden=true; document.body.appendChild(i);
+      i.onchange=function(){ var f=i.files&&i.files[0]; i.remove(); if(!f) return; var rd=new FileReader();
+        rd.onload=function(){ var u=new Uint8Array(rd.result); try{ XLSX.read(u,{type:"array",bookSheets:true}); }catch(e){
+            tell("이 양식은 열 수 없어요", /password/i.test(String(e&&e.message))?"암호가 걸린 파일이에요. 엑셀에서 열어 «다른 이름으로 저장»한 파일로 골라 주세요. 기본 양식은 «홈택스 일괄발급 양식 내려받기»를 쓰면 돼요.":"엑셀 파일이 맞는지 봐 주세요."); return; }
+          hometaxGo(u); };
+        rd.readAsArrayBuffer(f); }; i.click(); }; }
   document.querySelectorAll("[data-txearly]").forEach(function(b){ b.onclick=function(){ early(b.getAttribute("data-txearly")); }; });
   /* 입금 전 줄은 체크 안 됨 */
   TAXES.forEach(function(t){ if(!t.unpaid) return;
