@@ -22,9 +22,13 @@ rep(U10J, U11J)
 rep(U10C, U11C)
 
 # 업체별 기억 열쇠
-rep('''      CGG_CSVUP.partners({owner:isOwner(),tplText:W133_TPL_P,''', '''      CGG_CSVUP.partners({owner:isOwner(),store:(S.cfg&&S.cfg.shopName)||"",tplText:W133_TPL_P,''')
-rep('''  CGG_CSVUP.places({owner:isOwner(),tplText:W133_TPL_D,''', '''  CGG_CSVUP.places({owner:isOwner(),store:(S.cfg&&S.cfg.shopName)||"",tplText:W133_TPL_D,''')
+rep('''      CGG_CSVUP.partners({owner:isOwner(),tplText:W133_TPL_P,''', '''      CGG_CSVUP.partners({owner:isOwner(),store:w134Store(),tplText:W133_TPL_P,''')
+rep('''  CGG_CSVUP.places({owner:isOwner(),tplText:W133_TPL_D,''', '''  CGG_CSVUP.places({owner:isOwner(),store:w134Store(),tplText:W133_TPL_D,''')
 # 안내 글
-rep('''양식에 상사 · 딜러를 적어 올리면 한 번에 들어가요. 이미 있는 사람은 건너뛰어요.''', '''양식이나 카모두에서 받은 딜러 명부(엑셀)를 그대로 올려요. 이미 있는 사람은 건너뛰어요.''')
+rep('''양식에 상사 · 딜러를 적어 올리면 한 번에 들어가요. 이미 있는 사람은 건너뛰어요.''', '''양식이나 카모두에서 받은 딜러 명부(엑셀)를 그대로 올려 바로 거래처로 넣어요. 이미 있는 사람은 건너뛰어요.''')
 
+rep('''카모두에서 받은 명부를 올려 두면 찾아서 바로 딜러로 넣을 수 있어요.''', '''카모두 명부를 찾기용으로 올려 두는 곳이에요(거래처로 바로 넣지는 않아요).''')
+# 기억 열쇠 — 우리 사업장 이름(기본값 «차곳간»이거나 비면 기억 안 함)
+rep('''var WPT={st:{}};''', '''var WPT={st:{}};
+function w134Store(){var n=String((S.cfg&&S.cfg.shopName)||"").trim();return (n&&n!=="차곳간")?n:"";}''')
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))

@@ -1,7 +1,7 @@
 /* 차곳간 엑셀(CSV · xlsx) 한꺼번에 올리기 부품 csvup 1.1 (워시 v134~ · 체크도 같은 부품을 그대로 가져다 씀)
    1.1 (대표님 10/18): 카모두 전산에서 받은 딜러 명부를 «그대로» 올려도 되게
      · 칸 맞추기: 칸 이름 비슷한 말 사전으로 차곳간 칸에 자동 짝 → 미리보기 위 «칸 짝짓기» 한 줄에서 바꿀 수 있음(«안 씀» 포함)
-     · 고른 짝은 이 기기에 업체별로 기억(o.store) — 칸 이름만 저장, 손님 자료는 저장 안 함
+     · 고른 짝은 이 기기에 업체별로 기억(o.store — 비면 기억 안 함) — 칸 이름만 저장, 손님 자료는 저장 안 함
      · 칸 이름 줄 찾기: 맨 위 제목 줄이 있어도 앞 10줄 안에서 칸 이름 줄을 찾아요
      · .xlsx 도 받기 — 바깥 엑셀 읽기 도구(SheetJS) 없이 브라우저 기본 압축 풀기(DecompressionStream)로 첫 시트만 읽어요
        (못 쓰는 브라우저 · 옛 .xls 는 «CSV로 저장» 안내. 웹 표를 .xls 이름으로 내려 주는 전산 파일은 표로 읽어요)
@@ -167,8 +167,8 @@ var CGG_CSVUP = (function(){
   }
   /* 기억한 짝 — 이 기기 · 업체별 · 칸 이름만 */
   function memKey(o){ return "cgg.csvup."+o.kind+"."+String(o.store||"").slice(0,80); }
-  function memGet(o){ try{ return JSON.parse(localStorage.getItem(memKey(o))||"{}")||{}; }catch(e){ return {}; } }
-  function memPut(o, head, at){ try{ var m={}; o.cols.forEach(function(c){ m[c.k]=at[c.k]==null?"":String(head[at[c.k]]||""); }); localStorage.setItem(memKey(o), JSON.stringify(m)); }catch(e){} }
+  function memGet(o){ if(!o.store) return {}; try{ return JSON.parse(localStorage.getItem(memKey(o))||"{}")||{}; }catch(e){ return {}; } }
+  function memPut(o, head, at){ if(!o.store) return; try{ var m={}; o.cols.forEach(function(c){ m[c.k]=at[c.k]==null?"":String(head[at[c.k]]||""); }); localStorage.setItem(memKey(o), JSON.stringify(m)); }catch(e){} }
   function got(o, rows, fname){
     var hr=headRow(rows, o.cols), head=(rows[hr]||[]).map(function(h,i){ return String(h==null?"":h).trim(); }), m=mapHead(head, o.cols), mem=memGet(o), H=head.map(hkey);
     o.cols.forEach(function(c){ if(!(c.k in mem)) return; var w=mem[c.k];

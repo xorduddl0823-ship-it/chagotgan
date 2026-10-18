@@ -3447,7 +3447,7 @@ var CGG_PARTNER = (function(){
 /* 차곳간 엑셀(CSV · xlsx) 한꺼번에 올리기 부품 csvup 1.1 (워시 v134~ · 체크도 같은 부품을 그대로 가져다 씀)
    1.1 (대표님 10/18): 카모두 전산에서 받은 딜러 명부를 «그대로» 올려도 되게
      · 칸 맞추기: 칸 이름 비슷한 말 사전으로 차곳간 칸에 자동 짝 → 미리보기 위 «칸 짝짓기» 한 줄에서 바꿀 수 있음(«안 씀» 포함)
-     · 고른 짝은 이 기기에 업체별로 기억(o.store) — 칸 이름만 저장, 손님 자료는 저장 안 함
+     · 고른 짝은 이 기기에 업체별로 기억(o.store — 비면 기억 안 함) — 칸 이름만 저장, 손님 자료는 저장 안 함
      · 칸 이름 줄 찾기: 맨 위 제목 줄이 있어도 앞 10줄 안에서 칸 이름 줄을 찾아요
      · .xlsx 도 받기 — 바깥 엑셀 읽기 도구(SheetJS) 없이 브라우저 기본 압축 풀기(DecompressionStream)로 첫 시트만 읽어요
        (못 쓰는 브라우저 · 옛 .xls 는 «CSV로 저장» 안내. 웹 표를 .xls 이름으로 내려 주는 전산 파일은 표로 읽어요)
@@ -3613,8 +3613,8 @@ var CGG_CSVUP = (function(){
   }
   /* 기억한 짝 — 이 기기 · 업체별 · 칸 이름만 */
   function memKey(o){ return "cgg.csvup."+o.kind+"."+String(o.store||"").slice(0,80); }
-  function memGet(o){ try{ return JSON.parse(localStorage.getItem(memKey(o))||"{}")||{}; }catch(e){ return {}; } }
-  function memPut(o, head, at){ try{ var m={}; o.cols.forEach(function(c){ m[c.k]=at[c.k]==null?"":String(head[at[c.k]]||""); }); localStorage.setItem(memKey(o), JSON.stringify(m)); }catch(e){} }
+  function memGet(o){ if(!o.store) return {}; try{ return JSON.parse(localStorage.getItem(memKey(o))||"{}")||{}; }catch(e){ return {}; } }
+  function memPut(o, head, at){ if(!o.store) return; try{ var m={}; o.cols.forEach(function(c){ m[c.k]=at[c.k]==null?"":String(head[at[c.k]]||""); }); localStorage.setItem(memKey(o), JSON.stringify(m)); }catch(e){} }
   function got(o, rows, fname){
     var hr=headRow(rows, o.cols), head=(rows[hr]||[]).map(function(h,i){ return String(h==null?"":h).trim(); }), m=mapHead(head, o.cols), mem=memGet(o), H=head.map(hkey);
     o.cols.forEach(function(c){ if(!(c.k in mem)) return; var w=mem[c.k];
@@ -9616,7 +9616,7 @@ function destCsvShow(){["destCsvTpl","destCsv"].forEach(function(i){if($(i))$(i)
 $("destCsvTpl").onclick=function(){CGG_CSVUP.download("양식_배달장소.csv",W133_TPL_D);};
 $("destCsv").onclick=function(){
   var cur=destList2().concat((editDests||[]).map(toObj).filter(function(d){return d.name;}));
-  CGG_CSVUP.places({owner:isOwner(),store:(S.cfg&&S.cfg.shopName)||"",tplText:W133_TPL_D,places:cur,
+  CGG_CSVUP.places({owner:isOwner(),store:w134Store(),tplText:W133_TPL_D,places:cur,
     api:{savePlaces:function(add){
       var list=destList2().concat(add.map(function(d){return {name:d.name,phone:d.phone||"",addr:d.addr||"",memo:d.memo||"",fav:false};}));
       S.cfg=Object.assign({},S.cfg);S.cfg.destinations=list;
@@ -10083,6 +10083,7 @@ function saveDealer(o){
                       dealers   {id,name,phone,company,type:"staff"|"biz",taxType,bizName,bizNo,ceo,addr,upte,jongmok,email}
    딜러는 상사를 «이름»으로 이어요(입고 기록과 같은 방식). 계산서: 끊음 + 개인사업자 = 본인 · 끊음 + 소속 = 상사 · 안 끊음 / 현금영수증 = 안 끊음 */
 var WPT={st:{}};
+function w134Store(){var n=String((S.cfg&&S.cfg.shopName)||"").trim();return (n&&n!=="차곳간")?n:"";}
 /* v133 엑셀(CSV) 양식 — 워시/올리기용/양식_거래처.csv · 양식_배달장소.csv 글자 그대로(받을 때 BOM 붙음) */
 var W133_TPL_P="상사 이름,딜러 이름,휴대폰,사업자번호,대표자,이메일,세금계산서(상사 이름으로/딜러 본인/안 끊음/나중에)\r\n예시모터스,홍길동,010-1234-5678,000-00-00000,김예시,example@example.com,상사 이름으로\r\n";
 var W133_TPL_D="장소 이름,주소,연락처,메모\r\n예시 매매단지,서울특별시 예시구 예시로 123,02-000-0000,정문 경비실에 키 맡기기\r\n";
@@ -10154,15 +10155,15 @@ function wPtRender(){
   if($("pSub"))$("pSub").hidden=true;
   var host=$("pBody");if(!host)return;
   host.innerHTML='<div class="card" style="padding:16px"><div id="wPt"></div></div>'+
-    (isOwner()?'<div class="card wpt-roster"><div><b>엑셀로 한꺼번에 올리기</b><div class="hint" style="margin-top:2px">양식이나 카모두에서 받은 딜러 명부(엑셀)를 그대로 올려요. 이미 있는 사람은 건너뛰어요.</div></div>'+
+    (isOwner()?'<div class="card wpt-roster"><div><b>엑셀로 한꺼번에 올리기</b><div class="hint" style="margin-top:2px">양식이나 카모두에서 받은 딜러 명부(엑셀)를 그대로 올려 바로 거래처로 넣어요. 이미 있는 사람은 건너뛰어요.</div></div>'+
     '<div class="wcsv-btns"><button type="button" class="cgg-btn" id="wPtCsvTpl">엑셀 양식 받기</button><button type="button" class="cgg-btn pri" id="wPtCsv">엑셀로 한꺼번에 올리기</button></div></div>':'')+
-    '<div class="card wpt-roster"><div><b>딜러 명부 (조합 전산 엑셀)</b><div class="hint" style="margin-top:2px">카모두에서 받은 명부를 올려 두면 찾아서 바로 딜러로 넣을 수 있어요.</div></div>'+
+    '<div class="card wpt-roster"><div><b>딜러 명부 (조합 전산 엑셀)</b><div class="hint" style="margin-top:2px">카모두 명부를 찾기용으로 올려 두는 곳이에요(거래처로 바로 넣지는 않아요).</div></div>'+
     '<button type="button" class="cgg-btn" id="wPtRoster">딜러 명부 열기</button></div>';
   $("wPtRoster").onclick=function(){P.sub="roster";renderParties();window.scrollTo(0,0);};
   if($("wPtCsv")){
     $("wPtCsvTpl").onclick=function(){CGG_CSVUP.download("양식_거래처.csv",W133_TPL_P);};
     $("wPtCsv").onclick=function(){
-      CGG_CSVUP.partners({owner:isOwner(),store:(S.cfg&&S.cfg.shopName)||"",tplText:W133_TPL_P,dealers:wPtDealers(),companies:wPtCompanies(),later:false,
+      CGG_CSVUP.partners({owner:isOwner(),store:w134Store(),tplText:W133_TPL_P,dealers:wPtDealers(),companies:wPtCompanies(),later:false,
         api:{saveCompany:function(c){return wPtSaveCompany(c);},saveDealer:function(d){return wPtSaveDealer(d,true);}},
         done:function(m){toast(m);renderParties();try{refreshDatalists();}catch(e){}},
         fail:function(e){return errMsg(e);}});
@@ -19238,13 +19239,13 @@ body.jpay #ccwLockBar{display:none!important}
 /* 1.1 칸 짝짓기 — 차곳간 칸마다 «올린 파일의 칸» 고르기, 확인할 칸은 주황 */
 .csu-map{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
 .csu-mapc{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:13.5px;color:var(--muted)}
-.csu-mapc b{color:var(--text)} .csu-mapc .cgg-btn{min-height:36px;height:36px}
+.csu-mapc b{color:var(--text)} .csu-mapc .cgg-btn{min-height:43px;height:43px}
 .csu-maph{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:14px}
 .csu-mapr{display:flex;flex-wrap:wrap;gap:8px}
 .csu-mapr label{flex:1 1 150px;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted)}
 .csu-mapr select{height:43px;width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:0 8px;font:inherit;font-size:14px;background:var(--surface);color:var(--text)}
 .csu-mapr label.warn{color:var(--warn)} .csu-mapr label.warn select{border-color:var(--warn);background:var(--warn-soft)}
-@media (max-width:600px){.csu-mapr label{flex:1 1 calc(50% - 8px)}.csu-mapr select{height:42px}.csu-btns .cgg-btn{height:42px;min-height:42px}.csu-tbl{max-height:38vh}}
+@media (max-width:600px){.csu-mapc .cgg-btn{min-height:42px;height:42px}.csu-mapr label{flex:1 1 calc(50% - 8px)}.csu-mapr select{height:42px}.csu-btns .cgg-btn{height:42px;min-height:42px}.csu-tbl{max-height:38vh}}
 
 /* v130 — 거래처 화면 아래 조합 전산 딜러 명부 칸 */
 .wcsv-btns{display:flex;flex-wrap:wrap;gap:8px}

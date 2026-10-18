@@ -23,10 +23,10 @@
 /* 1.1 칸 짝짓기 — 차곳간 칸마다 «올린 파일의 칸» 고르기, 확인할 칸은 주황 */
 .csu-map{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
 .csu-mapc{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:13.5px;color:var(--muted)}
-.csu-mapc b{color:var(--text)} .csu-mapc .cgg-btn{min-height:36px;height:36px}
+.csu-mapc b{color:var(--text)} .csu-mapc .cgg-btn{min-height:43px;height:43px}
 .csu-maph{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:14px}
 .csu-mapr{display:flex;flex-wrap:wrap;gap:8px}
 .csu-mapr label{flex:1 1 150px;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted)}
 .csu-mapr select{height:43px;width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:0 8px;font:inherit;font-size:14px;background:var(--surface);color:var(--text)}
 .csu-mapr label.warn{color:var(--warn)} .csu-mapr label.warn select{border-color:var(--warn);background:var(--warn-soft)}
-@media (max-width:600px){.csu-mapr label{flex:1 1 calc(50% - 8px)}.csu-mapr select{height:42px}.csu-btns .cgg-btn{height:42px;min-height:42px}.csu-tbl{max-height:38vh}}
+@media (max-width:600px){.csu-mapc .cgg-btn{min-height:42px;height:42px}.csu-mapr label{flex:1 1 calc(50% - 8px)}.csu-mapr select{height:42px}.csu-btns .cgg-btn{height:42px;min-height:42px}.csu-tbl{max-height:38vh}}
