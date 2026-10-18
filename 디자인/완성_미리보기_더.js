@@ -162,7 +162,7 @@ var PVX=(function(){
   /* ═══ 홈페이지 (cgg.co.kr 메인 · 요금제 · 통합 입구 로그인 · 가입) — 앱 틀 대신 사이트 틀 ═══ */
   /* 메인 홈페이지는 «지금 / 손본 뒤» 나란히 (대표님 확정 10/18 — 지금 느낌 그대로, 바꾸는 건 최소만) */
   function compare(root){
-    root.innerHTML='<div class="cmp"><div class="cmph"><b>cgg.co.kr 메인 — 지금 / 손본 뒤</b><span class="d">배치 · 큰 제목 · 그림 · 문구 · 색 · 구역 차례는 그대로예요. 바꾼 곳: 로고(CI) · 누르는 곳 44px · 체크칸 22px · 입력칸.</span>'
+    root.innerHTML='<div class="cmp"><div class="cmph"><b>cgg.co.kr 메인 — 지금 / 손본 뒤</b><span class="d">배치 · 큰 제목 · 그림 · 문구 · 색 · 구역 차례는 그대로예요. 바꾼 곳(빨간 점선): 로고(CI) · 누르는 곳 44px · 체크칸 22px · 입력칸. 대표님 참고 시안에서 빌려 온 칸(보라 띠): ① 제품 비교 카드 ② 탭 예시 ③ 4단계 흐름 ④ 자주 묻는 질문 ⑤ 시작 3단계 · 남색 시작 띠 ⑥ 폰 메뉴 · 움직임 줄이기.</span>'
       +'<span class="row" style="margin:0">'+chip("나란히",true)+chip("지금만")+chip("손본 뒤만")+'<label class="ck"><input type="checkbox" id="mk" checked> 바뀐 곳 표시</label></span>'
       +'<span class="row" style="margin:0"><a class="cgg-btn" href="#site-login">로그인 화면</a><a class="cgg-btn" href="#site-join">가입 화면</a></span></div>'
       +'<div class="cmpb" data-v="both"><figure><figcaption>지금</figcaption><iframe title="지금 홈페이지" src="시안/홈페이지/지금.html"></iframe></figure><figure><figcaption>손본 뒤</figcaption><iframe id="aft" title="손본 뒤 홈페이지" src="시안/홈페이지/손본뒤.html?mark"></iframe></figure></div></div>';

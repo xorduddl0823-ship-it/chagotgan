@@ -10,8 +10,8 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "홈페이지", "공통")); import 사업자정보 as B
 rd = lambda p: io.open(p, encoding="utf-8").read()
 t = rd(os.path.join(ROOT, "홈페이지", "소개", "소개_시안_틀.html"))
-EX = {"상호": "차곳간 (예시 상호)", "대표자": "홍길동", "사업자등록번호": "000-00-00000", "통신판매업신고번호": "제0000-예시-0000호",
-      "주소": "서울시 예시구 예시로 00", "대표전화": "1600-0000", "이메일": "help@example.com", "개인정보보호책임자": "홍길동"}
+EX = {"상호": "차곳간 (예시 상호)", "대표자": "이택영", "사업자등록번호": "000-00-00000", "통신판매업신고번호": "제0000-예시-0000호",
+      "주소": "서울시 예시구 예시로 00", "대표전화": "1600-0000", "이메일": "help@example.com", "개인정보보호책임자": "이택영"}
 soon = lambda name: base64.b64encode(('<!doctype html><meta charset="utf-8"><body style="font:15px/1.6 sans-serif;margin:0;display:grid;place-items:center;height:100vh;color:#667085;background:#F7F9FC"><p style="text-align:center;padding:20px"><b style="color:#101828">' + name + ' 미리 써 보기</b><br>이 미리보기에서는 맨 위 «' + name + '» 단추로 손본 뒤 화면을 봐요.</p>').encode("utf-8")).decode("ascii")
 t = t.replace('    <div><b>전화</b><span>@@TEL@@</span></div>\n    <div><b>이메일</b><span>@@MAIL@@</span></div>\n',
               '    <div><b>전화</b><span>' + EX["대표전화"] + '</span></div><div><b>이메일</b><span>' + EX["이메일"] + '</span></div>\n')

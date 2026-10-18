@@ -21,3 +21,58 @@ nav.mn a{min-height:44px;display:inline-flex;align-items:center;padding:0 12px}
 /* 바뀐 곳 표시 (?mark · #mark) */
 .cgg-mk [data-chg]{outline:2px dashed #D92D20;outline-offset:2px}
 .cgg-mklegend{position:fixed;right:12px;bottom:12px;z-index:200;background:#fff;color:#101828;border:2px dashed #D92D20;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+/* ── 대표님 참고 시안(운영/참고자료/홈페이지_참고시안_대표님_1018.html)에서 «부분만 빌려 온» 칸 ── */
+.bor{position:relative}
+.bor-tag{display:none}
+.cgg-mk .bor{box-shadow:inset 6px 0 0 #7A5AF8}
+.cgg-mk .bor-tag{display:inline-block;background:#7A5AF8;color:#fff;font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 10px;margin-bottom:6px;width:max-content}
+/* ① 제품 3개 비교 카드 */
+.cmp3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.cmp3 article{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:20px;display:flex;flex-direction:column;gap:8px}
+.cmp3 .who{font-size:13px;font-weight:700;color:var(--brand)}
+.cmp3 h3{font-size:19px}
+.cmp3 p{color:var(--muted);font-size:14.5px}
+.cmp3 ul{list-style:none;margin:4px 0 6px;padding:0;display:grid;gap:4px;font-size:14.5px}
+.cmp3 li::before{content:"✓";color:var(--ok);font-weight:900;margin-right:8px}
+.cmp3 .btn{margin-top:auto}
+/* ② 탭으로 바꿔 보는 예시 */
+.mini{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:18px;display:grid;gap:12px}
+.mini .tabs{display:flex;gap:6px;flex-wrap:wrap}
+.mini .tabs button{min-height:44px;padding:0 18px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:15px;border-radius:999px;cursor:pointer}
+.mini .tabs button[aria-selected="true"]{background:var(--navy);border-color:var(--navy);color:var(--navy-ink)}
+.mini h3{font-size:18px}
+.mini .k{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mini .k div{background:var(--surface2);border-radius:12px;padding:10px 12px}
+.mini .k small{display:block;color:var(--muted);font-size:13px}
+.mini .k strong{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+.mini .k em{font-style:normal;font-size:13px;color:var(--muted);margin-left:2px}
+.mini table{width:100%;border-collapse:collapse;font-size:14.5px}
+.mini th{text-align:left;color:var(--muted);font-size:13px;font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line)}
+.mini td{padding:9px 8px;border-bottom:1px solid var(--line)}
+.mini .st{display:inline-block;font-size:12.5px;font-weight:700;border-radius:6px;padding:1px 8px;background:var(--brand-soft);color:var(--brand)}
+.mini .st.g{background:var(--ok-soft);color:var(--ok)} .mini .st.a{background:var(--warn-soft);color:var(--warn)}
+.mini .note{margin:0}
+/* ③ 4단계 흐름 */
+.flow4{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;counter-reset:f}
+.flow4 li{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;display:grid;gap:4px}
+.flow4 li::before{counter-increment:f;content:"0" counter(f);font-weight:900;color:var(--brand);font-size:14px}
+.flow4 b{font-size:16px} .flow4 span{color:var(--muted);font-size:14.5px}
+/* ④ 자주 묻는 질문 */
+.faq{display:grid;gap:8px;max-width:820px}
+.faq details{background:var(--surface);border-radius:14px;box-shadow:var(--sh)}
+.faq summary{cursor:pointer;font-weight:700;padding:0 18px;min-height:52px;display:flex;align-items:center;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"＋";margin-left:auto;color:var(--muted);font-weight:900}
+.faq details[open] summary::after{content:"－"}
+.faq p{padding:0 18px 16px;color:var(--muted);font-size:15px}
+/* ⑤ 시작 3단계 + 남색 시작 띠 */
+.start3{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;counter-reset:s3}
+.start3 li{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px}
+.start3 li::before{counter-increment:s3;content:counter(s3);display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:800;margin-bottom:6px}
+.start3 b{display:block;font-size:16px} .start3 span{color:var(--muted);font-size:14.5px}
+.ctaband{background:var(--navy);color:var(--navy-ink);border-radius:var(--r);padding:28px 24px;display:grid;gap:12px}
+.ctaband h2{font-size:clamp(22px,3.4vw,30px);font-weight:900;letter-spacing:-.5px}
+.ctaband p{opacity:.85}
+.ctaband .btn.g{background:transparent;color:#fff;border-color:#ffffff66}
+/* ⑥ 움직임 줄이기 설정 존중 */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
