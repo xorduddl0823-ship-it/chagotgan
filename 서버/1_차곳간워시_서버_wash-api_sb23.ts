@@ -2205,6 +2205,9 @@ async function taxBillGate(shop: string, json: unknown): Promise<{ why: string; 
     return no("어느 청구서의 계산서인지 알 수 없습니다. 청구서에서 «세금계산서»를 눌러 주세요");
   }
   if (!want || got !== want) return no("계산서 합계(" + got.toLocaleString("ko-KR") + "원)가 장부 금액(" + want.toLocaleString("ko-KR") + "원)과 다릅니다");
+  /* 보안 낮음: 받는 사업자번호가 그 차들의 딜러(본인 사업자) 또는 소속 상사 번호인지 — 숫자만 비교 */
+  const corpWhy = await taxCorpCheck(shop, recIds, digits(String((req.doc && req.doc.invoiceeCorpNum) || "")));
+  if (corpWhy) return no(corpWhy);
   /* 보안 낮음 2: 한 청구서로 한 번만(옛 기록 대조) — 차 단위로는 아래 wash_tax_rec 잡기가 막음 */
   if (code) {
     const { data: done } = await sb.from("wash_taxlog").select("no").eq("shop", shop).eq("ok", true).ilike("memo", "%" + tag + "%").limit(1);
@@ -2214,6 +2217,25 @@ async function taxBillGate(shop: string, json: unknown): Promise<{ why: string; 
   d.remark1 = (tag + " " + String(d.remark1 || "")).slice(0, 300);
   const out = Object.assign({}, req, { doc: d }); delete out.bill;
   return { why: "", json: JSON.stringify(out), claims: recIds, test: !!req.test };
+}
+/** sb23: 받는 사업자번호 대조 — 차들의 딜러(dealers · type «biz» 면 그 bizNo)와 상사(companies · 차·딜러의 company 이름)의 번호만 허락 */
+async function taxCorpCheck(shop: string, ids: string[], corp: string): Promise<string> {
+  if (corp.length !== 10) return "받는 곳 사업자등록번호(10자리)가 올바르지 않습니다";
+  const { data: recs } = await sb.from("wash_docs").select("id,data").eq("shop", shop).eq("demo", false).eq("col", "intakes").in("id", ids);
+  const dealers = new Set<string>(), comps = new Set<string>();
+  (recs || []).forEach((r: any) => { const d = r && r.data || {}; if (d.dealer) dealers.add(String(d.dealer)); if (d.company) comps.add(String(d.company)); });
+  const { data: book } = await sb.from("wash_docs").select("col,data").eq("shop", shop).eq("demo", false).in("col", ["dealers", "companies"]).limit(5000);
+  const ok = new Set<string>();
+  (book || []).filter((b: any) => b.col === "dealers" && b.data && dealers.has(String(b.data.name || ""))).forEach((b: any) => {
+    if (String(b.data.type || "") === "biz" && digits(String(b.data.bizNo || "")).length === 10) ok.add(digits(String(b.data.bizNo)));
+    if (b.data.company) comps.add(String(b.data.company));
+  });
+  (book || []).filter((b: any) => b.col === "companies" && b.data && comps.has(String(b.data.name || ""))).forEach((b: any) => {
+    if (digits(String(b.data.bizNo || "")).length === 10) ok.add(digits(String(b.data.bizNo)));
+  });
+  if (!ok.size) return "이 차들의 거래처(딜러·상사)에 사업자등록번호가 없습니다. 거래처에 먼저 넣어 주세요";
+  if (!ok.has(corp)) return "받는 곳 사업자등록번호가 이 차들의 딜러·상사 번호와 다릅니다";
+  return "";
 }
 /** sb23(SQL 21): 차(입고 기록)마다 «세금계산서 냄» 을 먼저 잡음 — 같은 차 두 번 · 동시에 두 번 누름을 막음.
  *  잡히면 null · 이미 잡혔으면 까닭 · 표가 없으면(SQL 21 전) 발행하지 않음 */

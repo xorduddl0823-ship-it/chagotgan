@@ -20,8 +20,12 @@ Object.assign(store, {
   ],
   wash_users: [{ phone: "01000000000", shop: "ADMIN", role: "admin", active: true }],
   wash_docs: [
-    { shop: "BT", demo: false, col: "intakes", id: "j1", data: { status: "수금완료", total: 50000, paidAt: "2026-10-10" } },
-    { shop: "BT", demo: false, col: "intakes", id: "j2", data: { status: "출고", total: 50000 } },
+    { shop: "BT", demo: false, col: "intakes", id: "j1", data: { status: "수금완료", total: 50000, paidAt: "2026-10-10", dealer: "홍딜러", company: "홍상사" } },
+    { shop: "BT", demo: false, col: "intakes", id: "j2", data: { status: "출고", total: 50000, dealer: "홍딜러", company: "홍상사" } },
+    { shop: "BT", demo: false, col: "dealers", id: "d1", data: { name: "홍딜러", company: "홍상사", type: "staff" } },
+    { shop: "BT", demo: false, col: "dealers", id: "d2", data: { name: "개인딜러", type: "biz", bizNo: "555-66-77777" } },
+    { shop: "BT", demo: false, col: "companies", id: "c1", data: { name: "홍상사", bizNo: "222-33-34445" } },
+    { shop: "ZZ", demo: false, col: "companies", id: "c9", data: { name: "홍상사", bizNo: "999-88-77777" } },
   ],
   wash_viewcode: [
     { code: BILL, shop: "BT", kind: "bill", expires_at: far, data: { amount: 110000, base: 100000, rows: [{ id: "j1" }, { id: "j2" }] } },
@@ -96,8 +100,8 @@ check("같은 결제로 다시(«그대로 다시 보내기» 포함)는 거절"
 
 console.log("■ 워시 v135 묶음(recIds · 발행처×딜러)");
 const P0 = pop.length;
-store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j3", data: { status: "수금완료", total: 33000 } },
-  { shop: "BT", demo: false, col: "intakes", id: "j4", data: { status: "출고", total: 22000 } },
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j3", data: { status: "수금완료", total: 33000, dealer: "홍딜러", company: "홍상사" } },
+  { shop: "BT", demo: false, col: "intakes", id: "j4", data: { status: "출고", total: 22000, dealer: "홍딜러", company: "홍상사" } },
   { shop: "ZZ", demo: false, col: "intakes", id: "z1", data: { status: "수금완료", total: 11000 } });
 const grp = (ids: string[], extra: any = {}) => ({ month: "2026-10", key: "2223334445|홍딜러", recIds: ids, amount: 999999, paid: 999999, left: 0, code: "", ...extra });
 r = await issue({ bill: grp(["j3", "j4"]), doc: doc(55000) });
@@ -113,14 +117,25 @@ check("모두 입금 + 금액 같음 → 발행 · 차 잡힘 · 비고 «묶음
 const before = pop.length;
 r = await issue({ bill: grp(["j3"]), doc: doc(33000), force: true });
 check("같은 차로 두 번째(«그래도 보내기» 포함)는 거절", r.ok === false && /이미 세금계산서를 낸 차/.test(r.error) && pop.length === before, r);
-store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j5", data: { status: "수금완료", total: 10000 } });
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j5", data: { status: "수금완료", total: 10000, dealer: "홍딜러", company: "홍상사" } });
 const failOnce = globalThis.fetch;
 globalThis.fetch = (async (u: any, i: any) => String(u).includes("/Taxinvoice") ? Response.json({ code: -99999, message: "팝빌 오류" }) : failOnce(u, i)) as typeof fetch;
 r = await issue({ bill: grp(["j5"]), doc: doc(10000) });
 globalThis.fetch = failOnce;
 check("팝빌 실패하면 잡은 것 놓음(다시 낼 수 있게)", r.ok === false && !store.wash_tax_rec.some((x: any) => x.rec_id === "j5"), [r, store.wash_tax_rec]);
+console.log("■ 받는 사업자번호 대조");
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j7", data: { status: "수금완료", total: 8000, dealer: "홍딜러", company: "홍상사" } },
+  { shop: "BT", demo: false, col: "intakes", id: "j8", data: { status: "수금완료", total: 9000, dealer: "개인딜러" } },
+  { shop: "BT", demo: false, col: "intakes", id: "j9", data: { status: "수금완료", total: 6000, dealer: "없는딜러" } });
+const P2 = pop.length;
+r = await issue({ bill: grp(["j7"]), doc: Object.assign(doc(8000), { invoiceeCorpNum: "999-88-77777" }) });
+check("다른 곳(남의 업체 같은 이름 상사) 번호로는 거절", r.ok === false && /다릅니다/.test(r.error) && pop.length === P2, r);
+r = await issue({ bill: grp(["j8"]), doc: Object.assign(doc(9000), { invoiceeCorpNum: "5556677777" }) });
+check("딜러 본인 사업자(type biz) 번호는 됨", r.ok === true && pop.length === P2 + 1, r);
+r = await issue({ bill: grp(["j9"]), doc: doc(6000) });
+check("거래처에 번호가 없으면 거절", r.ok === false && /사업자등록번호가 없습니다/.test(r.error), r);
 console.log("■ SQL 21 전");
-store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j6", data: { status: "수금완료", total: 7000 } });
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j6", data: { status: "수금완료", total: 7000, dealer: "홍딜러", company: "홍상사" } });
 knobs.missing.add("wash_tax_rec");
 const P1 = pop.length;
 r = await issue({ bill: grp(["j6"]), doc: doc(7000) });
