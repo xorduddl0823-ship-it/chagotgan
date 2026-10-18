@@ -3346,7 +3346,7 @@ function chkFeats(){
     {id:"price",label:"단가표 고치기",path:"설정 › 작업 항목 · 단가표",go:"set/price",words:"단가 검사비 가격 요금 구간"},
     {id:"fee",label:"검사자 수수료",path:"설정 › 검사자 수수료",go:"set/fee",words:"수수료 검사자"},
     {id:"popbill",label:"입금 자동 확인 (팝빌)",path:"설정 › 입금 자동 확인",go:"set/popbill",words:"팝빌 연동 계좌 조회 세금계산서 연결"},
-    {id:"sms",label:"문자 자동수집",path:"설정 › 입금 자동 확인 › 아래쪽",go:"set/popbill",words:"문자 수집 입금 문자"},
+    {id:"sms",label:"문자 자동수집",path:"설정 › 입금 자동 확인 › 문자 자동수집",go:"set/sms",words:"문자 수집 입금 문자"},
     {id:"sender",label:"발신번호 (문자 보내는 번호)",path:"설정 › 알림",go:"set/alarm",words:"발신번호 보내는 번호 문자 번호"},
     {id:"alarm",label:"알람 소리",path:"설정 › 알림",go:"set/alarm",words:"알람 소리 알림음"},
     {id:"backup",label:"백업 · 기기",path:"설정 › 백업 · 기기",go:"set/backup",words:"백업 연결 서버"},
@@ -11631,15 +11631,17 @@ PAGE.office=function(){
 NEEDS.office=NEEDS.partner;
 AFTER.office=function(){ if(AFTER.partner) AFTER.partner.apply(this,arguments); };
 
-/* ── 설정 › 입금 자동 확인 = 팝빌 + 문자 자동수집(메뉴 지도: set/sms 없어짐) ── */
-var _pp=PAGE.popbill, _psms=PAGE.sms;
+/* ── 설정 › 입금 자동 확인 = 팝빌 + 문자 자동수집으로 가는 단추
+   (보안 b84a8c9: 문자 화면 코드가 #main 첫 입력칸을 찾아서 한 화면에 합치면 팝빌 칸을 잡아요 → 문자 자동수집은 따로 화면 그대로, 메뉴는 설정 묶음) ── */
+var _pp=PAGE.popbill;
 PAGE.popbill=function(){
-  var tmp=document.createElement("div"); tmp.innerHTML=_psms.apply(this,arguments); var hd=tmp.querySelector(".cgg-head"); if(hd) hd.remove();
-  return _pp.apply(this,arguments)+'<details class="chk-fold" id="v55Sms"><summary>문자 자동수집 (보조) · 펼쳐 보기</summary>'+tmp.innerHTML+'</details>';
+  return _pp.apply(this,arguments)+card("문자 자동수집 (보조)","휴대폰에 오는 입금 문자를 보조로 모아요. 팝빌 계좌조회가 기본이에요.",
+    '<div class="tools"><button type="button" class="btn" id="v55SmsGo">문자 자동수집 설정 열기</button></div>');
 };
-NEEDS.popbill=(NEEDS.popbill||[]).concat((NEEDS.sms||[]).filter(function(x){ return (NEEDS.popbill||[]).indexOf(x)<0; }));
 var _ap=AFTER.popbill;
-AFTER.popbill=function(){ if(_ap) _ap.apply(this,arguments); if(AFTER.sms) AFTER.sms.apply(this,arguments); };
+AFTER.popbill=function(){ if(_ap) _ap.apply(this,arguments); var b=$("v55SmsGo"); if(b) b.onclick=function(){ go("sms"); }; };
+var _g0=window.groupOf;
+if(_g0) window.groupOf=groupOf=function(p){ if(p==="sms") return ["set",SETS]; return _g0.apply(this,arguments); };
 
 /* ── 설정 › 알림 — 발신번호 칸(#smsFrom · 메뉴 지도 spot) ── */
 var _pa=PAGE.alarm;

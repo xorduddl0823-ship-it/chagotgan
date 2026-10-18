@@ -60,7 +60,7 @@ rep('''{id:"popbill",label:"팝빌 연동",path:"설정 › 팝빌 연동",''', 
 rep('''{id:"sms",label:"문자 자동수집",path:"설정 › 문자 자동수집",''', '''{id:"sms",label:"문자 자동수집",path:"설정 › 입금 자동 확인 › 아래쪽",''')
 rep('billtpl:"알림톡문구", hometax:"세금계산서",', 'billtpl:"알림톡문구", hometax:"세금계산서", recv:"받을금액", office:"우리사업장",')
 
-rep('''path:"설정 › 입금 자동 확인 › 아래쪽",go:"set/sms",''', '''path:"설정 › 입금 자동 확인 › 아래쪽",go:"set/popbill",''')
+rep('''path:"설정 › 입금 자동 확인 › 아래쪽",go:"set/sms",''', '''path:"설정 › 입금 자동 확인 › 문자 자동수집",go:"set/sms",''')   # 문자 화면은 따로(보안 b84a8c9)
 
 # 설정 화면 제목 = 메뉴 칸 이름
 rep('''  return head("문자 자동수집",''', '''  return head("문자 자동수집",''')
