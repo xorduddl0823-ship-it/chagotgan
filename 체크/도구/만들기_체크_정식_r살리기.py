@@ -2,13 +2,13 @@
   지난 통째 zip 의 _redirects(바깥 주소로 넘기기 · 가운데 :key) 가 Cloudflare Workers 올리기에서 막혀 빠졌어요.
   이번 _redirects 는 «같은 사이트 안에서 잇기(200)» 세 줄만 — 바깥 주소 · 가운데 :key 없음.
   옛 /d/열쇠 · /v/보기코드 는 작은 넘기기 화면(d/index.html · v/index.html)이 새 보기 화면으로 보내요.
-  안: index.html(v55) · driver/index.html(v28) · r/index.html · d/index.html · v/index.html · _headers · _redirects
+  안: index.html(v55.1 — 배달 · 입금 기간만큼 받아 오기) · driver/index.html(v28) · r/index.html · d/index.html · v/index.html · _headers · _redirects
   zip 맨 위에 바로 index.html · 시각 1980-01-01 고정 · 차례 고정(같은 파일이면 지문이 늘 같아요)
   BASE 는 이 파일 자리 기준(보안 방 의견)
 """
 import hashlib, os, zipfile
 BASE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")) + "/"
-OUT = BASE + "체크/올리기용/2_차곳간_체크_정식_v55_r살리기.zip"
+OUT = BASE + "체크/올리기용/2_차곳간_체크_정식_v55.1_통째.zip"
 ADD = BASE + "체크/올리기용/시험뒤_더할_파일/"
 NEW = BASE + "체크/올리기용/정식_r살리기/"
 
@@ -25,7 +25,7 @@ headers = open(ADD + "_headers", encoding="utf-8").read().rstrip("\n") + """
   X-Robots-Tag: noindex, nofollow
 """
 FILES = [
-    ("index.html", open(BASE + "체크/2_차곳간_체크_index_v55.html", "rb").read()),
+    ("index.html", open(BASE + "체크/2_차곳간_체크_index_v55.1.html", "rb").read()),
     ("_headers", headers.encode("utf-8")),
     ("_redirects", redirects.encode("utf-8")),
     ("d/index.html", open(NEW + "d/index.html", "rb").read()),
