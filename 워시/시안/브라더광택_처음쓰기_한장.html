@@ -6,7 +6,7 @@
   --bg:#f3f5f9; --card:#ffffff; --ink:#14233a; --muted:#5d6b80; --line:#dce3ec;
   --brand:#1668c4; --brand-ink:#ffffff; --brand-soft:#e6f0fb;
   --ok:#1a7f4b; --ok-soft:#e7f5ee; --warn:#9a5a00; --warn-soft:#fdf2e1; --navy:#0b2545;
-  --f-body:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-body:"Noto Sans KR","Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0f1724; --card:#172235; --ink:#e7edf6; --muted:#9aa8bc; --line:#2a3850;
@@ -51,23 +51,28 @@ b.btn{display:inline-block;border:1px solid var(--line);border-radius:7px;paddin
       <li><h3>우리 가게 정보</h3>
         <p><span class="k">어디서</span><b class="btn">설정</b> › <b class="btn">우리 사업장</b></p>
         <p><span class="k">할 일</span>상호 · 사업자번호 · 대표 · 전화번호 · 로고를 넣고 저장</p>
-        <p class="done">끝: 화면 위에 «브라더광택»이 보여요</p></li>
+        <p class="done">끝: 화면 위 업체 이름 밑에 «사업자 000-00-00000 · 대표 ○○○»가 보여요</p></li>
       <li><h3>단가표</h3>
         <p><span class="k">어디서</span><b class="btn">설정</b> › <b class="btn">작업 항목 · 단가표</b></p>
-        <p><span class="k">할 일</span>광택 · 실내세차 · 유리막처럼 하는 작업과 차종(국산 · 수입 · 크기)별 가격 넣기</p>
-        <p class="done">끝: 입고할 때 작업을 고르면 금액이 저절로 들어가요</p></li>
+        <p><span class="k">할 일</span>광택 · 외부세차 · 하부세차처럼 하는 작업과 차종(국산 · 수입 · 크기)별 가격 넣기. 가격이 «부가세 별도»인지 «포함»인지도 골라요</p>
+        <p class="done">끝: 입고할 때 작업을 고르면 금액이 저절로 들어가요. 청구서 · 세금계산서 금액도 이 설정대로 나가요</p></li>
       <li><h3>거래처 (상사 · 딜러)</h3>
-        <p><span class="k">어디서</span><b class="btn">설정</b> › <b class="btn">거래처</b> › 매매상사 사업자 · 딜러 목록</p>
-        <p><span class="k">할 일</span>상사는 <b class="btn">엑셀에서 불러오기</b>로 한 번에, 딜러는 이름 · 휴대폰 번호를 하나씩</p>
+        <p><span class="k">어디서</span><b class="btn">설정</b> › <b class="btn">거래처</b> › 아래 <b class="btn">엑셀로 한꺼번에 올리기</b></p>
+        <p><span class="k">할 일</span>카모두에서 받은 <b>상사리스트</b> 엑셀을 먼저, 그다음 <b>딜러리스트</b> 엑셀을 그대로 올려요. 미리보기에서 <b class="btn">상사로 거르기</b> › <b class="btn">고르기</b>로 우리와 거래하는 상사만 체크 → <b class="btn">N줄 넣기</b></p>
+        <p><span class="k">알아 둘 것</span>퇴사한 딜러 · 폐업한 상사는 저절로 빠져요. 회사코드 칸은 읽지 않아요. 세금계산서를 끊는 곳은 그 줄을 눌러 «계산서 끊음»과 사업자번호를 넣어요</p>
         <p class="done">끝: 입고할 때 상사 · 딜러를 고를 수 있어요. 딜러 번호가 있으면 알림톡이 가요</p></li>
       <li><h3>직원 계정 · 직원 폰</h3>
         <p><span class="k">어디서</span><b class="btn">설정</b> › <b class="btn">직원 계정</b> 다음 <b class="btn">QR 코드</b></p>
         <p><span class="k">할 일</span>직원을 만들고, 직원 폰 카메라로 QR을 찍어 홈 화면에 추가</p>
         <p class="done">끝: 직원 폰에 «입고 · 출고» 큰 단추가 보여요</p></li>
       <li><h3>자주 가는 목적지 · 입금 계좌</h3>
-        <p><span class="k">어디서</span><b class="btn">설정</b> › <b class="btn">배달 도착지</b> · <b class="btn">청구서</b> › 2. 청구서 보내기의 입금 계좌</p>
-        <p><span class="k">할 일</span>전시장 이름 · 주소(명함 사진으로도 돼요), 입금 계좌 · 입금 기한</p>
+        <p><span class="k">어디서</span><b class="btn">배달</b> › <b class="btn">목적지</b> · <b class="btn">월별 청구서</b> › 청구서 보내기의 입금 계좌</p>
+        <p><span class="k">할 일</span>전시장 이름 · 주소(명함 사진이나 <b class="btn">엑셀로 한꺼번에 올리기</b>도 돼요), 입금 계좌 · 입금 기한</p>
         <p class="done">끝: 출고 알림에 주소 · 지도가, 청구서에 계좌가 찍혀요</p></li>
+      <li><h3>첫 입고 해 보기</h3>
+        <p><span class="k">어디서</span>직원 폰 첫 화면 <b class="btn">입고</b> (PC는 오른쪽 위 <b class="btn">현장 화면</b>)</p>
+        <p><span class="k">할 일</span>차 한 대를 사진 → 상사 · 딜러 · 작업 고르기 → <b class="btn">입고 등록</b></p>
+        <p class="done">끝: PC <b class="btn">홈</b>과 <b class="btn">일감</b>에 그 차가 보이고, 딜러에게 입고 알림톡이 가요</p></li>
     </ol>
   </section>
 
@@ -93,9 +98,9 @@ b.btn{display:inline-block;border:1px solid var(--line);border-radius:7px;paddin
         <p><span class="k">할 일</span>맨 위 할 일 카드 3장(늦어지는 차 · 받을 금액 · 자재 부족 등)을 눌러 처리</p>
         <p class="done">끝: 카드가 «할 일이 없어요»로 바뀌어요</p></li>
       <li><h3>돈이 들어오면 입금 완료</h3>
-        <p><span class="k">어디서</span><b class="btn">일감</b> › 입출고 내역</p>
+        <p><span class="k">어디서</span><b class="btn">일감</b> › 입고 · 출고 내역</p>
         <p><span class="k">할 일</span>들어온 차를 체크 → <b class="btn">선택한 차 입금 완료</b></p>
-        <p class="done">끝: 그 차가 «수금 완료»로 바뀌고 받을 금액이 줄어요</p></li>
+        <p class="done">끝: 그 차가 «입금 완료»로 바뀌고 받을 금액이 줄어요</p></li>
     </ol>
   </section>
 
@@ -103,9 +108,13 @@ b.btn{display:inline-block;border:1px solid var(--line);border-radius:7px;paddin
     <div class="ph"><h2>한 달에 한 번</h2><span class="who">사장님 · PC</span></div>
     <ol>
       <li><h3>지난달 청구서 보내기</h3>
-        <p><span class="k">어디서</span><b class="btn">청구서</b> › <b class="btn">청구서 만들기</b></p>
-        <p><span class="k">할 일</span>위 칸을 <b class="btn">딜러별로 청구</b>로 고르고 <b class="btn">청구서 만들기</b> → 보낼 딜러를 체크 → 아래 «고른 곳 N곳 · 합계»를 확인 → <b class="btn">③ N곳에 청구서 보내기</b></p>
+        <p><span class="k">어디서</span><b class="btn">월별 청구서</b></p>
+        <p><span class="k">할 일</span>위 칸을 <b class="btn">딜러별로 청구</b>로 고르고 <b class="btn">청구서 만들기</b> → 보낼 딜러를 체크 → 아래 «고른 딜러 N명 · 합계»를 확인 → <b class="btn">③ N명에게 청구서 보내기</b></p>
         <p class="done">끝: 그 줄이 «보냄» · 딜러에게 청구서 알림톡 + «청구 내역 보기» 단추</p></li>
+      <li><h3>세금계산서 — 입금한 곳만</h3>
+        <p><span class="k">어디서</span><b class="btn">세금계산서</b> › 지난달 고르기</p>
+        <p><span class="k">할 일</span>입금이 끝난 곳만 고를 수 있어요(입금 전은 회색 «입금 뒤 발급돼요»). <b class="btn">홈택스 일괄발급 양식 내려받기</b> → 홈택스 «일괄발급»에서 그 파일을 올려요. 팝빌을 쓰면 <b class="btn">고른 건 바로 발급</b></p>
+        <p class="done">끝: 표의 «자동 발급» 칸이 «발급됨», 또는 홈택스에서 발급 끝. 다 했으면 <b class="btn">이 달 발행 완료로 표시</b></p></li>
     </ol>
   </section>
 
@@ -113,7 +122,7 @@ b.btn{display:inline-block;border:1px solid var(--line);border-radius:7px;paddin
     <h2>막히면</h2>
     <ul>
       <li>번호판이 안 읽히면 번호를 손으로 넣고 그대로 입고하면 돼요.</li>
-      <li>알림이 갔는지는 <b class="btn">설정</b> › <b class="btn">발송함</b>에서 봐요. 못 보낸 줄은 거기서 다시 보내요.</li>
+      <li>알림이 갔는지는 <b class="btn">설정</b> › <b class="btn">보낸 기록</b>에서 봐요. 못 보낸 줄은 거기서 다시 보내요.</li>
       <li>잘못 지웠으면 오른쪽 위 이름 ▾ › <b class="btn">휴지통</b>에서 되돌려요.</li>
       <li>그래도 안 되면 그 화면을 찍어 차곳간에 보내 주세요. 그날 고쳐 드려요.</li>
     </ul>
