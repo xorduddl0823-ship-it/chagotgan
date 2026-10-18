@@ -101,3 +101,10 @@ section.hero .pickh button{background:transparent;color:#fff;border-color:#fffff
 section.hero .pickh button[aria-pressed="true"]{background:#fff;color:var(--navy);border-color:#fff}
 section.alt{background:var(--bg)}
 section.hero .pick p{color:var(--muted)} section.hero .pick h3{color:var(--ink)}
+/* 검수 3 F12 — 첫 화면 카드는 짧은 고르기 단추(설명은 아래 비교 카드에서) */
+.cgg-roles section.hero .picks{grid-template-columns:repeat(3,minmax(0,max-content));gap:8px}
+.cgg-roles section.hero .pick{flex-direction:row;align-items:center;gap:10px;padding:10px 16px 10px 10px;min-height:56px}
+.cgg-roles section.hero .pick p{display:none}
+.cgg-roles section.hero .pick h3{margin:0;font-size:16px}
+.cgg-roles section.hero .pick .ic2{width:36px;height:36px;font-size:12px}
+@media (max-width:600px){ .cgg-roles section.hero .picks{grid-template-columns:1fr} }
