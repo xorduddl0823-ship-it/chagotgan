@@ -3,9 +3,10 @@
   _headers: 보기 화면 머리글은 v55.1 그대로 + 모든 쪽(/*)에 «다른 사이트 틀 안에 못 넣게»(frame-ancestors 'self' https://*.cgg.co.kr · 보안 낮음 고침)
   zip 맨 위에 바로 index.html · 시각 1980-01-01 고정 · 차례 고정(같은 파일이면 지문이 늘 같아요)
 """
-import hashlib, os, zipfile
+import hashlib, os, sys, zipfile
+V = sys.argv[1] if len(sys.argv) > 1 else "v56"   # v56 · v56.1
 BASE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")) + "/"
-OUT = BASE + "체크/올리기용/2_차곳간_체크_정식_v56_통째.zip"
+OUT = BASE + "체크/올리기용/2_차곳간_체크_정식_%s_통째.zip" % V
 ADD = BASE + "체크/올리기용/시험뒤_더할_파일/"
 NEW = BASE + "체크/올리기용/정식_r살리기/"
 
@@ -20,7 +21,7 @@ headers = """# 모든 쪽 — 차곳간 사이트(cgg.co.kr) 밖의 틀(iframe) 
   X-Robots-Tag: noindex, nofollow
 """
 FILES = [
-    ("index.html", open(BASE + "체크/2_차곳간_체크_index_v56.html", "rb").read()),
+    ("index.html", open(BASE + "체크/2_차곳간_체크_index_%s.html" % V, "rb").read()),
     ("_headers", headers.encode("utf-8")),
     ("d/index.html", open(NEW + "d/index.html", "rb").read()),
     ("driver/index.html", open(BASE + "체크/driver/index_v28.html", "rb").read()),
