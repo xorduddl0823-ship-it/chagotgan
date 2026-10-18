@@ -122,7 +122,7 @@ AFTER.home=function(){
     rank:{title:"이번 달 일감", link:{label:"매출", onClick:function(){ go("sales"); }}, sub:"검사 종류별 · 많은 차례", items:ranks.map(function(x){ return {label:x[0], value:won(x[1])+"대", pct:x[1]/rmx}; })},
     help:"홈 차례는 워시와 같아요: 자주 쓰는 기능 → 오늘 할 일 → 숫자 칸 4개 → 일정 · 이번 달 입금 · 이번 달 일감.\n아래 «체크 전용» 칸은 체크에만 있어요."});
   /* 체크 전용 칸 — 사용법 위 */
-  var made=BILLS.length, sentN=BILLS.filter(function(b){ return b.sendState!=="안 보냄"; }).length, sp=made?Math.round(sentN/made*100):0;
+  var made=BILLS.length, sentN=BILLS.filter(function(b){ return b.sendState!=="안 보냄"; }).length;
   var late=BILLS.filter(function(b){ return b.left>0; }).sort(function(a,b){ return b.left-a.left; });
   var box=document.createElement("div");
   box.innerHTML='<div id="chkSteps"></div>'+   /* v56.2: «이번 달 어디까지 왔나» = 공통 CGG.steps (04 결정 · 두 제품 같음) */
@@ -145,7 +145,7 @@ AFTER.home=function(){
     {label:"청구서 만들기", state:made?"done":"todo", note:made?won(made)+"장 만듦":"남음"},
     {label:"청구서 보내기", state:allSent?"done":(made?"now":"todo"), note:made?won(sentN)+"장 보냄 · "+won(made-sentN)+"장 남음":"남음"},
     {label:"입금 확인", state:allPaid?"done":(allSent?"now":"todo"), note:pct+"% 입금"}],
-    {title:"이번 달 어디까지 왔나", desc:"왼쪽부터 차례대로 하시면 돼요."});   /* v56.1: «어디까지 왔나»는 공통 기능(워시 v138) — 체크 전용 표시 없음 */
+    {title:"이번 달 어디까지 왔나", desc:"왼쪽부터 차례대로 하시면 돼요."});   /* v56.2: «어디까지 왔나»는 공통 기능(워시 v138) — 체크 전용 표시 없음 */
   var hp=el.querySelector(".cgg-help"); while(box.firstChild) el.insertBefore(box.firstChild, hp||null);
   wireTable("fo",function(){ draw(); });
   Array.prototype.forEach.call(el.querySelectorAll("[data-v56go]"),function(b){ b.onclick=function(){ go(b.getAttribute("data-v56go")); }; });
