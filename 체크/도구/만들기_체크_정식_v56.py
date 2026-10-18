@@ -12,6 +12,7 @@ NEW = BASE + "체크/올리기용/정식_r살리기/"
 headers = """# 모든 쪽 — 차곳간 사이트(cgg.co.kr) 밖의 틀(iframe) 안에 못 넣게 (v56 · 보안 낮음 고침)
 /*
   Content-Security-Policy: frame-ancestors 'self' https://*.cgg.co.kr
+  X-Content-Type-Options: nosniff
 """ + open(ADD + "_headers", encoding="utf-8").read().rstrip("\n") + """
 /v/*
   Cache-Control: no-store
