@@ -82,7 +82,6 @@
       "Bash(git config --get:*)",
       "Bash(npm test:*)",
       "Bash(npm run:*)",
-      "Bash(npx:*)",
       "Bash(bash 서버/:*)",
       "Bash(bash 체크/:*)",
       "Bash(bash 워시/:*)",
