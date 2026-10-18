@@ -62,7 +62,7 @@ rep('''      '<label class="f" style="margin-top:8px">템플릿 문구 — 신�
         '<button class="btn" data-copy="at_txt_'+key+'">문구 복사 (신청용)</button>'+
         '<button class="btn" data-reset="'+key+'">처음 문구로</button>'+
         '<button class="btn" data-test="'+key+'">내 번호로 알림톡 시험</button></div>'+''',
-'''      '<div style="margin-top:8px">'+CGG_ATATXT.box(key==="out"?"release":"bill")+'</div>'+
+'''      '<div style="margin-top:8px">'+CGG_ATATXT.box(key==="out"?"release":"bill",null,{noSms:true})+'</div>'+
       '<textarea id="at_txt_'+key+'" hidden readonly>'+esc(text)+'</textarea>'+   /* v137 승인 문구 — 보기만 */
       '<div class="tools" style="margin-top:8px">'+
         '<button class="btn" data-test="'+key+'">내 번호로 알림톡 시험</button></div>'+''')
@@ -70,6 +70,18 @@ rep('''    out:{tpl:c.tplOut||"",text:c.ataOutText||DEF_ATA_OUT},bill:{tpl:c.tpl
 '''    out:{tpl:c.tplOut||"",text:DEF_ATA_OUT},bill:{tpl:c.tplBill||"",text:DEF_ATA_BILL}};   /* v137 늘 승인 문구 */''')
 rep('''      ataOutText:$("at_txt_out").value,ataBillText:$("at_txt_bill").value,''', '''      ataOutText:DEF_ATA_OUT,ataBillText:DEF_ATA_BILL,''')
 
+# 검사 일꾼: 신청 순서 안내의 없어진 단추 이름 · 미리보기/시험 예시 값을 승인 문구 변수 이름으로
+rep('''    '<li>솔라피 → 카카오 → <b>템플릿 등록</b>. 아래 두 문구를 [문구 복사]로 복사해 그대로 붙여 넣고 검수 요청 (보통 1~3일)</li>'+''',
+'''    '<li>템플릿 문구는 아래 승인 문구 그대로예요(고칠 수 없어요). 승인 뒤 받은 <b>템플릿 ID</b>만 넣으면 돼요.</li>'+''')
+rep('''  var sample={out:{"업체":shopLabel(),"딜러":"홍길동","상사":"브라더모터스","차량번호":"12가3456",
+      "작업":"외부세차, 광택","목적지":"브라더모터스","금액":"150,000원"},
+    bill:{"업체":shopLabel(),"청구월":periodLabel(mKey(nowIso())),"받는분":"브라더모터스",
+      "소속상사":"","대수":"12대","작업내역":"광택 8대, 외부세차 4대","합계":"1,320,000원",
+      "계좌":(S.cfg&&S.cfg.bank)||"(계좌)","연락처":(S.cfg&&S.cfg.send&&S.cfg.send.from)||""}};''',
+'''  var sample={out:{"딜러명":"홍길동","상사명":"브라더모터스","차량번호":"12가3456","작업내용":"외부세차, 광택",
+      "목적지":"브라더모터스","출고일시":dtKo(nowIso()),"업체전화":shopTel(),"업체명":shopLabel(),"보기코드":""},
+    bill:{"기간":periodLabel(mKey(nowIso())),"받는곳":"브라더모터스","업체명":shopLabel(),"건수":"12","금액":"1,320,000",
+      "입금기한":billDue(null),"계좌":(S.cfg&&S.cfg.bank)||"(계좌)","업체전화":shopTel(),"보기코드":""}};   /* v137 승인 문구 변수 이름 */''')
 # 승인 문구와 부품 글자가 같은지 만들 때 확인
 import re, json
 def jsstr(name):

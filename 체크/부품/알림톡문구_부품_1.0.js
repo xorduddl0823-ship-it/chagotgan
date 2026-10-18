@@ -2,7 +2,8 @@
    대표님 10/18: 알림톡은 카카오가 승인한 글자 그대로만 나가요 → 화면에서는 «보기만»(잠금), 고칠 수 있는 건 문자 문구뿐.
    글자 출처: 알림톡/00_확정본_13개_원문.md (솔라피 등록본 · 통과 8개 중 화면이 보내는 5개). 서버 ATA_TPL 과 같은 이름 · 같은 변수.
    CGG_ATATXT.list[key] = {name, body, sms}       key: intake · release · extra_work · bill · deposit_ok
-   CGG_ATATXT.box(key, vars?)  → 잠긴 «알림톡 승인 문구» 칸 HTML (vars 를 주면 #{…} 자리에 예시 값을 넣어 보여 줌, 모두 esc)
+   CGG_ATATXT.box(key, vars?, opt?)  → 잠긴 «알림톡 승인 문구» 칸 HTML (vars 를 주면 #{…} 자리에 예시 값을 넣어 보여 줌, 모두 esc)
+                                       opt.noSms: 아래에 문자 문구 칸이 없는 화면(설정 등)이면 «문자 문구만 고칠 수 있어요» 줄을 빼요
    CGG_ATATXT.fill(text, vars) → #{…} 채우기 (빈 값은 «-», 서버와 같음) */
 var CGG_ATATXT = (function(){
   var V="ata 1.0";
@@ -21,7 +22,7 @@ var CGG_ATATXT = (function(){
   };
   function fill(text, vars){ return String(text||"").replace(/#\{([^}]+)\}/g,function(m,k){ var v=(vars||{})[k]; return (v==null||v==="")?"-":String(v); }); }
   /* 잠긴 칸 — 고치는 칸(textarea)이 아니라 글로만 보여 줘요. 예시 값이 없으면 #{…} 자리를 파란 글씨로 */
-  function box(key, vars){
+  function box(key, vars, opt){ opt=opt||{};
     var t=T[key]; if(!t) return "";
     var body=vars ? esc(fill(t.body, vars)) : esc(t.body).replace(/#\{([^}]+)\}/g,'<b style="color:var(--brand)">#{$1}</b>');
     return '<div class="ata-lock" style="border:1px solid var(--line);border-radius:12px;background:var(--surface2);padding:10px 12px;margin:0 0 12px">'+
@@ -29,7 +30,7 @@ var CGG_ATATXT = (function(){
       '<span style="font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:1px 8px;background:var(--surface)">🔒 카카오 승인 문구 · 고칠 수 없어요</span></div>'+
       '<div style="white-space:pre-wrap;font-size:13.5px;line-height:1.55">'+body+'</div>'+
       (t.button?'<div style="margin-top:6px;font-size:13px;color:var(--muted)">단추: '+esc(t.button)+'</div>':'')+
-      '<div style="margin-top:6px;font-size:12.5px;color:var(--muted)">알림톡은 이 글자 그대로만 나가요. 아래 <b>문자 문구</b>는 알림톡이 안 갈 때 가는 문자예요 — 이것만 고칠 수 있어요.</div>'+
+      '<div style="margin-top:6px;font-size:12.5px;color:var(--muted)">알림톡은 이 글자 그대로만 나가요.'+(opt.noSms?'':' 아래 <b>문자 문구</b>는 알림톡이 안 갈 때 가는 문자예요 — 이것만 고칠 수 있어요.')+'</div>'+
     '</div>';
   }
   return {V:V, list:T, fill:fill, box:box};
