@@ -752,3 +752,11 @@ select.cgg-hb{width:auto}
 .cgg-nbadge{background:var(--stop-ink)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cgg-badge,:root:not([data-theme="light"]) .cgg-nbadge{color:#1a0b0a}}
 :root[data-theme="dark"] .cgg-badge,:root[data-theme="dark"] .cgg-nbadge{color:#1a0b0a}
+/* 1.13 고침(체크 방 알림 10/18) — 폰 머리 단추를 44px 로 키우면서 업체명 자리가 줄던 것: 폰에서는 «찾기»를 돋보기 그림 하나(44 × 44)로.
+   글자는 화면 읽기용으로만 남겨요(aria-label «기능 찾기»). 업체명은 1.12 만큼 자리를 다시 가져요 */
+@media (max-width:760px){
+  .cgg-top .cgg-findbtn{width:44px;padding:0;justify-content:center}
+  .cgg-top .cgg-findbtn>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .cgg-top .cgg-hb.cgg-me{padding:0 8px}
+  .cgg-top .cgg-right{gap:4px}
+}

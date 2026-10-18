@@ -61,6 +61,47 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 .bars .bar i{display:block;width:100%;border-radius:6px 6px 0 0;background:var(--tabon)} .bars .bar.on i{background:var(--blue)}
 .bars .bar span{font-size:11.5px;color:var(--muted)} .bars .bar.on span{color:var(--blue);font-weight:800}
 .bars .bar:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+/* 딜러앱 · 홈페이지 미리보기 모양 (1.13 토큰만 써요) */
+.dph{height:160px;border-radius:12px;background:linear-gradient(135deg,var(--tabon),var(--bg));display:grid;place-items:center;color:var(--muted);font-weight:700;margin:12px 0}
+.dlog{margin:0 0 10px;padding-left:18px;display:grid;gap:6px;font-size:14px}
+.dbills{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--sec-gap);margin-bottom:var(--sec-gap)}
+.dbill{margin:0}
+.dbh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dbm{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dbm strong{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums} .dbm strong small{font-size:14px;margin-left:2px;color:var(--muted)}
+.dbm span{font-size:13px;color:var(--muted)}
+.site{min-height:100vh;background:var(--bg)}
+.ssb{background:var(--navy);color:#fff;font-size:13px;text-align:center;padding:8px 16px}
+.shd{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px max(16px,calc((100% - 1200px)/2));background:var(--navy);border-top:1px solid #ffffff1f}
+.slogo{display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-size:18px;font-weight:900}
+.snav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.snav a{color:#dbe6f5;text-decoration:none;font-weight:700;font-size:14px;padding:0 12px;min-height:44px;display:inline-flex;align-items:center;border-radius:10px}
+.snav a[aria-current="page"],.snav a:hover{background:#ffffff1a;color:#fff}
+.snav a:focus-visible,.sprodc:focus-visible{outline:3px solid var(--sky,#7cc4ff);outline-offset:2px}
+.smain{max-width:1200px;margin:0 auto;padding:24px 16px 40px}
+.shero{padding:28px 0 8px}
+.shero small{color:var(--blue);font-weight:800}
+.shero h1{font-size:clamp(26px,4vw,40px);line-height:1.25;margin:8px 0 12px;font-weight:900;letter-spacing:-.02em}
+.shero p{color:var(--muted);font-size:16px;max-width:680px;margin:0 0 14px}
+.sprod{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
+.sprodc{display:flex;flex-direction:column;gap:6px;padding:18px 20px;text-decoration:none;color:var(--text)}
+.sprodc span{color:var(--muted);font-size:14px} .sprodc em{font-style:normal;color:var(--blue);font-weight:800;font-size:14px}
+.ssec{margin-top:36px} .ssec h2{font-size:24px;font-weight:900;margin:0 0 6px} .slead{color:var(--muted);margin:0 0 14px}
+.splans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.splan{padding:20px;display:flex;flex-direction:column;gap:8px;margin:0} .splan.rec{box-shadow:0 0 0 2px var(--blue),var(--sh)}
+.splan h3{margin:0;font-size:18px} .splan .cgg-st{align-self:flex-start}
+.spr strong{font-size:30px;font-weight:900} .spr small{color:var(--muted);margin-left:4px}
+.splan .d,.ssteps .d,.sbox .d{color:var(--muted);font-size:13.5px;margin:0}
+.ssteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.ssteps .cgg-card{padding:16px 18px;margin:0}
+.sflow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding-left:20px;font-weight:700}
+.sbox{max-width:520px;margin:20px auto;padding:24px}
+.sbox h1{font-size:24px;margin:0 0 8px}
+.sbox hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.sdots{display:flex;gap:6px;flex-wrap:wrap;list-style:none;padding:0;margin:0 0 14px;font-size:12.5px;color:var(--muted)}
+.sdots li{padding:4px 10px;border-radius:999px;background:var(--bg)} .sdots li[aria-current]{background:var(--tabon);color:var(--blue);font-weight:800}
+.sft{text-align:center;color:var(--muted);font-size:12.5px;padding:24px 16px;border-top:1px solid var(--line);line-height:1.7}
+@media (max-width:760px){ .sprod,.splans,.ssteps{grid-template-columns:1fr} .snav{margin-left:0} }
 .fm.four{grid-template-columns:repeat(4,minmax(0,1fr))}
 .lay{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .lay button{border:1.5px solid var(--ln2);border-radius:12px;background:var(--surface);padding:12px;font:inherit;font-weight:700;cursor:pointer;color:var(--text)}
@@ -70,7 +111,7 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
 
 <div class="pv" role="region" aria-label="미리보기 고르기"><div class="in">
   <b>미리보기</b><span>추천안(대조표 74줄)대로 만든 완성 화면이에요. 지어낸 자료예요. 점선 상자는 제품마다 다른 칸이에요.</span>
-  <span class="seg" aria-label="제품"><a id="pW" href="#wash">워시</a><a id="pC" href="#check">체크</a></span>
+  <span class="seg" aria-label="제품"><a id="pW" href="#wash">워시</a><a id="pC" href="#check">체크</a><a id="pA" href="#admin">관리</a><a id="pD" href="#dealer">딜러앱</a><a id="pH" href="#site">홈페이지</a></span>
   <span class="seg" aria-label="메뉴 모양"><a id="lT" href="#wash">가로(위)</a><a id="lS" href="#wash-side">세로(왼쪽)</a></span>
 </div></div>
 <div class="cgg-app" id="app">
@@ -78,17 +119,19 @@ body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Goth
   <main class="cgg-main" id="main"></main>
   <nav class="cgg-tbar" id="tbar"></nav>
 </div>
+<div id="siteRoot" class="site" hidden></div>
 <script src="공통/cgg-j4-1.13.js"></script>
 <script src="메뉴지도/워시_메뉴.js"></script>
 <script src="메뉴지도/체크_메뉴.js"></script>
+<script src="완성_미리보기_더.js"></script>
 <script>
 /* 미리보기 전용 — 지어낸 자료. #wash · #check, 뒤에 -side 면 세로(왼쪽) 메뉴 */
-var P=/check/.test(location.hash)?"check":"wash", SIDE=/-side|-icon/.test(location.hash), ICON=/-icon/.test(location.hash);
+var HP=location.hash.slice(1).split("-")[0], P=["check","admin","dealer","site"].indexOf(HP)>=0?HP:"wash", SITEPG=P==="site"?(location.hash.split("-")[1]||"main"):"", SIDE=P!=="site"&&/-side|-icon/.test(location.hash), ICON=/-icon/.test(location.hash);
 if(SIDE) document.querySelector(".pv").classList.add("float");   /* 세로 모양은 왼쪽 메뉴가 맨 위를 덮어서, 고르는 단추를 아래 오른쪽에 띄워요 */
 (function(){ var h=function(p,s){ return "#"+p+(s?"-side":""); };
-  var a={pW:h("wash",SIDE),pC:h("check",SIDE),lT:h(P,false),lS:h(P,true)}; for(var k in a){ var el=document.getElementById(k); el.href=a[k]; }
-  document.getElementById(P==="wash"?"pW":"pC").setAttribute("aria-current","true"); document.getElementById(SIDE?"lS":"lT").setAttribute("aria-current","true"); })();
-var D=P==="check"?CGG_MENU_CHECK:CGG_MENU_WASH, W=P==="wash", cur="home", E=CGG.esc, won=CGG.won;
+  var a={pW:h("wash",SIDE),pC:h("check",SIDE),pA:h("admin",SIDE),pD:h("dealer",SIDE),pH:"#site",lT:h(P==="site"?"wash":P,false),lS:h(P==="site"?"wash":P,true)}; for(var k in a){ var el=document.getElementById(k); el.href=a[k]; }
+  document.getElementById({wash:"pW",check:"pC",admin:"pA",dealer:"pD",site:"pH"}[P]).setAttribute("aria-current","true"); if(P==="site") document.querySelector('[aria-label="메뉴 모양"]').hidden=true; else document.getElementById(SIDE?"lS":"lT").setAttribute("aria-current","true"); })();
+var D=P==="check"?CGG_MENU_CHECK:P==="admin"?PVX.menus.admin:P==="dealer"?PVX.menus.dealer:CGG_MENU_WASH, W=P==="wash", cur="home", E=CGG.esc, won=CGG.won;
 CGG.favicon();
 /* 화면 열쇠 → 공통 화면 이름 (두 제품이 같은 화면을 같은 그리기로) */
 var SCR={"home":"home","sales":"sales","bill":"bill","bill/month":"bill","bill/group":"billgroup","money/io":"io","deposit/in":"io","money/due":"due","deposit/due":"due","deposit/ins":"ins",
@@ -372,15 +415,25 @@ function draw(){
   m.innerHTML=""; FMN=0; if(f) f(m); else m.innerHTML=head(E(crumb()),"미리보기에 없는 화면이에요.");
   Array.prototype.forEach.call(m.querySelectorAll("[data-lay]"),function(b){ b.onclick=function(){ var L=b.getAttribute("data-lay"); location.hash=P+(L==="top"?"":"-"+L); }; });
 }
+/* 관리 · 딜러앱은 자기 화면 열쇠만 (워시 · 체크 열쇠와 겹치지 않게) */
+if(P==="admin"||P==="dealer"){ SCR=PVX.scr[P]; for(var vk in PVX.views) V[vk]=PVX.views[vk]; }
+if(P==="site"){ document.getElementById("app").hidden=true; var SR=document.getElementById("siteRoot"); SR.hidden=false; document.title="차곳간 — 홈페이지 미리보기"; PVX.site(SR,["main","price","login","join"].indexOf(SITEPG)>=0?SITEPG:"main"); window.addEventListener("hashchange",function(){ location.reload(); }); }
+else {
 CGG.layout.init(document.getElementById("app"), "cgg_merge_pv_layout", SIDE?"side":"top"); CGG.layout.set(ICON?"icon":SIDE?"side":"top");   /* 미리보기는 주소(#…-side · -icon)가 정해요 */
-CGG.header(document.getElementById("top"),{product:W?"워시":"체크",sub:W?"광택 · 세차 정산":"성능점검 정산",ver:W?"v137":"v56",date:"10/18",
-  biz:{name:W?"예시 광택":"예시 성능검사소",line:"사업자 000-00-00091 · 대표 홍길동"},
+var HD={wash:["워시","광택 · 세차 정산","v137","예시 광택","사업자 000-00-00091 · 대표 홍길동"],check:["체크","성능점검 정산","v56","예시 성능검사소","사업자 000-00-00091 · 대표 홍길동"],
+  admin:["관리","본사 관리","v4.9","차곳간 본사 (예시)","관리자 · 본사 관리자 전용"],dealer:["딜러","내 상사 상품화","d4.0","김민수 딜러","예시상사 · 010-****-0000"]}[P];
+CGG.header(document.getElementById("top"),{product:HD[0],sub:HD[1],ver:HD[2],date:"10/18",
+  biz:{name:HD[3],line:HD[4]},
   find:{mode:"nav",feats:D.feats,onGo:goFeat},
   notice:toast("공지사항"),help:toast("도움말"),link:toast("주소를 복사했어요"),refresh:toast("새로고침했어요"),
-  auto:{value:"30",options:[["0","자동 끄기"],["30","30초마다"],["60","1분마다"]],onChange:function(){}},saved:true,
+  auto:P==="dealer"?null:{value:"30",options:[["0","자동 끄기"],["30","30초마다"],["60","1분마다"]],onChange:function(){}},saved:true,
   field:W?{label:"현장 화면",on:toast("현장 화면으로")}:null,
-  me:{name:"김대표",role:"대표",items:[{key:"me",icon:"user",label:"마이페이지",note:"요금제 · 사용량"},{key:"trash",icon:"trash",label:"휴지통"},"-",{key:"lay",icon:"pc",label:"화면 설정"},"-",{key:"out",icon:"out",label:"로그아웃"}],onPick:function(k){ if(k==="me") CGG.myPage({who:"김대표 · 대표",plan:[["지금 요금제","스탠다드 (예시)"]],usage:[["알림톡",198,1000,"건"]],account:[["로그인 번호","010-****-0000"]]}); else CGG.toast("미리보기예요"); }}});
+  me:{name:P==="dealer"?"김민수":P==="admin"?"관리자":"김대표",role:P==="dealer"?"딜러":P==="admin"?"본사 관리자":"대표",items:[{key:"me",icon:"user",label:"마이페이지",note:"요금제 · 사용량"},{key:"trash",icon:"trash",label:"휴지통"},"-",{key:"lay",icon:"pc",label:"화면 설정"},"-",{key:"out",icon:"out",label:"로그아웃"}],onPick:function(k){ var WHO={wash:"김대표 · 대표",check:"김대표 · 대표",admin:"관리자 · 본사 관리자",dealer:"김민수 · 딜러 (예시상사)"}[P];
+    if(k==="me") CGG.myPage(P==="admin"?{who:WHO,account:[["아이디","admin (예시)"]]}:P==="dealer"?{who:WHO,account:[["로그인 번호","010-****-0000"]]}:{who:WHO,plan:[["지금 요금제","스탠다드 (예시)"]],usage:[["알림톡",198,1000,"건"]],account:[["로그인 번호","010-****-0000"]]});
+    else if(k==="out") CGG.dialog({size:"confirm",title:"로그아웃할까요?",rows:[["누구",WHO]],ok:"로그아웃",cancel:"취소",onOk:toast("로그아웃했어요")});
+    else CGG.toast("미리보기예요"); }}});
 CGG.badge(document.querySelector('[data-hb="me"]'), 3);   /* 휴지통에 3건 — 사람 단추 오른쪽 위 바깥 모서리 */
 window.addEventListener("hashchange",function(){ location.reload(); });
 draw();
+}
 </script>
