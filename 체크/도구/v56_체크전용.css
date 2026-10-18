@@ -1,0 +1,100 @@
+<style id="chk-v56">
+/* ═══ 체크 v56 — 체크 전용 몫 한 곳 (예전 chk-j4 · chk-glue · chk-v50 · v42-cal · v43-piece · cgg-beta-piece 를 걷어내고 남길 것만)
+   공통 부품 cgg-j4 1.12 보다 «앞»에 둬요 — 뼈대(머리말 · 메뉴 · 본문 폭 · 숫자 칸 · 표 · 띠)는 공통 부품이 정하고 여기서 덮어쓰지 않아요(A5) ═══ */
+/* 옛 화면 조각(.card · .btn · 옛 표)의 색 · 모서리 — 워시와 같은 값 (예전 chk-j4) */
+:root{--bg:#F3F5F8;--surface:#FFFFFF;--surface2:#F7F9FC;--line:#EAECF0;--text:#101828;--muted:#667085;
+  --brand:#1668C4;--brand-soft:#E8F1FC;--accent:#0B2545;--sky:#8FC9F2;
+  --good:#1E9E5A;--good-soft:#E4F5EC;--warn:#B26B00;--warn-soft:#FFF2DD;--danger:#D64545;--danger-soft:#FDE8E8;
+  --shadow:0 1px 2px #1018280d,0 12px 32px -20px #0B254540;--r:18px;--j-ctl:43px}
+body{font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+.card{border:0;border-radius:18px;box-shadow:var(--shadow);background:var(--surface)}
+.btn{min-height:var(--j-ctl);border-radius:12px;border:1px solid #E3E8EE;font-weight:700;font-size:14px;color:#344054;background:#fff}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 6px 16px -8px #1668C4cc}
+.btn.danger{color:var(--danger)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--brand)}
+.photobox{border-radius:14px;border:2px dashed #D0D5DD}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{background:var(--surface);color:var(--text);border-color:var(--line)}}
+:root[data-theme="dark"] .btn{background:var(--surface);color:var(--text);border-color:var(--line)}
+@media (max-width:600px){ .card{border-radius:14px} .btn{min-height:38px;font-size:13px;border-radius:10px} }
+
+/* 옛 .wrap 틀을 공통 바깥 상자(.cgg-app)로 — 폭은 공통 .cgg-main 이 정해요 */
+#wrap.cgg-app{max-width:none;margin:0;padding-top:0;padding-right:0}
+#wrap.cgg-app.lay-top{padding-left:0}
+@media (max-width:999px){#wrap.cgg-app{padding-left:0}}
+.cgg-main #main{margin:0}
+/* 작은 탭(#cggSub)은 폰에서만 — 넓은 화면은 공통 메뉴 밑 줄 · 왼쪽 펼침에 같은 칸 */
+@media (min-width:601px){ #cggSub{display:none!important} }
+#cggSub .cgg-nsgrp{flex:none;align-self:center;font-size:11.5px;font-weight:800;color:var(--muted);margin:0 2px 0 8px}
+/* 층 순서 (공통 이름) */
+.sheetbg{z-index:var(--z-dialog)} .sheet{z-index:calc(var(--z-dialog) + 1)} .ovl{z-index:calc(var(--z-dialog) + 2)}
+/* 머리말 «연결 안 됨» */
+.cgg-hb.cgg-conn.chk-off{color:#FFB4A8} .cgg-hb.cgg-conn.chk-off i{background:#FF8B82;box-shadow:0 0 0 3px #FF8B8233}
+@media (min-width:1000px){ .lay-side .cgg-hb.cgg-conn.chk-off,.lay-icon .cgg-hb.cgg-conn.chk-off{color:var(--stop)} }
+
+/* 공통 표 안의 체크 몫 — 거르기 고르기 칸 · 고른 개수 · 두 줄 칸 */
+.cgg-ttop select:not(.cgg-size){height:var(--ctl);width:auto;min-width:0;max-width:100%;border:1px solid var(--ln2);border-radius:var(--r-ctl);background:var(--surface);color:var(--text);font:inherit;font-size:14px;padding:0 10px;margin:0}
+.cgg-ttop .cgg-size{width:auto;margin:0}
+.cgg-tblock button.cgg-btn.btn{min-height:0;box-shadow:none}
+.cgg-tblock button.cgg-btn.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.cgg-tblock button.cgg-btn.btn[disabled]{opacity:.45;cursor:default}
+.cgg-tblock button[data-n]::after{content:" (" attr(data-n) ")"}
+.cgg-tblock{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:normal}
+.cgg-tblock .cgg-mhead select{width:auto;min-height:auto}
+.cgg-table .cgg-st+.b{display:block;font-size:10.5px;color:var(--muted);line-height:1.2}
+.cgg-table td .two{display:flex;flex-direction:column;line-height:1.25}
+.cgg-table td>.a,.cgg-table td>.b{display:block;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
+.cgg-table td>.b,.cgg-table td .two .b{font-size:11.5px;font-weight:600;color:var(--muted)}
+/* 옛 카드 안에 든 표 — 카드 속 카드가 되지 않게 표 칸만 선으로 */
+.card .cgg-tblock{margin:12px 0 0}
+.card .cgg-tblock>.cgg-card{box-shadow:none;border:1px solid var(--line)}
+
+/* 접힌 카드 (도움 · 설명 · 자주 안 쓰는 칸) */
+.chk-fold{margin:0 0 16px}
+.chk-fold>summary{cursor:pointer;list-style:none;min-height:50px;display:flex;align-items:center;padding:0 20px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);font-size:14px;font-weight:700;color:var(--muted)}
+.chk-fold>summary::-webkit-details-marker{display:none}
+.chk-fold>summary::before{content:"▸";margin-right:8px;color:var(--blue)}
+.chk-fold[open]>summary::before{content:"▾"}
+.chk-fold[open]>summary{border-radius:var(--r-card) var(--r-card) 0 0;box-shadow:none;border-bottom:1px solid var(--line)}
+.chk-fold>.card{margin:0;border-top-left-radius:0;border-top-right-radius:0}
+@media (max-width:600px){ .chk-fold{margin-bottom:10px} .chk-fold>summary{min-height:42px;padding:0 14px;font-size:13px;border-radius:14px} }
+.cgg-main .cgg-help p{white-space:pre-line}
+
+/* 체크 전용 상자 — 공통 화면 안에 덧붙는 칸(«제품 전용» 표시 · 점선 테두리, 디자인 완성 미리보기와 같은 모양) */
+.chk-own{border:1.5px dashed var(--ln2)}
+.chk-own>h3::after{content:"체크 전용";font-size:11px;font-weight:800;margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--tabon);color:var(--blue);vertical-align:2px}
+.chk-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.chk-steps>div{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.5}
+.chk-steps>div b{display:block;font-size:14px}
+.chk-steps>div .bar{height:6px;border-radius:3px;background:var(--line);margin:8px 0 4px;overflow:hidden}
+.chk-steps>div .bar i{display:block;height:100%;background:var(--blue)}
+.chk-steps>div.done .bar i{background:var(--done)}
+.chk-steps>div small{color:var(--muted)}
+@media (max-width:800px){ .chk-steps{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+/* 설정 › 직원 계정 · 전체 메뉴 · 검사소 고르기 · 할 일 목록 */
+.cgg-todo-list{margin:0;padding-left:20px;line-height:1.8;font-size:14px;color:var(--text)}
+.cgg-todo-list b{font-weight:800}
+.staff-add{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.staff-add input,.staff-add select{height:43px;border:1px solid var(--line);border-radius:12px;padding:0 12px;font:inherit;font-size:14.5px;background:var(--surface);color:var(--text);min-width:0}
+.staff-add #stName{flex:1 1 120px} .staff-add #stPhone{flex:1 1 150px} .staff-add select{flex:0 0 96px}
+.staff-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.staff-t{width:100%;border-collapse:collapse;font-size:14px;min-width:760px}
+.staff-t th,.staff-t td{padding:0 12px;height:50px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.staff-t th{height:40px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.staff-t tr:last-child td{border-bottom:0}
+.staff-btns{display:flex;gap:6px;justify-content:flex-end}
+.staff-btns .btn{min-height:34px;height:34px;padding:0 10px;font-size:12.5px;border-radius:10px}
+.cgg-offpick input{width:100%;height:44px;border:1px solid var(--line);border-radius:12px;padding:0 12px;font:inherit;font-size:16px;text-transform:uppercase;background:var(--surface);color:var(--text)}
+
+/* 결과 목록 창 · 얇은 진행 줄 («불러오는 중이에요…» 글 대신) */
+.v56-list{margin:8px 0 6px;padding-left:20px;display:grid;gap:4px;font-size:14px;line-height:1.5}
+.v56-more{display:block;margin-top:6px;color:var(--muted);font-size:13px}
+body.chk-loading::before{content:"";position:fixed;left:0;top:0;height:3px;width:40%;background:var(--blue);z-index:var(--z-toast);animation:chkLoad 1s ease-in-out infinite}
+@keyframes chkLoad{0%{left:-40%}100%{left:100%}}
+@media (prefers-reduced-motion:reduce){ body.chk-loading::before{animation:none;width:100%;opacity:.6} }
+/* 밀린 달 한꺼번에 — 달 고르기 줄 */
+.cgg-dlg label.chk-bb{display:flex!important;flex-direction:row!important;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:0;cursor:pointer;font-size:14px;color:var(--text)}
+.cgg-dlg label.chk-bb input{flex:none;width:20px;height:20px;margin:0}
+/* «준비 중» 단추는 없어요 — 혹시 남으면 보이지 않게 */
+button[data-soon],select[data-soon]{display:none!important}
+</style>

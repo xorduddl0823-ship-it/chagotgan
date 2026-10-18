@@ -1,23 +1,94 @@
-"""체크 v55 → v56 — 대표님 TEST(10/18) 다듬기
-  ① 여러 건 결과 창: 한 곳씩 줄 바꿔 목록 + 할 일 단추(청구서 지우기 · 세금계산서 발급 · 딜러 등록)
-  ② 메뉴 · 안쪽 칸 바꿀 때 «불러오는 중이에요…»로 화면을 지우지 않음 — 예전 내용 그대로 + 얇은 진행 줄
-  ③ 디자인 메뉴 지도 이름(e24c0ec): 세금계산서 발행 / 달마다 장부 · 입금 · 출금 / 받을 금액 / 보험료 맞춰 보기 ·
-     청구서 목록 / 받는 곳 합치기 · 알림톡 문구는 설정 › 알림 안 · 보내는 번호(발신번호)
-v55(보안 통과 14d8c99 · 72b3ea72de34)는 읽기만.
+"""체크 v55.1 → v56 — 디자인 통합 2단계 (대표님 «디자인 통합 계획» 승인 10/18)
+쓰는 법: python3 체크/도구/만들기_체크_v56.py   (v55.1 은 읽기만 · 덮어쓰지 않아요)
+  ① 공통 부품 cgg-j4 1.10 → 1.12(보안 통과 판 그대로) + 메뉴 지도 체크_메뉴.js(CGG_MENU_CHECK)
+  ② 덧댄 조각(chk-j4 · v42-cal · v43-piece · chk-glue · chk-v50 · cgg-beta-piece) 걷어내고 체크 전용 몫만 «chk-v56» 한 곳에
+  ③ 대조표 74줄 추천(체크/대조 · 04 결정 기록) — 표 · 숫자 칸 · 할 일 띠 · 화면 제목 · 말(«메시지») · 배달 기록 · 목적지별 보기 뺌
+  ④ 같은 판: 알림톡 칸 잠금(문자만 고치기) · 밀린 달 한꺼번에(check-api v51) · «매일 자동» 잠금 풀기 · 결과 목록 창 · «불러오기» 글 없앰
+절대 규칙: 정산 · 입금 · 세금계산서 · 청구서 계산 함수는 고치지 않음(체크/도구/돈코드_지문.py 로 v55.1 과 같은지 확인).
 """
-BASE = "/home/user/chagotgan/"
-s = open(BASE + "체크/2_차곳간_체크_index_v55.html", encoding="utf-8").read()
+import os, re, sys
+HERE = os.path.dirname(os.path.abspath(__file__)); CHK = os.path.dirname(HERE); ROOT = os.path.dirname(CHK)
+SRC = os.path.join(CHK, "2_차곳간_체크_index_v55.1.html"); OUT = os.path.join(CHK, "2_차곳간_체크_index_v56.html")
+def rd(*p): return open(os.path.join(ROOT, *p), encoding="utf-8").read()
+s = open(SRC, encoding="utf-8").read()
 def rep(old, new, count=1):
     global s
     n = s.count(old)
-    if n != count: raise SystemExit("찾은 수가 다름(%d≠%d): %s" % (n, count, old[:90]))
+    if n != count: raise SystemExit("찾은 수가 다름(%d≠%d): %s" % (n, count, old[:120]))
     s = s.replace(old, new)
+def cut(start, end):
+    """start 로 시작해 end 로 끝나는 덩어리 하나를 통째로 뺌"""
+    global s
+    i = s.find(start); j = s.find(end, i)
+    if i < 0 or j < 0 or s.find(start, i + 1) >= 0: raise SystemExit("덩어리를 못 찾음: " + start[:80])
+    s = s[:i] + s[j + len(end):]
 
-rep('ver:"체크 v55", date:"10/18"', 'ver:"체크 v56", date:"10/18"')
-rep('$("hdVer").textContent="체크 v55 · "', '$("hdVer").textContent="체크 v56 · "')
-rep('<!-- 체크 v55 (', '<!-- 체크 v56 (v55 + TEST 다듬기: 결과 목록 창 · 불러오기 글 없앰 · 메뉴 지도 이름) · 체크 v55 (')
+# ═══ ① 공통 부품 1.10 → 1.12 · 메뉴 지도 ═══
+J110, C110 = rd("디자인", "공통", "cgg-j4-1.10.js"), rd("디자인", "공통", "cgg-j4-1.10.css")
+J112, C112 = rd("디자인", "공통", "cgg-j4-1.12.js"), rd("디자인", "공통", "cgg-j4-1.12.css")
+MENU = rd("디자인", "메뉴지도", "체크_메뉴.js")
+rep(J110, J112 + "\n" + MENU)
+rep(C110, C112)
+assert 'version:"cgg-j4 1.12"' in s
 
-# ② 불러오는 중 글 없앰 — 예전 내용 그대로 · 얇은 진행 줄
+# 판 이름
+rep('ver:"체크 v55.1", date:"10/18"', 'ver:"체크 v56", date:"10/18"')
+rep('$("hdVer").textContent="체크 v55.1 · "', '$("hdVer").textContent="체크 v56 · "')
+rep('<!-- 체크 v55.1 (', '<!-- 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (')
+
+# ═══ ③-A3 표 = 공통 1.12 모양(워시 표) — 위 «넓은 찾기 · 상태 칩 · 20개씩 · 빨간 지우기», 칸 머리 ↕, 아래 «처음 · 이전 · 1 / N · 모두 N줄 · 다음 · 맨뒤», 할 일 단추는 표 아래 줄
+#    표 안 동작(wireTable · picked · data-* 이름)은 그대로 — 모양만 바꿔요
+rep('function ts(id){ if(!TS[id]) TS[id]={q:"",sort:"",dir:1,per:10,page:1,sel:{}}; return TS[id]; }',
+    'function ts(id){ if(!TS[id]) TS[id]={q:"",sort:"",dir:1,per:20,page:1,sel:{}}; return TS[id]; }   /* v56: 처음 20개씩(공통 1.12) */')
+rep('  if([5,10,20,30,50].indexOf(s.per)<0) s.per=10;', '  if([5,10,20,30,50].indexOf(s.per)<0) s.per=20;')
+i = s.index("  var h='<div class=\"tblk cgg-card\" id=\"'+id+'-blk\">';")
+j = s.index("  /* 넓은 화면 — 표 */", i)
+s = s[:i] + r'''  var h='<div class="tblk cgg-tblock" id="'+id+'-blk">';   /* v56: 공통 1.12 표 — 흰 카드는 표만 감싸요 */
+  var nSel=Object.keys(s.sel).filter(function(k){ return s.sel[k]; }).length;
+  TBX[id]={cols:cols, rows:all, cell:cellHtml};   /* v40: 엑셀 다운로드용 */
+  var bulk=(opt.tools||"").replace(/<button class="btn">(엑셀 다운로드|기록 전체 엑셀 다운로드)<\/button>/g, '<button class="btn" data-xls="1">$1</button>').replace(/<button (?:type="button" )?class="btn( primary| danger)?"/g, function(_,k){ return '<button type="button" class="cgg-btn btn'+(k===" danger"?" danger":k===" primary"?" pri":"")+'"'; })
+    .replace(/(<button type="button" class="cgg-btn btn[^"]*")([^>]*>)(\s*(?:선택항목|선택한|고른)[^<]*<\/button>)/g, function(_,a,b2,c2){
+      return a+' data-needsel="1"'+(nSel?' data-n="'+nSel+'"':' disabled')+b2+c2; });
+  /* 빨간 지우기 단추는 표 위 오른쪽, 나머지 할 일 단추는 표 아래 줄 (워시 모양) */
+  var dels=[], rest=bulk.replace(/<button[^>]*>[\s\S]*?<\/button>/g, function(b){ if(/class="cgg-btn btn danger"/.test(b)||/>[^<]*줄[^<]*지우기[^<]*<\/button>$/.test(b)){ dels.push(b.replace('class="cgg-btn btn"','class="cgg-btn btn danger"')); return ""; } return b; });
+  h+='<div class="cgg-ttop"><label class="cgg-find"><input id="'+id+'-q" data-q="1" placeholder="검색" value="'+esc(s.q)+'" aria-label="검색"></label>';
+  if(si>=0) h+='<div class="cgg-tchips" role="group" aria-label="상태로 거르기">'+tabs.map(function(t){
+      return '<button type="button" class="cgg-fp'+((s.tf||"")===t[0]?' on':'')+'" data-tf="'+esc(t[0])+'" aria-pressed="'+((s.tf||"")===t[0])+'">'+esc(t[1])+' <b>'+t[2]+'</b></button>'; }).join("")+'</div>';
+  h+=(opt.filters||"")+'<span class="sp"></span><select class="cgg-size" id="'+id+'-per" data-size="1" aria-label="한 번에 보일 개수">'+
+     [5,10,20,30,50].map(function(n){ return '<option value="'+n+'"'+(s.per===n?" selected":"")+'>'+n+'개씩</option>'; }).join("")+'</select>'+dels.join("")+'</div><div class="cgg-card">';
+''' + s[j:]
+rep('''       (s.sort===c.k?(s.dir>0?"ascending":"descending"):"none")+'">'+esc(c.t)+(s.sort===c.k?(s.dir>0?' ↑':' ↓'):'')+'</th>';''',
+    '''       (s.sort===c.k?(s.dir>0?"ascending":"descending"):"none")+'">'+esc(c.t)+'<i class="so">'+(s.sort===c.k?(s.dir>0?'▲':'▼'):'↕')+'</i></th>';''')
+i = s.index("  /* 아래 쪽 — 총 N건 · N개씩 보기 · 이전 / 다음 */")
+j = s.index("function wireTable(id, redraw){", i)
+s = s[:i] + r'''  /* v56 아래 쪽 — 처음 · 이전 · 1 / N · 모두 N줄 · 다음 · 맨뒤 (공통 1.12) · 그 아래 할 일 단추 줄 */
+  h+='</div><div class="cgg-pager"><button type="button" class="cgg-btn" data-pg="1"'+(s.page<=1?" disabled":"")+'>처음</button>'+
+     '<button type="button" class="cgg-btn" data-pg="'+(s.page-1)+'"'+(s.page<=1?" disabled":"")+'>이전</button><span>'+s.page+' / '+pages+' · 모두 '+won(all.length)+'줄</span>'+
+     '<button type="button" class="cgg-btn" data-pg="'+(s.page+1)+'"'+(s.page>=pages?" disabled":"")+'>다음</button>'+
+     '<button type="button" class="cgg-btn" data-pg="'+pages+'"'+(s.page>=pages?" disabled":"")+'>맨뒤</button></div>';
+  if(String(rest).replace(/\s+/g,"")) h+='<div class="cgg-tacts">'+rest+'</div>';
+  h+='</div>';
+  return h;
+}
+''' + s[j:]
+# ═══ ③-A2 숫자 칸 = 공통 1.12(워시 모양): 점 없음 · 단위 같은 크기 · 뜻 색(입금 초록 · 받을 금액/확인 필요 주황 · 0 회색) ═══
+rep('''      return {label:String(x[0]).replace(/<[^>]+>/g,""), value:m?m[1]:t, unit:m?m[2]:"",
+              color: x[2]==="bad"?"#D64545":(x[2]==="good"?"#1E9E5A":(x[2]==="warn"?"#B26B00":"#1668C4"))}; }));''',
+'''      var lb=String(x[0]).replace(/<[^>]+>/g,"");   /* v56: 뜻 색 tone (공통 1.12) */
+      var tn=(x[2]==="bad"||x[2]==="warn"||/받을|대기|확인 필요|미수|안 된|못 /.test(lb))?"due":(x[2]==="good"||/입금|받은/.test(lb))?"in":"";
+      return {label:lb, value:m?m[1]:t, unit:m?m[2]:"", tone:tn, zeroMuted:true}; }));''')
+
+# ═══ ② 덧댄 조각 걷어내기 → 체크 전용 몫 한 곳(chk-v56, 공통 부품 앞) ═══
+cut('<style id="chk-j4">', '</style>')
+for sid in ("cgg-beta-piece", "v42-cal", "v43-piece", "chk-glue", "chk-v50"):
+    cut('<style id="%s">' % sid, '</style>')
+rep('<!-- ===== 체크 붙임 몫 — 옛 .wrap 틀과 공통 부품이 맞물리게 (머리말 버튼 모양은 디자인/공통/예시.html 그대로) ===== -->', '')
+rep('<!-- ===== 차곳간 공통 부품 cgg-j4 (디자인/공통 최신판', open(os.path.join(HERE, "v56_체크전용.css"), encoding="utf-8").read() + '<!-- ===== 차곳간 공통 부품 cgg-j4 (디자인/공통 최신판')
+for sid in ("chk-j4", "chk-glue", "chk-v50", "v42-cal", "v43-piece", "cgg-beta-piece"):
+    assert ('id="%s"' % sid) not in s, sid
+
+# ═══ ④ 같은 판 고침 ═══
+# «불러오기» 글 없앰 — 메뉴 · 안쪽 칸을 바꿀 때 화면을 지우지 않고 얇은 진행 줄만 (처음 한 번만 글)
 rep("""    $("main").innerHTML='<div class="card"><div class="loading">불러오는 중이에요…</div></div>';
     bar(""); busy(true);
     need(page).then(function(){ busy(false); bar(""); draw(); })
@@ -26,49 +97,53 @@ rep("""    $("main").innerHTML='<div class="card"><div class="loading">불러오
     document.body.classList.add("chk-loading"); busy(true);
     need(page).then(function(){ document.body.classList.remove("chk-loading"); busy(false); draw(); })
               .catch(function(e){ document.body.classList.remove("chk-loading"); busy(false); fail(e); draw(); });""")
-
-# ③ 메뉴 지도 이름
-rep('var TAXSUB=[["hometax","발행"],["history","달마다 장부"]];', 'var TAXSUB=[["hometax","세금계산서 발행"],["history","달마다 장부"]];')
-rep('var DEPSUB=[["deposit","입금 · 출금"],["recv","받을 금액"],["unpaid","보험료 대조"]];', 'var DEPSUB=[["deposit","입금 · 출금"],["recv","받을 금액"],["unpaid","보험료 맞춰 보기"]];')
-rep('var BILLSUB=[["bill","월별 청구서"],["billgrp","청구처 묶음"],["billtpl","알림톡 템플릿"]];', 'var BILLSUB=[["bill","청구서 목록"],["billgrp","받는 곳 합치기"]];   /* v56: 알림톡 문구는 설정 › 알림 안 */')
-rep('{id:"unpaid",label:"보험료 대조",path:"입·출금 내역 › 보험료 대조",', '{id:"unpaid",label:"보험료 맞춰 보기",path:"입·출금 내역 › 보험료 맞춰 보기",')
-rep('{id:"billgrp",label:"청구처 묶음 (받는 곳 합치기)",path:"월별 청구서 › 청구처 묶음",go:"bill/billgrp",', '{id:"billgrp",label:"받는 곳 합치기",path:"월별 청구서 › 받는 곳 합치기",go:"bill/billgrp",')
-rep('{id:"billtpl",label:"알림톡 템플릿",path:"월별 청구서 › 알림톡 템플릿",go:"bill/billtpl",', '{id:"billtpl",label:"알림톡 문구",path:"설정 › 알림 › 알림톡 문구",go:"set/billtpl",')
-rep('{id:"sender",label:"발신번호 (문자 보내는 번호)",', '{id:"sender",label:"보내는 번호(발신번호)",')
-rep("""<h3>발신번호 (문자 보내는 번호)</h3>""", """<h3>보내는 번호(발신번호)</h3>""")
-
-rep('head("알림톡 템플릿"', 'head("알림톡 문구"')
-rep('head("청구처 묶음"', 'head("받는 곳 합치기"')
-rep('head("보험료 대조"', 'head("보험료 맞춰 보기"')
-
-# ① 결과 목록 창
-rep('''        if(gone<=0) tell("청구서를 지우지 못했어요", lines.join("<br>")||"지울 수 있는 청구서가 없었어요.");
-        else if(lines.length) tell(gone+"곳만 지웠어요", lines.join("<br>"));''',
-    '''        /* v56: 한 곳씩 줄 바꿔 목록 · 입금이 붙어 못 지우면 입·출금 내역 가는 단추 */
-        var paidK=kp.some(function(x){ return /입금/.test(String(x.why||"")); });
-        var items=kp.map(function(x){ return {name:x.name, why:x.why}; }).concat(left.map(function(id){
-          var b=L.filter(function(z){ return String(z.id)===id; })[0]; return {name:b?b.name:id, why:"서버는 지웠다고 했는데 아직 남아 있어요"}; }));
-        var more=(paidK?"입금 맞춤을 먼저 되돌리면 지울 수 있어요. ":"")+(ms?"못 찾은 "+ms+"곳 — 이미 지워졌거나 다른 달 청구서예요. ":"")+(left.length?"이 창을 사진으로 찍어 체크 방에 보내 주세요.":"");
-        var g1=paidK?{label:"입·출금 내역 가기", page:"deposit"}:null;
-        if(gone<=0 && !items.length) tell("청구서를 지우지 못했어요", more?esc(more):"지울 수 있는 청구서가 없었어요.");
-        else if(gone<=0) chkResult("청구서를 지우지 못했어요", "못 지운 "+items.length+"곳", items, more, g1);
-        else if(items.length||more) chkResult(gone+"곳만 지웠어요", items.length?"못 지운 "+items.length+"곳":"", items, more, g1);''')
-rep('''        var m=won(r.ok)+"장을 발급했어요.";
-        if(r.bad&&r.bad.length) m+=" 안 된 곳 "+r.bad.length+"건 — "+r.bad.slice(0,3).join(" / ");
-        bar(m,(r.bad&&r.bad.length)?"err":"ok");''',
-    '''        var m=won(r.ok)+"장을 발급했어요.";
-        if(r.bad&&r.bad.length) chkResult(r.ok?m:"세금계산서를 발급하지 못했어요", "안 된 곳 "+r.bad.length+"건", r.bad.map(chkSplit), "", null);   /* v56: 한 곳씩 */
-        else bar(m,"ok");''')
-rep('''        bar(won(okN)+"명을 등록했어요."+(resend?" 알림 "+won(sent)+"건을 다시 보냈어요."+(failN?" "+won(failN)+"건은 못 보냈어요.":""):"")+
-          (bad.length?" 등록 못 한 "+won(bad.length)+"줄 — "+bad.slice(0,2).map(function(x){ return String(x.why||""); }).join(" / "):""),
-          (bad.length||failN)?"err":"ok");''',
-    '''        var msg=won(okN)+"명을 등록했어요."+(resend?" 알림 "+won(sent)+"건을 다시 보냈어요."+(failN?" "+won(failN)+"건은 못 보냈어요.":""):"");
-        if(bad.length) chkResult("등록 못 한 줄이 있어요", msg+" 등록 못 한 "+won(bad.length)+"줄", bad.map(function(x){ return {name:String(x.name||""), why:String(x.why||"")}; }), "", null);   /* v56 */
-        else bar(msg, failN?"err":"ok");''')
-
+# «매일 자동» 잠금 풀기 — 서버 v50부터 승인 전에도 켤 수 있음(그동안 문자로)
+rep("""(RRULE.auto?" checked":"")+((own&&RRULE.ataReady)?"":" disabled")+'> 매일 아침 9시쯤 자동으로 보내기</label>'""",
+    """(RRULE.auto?" checked":"")+(own?"":" disabled")+'> 매일 아침 9시쯤 자동으로 보내기</label>'""")
+rep("""(RRULE.ataReady ? "" : '<p class="note" style="margin:6px 0 0">자동 보내기는 재검사 알림톡이 <b>카카오 승인된 뒤</b>에 켤 수 있어요. 그 전에는 직접 보내면 문자로 가요.</p>')""",
+    """(RRULE.ataReady ? "" : '<p class="note" style="margin:6px 0 0">재검사 알림톡이 <b>카카오 승인되기 전</b>에는 자동으로 보낼 때도 <b>문자</b>로 나가요(문자 요금이 들어요).</p>')""")
+# 배달 › 문구 · 발송 설정 — 알림톡은 승인 문구(출고안내) 잠금 칸, 고칠 수 있는 건 문자 문구
+rep("""      '<label class="f">문자로 갈 때 문구</label>'+""", """      '<div id="dwAtaLock"></div><label class="f">문자 문구 — 알림톡이 안 갈 때 · 고칠 수 있어요</label>'+""")
+a = s.index("""      '<label class="f" style="margin-top:6px">알림톡 문구 (차곳간이 카카오에 등록한 문구""")
+b = s.index("""      '<div class="tools"><button class="btn primary" id="dwSave2">문구 저장</button>'+""", a)
+s = s[:a] + s[b:]
+k = s.index('<div class="phone-top">카카오 알림톡</div>', a)   # 배달 문구 화면 것만 (청구서 보내기 것은 그대로)
+s = s[:k] + '<div class="phone-top">문자 (알림톡이 안 갈 때)</div>' + s[k+len('<div class="phone-top">카카오 알림톡</div>'):]
+k = s.index('<div class="phone-from">차곳간 카카오 채널에서</div>', k)
+s = s[:k] + '<div class="phone-from">검사소 번호로</div>' + s[k+len('<div class="phone-from">차곳간 카카오 채널에서</div>'):]
+# 알림톡 문구 부품 ata 1.1 + v56 덧붙임 — 마지막 «공통 부품 부르기» 앞
 rep("""<script>
-/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", open(BASE + "체크/도구/v56_다듬기.js", encoding="utf-8").read() + """<script>
+/* ===== 체크 v24 — 공통 부품 부르기 ===== */""", "<script>\n" + rd("체크", "부품", "알림톡문구_부품_1.1.js") + "\n</script>\n" + open(os.path.join(HERE, "v56_통합.js"), encoding="utf-8").read() + """<script>
 /* ===== 체크 v24 — 공통 부품 부르기 ===== */""")
 
-open(BASE + "체크/2_차곳간_체크_index_v56.html", "w", encoding="utf-8").write(s)
-print("만듦: 체크/2_차곳간_체크_index_v56.html", len(s))
+rep('  home:["bill","dep"], sales:["sales"],', '  home:["bill","dep","sales"], sales:["sales"],   /* v56: 홈 숫자 칸 작은 그래프 · 지난달 비교 */')
+
+# 입·출금 내역 «통장을 먼저 연결해 주세요» — 워시 모양(주황 상자 · ①②③ 글 · 파란 단추)
+rep("""  (OFFICE.popbill_ready?'':card("통장을 먼저 연결해 주세요","팝빌로 통장을 이어 두면 들어온 돈이 저절로 들어와요. 설정 › 입금 자동 확인에서 한 번만 하면 돼요.",
+    '<div class="tools"><button type="button" class="btn primary" id="depBankGo">입금 자동 확인 화면으로 가기</button></div>'))+""",
+"""  (OFFICE.popbill_ready?'':'<div class="card" style="background:var(--warn-soft);box-shadow:none">'+   /* v56: 워시와 같은 연결 상자 */
+    '<b style="color:var(--warn)">통장을 먼저 연결해 주세요</b>'+
+    '<div class="hint" style="margin-top:6px">① 위쪽 메뉴에서 <b>설정</b> 을 눌러요 → ② 그 아래 줄에서 <b>입금 자동 확인</b> 을 눌러요 → ③ 통장을 연결해요.</div>'+
+    '<button type="button" class="btn primary" id="depBankGo" style="margin-top:10px">입금 자동 확인 화면으로 가기</button></div>')+""")
+
+# 표 칸이 많으면 글 칸(폭 없음)이 23px로 눌리던 것(v55.1부터) — 표 최소 폭을 칸 폭 합으로, 넘치면 옆으로 밀어 봐요
+rep("""  h+='<div class="cgg-twrap"><table class="cgg-table"><colgroup><col style="width:56px">'+kinds.map(""",
+    """  var tmin=56+kinds.reduce(function(t,k){ return t+(TB_WID[k]||120); },0)+(hasAct?(opt.actWidth||TB_WID.act):0);   /* v56: 글 칸 최소 120 */
+  h+='<div class="cgg-twrap"><table class="cgg-table" style="min-width:'+tmin+'px"><colgroup><col style="width:56px">'+kinds.map(""")
+
+# 말 통일(10/18): 문자 · 알림톡을 함께 뜻하면 «메시지»
+rep("<b>보내기</b><div class=\"bar\"><i style=\"width:100%\"></i></div><small>알림톡 · 문자</small>", "<b>보내기</b><div class=\"bar\"><i style=\"width:100%\"></i></div><small>메시지</small>")
+rep("문자·알림톡·계산서에 쓰여요", "메시지 · 계산서에 쓰여요")
+rep("자료 올리기 · 청구서 보내기 · 문자·알림톡 · 세금계산서", "자료 올리기 · 청구서 보내기 · 메시지 · 세금계산서")
+
+# 설정 › 자료 올리기 — 끌어다 놓는 칸에 제목 «엑셀 올리기»
+rep('  card("", "",\n    \'<div class="photobox" id="xlBox"', '  card("엑셀 올리기", "",\n    \'<div class="photobox" id="xlBox"')
+
+# 카모두 명부 공통 자리 = 설정 › 거래처 관리 «엑셀로 한꺼번에 올리기»(워시와 같은 칸 · 같은 글) — 자료 올리기 칸은 그대로 둬요
+rep("<h3>엑셀로 한꺼번에 올리기</h3><p class=\"csub\">양식에 상사 · 딜러를 적어 올리면 한 번에 들어가요. 이미 있는 사람은 건너뛰어요.</p>",
+    "<h3>엑셀로 한꺼번에 올리기</h3><p class=\"csub\">카모두 · 조합 전산에서 받은 명부를 그대로 올려도 돼요. 이미 있는 사람은 건너뛰어요.</p>")
+
+#@@끝
+
+open(OUT, "w", encoding="utf-8").write(s)
+print("만듦:", os.path.relpath(OUT, ROOT), len(s))

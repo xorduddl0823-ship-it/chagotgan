@@ -141,6 +141,10 @@ FAKE = r'''<script>
         if(a[2]&&a[2].test) return {id:id, name:"김대표 (내 번호)", ok:true, how:"ata", why:""};
         return i===2 ? {id:id, name:iv.bill_to_name||"", ok:false, how:"", why:"카카오톡을 쓰지 않는 번호"} : {id:id, name:iv.bill_to_name||"", ok:true, how:i%3===1?"lms":"ata", why:""}; })};
       case "invoiceRekey": return {ok:true};
+      /* v56 · 서버 check-api v51 밀린 달 한꺼번에 — 지어낸 밀린 달 셋 */
+      case "billBundleList": return {dealerId:(a[0]||{}).dealerId, rows:[["2026-08",264000,0],["2026-09",330000,110000],["2026-10",418000,0]].map(function(x,i){
+        return {id:"bb"+i, ym:x[0], total:x[1], paid:x[2], left:x[1]-x[2], sentAt:i<2?x[0]+"-28T09:00:00":""}; }), left:902000};
+      case "billBundleSend": return {ok:true, how:(a[0]||{}).test?"ata":"ata", why:"", months:((a[0]||{}).ids||[]).length, left:902000};
       /* v44 · 서버 v34 거래처 창구 (체크/기획/2026-10-17_v44_거래처_창구_약속.md) */
       case "companies": return COMP.map(function(c,i){ return {id:"c"+i, name:c[0], biz_no:c[1], ceo:c[2]||"", tel:c[3]||"",
           addr:c[4]||"", email:c[5]||"", upte:c[6]||"", jongmok:c[7]||"",
