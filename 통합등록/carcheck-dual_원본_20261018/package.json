@@ -1,0 +1,48 @@
+{
+  "name": "carcheck-dual",
+  "version": "0.1.0",
+  "description": "성능점검 결과를 경기조합(carmodoo)과 공정정보협회(carinfo) 두 사이트에 한 번에 등록",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "kr.carcheck.dual",
+    "productName": "성능점검 이중등록",
+    "directories": {
+      "output": "../carcheck-dual-build",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**",
+      "renderer/**"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "성능점검 이중등록",
+      "artifactName": "CarCheckDual-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "CarCheckDual-Portable-${version}.exe"
+    }
+  }
+}

@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>절개도 맞추기</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { margin: 0; padding: 16px 18px 40px; background: #f6f8fa; }
+  h1 { font-size: 18px; margin: 0 0 3px; }
+  .lead { color: #5b6675; font-size: 13px; margin: 0 0 12px; }
+  .wrap { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+  .card { background: #fff; border: 1px solid #dde3ea; border-radius: 8px;
+          padding: 12px 14px; flex: 0 0 auto; }
+  .card h2 { font-size: 13px; margin: 0 0 8px; color: #33415c; }
+
+  /* 편집판 — 네 그림을 나란히 크게 */
+  #stage { width: 800px; }
+  #stage .parts-views { flex-wrap: nowrap; gap: 6px; }
+  #stage .parts-view { flex: 0 0 190px; max-width: 190px; min-width: 190px; }
+  #stage .parts-svg { width: 190px; height: auto; }
+  #stage .part { pointer-events: none; }          /* 상태 고르는 창이 뜨지 않게 */
+  #stage .parts-guide, #stage .parts-summary,
+  #stage .parts-legend, #stage .parts-ranks { display: none; }
+
+  /* 미리보기 — 앱에서 보일 크기 그대로 */
+  #mini { width: 560px; }
+  #mini .part { pointer-events: none; }
+  #mini .parts-guide, #mini .parts-summary, #mini .parts-legend { display: none; }
+
+  .panel { width: 350px; }
+  .hitbox { fill: transparent; cursor: move; }
+  .hitbox.sel { fill: rgba(47,111,237,.10); }
+  .hdl { fill: #fff; stroke: #2f6fed; stroke-width: 1.2; cursor: nwse-resize; }
+  .hdl.e, .hdl.w { cursor: ew-resize; }
+  .hdl.n, .hdl.s { cursor: ns-resize; }
+  .hdl.ne, .hdl.sw { cursor: nesw-resize; }
+  .hdl.end { stroke: #e67e22; cursor: grab; }
+  .outline { fill: none; stroke: #2f6fed; stroke-width: 1.4; stroke-dasharray: 3 2; pointer-events: none; }
+
+  .who { font-size: 13px; font-weight: 700; color: #1b4bb8; margin-bottom: 6px; min-height: 18px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 10px; }
+  .fld { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+  .fld span { width: 58px; color: #6b7684; flex: none; }
+  .fld input { width: 58px; padding: 3px 5px; text-align: right; }
+  .slid { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 5px 0; }
+  .slid span { width: 58px; color: #6b7684; }
+  .slid input[type=range] { flex: 1; }
+  .slid output { width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { padding: 6px 12px; border-radius: 5px; border: 1px solid #cbd3dc; background: #fff; cursor: pointer; font-size: 13px; }
+  button.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; font-weight: 600; }
+  label.chk { font-size: 12px; display: flex; align-items: center; gap: 5px; color: #33415c; }
+  .dead { background: #fdecec; border: 1px solid #f0b4b4; color: #a3271d;
+          border-radius: 5px; padding: 8px 10px; font-size: 12px; line-height: 1.6; margin-bottom: 8px; }
+  #msg { margin-top: 8px; font-size: 12px; min-height: 18px; }
+  #msg.ok { color: #1a7f47; }
+  #msg.bad { color: #c0392b; }
+  .hint { font-size: 12px; color: #5b6675; line-height: 1.75; margin: 10px 0 0; }
+  .list { max-height: 190px; overflow: auto; border: 1px solid #e6eaf0; border-radius: 5px; margin-top: 6px; }
+  .list button { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid #f0f3f7;
+                 border-radius: 0; padding: 4px 8px; font-size: 12px; background: #fff; }
+  .list button.on { background: #eaf1ff; font-weight: 700; color: #1b4bb8; }
+</style>
+</head>
+<body>
+  <h1>절개도 맞추기</h1>
+  <p class="lead">부위 상자를 끌어 옮기고, 모서리를 끌어 크기를 바꿉니다. 기둥은 양 끝점과 굴곡으로 맞춥니다. 바꾼 모습이 아래 미리보기에 바로 나옵니다.</p>
+
+  <div class="wrap">
+    <div class="card">
+      <h2>편집판 — 누르면 골라지고, 끌면 옮겨집니다</h2>
+      <div id="stage"></div>
+    </div>
+
+    <div class="card panel">
+      <div class="acts" style="margin-bottom:10px">
+        <button type="button" class="primary" id="save">저장</button>
+        <button type="button" id="undo">되돌리기</button>
+        <button type="button" id="reset">처음값으로</button>
+        <button type="button" id="download">파일로 내려받기</button>
+      </div>
+      <div id="dead" class="dead" style="display:none"></div>
+      <div id="msg"></div>
+
+      <h2>고르는 중</h2>
+      <div class="who" id="who">부위를 눌러 주세요</div>
+      <div class="grid2" id="fields"></div>
+
+      <h2 style="margin-top:12px">차체 밑그림</h2>
+      <div class="slid"><span>가로</span><input type="range" id="tf-x" min="-40" max="40" step="0.5" value="0"><output id="ov-x">0</output></div>
+      <div class="slid"><span>세로</span><input type="range" id="tf-y" min="-40" max="40" step="0.5" value="0"><output id="ov-y">0</output></div>
+      <div class="slid"><span>크기</span><input type="range" id="tf-s" min="0.6" max="1.6" step="0.01" value="1"><output id="ov-s">1</output></div>
+
+      <label class="chk" style="margin-top:10px">
+        <input type="checkbox" id="mirror" checked> 좌측면을 고치면 우측면도 함께 (좌우 대칭)
+      </label>
+
+      <h2 style="margin-top:12px">부위 목록</h2>
+      <div class="list" id="list"></div>
+
+      <p class="hint">
+        방향키로 0.5씩(Shift 5씩) 밀 수 있습니다.<br>
+        <b>Alt</b> 를 누른 채 방향키를 누르면 <b>크기</b>가 바뀝니다.<br>
+        그림은 <b>앞이 위쪽</b>입니다.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>미리보기 (앱에서 보일 크기)</h2>
+      <div id="mini"></div>
+    </div>
+  </div>
+
+<script src="/parts-diagram.js"></script>
+<script>
+var SVGNS = 'http://www.w3.org/2000/svg';
+var DVIEWS = window.VIEWS;
+var TF = window.VIEW_TF;
+
+var FIELDS = [
+  ['pt1','1. 후드'],['pt2','2. 프론트펜더'],['pt3','3. 도어'],['pt4','4. 트렁크리드'],
+  ['pt5','5. 라디에이터서포트'],['pt6','6. 쿼터패널'],['pt7','7. 루프패널'],['pt8','8. 사이드실패널'],
+  ['pt9','9. 프론트패널'],['pt10','10. 크로스멤버'],['pt11','11. 인사이드패널'],['pt12','12. 사이드멤버'],
+  ['pt13','13. 휠하우스'],['pt14','14. 필러패널'],['pt14A','14. 필러패널 A'],['pt14B','14. 필러패널 B'],
+  ['pt14C','14. 필러패널 C'],['pt15','15. 대쉬패널'],['pt16','16. 플로어패널'],['pt17','17. 트렁크플로어'],
+  ['pt18','18. 리어패널'],['pt19','19. 패키지트레이']
+].map(function (r) { return { k: r[0], label: r[1], type: 'part' }; });
+
+var FIRST = JSON.parse(JSON.stringify(window.getLayout()));   // 처음값
+var undoStack = [];
+var state = {};
+var stage = document.getElementById('stage');
+var mini = document.getElementById('mini');
+var msg = document.getElementById('msg');
+var sel = null;              // 고른 부위 (region 객체)
+var marks = {};              // 부위id -> { hit, outline, handles: [] }
+
+function byId(id) {
+  for (var i = 0; i < window.ALL_REGIONS.length; i++) {
+    if (window.ALL_REGIONS[i].id === id) return window.ALL_REGIONS[i];
+  }
+  return null;
+}
+function viewOf(r) { return String(r.id).split(':')[0]; }
+function nameOf(r) {
+  var f = FIELDS.filter(function (x) { return x.k === r.k; })[0];
+  var t = { L: '좌', R: '우', LF: '좌앞', LR: '좌뒤', RF: '우앞', RR: '우뒤' };
+  var v = { sideL: '좌측면', top: '평면', frame: '골격', sideR: '우측면' }[viewOf(r)];
+  return v + ' · ' + ((f && f.label) || r.k) + (r.pos ? ' (' + (t[r.pos] || r.pos) + ')' : '');
+}
+
+/* ── 편집판 ───────────────────────────────────────────── */
+function buildStage() {
+  stage.textContent = '';
+  window.renderPartsDiagram(stage, FIELDS, state, function () {});
+  marks = {};
+  var svgs = stage.querySelectorAll('.parts-svg');
+
+  DVIEWS.forEach(function (view, vi) {
+    var svg = svgs[vi];
+    if (!svg) return;
+    view.regions.forEach(function (r) {
+      var hit = document.createElementNS(SVGNS, r.line ? 'path' : 'rect');
+      hit.setAttribute('class', 'hitbox');
+      hit.dataset.id = r.id;
+      svg.appendChild(hit);
+      hit.addEventListener('pointerdown', function (e) { startDrag(e, r, 'move'); });
+
+      var out = document.createElementNS(SVGNS, r.line ? 'path' : 'rect');
+      out.setAttribute('class', 'outline');
+      out.style.display = 'none';
+      svg.appendChild(out);
+
+      var handles = [];
+      var kinds = r.line ? ['end0', 'end1'] : ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+      kinds.forEach(function (kind) {
+        var h = document.createElementNS(SVGNS, 'rect');
+        h.setAttribute('class', 'hdl ' + kind + (r.line ? ' end' : ''));
+        h.setAttribute('width', 5.5);
+        h.setAttribute('height', 5.5);
+        h.setAttribute('rx', 1);
+        h.style.display = 'none';
+        h.dataset.id = r.id;
+        h.dataset.kind = kind;
+        h.setAttribute('tabindex', '0');
+        svg.appendChild(h);
+        h.addEventListener('pointerdown', function (e) { startDrag(e, r, kind); });
+        handles.push(h);
+      });
+
+      marks[r.id] = { hit: hit, out: out, handles: handles };
+      paint(r);
+    });
+  });
+  if (sel) select(sel.id);
+}
+
+/** 한 부위의 잡는 자리·테두리·손잡이를 지금 값에 맞춘다 */
+function paint(r) {
+  var m = marks[r.id];
+  if (!m) return;
+
+  if (r.line) {
+    var d = window.pillarPath(r.line);
+    m.hit.setAttribute('d', d);
+    m.out.setAttribute('d', d);
+    place(m.handles[0], r.line[0], r.line[1]);
+    place(m.handles[1], r.line[2], r.line[3]);
+  } else {
+    var b = r.box;
+    ['x', 'y', 'width', 'height'].forEach(function (a, i) {
+      m.hit.setAttribute(a, b[i]);
+      m.out.setAttribute(a, b[i]);
+    });
+    var cx = [b[0], b[0] + b[2] / 2, b[0] + b[2], b[0] + b[2], b[0] + b[2], b[0] + b[2] / 2, b[0], b[0]];
+    var cy = [b[1], b[1], b[1], b[1] + b[3] / 2, b[1] + b[3], b[1] + b[3], b[1] + b[3], b[1] + b[3] / 2];
+    m.handles.forEach(function (h, i) { place(h, cx[i], cy[i]); });
+  }
+
+  //  그림 자체(앱이 그린 도형)도 함께 고쳐 그린다
+  var g = m.hit.parentNode.querySelector('g.part [data-x]');   // 쓰지 않음 (아래에서 직접 찾는다)
+  var shape = shapeOf(r);
+  if (shape) {
+    if (r.line) shape.setAttribute('d', window.pillarPath(r.line));
+    else ['x', 'y', 'width', 'height'].forEach(function (a, i) { shape.setAttribute(a, r.box[i]); });
+    var t = shape.parentNode.querySelector('text');
+    if (t) {
+      if (r.line) {
+        var dx = r.line[2] - r.line[0], dy = r.line[3] - r.line[1];
+        var len = Math.sqrt(dx * dx + dy * dy) || 1;
+        var bend = Number(r.line[5] || 0);
+        t.setAttribute('x', (r.line[0] + r.line[2]) / 2 + (-dy / len) * bend);
+        t.setAttribute('y', (r.line[1] + r.line[3]) / 2 + (dx / len) * bend);
+      } else {
+        t.setAttribute('x', r.box[0] + r.box[2] / 2);
+        t.setAttribute('y', r.box[1] + r.box[3] / 2);
+      }
+    }
+  }
+}
+
+/** 그 부위의 진짜 도형(앱이 그린 것) */
+function shapeOf(r) {
+  var m = marks[r.id];
+  if (!m) return null;
+  var svg = m.hit.ownerSVGElement;
+  var want = nameTitle(r);
+  var found = null;
+  svg.querySelectorAll('g.part').forEach(function (g) {
+    var t = g.querySelector('title');
+    if (t && t.textContent === want) found = g.querySelector('rect,path,polygon');
+  });
+  return found;
+}
+
+function nameTitle(r) {
+  var f = FIELDS.filter(function (x) { return x.k === r.k; })[0];
+  var t = { L: '좌', R: '우', LF: '좌앞', LR: '좌뒤', RF: '우앞', RR: '우뒤' };
+  return ((f && f.label) || r.k) + (r.pos ? ' (' + (t[r.pos] || r.pos) + ')' : '');
+}
+
+function place(h, x, y) {
+  h.setAttribute('x', x - 2.75);
+  h.setAttribute('y', y - 2.75);
+}
+
+/* ── 고르기 ───────────────────────────────────────────── */
+function select(id) {
+  sel = byId(id);
+  Object.keys(marks).forEach(function (k) {
+    var m = marks[k], on = (k === id);
+    m.hit.classList.toggle('sel', on);
+    m.out.style.display = on ? '' : 'none';
+    m.handles.forEach(function (h) { h.style.display = on ? '' : 'none'; });
+  });
+  document.getElementById('who').textContent = sel ? nameOf(sel) : '부위를 눌러 주세요';
+  buildFields();
+  syncTf();
+  document.querySelectorAll('#list button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.id === id);
+  });
+}
+
+/* ── 끌기 ─────────────────────────────────────────────── */
+function startDrag(e, r, kind) {
+  e.preventDefault();
+  e.stopPropagation();
+  select(r.id);
+  push();
+
+  var svg = e.currentTarget.ownerSVGElement;
+  var box = svg.getBoundingClientRect();
+  var toX = function (c) { return (c - box.left) / box.width * 160; };
+  var toY = function (c) { return (c - box.top) / box.height * 270; };
+  var sx = toX(e.clientX), sy = toY(e.clientY);
+  var begin = r.line ? r.line.slice() : r.box.slice();
+  var el = e.currentTarget;
+  try { el.setPointerCapture(e.pointerId); } catch (err) {}
+
+  function move(ev) {
+    var dx = round(toX(ev.clientX) - sx), dy = round(toY(ev.clientY) - sy);
+    if (r.line) {
+      if (kind === 'move') {
+        r.line[0] = begin[0] + dx; r.line[1] = begin[1] + dy;
+        r.line[2] = begin[2] + dx; r.line[3] = begin[3] + dy;
+      } else if (kind === 'end0') {
+        r.line[0] = begin[0] + dx; r.line[1] = begin[1] + dy;
+      } else {
+        r.line[2] = begin[2] + dx; r.line[3] = begin[3] + dy;
+      }
+    } else {
+      var b = r.box;
+      if (kind === 'move') { b[0] = begin[0] + dx; b[1] = begin[1] + dy; }
+      else {
+        var L = begin[0], T = begin[1], W = begin[2], H = begin[3];
+        if (kind.indexOf('w') >= 0) { b[0] = L + dx; b[2] = Math.max(4, W - dx); }
+        if (kind.indexOf('e') >= 0) { b[2] = Math.max(4, W + dx); }
+        if (kind.indexOf('n') >= 0) { b[1] = T + dy; b[3] = Math.max(4, H - dy); }
+        if (kind.indexOf('s') >= 0) { b[3] = Math.max(4, H + dy); }
+      }
+    }
+    afterEdit(r);
+  }
+  function up(ev) {
+    try { el.releasePointerCapture(ev.pointerId); } catch (err) {}
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
+    renderMini();
+  }
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', up);
+}
+
+function round(v) { return Math.round(v * 2) / 2; }
+
+/** 고친 뒤 — 대칭 맞추고 그림·숫자 갱신 */
+function afterEdit(r) {
+  mirrorFrom(r);
+  paint(r);
+  var tw = twinOf(r);
+  if (tw) paint(tw);
+  showFields();
+}
+
+/** 좌측면에서 고치면 우측면도 (또는 그 반대) */
+function twinOf(r) {
+  var v = viewOf(r);
+  if (v !== 'sideL' && v !== 'sideR') return null;
+  var other = v === 'sideL' ? 'sideR' : 'sideL';
+  var pos = String(r.pos || '').replace(v === 'sideL' ? 'L' : 'R', v === 'sideL' ? 'R' : 'L');
+  return byId(other + ':' + r.k + (pos ? '@' + pos : ''));
+}
+
+function mirrorFrom(r) {
+  if (!document.getElementById('mirror').checked) return;
+  var tw = twinOf(r);
+  if (!tw) return;
+  if (r.line && tw.line) {
+    tw.line[0] = 160 - r.line[0]; tw.line[1] = r.line[1];
+    tw.line[2] = 160 - r.line[2]; tw.line[3] = r.line[3];
+    tw.line[4] = r.line[4];       tw.line[5] = -Number(r.line[5] || 0);
+  } else if (r.box && tw.box) {
+    tw.box[0] = 160 - r.box[0] - r.box[2];
+    tw.box[1] = r.box[1];
+    tw.box[2] = r.box[2];
+    tw.box[3] = r.box[3];
+  }
+}
+
+/* ── 숫자 칸 ─────────────────────────────────────────── */
+var LB_BOX = ['가로 위치', '세로 위치', '너비', '높이'];
+var LB_LINE = ['끝1 x', '끝1 y', '끝2 x', '끝2 y', '굵기', '굴곡'];
+var fieldsBox = document.getElementById('fields');
+
+function buildFields() {
+  fieldsBox.textContent = '';
+  if (!sel) return;
+  var labels = sel.line ? LB_LINE : LB_BOX;
+  labels.forEach(function (lab, i) {
+    var d = document.createElement('label');
+    d.className = 'fld';
+    var s = document.createElement('span');
+    s.textContent = lab;
+    var inp = document.createElement('input');
+    inp.type = 'number';
+    inp.step = '0.5';
+    inp.dataset.at = i;
+    inp.addEventListener('change', function () {
+      var v = Number(this.value);
+      if (!isFinite(v)) return;
+      push();
+      (sel.line || sel.box)[Number(this.dataset.at)] = v;
+      afterEdit(sel);
+      renderMini();
+    });
+    d.appendChild(s);
+    d.appendChild(inp);
+    fieldsBox.appendChild(d);
+  });
+  showFields();
+}
+
+function showFields() {
+  if (!sel) return;
+  var arr = sel.line || sel.box;
+  fieldsBox.querySelectorAll('input').forEach(function (inp) {
+    inp.value = arr[Number(inp.dataset.at)] || 0;
+  });
+}
+
+/* ── 차체 밑그림 ─────────────────────────────────────── */
+function curView() { return sel ? viewOf(sel) : 'sideL'; }
+function syncTf() {
+  var t = TF[curView()] || [0, 0, 1];
+  document.getElementById('tf-x').value = t[0];
+  document.getElementById('ov-x').textContent = t[0];
+  document.getElementById('tf-y').value = t[1];
+  document.getElementById('ov-y').textContent = t[1];
+  document.getElementById('tf-s').value = t[2];
+  document.getElementById('ov-s').textContent = t[2];
+}
+[['tf-x', 0, 'ov-x'], ['tf-y', 1, 'ov-y'], ['tf-s', 2, 'ov-s']].forEach(function (row) {
+  var el = document.getElementById(row[0]);
+  el.addEventListener('input', function () {
+    document.getElementById(row[2]).textContent = this.value;
+    TF[curView()][row[1]] = Number(this.value);
+    buildStage();
+  });
+  el.addEventListener('change', renderMini);
+});
+
+/* ── 방향키 ──────────────────────────────────────────── */
+window.addEventListener('keydown', function (e) {
+  if (!sel) return;
+  if (['INPUT', 'TEXTAREA'].indexOf((e.target.tagName || '')) >= 0) return;
+  var d = e.shiftKey ? 5 : 0.5;
+  var mv = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key];
+  if (!mv) return;
+  e.preventDefault();
+  push();
+  if (sel.line) {
+    if (e.altKey) { sel.line[2] += mv[0]; sel.line[3] += mv[1]; }
+    else { sel.line[0] += mv[0]; sel.line[1] += mv[1]; sel.line[2] += mv[0]; sel.line[3] += mv[1]; }
+  } else if (e.altKey) {
+    sel.box[2] = Math.max(4, sel.box[2] + mv[0]);
+    sel.box[3] = Math.max(4, sel.box[3] + mv[1]);
+  } else {
+    sel.box[0] += mv[0]; sel.box[1] += mv[1];
+  }
+  afterEdit(sel);
+  renderMini();
+});
+
+/* ── 부위 목록 ───────────────────────────────────────── */
+var listBox = document.getElementById('list');
+window.ALL_REGIONS.forEach(function (r) {
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = nameOf(r);
+  b.dataset.id = r.id;
+  b.addEventListener('click', function () { select(r.id); });
+  listBox.appendChild(b);
+});
+
+/* ── 되돌리기 · 처음값 · 저장 ────────────────────────── */
+function push() {
+  undoStack.push(JSON.parse(JSON.stringify(window.getLayout())));
+  if (undoStack.length > 60) undoStack.shift();
+}
+
+document.getElementById('undo').addEventListener('click', function () {
+  var prev = undoStack.pop();
+  if (!prev) { msg.className = ''; msg.textContent = '되돌릴 것이 없습니다.'; return; }
+  window.setLayout(prev);
+  buildStage(); renderMini(); showFields(); syncTf();
+});
+
+document.getElementById('reset').addEventListener('click', function () {
+  push();
+  window.setLayout(JSON.parse(JSON.stringify(FIRST)));
+  buildStage(); renderMini(); showFields(); syncTf();
+  msg.className = '';
+  msg.textContent = '처음값으로 되돌렸습니다. 저장해야 프로그램에 적용됩니다.';
+});
+
+document.getElementById('save').addEventListener('click', function () {
+  fetch('/save', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(window.getLayout()),
+  }).then(function (r) { return r.json(); }).then(function (r) {
+    msg.className = r.ok ? 'ok' : 'bad';
+    msg.textContent = r.ok
+      ? '저장했습니다 → ' + r.file + ' (프로그램을 다시 켜면 반영됩니다)'
+      : '저장하지 못했습니다: ' + r.error;
+    if (r.ok) showDead(false);
+  }).catch(function () {
+    /*  여기로 오는 것은 대개 "서버가 없다" 는 뜻이다.
+     *  검은 창을 닫았거나 Ctrl+C 를 눌렀을 때 이렇게 된다.
+     *  맞춘 값을 잃지 않도록 파일로 내려받는 길을 열어 준다. */
+    msg.className = 'bad';
+    msg.textContent = '저장하지 못했습니다 — 도구 창(검은 창)이 닫혀 있습니다.';
+    showDead(true);
+  });
+});
+
+/** 서버가 살아 있는지 */
+function showDead(bad) {
+  var box = document.getElementById('dead');
+  box.style.display = bad ? '' : 'none';
+  if (bad) {
+    box.innerHTML =
+      '<b>도구 서버가 꺼져 있습니다.</b><br>' +
+      '검은 창(6_절개도_맞추기.bat)이 닫혔거나 Ctrl+C 로 멈춘 것입니다.<br>' +
+      '① 맞춘 값을 잃지 않으려면 먼저 <b>[파일로 내려받기]</b> 를 누르세요.<br>' +
+      '② 그다음 <b>6_절개도_맞추기.bat</b> 를 다시 실행하고 이 페이지를 새로고침(F5)하면 [저장] 이 됩니다.';
+  }
+}
+
+function pingServer() {
+  fetch('/alive', { cache: 'no-store' })
+    .then(function (r) { showDead(!r.ok); })
+    .catch(function () { showDead(true); });
+}
+
+/*  값을 파일로 내려받기 — 서버가 없어도 맞춘 것을 건질 수 있게.
+ *  받은 diagram.json 을 %APPDATA%\carcheck-dual 에 넣으면 그대로 쓰인다. */
+document.getElementById('download').addEventListener('click', function () {
+  var text = JSON.stringify(window.getLayout(), null, 2);
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = 'diagram.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  msg.className = 'ok';
+  msg.textContent = 'diagram.json 을 내려받았습니다. ' +
+    '%APPDATA%\\carcheck-dual\\ 폴더에 넣으면 프로그램이 그대로 씁니다.';
+});
+
+function renderMini() {
+  mini.textContent = '';
+  window.renderPartsDiagram(mini, FIELDS, state, function () {});
+}
+
+/* ── 시작 ────────────────────────────────────────────── */
+fetch('/load').then(function (r) { return r.json(); }).then(function (r) {
+  if (r.pillars && window.setPillars) window.setPillars(r.pillars);
+  if (r.saved) {
+    window.setLayout(r.saved);
+    msg.textContent = '저장해 둔 배치를 불러왔습니다.';
+  }
+  start();
+}).catch(start);
+
+function start() {
+  buildStage();
+  renderMini();
+  select(window.ALL_REGIONS[0].id);
+  pingServer();
+  setInterval(pingServer, 5000);       // 검은 창이 닫히면 바로 알려 준다
+}
+</script>
+</body>
+</html>
