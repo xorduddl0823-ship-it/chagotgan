@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   차곳간 공통 부품 · J안 4판 · cgg-j4 1.13.2 (2026-10-18, 디자인 방 · 초안)
+   차곳간 공통 부품 · J안 4판 · cgg-j4 1.13.2 (2026-10-19, 디자인 방 · 챗지피티 검수 3 고침)
    1.8 바뀐 것: ⑧ 페이지 뼈대 — 크기는 모두 아래 «뼈대 치수» 변수 한 벌. 제품 CSS 에서 이 변수와 뼈대 부품의 크기를 덮어쓰지 않아요 (통합 검사표로 숫자 확인)
    1.7 바뀐 것:
    1.7 바뀐 것: ⑦ 메뉴 찾기 — 왼쪽 메뉴 늘 펼침(.cgg-nsubs) · 기능 찾기(.cgg-hfind) · 전체 메뉴 판(.cgg-sheet) · 홈 바로가기(.cgg-quick)
@@ -781,7 +781,7 @@ select.cgg-hb{width:auto}
 .cgg-sortb:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .cgg-table th.n .cgg-sortb{justify-content:flex-end} .cgg-table th.c .cgg-sortb{justify-content:center}
 /* F18 고르기 칸 없는 표 */
-.cgg-tblock.nosel .cgg-mrow{grid-template-columns:minmax(0,1fr)}
+.cgg-tblock.nosel .cgg-mrow{grid-template-columns:minmax(0,1fr)} .cgg-tblock.nosel .cgg-mrow .ra{grid-column:1 / -1}
 .cgg-table .fx1.fx0less{left:0}
 /* F05 폰 «이름표: 값» — 긴 값(차량번호 · 목적지 · 연락처)은 줄을 바꿔 끝까지 */
 @media (max-width:1100px){

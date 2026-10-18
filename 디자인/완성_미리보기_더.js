@@ -33,9 +33,9 @@ var PVX=(function(){
   function G(s){ return function(m){
     m.innerHTML=head(s.t,s.d)+(s.band?slot("b"):"")+(s.tools?tools(s.tools()):"")+(s.k?slot("k"):"")+(s.pre?s.pre():"")+(s.cols?slot("t"):"")+(s.post?s.post():"")+(s.help?CGG.help(s.help):"");
     if(s.band) band("b",s.band); if(s.k) CGG.kpis(q("k"),s.k);
-    if(s.cols){ var o={cols:s.cols,kinds:s.kinds,rows:s.rows,stateMap:s.map,tabs:s.tabs,find:s.find||"검색",mobileFields:s.mf};
+    if(s.cols){ var o={cols:s.cols,kinds:s.kinds,rows:s.rows,stateMap:s.map,tabs:s.tabs,find:s.find||"검색",mobileFields:s.mf,sort:s.sort};
       if(s.acts){ o.actions=function(r){ return s.acts(r); }; o.onAction=function(k,r){ (s.onAct||function(k,r){ ask(k==="del"?"지우기":k,r[0],"1건"); })(k,r); }; }
-      tbl("t",Object.assign(o,s.bulk!==false?bulk(s.rows,0,s.bulk||[]):{})); }
+      tbl("t",Object.assign(o,s.bulk!==false?bulk(s.rows,0,s.bulk||[]):{select:false})); }   /* 일괄 단추가 없는 표는 고르기 칸 없음(1.13.2 F18) */
     if(s.after) s.after(m); }; }
   function card(t,d,body){ return bx(t,d,body); }
   function kv(rows){ return '<div class="small6" style="border:1px solid var(--line);border-radius:12px;overflow:hidden">'+rows.map(function(x){ return '<div><span>'+E(x[0])+'</span><b>'+E(x[1])+(x[2]?'<small>'+E(x[2])+'</small>':'')+'</b></div>'; }).join("")+'</div>'; }
@@ -134,7 +134,7 @@ var PVX=(function(){
     var x=document.createElement("div"); x.innerHTML=bx("최근 내 차","",'<div id="dcar"></div><div class="row">'+btn("모두 보기",false,"dall")+'</div>'); m.insertBefore(x,m.querySelector(".cgg-help"));
     tbl("dcar",{cols:["차량번호","단계","차종","작업","지금 위치","마지막 기록","들어간 금액"],kinds:["name","state","text","text","text","time","money"],rows:CARS.slice(0,3),stateMap:DSTATE,tabs:[["","전체"]],find:"차량번호",mobileFields:[[2,"차종"],[4,"지금"],[1,"단계"]]});
     q("dall").onclick=function(){ go("cars"); }; };
-  var DSTATE={"입고":"run","작업 중":"run","출고":"chk","도착":"chk","상품화 완료":"done"};
+  var DSTATE={"입고":"run","작업 중":"run","출고":"run","도착":"chk","상품화 완료":"done"};   /* 딜러앱 d3.9 STMAP 그대로 */
   V.d_cars=function(m){ var SEL=[]; m.innerHTML=head("작업 중인 차 <em>1대</em>, 도착한 차 <em>1대</em>가 있어요","업체에 맡긴 내 차가 지금 어디 있는지, 어디까지 됐는지 확인해요.")+tools(btn("선택한 차 상품화 완료",true,"done"))+slot("t");
     q("done").disabled=true;
     tbl("t",{cols:["차량번호","단계","차종","작업","지금 위치","마지막 기록","들어간 금액"],kinds:["name","state","text","text","text","time","money"],rows:CARS,stateMap:DSTATE,tabs:[["","전체"],["입고","입고"],["작업 중","작업 중"],["출고","출고"],["도착","도착"]],find:"차량번호 · 차종 · 업체 검색",
@@ -144,9 +144,10 @@ var PVX=(function(){
   function carDetail(r){ CGG.dialog({size:"detail",title:r[0]+" · 차 상세",desc:"상품화 진행 과정",rows:[["차종",r[2]],["상사","예시상사"],["지금",r[4]],["지금까지 들어간 금액",r[6]?won(r[6])+"원":"업체가 아직 금액을 넣지 않았어요"]],
     body:'<div class="dph" role="img" aria-label="차 사진 예시">사진 3장 (예시)</div><ol class="dlog"><li><b>10-18 09:10</b> 예시상사 매장 도착</li><li><b>10-18 08:40</b> 출고 → 예시상사 매장 이동</li><li><b>10-17 15:00</b> 예시 광택 입고 · 작업: '+E(r[3])+'</li></ol><div class="row">'+btn("카히스토리 조회")+'</div>',
     ok:r[1]==="상품화 완료"?"상품화 완료 취소":"상품화 완료",cancel:"닫기",onOk:toast(r[1]==="상품화 완료"?"완료를 취소했어요":"완료로 표시했어요")}); }
-  V.d_noti=G({t:"알림",d:"카카오 알림톡으로 먼저 가고, 알림톡이 안 되면 문자로 가요.",cols:["내용","종류","언제"],kinds:["name","state","time"],
-    rows:[["12가 3400 예시상사 매장 도착 (사진 2장)","도착","10-18 09:10"],["14가 3414 출고 → 가람 2주차장","출고","10-18 08:40"],["15가 3421 예시 광택 입고","입고","10-17 15:00"],["예시 광택 9월 청구서","청구","10-01 10:00"]],
-    map:{"도착":"chk","출고":"run","입고":"run","청구":"done","재검사":"chk"},tabs:[["","전체"],[["입고","출고"],"입고 · 출고"],["도착","도착"],["청구","청구서"],["재검사","재검사"]],find:"차량번호 · 내용",mf:[[1,"종류"],[2,"언제"]],bulk:false,sort:[2,-1]});
+  /* 알림 — 딜러가 보는 핵심 단계 «출고 → 도착 → 상품화 완료»(d3.9)대로 칩을 나누고, 본문은 현장 말로 */
+  var NOTI=[["12가 3400 · 예시 광택 → 예시상사 매장 도착 (사진 2장)","도착","10-18 09:10"],["14가 3414 · 예시 광택 → 가람 2주차장 출고","출고","10-18 08:40"],["16가 3428 · 상품화 완료로 표시했어요","상품화 완료","10-17 18:20"],["15가 3421 · 예시 광택 입고","입고","10-17 15:00"],["예시 광택 · 9월 청구서","청구서","10-01 10:00"],["18가 3442 · 성능점검 유효기간이 7일 남았어요","재검사","10-16 09:00"]];
+  V.d_noti=G({t:"알림",d:"카카오 알림톡으로 먼저 가고, 알림톡이 안 되면 문자로 가요.",cols:["내용","단계","언제"],kinds:["name","state","time"],rows:NOTI,
+    map:{"입고":"run","작업 중":"run","출고":"run","도착":"chk","상품화 완료":"done","청구서":"done","재검사":"chk"},tabs:[["","전체"],["출고","출고"],["도착","도착"],["상품화 완료","상품화 완료"],["청구서","청구서"],["재검사","재검사"]],find:"차량번호 · 내용",mf:[[1,"단계"],[2,"언제"]],bulk:false,sort:[2,-1]});
   V.d_bill=function(m){ var B=[["예시 광택","2026년 10월 · 3대 · 10월 청구서",610000,"기한 10/31 · 13일 남음","입금 전"],["예시 성능검사소","2026년 09월 · 4대 · 9월 청구서",120000,"기한 10/13 · 5일 지남","기한 지남"],["누리 휠","2026년 09월 · 1대 · 9월 청구서",120000,"입금 확인 · 10/17","입금 확인"]];
     var sum=function(st){ return B.filter(function(b){ return b[4]===st; }).reduce(function(t,b){ return t+b[2]; },0); }, late=sum("기한 지남"), soon=sum("입금 전");
     m.innerHTML=head("낼 금액 <em>"+won(late+soon)+"원</em>","기한 지난 것 "+won(late)+"원(1곳) + 기한 전 "+won(soon)+"원(1곳) · 다음 기한 10/31")+'<div class="dbills">'+B.map(function(b,i){ return '<section class="bx dbill"><div class="dbh"><b>'+E(b[0])+'</b>'+CGG.status(b[4],{"입금 전":"chk","기한 지남":"stop","입금 확인":"done"})+'</div><p class="d">'+E(b[1])+'</p><div class="dbm"><strong>'+won(b[2])+'<small>원</small></strong><span>'+E(b[3])+'</span></div><div class="row">'+(b[4]==="입금 확인"?"":btn("계좌 복사",false,"ac"+i)+btn("금액 복사",false,"am"+i))+btn("내역 보기",b[4]!=="입금 확인","bv"+i)+'</div></section>'; }).join("")+'</div>'
@@ -162,13 +163,18 @@ var PVX=(function(){
   /* ═══ 홈페이지 (cgg.co.kr 메인 · 요금제 · 통합 입구 로그인 · 가입) — 앱 틀 대신 사이트 틀 ═══ */
   /* 메인 홈페이지는 «지금 / 손본 뒤» 나란히 (대표님 확정 10/18 — 지금 느낌 그대로, 바꾸는 건 최소만) */
   function compare(root, anchor){ var A=anchor?"#"+anchor:"";
-    root.innerHTML='<div class="cmp"><div class="cmph"><b>cgg.co.kr 메인 — 지금 / 손본 뒤</b><span class="d">주 참고는 대표님 시안 3이에요: 첫 화면은 남색 띠, 아래는 밝은 바탕 + 흰 카드. 배치 · 구역 차례 · 실제 링크는 지금 그대로예요. 빨간 점선 = 바뀐 곳, 보라 띠 = 참고 시안에서 빌려 온 칸. 첫 문구는 «지금 / 시안 3 / 시안 2» 단추로 골라 보세요.</span>'
-      +'<span class="row" style="margin:0">'+chip("나란히",true)+chip("지금만")+chip("손본 뒤만")+'<label class="ck"><input type="checkbox" id="mk" checked> 바뀐 곳 표시</label></span>'
+    root.innerHTML='<div class="cmp"><div class="cmph"><b>cgg.co.kr 메인 — 지금 / 손본 뒤</b><span class="d">주 참고는 대표님 시안 3이에요: 첫 화면은 남색 띠, 아래는 밝은 바탕 + 흰 카드. 배치 · 구역 차례 · 실제 링크는 지금 그대로예요. 빨간 점선 = 바뀐 곳, 보라 띠 = 참고 시안에서 빌려 온 칸. 첫 문구는 대표님 확정 «차를 맡는 순간부터, 정산을 마치는 순간까지.»예요.</span>'
+      +'<span class="row" style="margin:0" role="group" aria-label="폭 고르기">'+chip("나란히",true)+chip("PC 1440")+chip("폰 400")+'</span><span class="row" style="margin:0">'+'<label class="ck"><input type="checkbox" id="mk" checked> 바뀐 곳 표시</label></span>'
       +'<span class="row" style="margin:0"><a class="cgg-btn" href="#site-login">로그인 화면</a><a class="cgg-btn" href="#site-join">가입 화면</a></span></div>'
       +'<div class="cmpb" data-v="both"><figure><figcaption>지금</figcaption><iframe title="지금 홈페이지" src="시안/홈페이지/지금.html'+A+'"></iframe></figure><figure><figcaption>손본 뒤</figcaption><iframe id="aft" title="손본 뒤 홈페이지" src="시안/홈페이지/손본뒤.html?mark'+A+'"></iframe></figure></div></div>';
     var box=root.querySelector(".cmpb"), cs=root.querySelectorAll(".cmph .cgg-fp");
-    if(window.innerWidth<900){ box.setAttribute("data-v","after"); cs[0].classList.remove("on"); cs[2].classList.add("on"); }
-    Array.prototype.forEach.call(cs,function(c,i){ c.onclick=function(){ Array.prototype.forEach.call(cs,function(x){ x.classList.remove("on"); }); c.classList.add("on"); box.setAttribute("data-v",["both","now","after"][i]); }; });
+    if(window.innerWidth<900){ box.setAttribute("data-v","phone"); cs[0].classList.remove("on"); cs[2].classList.add("on"); }
+    Array.prototype.forEach.call(cs,function(c,i){ c.onclick=function(){ Array.prototype.forEach.call(cs,function(x){ x.classList.remove("on"); }); c.classList.add("on"); box.setAttribute("data-v",["both","pc","phone"][i]); fit(); }; });
+    /* PC 1440 — 두 화면을 위아래로, 1440 폭 그대로 그린 뒤 칸 폭에 맞춰 줄여 보여요 · 폰 400 — 400 폭 두 개를 나란히 */
+    function fit(){ var v=box.getAttribute("data-v"); Array.prototype.forEach.call(box.querySelectorAll("iframe"),function(f){ var fg=f.parentNode, W=fg.clientWidth;
+      if(v==="pc"){ var sc=Math.min(1,W/1440); f.style.width="1440px"; f.style.height=Math.round(900)+"px"; f.style.transform="scale("+sc+")"; f.style.transformOrigin="0 0"; fg.style.height=(Math.round(900*sc)+42)+"px"; }
+      else { f.style.width=v==="phone"?"400px":""; f.style.transform=""; f.style.height=""; fg.style.height=""; } }); }
+    window.addEventListener("resize",fit);
     q("mk").onchange=function(){ q("aft").src="시안/홈페이지/손본뒤.html"+(this.checked?"?mark":"")+A; }; }
   function site(root, page){
     /* 검수 3 F09 — #site-try · #site-price · #site-ask 는 홈페이지 안 그 구역으로 */

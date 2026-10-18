@@ -656,6 +656,25 @@ var CGG = (function(){
         var x=items[i++];
         Promise.resolve().then(function(){ return send(x); }).then(function(r){ r=r||{}; out.push({item:x,ok:!!r.ok,why:String(r.why||"")}); next(); },
           function(e){ out.push({item:x,ok:false,why:String((e&&e.message)||"")}); next(); }); })(); } };
-  return { CI:CI, favicon:favicon, todoBand:todoBand, monthPick:monthPick, findDialog:findDialog, myPage:myPage, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
+  /* 1.13.2 — 실패 까닭 쉬운 말 (워시 v138 sendErrText · kmsg 를 그대로 옮김 · 체크 방 요청)
+     CGG.easyMsg(에러나 글, 대신할 말) → 한글이고 영어 코드 · 주소 · 내부 말이 없으면 그대로, 아니면 대신할 말
+     CGG.sendWhy(서버가 준 실패 글) → «사진이 너무 커요» 같은 쉬운 까닭(영어 코드는 감춰요). 돌려주는 글은 그냥 글이라, 화면에 넣을 땐 esc 해요 */
+  function easyMsg(e, fb){
+    var m=(typeof e==="string")?e:String((e&&(e.message||e.__err||e.error))||"");
+    m=m.replace(/\s*\[[A-Za-z_]+\]\s*$/,"").trim();
+    if(m&&/[가-힣]/.test(m)&&!/[A-Za-z]{4,}|https?:|\/exec|\.gs\b|\.json|JWT|열쇠|스크립트|배포|시트|잔액|\{|\}/.test(m)) return m;
+    return fb||"처리하지 못했어요. 다시 시도해 주세요."; }
+  function sendWhy(raw){
+    var t=String(raw||""), FB="보내지 못했어요. 보낸 기록에서 다시 보내 주세요."; if(!t) return "";
+    if(/TooHighResolution/i.test(t)) return "사진이 너무 커요 (가로 1500 · 세로 1440 이하)";
+    if(/FileSizeTooLarge/i.test(t)) return "사진 용량이 너무 커요 (200KB 이하)";
+    if(/SignatureDoesNotMatch/i.test(t)) return "메시지 보내기 설정이 맞지 않아요 — 차곳간에 문의해 주세요";
+    if(/발신번호/.test(t)) return "보내는 번호(발신번호)가 없어요 — 설정 › 알림에서 넣어 주세요";
+    if(/InsufficientBalance|잔액/i.test(t)) return "문자 건수가 모자라요 — 마이페이지에서 충전해 주세요";
+    if(/NotFound|없는 번호/i.test(t)) return "받는 번호가 올바르지 않아요";
+    if(/timeout|시간 ?초과/i.test(t)) return "연결이 늦어요 — 다시 보내 주세요";
+    var m=t.match(/"errorMessage"\s*:\s*"([^"]+)"/); if(m) return easyMsg(m[1],FB);
+    return easyMsg(t.replace(/\s*\{[\s\S]*\}\s*/,"").trim(),FB); }
+  return { easyMsg:easyMsg, sendWhy:sendWhy, CI:CI, favicon:favicon, todoBand:todoBand, monthPick:monthPick, findDialog:findDialog, myPage:myPage, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
            listify:listify, list:list, progress:progress, bundle:bundle, steps:steps, status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.13.2" };
 })();
