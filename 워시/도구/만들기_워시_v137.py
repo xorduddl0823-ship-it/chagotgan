@@ -60,6 +60,14 @@ rep('''  $("scSave").onclick=function(){''',
 '''  if($("sendObGo"))$("sendObGo").onclick=function(){S.setSub="outbox";decideMode(false);window.scrollTo(0,0);};
   $("scSave").onclick=function(){''')
 
+# 0-3) 홈 첫 줄 = 두 제품 같은 규칙(1.12 CGG.home sum) · 화면 제목 숫자 파랑 없앰(워시 덧칠 걷어냄)
+rep('''.dashhead h2 em,.jsay em{font-style:normal;color:var(--blue)}''', '''.dashhead h2 em,.jsay em{font-style:normal;color:inherit}   /* v137 제목 숫자는 기본 글자색(1.12) */''')
+rep('''pick:(typeof pick!=="undefined"?pick:[]),paid:paid,dueAmt:dueAmt,''',
+'''pick:(typeof pick!=="undefined"?pick:[]),paid:paid,dueAmt:dueAmt,unsent:(function(){var u={};(notBilled||[]).forEach(function(d){u[d]=1;});return Object.keys(u).length;})(),''')
+rep('''  CGG.home(host,{date:(now.getMonth()+1)+"월 "+now.getDate()+"일 "+"일월화수목금토".charAt(now.getDay())+"요일",''',
+'''  CGG.home(host,{date:(now.getMonth()+1)+"월 "+now.getDate()+"일 "+"일월화수목금토".charAt(now.getDay())+"요일",
+    sum:mgr?null:{unsent:c.unsent||0,due:c.dueAmt||0},   /* v137 홈 첫 줄 = 체크와 같은 규칙 (매니저는 «작업 중인 차» 그대로) */''')
+
 # 1) 부품 넣기 — 거래처 부품 바로 뒤
 rep(CPT13, CPT13 + "\n" + ATA)
 
@@ -139,6 +147,11 @@ for a, b in [("체크한 번호가 문자·알림톡에 들어가요", "체크�
              ("출고 · 문자·알림톡 · 사진", "출고 · 메시지 · 사진"),
              ("보낸 문자 · 알림톡을 보고", "보낸 메시지를 보고"),
              ("내역·출고 기록·자재", "내역·배달 기록·자재"),
+             ("<li><b>기기 지우기는 시연 관리자만</b> 할 수 있어요. 대표·직원 화면에서는 목록만 보여요.</li>",
+              "<li><b>기기 지우기는 시연 관리자만</b> 할 수 있어요. 대표·직원 화면에서는 목록만 보여요. (로그인 잠금 화면에서는 대표도 안 쓰는 기기를 내보낼 수 있어요)</li>"),
+             ("<li>들어갈 수 없다는 안내(<b>들어올 수 없어요</b>)가 뜨면 <b>차곳간에 문의</b>해 주세요. 쓰던 기기에서 로그아웃하면 자리가 나고, 그때 [다시 시도]를 누르면 들어와요.</li>",
+              "<li>«<b>로그인할 수 없어요</b>»가 뜨면 대표는 그 화면에서 안 쓰는 기기를 <b>내보내고</b> 들어와요. 직원은 대표에게 문의해요. 지금 로그인(휴대폰 번호 · 비밀번호)은 기기 수를 서버가 지켜서 이 화면이 거의 안 떠요.</li>"),
+             ("양식이나 카모두에서 받은 딜러 명부(엑셀)를 그대로 올려 바로 거래처로 넣어요.", "양식이나 카모두에서 받은 상사명부 · 딜러명부(엑셀)를 그대로 올려 바로 거래처로 넣어요."),
              ("화면이 새 모양으로 바뀌었어요. 출고 기록 · 목적지는", "화면이 새 모양으로 바뀌었어요. 배달 기록 · 목적지는")]:
     if a not in s: raise SystemExit("말 맞추기 못 찾음: " + a)
     s = s.replace(a, b)
