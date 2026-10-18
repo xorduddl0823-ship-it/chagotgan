@@ -736,3 +736,14 @@ select.cgg-hb{width:auto}
 @media (max-width:760px){
   .cgg-top .cgg-hb{height:44px;min-width:44px}
 }
+/* 1.13 체크 v56 에서 옮겨 온 공통 몫 — 결과 목록 · 얇은 진행 줄 · 밀린 달 고르기 */
+.cgg-list{margin:8px 0 6px;padding-left:20px;display:grid;gap:4px;font-size:14px;line-height:1.5}
+.cgg-prog{position:fixed;left:0;right:0;top:0;height:3px;z-index:calc(var(--z-hdr) + 20);background:var(--tabon)}
+.cgg-prog>i{display:block;height:100%;width:0;background:var(--blue);transition:width .25s}
+.cgg-bb{max-height:46vh;overflow:auto;display:grid;gap:6px}
+.cgg-bbrow{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;box-sizing:border-box;cursor:pointer}
+.cgg-bbrow input{width:20px;height:20px;flex:none}
+.cgg-bbrow>span{flex:1;min-width:0} .cgg-bbrow small{display:block;color:var(--muted);font-size:12.5px}
+.cgg-bbrow .amt{flex:none;color:var(--chk-ink)}
+.cgg-bbdue{display:block;margin:12px 0 4px;font-size:13px;color:var(--muted)}
+.cgg-in{width:100%;height:var(--ctl);box-sizing:border-box;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:0 12px;font:inherit;background:var(--surface);color:var(--text)}

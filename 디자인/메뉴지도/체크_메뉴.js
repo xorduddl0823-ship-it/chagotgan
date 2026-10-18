@@ -36,7 +36,7 @@ var CGG_MENU_CHECK = {
     {id:"remind",       label:"재검사 알림 보내기",     path:"재검사 알림",                         go:"remind",           words:"재검사 알림 유효기간 만료 규칙 보내기"},
     {id:"deliv-log",    label:"배달 기록",              path:"배달 › 배달 기록",                    go:"delivery/log",     words:"배달 기록 출고 차량 이동 배송 탁송 확인 못 보낸 출고차량 오늘 출고 오늘 배달 나간 차"},
     {id:"dealer-wait",  label:"딜러 등록 대기",         path:"배달 › 배달 기록 › 맨 위",            go:"delivery/log",     words:"딜러 등록 승인 대기 기사가 적은 번호 처음 번호", spot:"#dealerWait"},
-    {id:"deliv-dest",   label:"목적지별 배달",          path:"배달 › 목적지",                     go:"delivery/dest",  words:"목적지별 장소별 모아 보기"},
+    {id:"deliv-dest",   label:"목적지",                 path:"배달 › 목적지",                     go:"delivery/dest",  words:"목적지별 배달 장소별 모아 보기 목적지 주소"},
     {id:"dest-add",     label:"목적지 추가",            path:"배달 › 목적지",                  go:"delivery/dest",    words:"목적지 도착지 주소 추가 관리"},
     {id:"deliv-msg",    label:"배달 문구 · 발송 설정",  path:"배달 › 문구 · 발송 설정",             go:"delivery/msg",     words:"배달 문자 문구 알림톡 보내는 방법 사진 카톡 발송 예약"},
     {id:"driver",       label:"기사 계정",              path:"배달 › 기사 계정",                    go:"delivery/driver",  words:"기사 배달 기사 계정 추가 로그인"},

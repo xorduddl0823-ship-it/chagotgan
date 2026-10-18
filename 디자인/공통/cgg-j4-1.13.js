@@ -588,6 +588,51 @@ var CGG = (function(){
       body:'<div class="cgg-mypage">'+(o.plan?'<section><h4>요금제</h4>'+dl(o.plan)+'</section>':'')+(o.usage?'<section><h4>이번 달 사용량</h4>'+use+'</section>':'')+(o.account?'<section><h4>내 계정</h4>'+dl(o.account)+'</section>':'')+'</div>',
       ok:o.ok, cancel:"닫기", onOk:o.onOk}); }
 
+  /* ───── 1.13 체크 v56 에서 옮겨 온 공통 몫 (워시 v137 · 체크 v56.1 같이 써요) ───── */
+  /* 여러 건 결과 목록 — «… N곳 — 가(까닭) / 나(까닭)» 한 줄을 한 곳씩 줄 바꾼 목록으로. html 은 이미 esc 된 글이어야 해요 */
+  function listify(html){
+    return String(html==null?"":html).split(/<br\s*\/?>/i).map(function(line){
+      var m=line.match(/^(.*?(?:\d+\s*(?:곳|건|줄|명))\s*)—\s*(.+)$/);
+      if(!m||!/ \/ /.test(m[2])) return line;
+      return m[1]+'<ul class="cgg-list">'+m[2].split(/\s+\/\s+/).map(function(x){ return '<li>'+x+'</li>'; }).join("")+'</ul>'; }).join("<br>"); }
+  /* 글자 목록 → 목록 HTML (모두 esc) */
+  function list(items){ return '<ul class="cgg-list">'+(items||[]).map(function(x){ return '<li>'+esc(x)+'</li>'; }).join("")+'</ul>'; }
+  /* 얇은 진행 줄 — 화면 맨 위 3px. CGG.progress(3,10,"보내는 중") · CGG.progress(null) 로 닫아요 */
+  var prog=null;
+  function progress(done, total, label){
+    if(done==null){ if(prog){ prog.remove(); prog=null; } return; }
+    if(!prog){ prog=document.createElement("div"); prog.className="cgg-prog"; prog.setAttribute("role","progressbar"); prog.setAttribute("aria-valuemin","0"); prog.innerHTML="<i></i>"; document.body.appendChild(prog); }
+    var t=Math.max(1,Number(total)||1), d=Math.min(t,Math.max(0,Number(done)||0));
+    prog.setAttribute("aria-valuemax",String(t)); prog.setAttribute("aria-valuenow",String(d)); prog.setAttribute("aria-label",String(label||"진행"));
+    prog.firstChild.style.width=(d/t*100)+"%"; }
+  /* 밀린 달 한꺼번에 — 화면 모양만(서버 부르기는 제품이 onNext · send 로 해요)
+     bundle.pick({name, rows:[{id, label, sub, left}], due:"", max:24, onNext:function(ids, sum, labels, due){}})  달 고르기 창
+     bundle.confirm({list:[{name, ids, sum, months:[…]}], due, onSend:function(test){}})                       «누구에게 · 몇 달 · 얼마» 확인 창
+     bundle.run(items, send(item)→Promise<{ok, why}>, done(out))                                              한 명씩 차례로 보내며 얇은 진행 줄 */
+  var bundle={
+    pick:function(o){ var rows=o.rows||[], max=o.max||24;
+      var body='<div class="cgg-bb">'+rows.map(function(x,i){ return '<label class="cgg-bbrow"><input type="checkbox" data-bi="'+i+'" checked><span><b>'+esc(x.label)+'</b>'+(x.sub?'<small>'+esc(x.sub)+'</small>':'')+'</span><b class="amt">'+won(x.left)+'원</b></label>'; }).join("")+'</div>'
+        +'<label class="cgg-bbdue" for="cggBbDue">입금 기한 (비우면 «확인 후 입금»)</label><input id="cggBbDue" class="cgg-in" placeholder="예: 11월 10일" maxlength="20" value="'+esc(o.due||"")+'">';
+      dialog({size:"form",title:"«"+o.name+"» 밀린 달 한꺼번에",desc:"고른 달을 알림톡 한 통으로 보내요(오래된 달부터). 입금도 오래된 달부터 맞춰요.",body:body,ok:"다음",cancel:"닫기",
+        onOk:function(dlg){ var ids=[],sum=0,lab=[];
+          Array.prototype.forEach.call(dlg.querySelectorAll("[data-bi]"),function(c){ if(c.checked){ var x=rows[+c.getAttribute("data-bi")]; ids.push(String(x.id)); sum+=Number(x.left)||0; lab.push(String(x.label)); } });
+          if(!ids.length){ toast("보낼 달을 하나 이상 골라 주세요"); return false; }
+          if(ids.length>max){ toast("한 번에 "+max+"달까지 보낼 수 있어요"); return false; }
+          var due=String((dlg.querySelector("#cggBbDue")||{}).value||"").trim().slice(0,20);
+          setTimeout(function(){ o.onNext&&o.onNext(ids,sum,lab,due); },0); } }); },
+    confirm:function(o){ var L=o.list||[]; if(!L.length) return;
+      var sum=L.reduce(function(t,x){ return t+(Number(x.sum)||0); },0), mn=L.reduce(function(t,x){ return t+x.ids.length; },0), m0=L[0].months||[];
+      dialog({size:"confirm",title:"밀린 달 청구서를 보낼까요?",desc:"알림톡이 안 가면 문자로 대신 가요.",
+        rows:[["누구에게",L[0].name+(L.length>1?" 외 "+(L.length-1)+"명":"")],["몇 달",L.length>1?L.length+"명 · 모두 "+mn+"달":mn+"달"+(m0.length?" ("+m0[0]+(mn>1?" ~ "+m0[m0.length-1]:"")+")":"")],["얼마",won(sum)+"원"],["입금 기한",o.due||"확인 후 입금"]],
+        body:'<div style="margin-top:10px"><button type="button" class="cgg-btn" data-bbtest="1">먼저 내 번호로 시험</button></div>',
+        ok:L.length>1?L.length+"명에게 보내기":"보내기",cancel:"취소",onOk:function(){ setTimeout(function(){ o.onSend&&o.onSend(false); },0); } });
+      var t=dim&&dim.querySelector("[data-bbtest]"); if(t) t.onclick=function(){ closeDialog(); o.onSend&&o.onSend(true); }; },
+    run:function(items, send, done){ var out=[], i=0, n=(items||[]).length;
+      (function next(){ progress(i,n,"보내는 중");
+        if(i>=n){ progress(null); done&&done(out); return; }
+        var x=items[i++];
+        Promise.resolve().then(function(){ return send(x); }).then(function(r){ r=r||{}; out.push({item:x,ok:!!r.ok,why:String(r.why||"")}); next(); },
+          function(e){ out.push({item:x,ok:false,why:String((e&&e.message)||"")}); next(); }); })(); } };
   return { CI:CI, favicon:favicon, todoBand:todoBand, monthPick:monthPick, findDialog:findDialog, myPage:myPage, header:header, home:home, todoBlock:todoBlock, calendar:calendar, moneyCard:moneyCard, rankCard:rankCard, short:short, nav:nav, allMenu:allMenu, closeSheet:closeSheet, find:find, match:match, quick:quick, spot:spot, ic:ic, esc:esc, won:won, layout:layout, tabbar:tabbar, todos:todos, menu:menu, badge:badge, closeMenu:closeMenu, trial:trial,
-           status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.13" };
+           listify:listify, list:list, progress:progress, bundle:bundle, status:status, head:head, kpis:kpis, table:table, help:help, dialog:dialog, closeDialog:closeDialog, toast:toast, version:"cgg-j4 1.13" };
 })();

@@ -69,6 +69,14 @@
 | R12 | 폰: 숫자 칸 이름 · 증감 12px, 쪽 넘김 · 정렬 · 달력 칸 · 달력 이동 · 머리 단추 누르는 곳 44px | 없음 |
 | R13 | 숫자 칸 이름을 카드 가운데로(작은 그래프 자리만큼 양쪽을 같이 비움). 폰은 그래프 위 · 이름 가운데 | 없음 |
 
+**체크 v56 에서 옮겨 온 공통 몫** (총괄 10/18 — 워시 v137 · 체크 v56.1 이 같이 써요. 서버 부르기 · 돈 셈은 제품에 그대로 두고, **모양만** 공통):
+| 부품 | 쓰는 법 | 체크 v56_통합.js 에서 바꿀 곳 |
+|---|---|---|
+| 결과 목록 | `CGG.listify(html)` — «못 보낸 곳 2곳 — 가(까닭) / 나(까닭)» 한 줄을 목록으로(html 은 이미 esc 된 글). `CGG.list(["글자",…])` — 글자 목록(모두 esc) | `listify` → `CGG.listify`, `.v56-list` → `.cgg-list` |
+| 얇은 진행 줄 | `CGG.progress(3,10,"보내는 중")` · 끝나면 `CGG.progress(null)` (화면 맨 위 3px) | 여러 건 보낼 때 |
+| 밀린 달 한꺼번에 | `CGG.bundle.pick({name, rows:[{id,label,sub,left}], due, onNext(ids,sum,labels,due)})` 달 고르기 창 → `CGG.bundle.confirm({list:[{name,ids,sum,months}], due, onSend(test)})` 확인 창(«먼저 내 번호로 시험» 단추 포함) → `CGG.bundle.run(items, send(item)→Promise<{ok,why}>, done(out))` 한 명씩 보내기 + 진행 줄 | `bundleOne` 의 창 · `bundleConfirm` · `bundleGo` 의 차례 보내기를 이걸로. `call("billBundleList"/"billBundleSend")` 는 제품에 그대로 |
+| 알림톡 잠금 문구 | `cgg-ata-1.1.js` (체크/부품/알림톡문구_부품_1.1.js 를 글자 하나 안 바꾸고 옮김) — `CGG_ATATXT.box(key, vars?, {noSms})` | `<script src>` 를 `디자인/공통/cgg-ata-1.1.js` 로 |
+
 ## 1.12 확정본 (2026-10-18 · 대표님 확정 — 통합 대조표 74줄 추천 그대로 · **보안 통과 3527f70**) ← **새 판은 이것을 붙여요** (1.11 + 워시 모양 부품)
 
 > **보안 통과 (4146c47 · 손질 15ea3a8도 통과, 보안 방 10/18)**. 손질 3가지(화면 모양만, 새 입력 · 새 글 없음):
