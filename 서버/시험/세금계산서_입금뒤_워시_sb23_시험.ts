@@ -1,6 +1,6 @@
 // 워시 sb23 시험 — 대표님 규칙 «입금 전 세금계산서 발급 없음» (업체 → 딜러 pbIssue · 본사 → 업체 hqTaxIssue)
 // 실행:  deno run -A --no-lock --import-map=서버/시험/import_map_wash.json 서버/시험/세금계산서_입금뒤_워시_sb23_시험.ts
-import { store } from "./fake_supabase_wash.ts";
+import { knobs, store } from "./fake_supabase_wash.ts";
 Deno.env.set("SUPABASE_URL", "http://fake.local");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake");
 Deno.env.set("POPBILL_LINKID", "LID"); Deno.env.set("POPBILL_SECRET", btoa("secret"));
@@ -20,8 +20,12 @@ Object.assign(store, {
   ],
   wash_users: [{ phone: "01000000000", shop: "ADMIN", role: "admin", active: true }],
   wash_docs: [
-    { shop: "BT", demo: false, col: "intakes", id: "j1", data: { status: "수금완료", total: 50000, paidAt: "2026-10-10" } },
-    { shop: "BT", demo: false, col: "intakes", id: "j2", data: { status: "출고", total: 50000 } },
+    { shop: "BT", demo: false, col: "intakes", id: "j1", data: { status: "수금완료", total: 50000, paidAt: "2026-10-10", dealer: "홍딜러", company: "홍상사" } },
+    { shop: "BT", demo: false, col: "intakes", id: "j2", data: { status: "출고", total: 50000, dealer: "홍딜러", company: "홍상사" } },
+    { shop: "BT", demo: false, col: "dealers", id: "d1", data: { name: "홍딜러", company: "홍상사", type: "staff" } },
+    { shop: "BT", demo: false, col: "dealers", id: "d2", data: { name: "개인딜러", type: "biz", bizNo: "555-66-77777" } },
+    { shop: "BT", demo: false, col: "companies", id: "c1", data: { name: "홍상사", bizNo: "222-33-34445" } },
+    { shop: "ZZ", demo: false, col: "companies", id: "c9", data: { name: "홍상사", bizNo: "999-88-77777" } },
   ],
   wash_viewcode: [
     { code: BILL, shop: "BT", kind: "bill", expires_at: far, data: { amount: 110000, base: 100000, rows: [{ id: "j1" }, { id: "j2" }] } },
@@ -35,7 +39,7 @@ Object.assign(store, {
     { id: "pay3", shop: "ZZ", amount: 55000, status: "paid" },
   ],
   wash_plans: [{ code: "pro", name: "프로", tax_free: 100 }],
-  wash_taxlog: [], wash_rate: [], cgg_sendlog: [], hq_audit: [],
+  wash_tax_rec: [], wash_taxlog: [], wash_rate: [], cgg_sendlog: [], hq_audit: [],
 });
 const pop: any[] = [];
 globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
@@ -71,7 +75,9 @@ r = await issue({ bill: BILL_BIG, doc: doc(220000) });
 check("(보안 낮음 1) 화면이 부풀린 청구서 금액으로는 거절 — 기준은 장부 줄 합계", r.ok === false && /110,000원/.test(r.error) && pop.length === 0, r);
 r = await issue({ bill: BILL, doc: doc(110000) });
 check("다 입금 + 금액 같음 → 발행 · 비고 앞에 «청구서 코드»", r.ok === true && pop.length === 1 && pop[0].remark1.startsWith("청구서 " + BILL + " · 홍딜러"), [r, pop[0]?.remark1]);
-r = await issue({ bill: BILL, doc: doc(110000), force: true });
+r = await issue({ bill: { month: "2026-10", recIds: ["j1"], amount: 50000, left: 0, code: "" }, doc: doc(55000) });
+check("(SQL 21) 같은 차(j1)가 든 v135 묶음은 거절 — 차 단위 한 번만", r.ok === false && /이미 세금계산서를 낸 차/.test(r.error) && pop.length === 1, r);
+r = await issue({ bill: { month: "2026-10", recIds: ["j1", "j2"], amount: 110000, left: 0, code: BILL }, doc: doc(110000), force: true });
 check("(보안 낮음 2) 같은 청구서로 두 번째는 거절(«다시 보내기»도)", r.ok === false && /이미/.test(r.error) && pop.length === 1, r);
 
 console.log("■ 본사 → 업체 (hqTaxIssue)");
@@ -92,5 +98,56 @@ check("(보안 참고) 앞부분이 같은 다른 결제(pay10)는 막히지 않
 r = await hq({ amount: 50000, payId: "pay1", period: "2026-10", force: true });
 check("같은 결제로 다시(«그대로 다시 보내기» 포함)는 거절", !!r.__err && /이미/.test(r.__err) && pop.length === 3, r);
 
+console.log("■ 워시 v135 묶음(recIds · 발행처×딜러)");
+const P0 = pop.length;
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j3", data: { status: "수금완료", total: 33000, dealer: "홍딜러", company: "홍상사" } },
+  { shop: "BT", demo: false, col: "intakes", id: "j4", data: { status: "출고", total: 22000, dealer: "홍딜러", company: "홍상사" } },
+  { shop: "ZZ", demo: false, col: "intakes", id: "z1", data: { status: "수금완료", total: 11000 } });
+const grp = (ids: string[], extra: any = {}) => ({ month: "2026-10", key: "2223334445|홍딜러", recIds: ids, amount: 999999, paid: 999999, left: 0, code: "", ...extra });
+r = await issue({ bill: grp(["j3", "j4"]), doc: doc(55000) });
+check("입금 전 차가 있으면 거절 (화면 left=0 이어도 장부로)", r.ok === false && /입금 전/.test(r.error) && /22,000원/.test(r.error) && pop.length === P0, r);
+r = await issue({ bill: grp(["j3", "z1"]), doc: doc(48400) });
+check("남의 업체 차가 섞이면 거절", r.ok === false && /장부에 없는 차/.test(r.error) && pop.length === P0, r);
+r = await issue({ bill: grp(["j3"]), doc: doc(33000) });
+check("금액: 단가표 기본(부가세 별도)이면 Σ×1.1 — Σ 그대로는 거절", r.ok === false && /36,300원/.test(r.error) && pop.length === P0, r);
+r = await issue({ bill: grp(["j3"]), doc: Object.assign(doc(36300), { remark1: "시험" }), test: true });
+check("시험 발행은 잡지 않음(나중 실제 발행 막지 않게)", r.ok === true && !store.wash_tax_rec.some((x: any) => x.rec_id === "j3"), r);
+r = await issue({ bill: grp(["j3"]), doc: doc(36300) });
+check("모두 입금 + 금액 같음 → 발행 · 차 잡힘 · 비고 «묶음 2026-10 1대»", r.ok === true && store.wash_tax_rec.some((x: any) => x.shop === "BT" && x.rec_id === "j3") && /^묶음 2026-10 1대 ·/.test(pop[pop.length - 1].remark1), [r, pop[pop.length - 1]?.remark1]);
+const before = pop.length;
+r = await issue({ bill: grp(["j3"]), doc: doc(36300), force: true });
+check("같은 차로 두 번째(«그래도 보내기» 포함)는 거절", r.ok === false && /이미 세금계산서를 낸 차/.test(r.error) && pop.length === before, r);
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j5", data: { status: "수금완료", total: 10000, dealer: "홍딜러", company: "홍상사" } });
+const failOnce = globalThis.fetch;
+globalThis.fetch = (async (u: any, i: any) => String(u).includes("/Taxinvoice") ? Response.json({ code: -99999, message: "팝빌 오류" }) : failOnce(u, i)) as typeof fetch;
+r = await issue({ bill: grp(["j5"]), doc: doc(11000) });
+globalThis.fetch = failOnce;
+check("팝빌 실패하면 잡은 것 놓음(다시 낼 수 있게)", r.ok === false && !store.wash_tax_rec.some((x: any) => x.rec_id === "j5"), [r, store.wash_tax_rec]);
+console.log("■ 받는 사업자번호 대조");
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j7", data: { status: "수금완료", total: 8000, dealer: "홍딜러", company: "홍상사" } },
+  { shop: "BT", demo: false, col: "intakes", id: "j8", data: { status: "수금완료", total: 9000, dealer: "개인딜러" } },
+  { shop: "BT", demo: false, col: "intakes", id: "j9", data: { status: "수금완료", total: 6000, dealer: "없는딜러" } });
+const P2 = pop.length;
+r = await issue({ bill: grp(["j7"]), doc: Object.assign(doc(8800), { invoiceeCorpNum: "999-88-77777" }) });
+check("다른 곳(남의 업체 같은 이름 상사) 번호로는 거절", r.ok === false && /다릅니다/.test(r.error) && pop.length === P2, r);
+r = await issue({ bill: grp(["j8"]), doc: Object.assign(doc(9900), { invoiceeCorpNum: "5556677777" }) });
+check("딜러 본인 사업자(type biz) 번호는 됨", r.ok === true && pop.length === P2 + 1, r);
+r = await issue({ bill: grp(["j9"]), doc: doc(6600) });
+check("거래처에 번호가 없으면 거절", r.ok === false && /사업자등록번호가 없습니다/.test(r.error), r);
+console.log("■ 단가표 «부가세 포함»(vatMode in)");
+store.wash_docs.push({ shop: "BT", demo: false, col: "settings", id: "config", data: { vatMode: "in" } },
+  { shop: "BT", demo: false, col: "intakes", id: "j10", data: { status: "수금완료", total: 22000, dealer: "홍딜러", company: "홍상사" } });
+r = await issue({ bill: grp(["j10"]), doc: doc(24200) });
+check("포함이면 ×1.1 은 거절", r.ok === false && /22,000원/.test(r.error), r);
+r = await issue({ bill: grp(["j10"]), doc: doc(22000) });
+check("포함이면 Σ 그대로 → 발행", r.ok === true, r);
+(store.wash_docs as any[]).find((d) => d.col === "settings").data.vatMode = "out";
+console.log("■ SQL 21 전");
+store.wash_docs.push({ shop: "BT", demo: false, col: "intakes", id: "j6", data: { status: "수금완료", total: 7000, dealer: "홍딜러", company: "홍상사" } });
+knobs.missing.add("wash_tax_rec");
+const P1 = pop.length;
+r = await issue({ bill: grp(["j6"]), doc: doc(7700) });
+check("표가 없으면 실제 발행 안 함 · «서버 준비 중»", r.ok === false && /준비/.test(r.error) && pop.length === P1, r);
+knobs.missing.delete("wash_tax_rec");
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);

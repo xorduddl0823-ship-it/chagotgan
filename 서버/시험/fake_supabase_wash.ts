@@ -49,6 +49,12 @@ class Q {
     const tbl = store[this.t] ?? (store[this.t] = []);
     const hit = tbl.filter((r) => this.filters.every((f) => f(r)));
     if (this.op === "insert" || this.op === "upsert") {
+      /* sb23 시험: wash_tax_rec 은 (shop, rec_id) 겹치면 거절 — 한 줄이라도 겹치면 하나도 안 넣음 */
+      if (this.t === "wash_tax_rec" && this.op === "insert") {
+        const ps = [].concat(this.payload) as Row[];
+        if (ps.some((p) => tbl.some((r) => r.shop === p.shop && r.rec_id === p.rec_id)))
+          return { data: null, error: { code: "23505", message: "duplicate key value violates unique constraint" } };
+      }
       for (const p of [].concat(this.payload)) tbl.push({ ...(p as Row) });
       return { data: null, error: null };
     }
