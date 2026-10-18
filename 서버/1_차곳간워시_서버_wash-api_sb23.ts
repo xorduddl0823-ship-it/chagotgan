@@ -2187,7 +2187,7 @@ async function taxBillGate(shop: string, json: unknown): Promise<{ why: string; 
     recIds = (Array.isArray(vc.data.rows) ? vc.data.rows : []).map((r: any) => billRowId(r && r.id)).filter(Boolean);
   } else if (bill && typeof bill === "object" && Array.isArray(bill.recIds) && bill.recIds.length) {
     /* ② 워시 v135 세금계산서 묶음(발행처 × 딜러) — 입고 기록 id 를 서버 장부로 다시 읽음.
-          화면의 amount·paid·left 는 쓰지 않음 · 묶음 금액 = 차 total 합계(부가세 포함 · 화면 taxGroups 와 같음) */
+          화면의 amount·paid·left 는 쓰지 않음 · 계산서 합계 = 청구서와 같은 셈(billAmt): 단가표 설정 vatMode «in» 이면 Σtotal, 아니면(기본 별도) Σ + round(Σ×0.1) */
     const ids = Array.from(new Set(bill.recIds.map((x: unknown) => billRowId(x)))) as string[];
     if (ids.length > 300 || ids.some((x) => !x)) return no("세금계산서에 넣은 차 목록이 올바르지 않습니다");
     const { data, error } = await sb.from("wash_docs").select("id,data")
@@ -2199,7 +2199,12 @@ async function taxBillGate(shop: string, json: unknown): Promise<{ why: string; 
     let sum = 0, left = 0;
     ids.forEach((x) => { const t = Math.round(Number(by[x].total) || 0); sum += t; if (String(by[x].status || "") !== "수금완료") left += t; });
     if (left > 0) return no("아직 입금 전입니다 (남은 금액 " + left.toLocaleString("ko-KR") + "원) — 입금이 끝나면 발행할 수 있어요");
-    want = sum; recIds = ids;
+    let vin = false;
+    try {
+      const { data: cf } = await sb.from("wash_docs").select("data").eq("shop", shop).eq("col", "settings").eq("id", "config").maybeSingle();
+      vin = !!(cf && cf.data && cf.data.vatMode === "in");
+    } catch (_) { /* 못 읽으면 기본(별도) */ }
+    want = vin ? sum : sum + Math.round(sum * 0.1); recIds = ids;
     tag = "묶음 " + String(bill.month || "").replace(/[^0-9-]/g, "").slice(0, 7) + " " + ids.length + "대 ·";
   } else {
     return no("어느 청구서의 계산서인지 알 수 없습니다. 청구서에서 «세금계산서»를 눌러 주세요");
@@ -2810,13 +2815,15 @@ const FN: Record<string, Fn> = {
           error: "남은 캐시가 " + wonTxt2(Number((c && c.balance) || 0)) +
                  " 입니다. 계산서 한 건은 " + wonTxt2(price) + " 이라 발행할 수 없습니다. 충전해 주세요" };
       }
-      const r: any = await pbIssue(s, a[0]);
+      let r: any;
+      try { r = await pbIssue(s, a[0]); } catch (e) { await cashUndoLog(c.logId); await taxRelease(s, claims); throw e; }   // 보안 참고: 던져도 놓음
       if (!r || !r.ok) { await cashUndoLog(c.logId); await taxRelease(s, claims); }
       return r;
     }
     const g = await taxTake(s);
     if (!g.allow) { await taxRelease(s, claims); return { ok: false, error: g.why || "계산서를 더 발행할 수 없습니다", stopped: true }; }
-    const r: any = await pbIssue(s, a[0]);
+    let r: any;
+    try { r = await pbIssue(s, a[0]); } catch (e) { await taxUndo(g); await taxRelease(s, claims); throw e; }
     if (!r || !r.ok) { await taxUndo(g); await taxRelease(s, claims); }
     return r;
   },
@@ -6463,11 +6470,14 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
     /* sb23(SQL 21): 실제 발행이면 결제를 먼저 잡음 — 동시에 두 번 누름 막기 · 실패하면 놓음 */
     const hqClaim = hq.pb_test ? [] : ["pay:" + payId];
     if (hqClaim.length) { const why = await taxClaim("ADMIN", hqClaim, String((ss && ss.phone) || "").slice(-4)); if (why) throw new Error(/이미/.test(why) ? "이 결제로 이미 세금계산서를 발행했습니다" : why); }
-    const r: any = await pbIssue("ADMIN", JSON.stringify({
-      corpNum: digits(hq.biz_no), test: !!hq.pb_test, userId: String(hq.pb_userid || ""),
-      force: !!v.force, doc,
-    }));
-    if (!r.ok) await taxRelease("ADMIN", hqClaim);
+    let r: any;
+    try {
+      r = await pbIssue("ADMIN", JSON.stringify({
+        corpNum: digits(hq.biz_no), test: !!hq.pb_test, userId: String(hq.pb_userid || ""),
+        force: !!v.force, doc,
+      }));
+    } catch (e) { await taxRelease("ADMIN", hqClaim); throw e; }
+    if (!r || !r.ok) await taxRelease("ADMIN", hqClaim);
     if (!r.ok && r.dup) return r;                       /* 화면에서 물어본 뒤 다시 보냅니다 */
     if (!r.ok) throw new Error(r.error || "세금계산서를 보내지 못했습니다");
     return { ok: true, test: !!hq.pb_test, mgtKey, total, ntsConfirmNum: r.ntsConfirmNum || "" };
