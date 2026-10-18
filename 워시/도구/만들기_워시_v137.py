@@ -201,7 +201,8 @@ $("bBundleAll").onclick=function(){
 $("bMake").onclick=function(){
   B.unit=$("bUnit").value;""")
 
-# 0-5) (공통 1.13 85fe100 이 밀린 달 고르기 줄 버그를 고쳐서 워시 쪽 임시 줄은 걷어냈어요)
+# 0-5) 공통 1.13 의 «.cgg-dlg label{flex-direction:column}» 가 밀린 달 고르기 줄(.cgg-bbrow)까지 세로로 세워요 → 디자인 방에 알림 · 고쳐질 때까지 워시에서만 바로잡기
+rep('''<style id="cgg-j4-wash-done">\n''', '''<style id="cgg-j4-wash-done">\n/* v137 공통 1.13 고쳐질 때까지: 밀린 달 고르기 줄은 가로 한 줄 (체크 v56 .chk-bb 와 같은 모양) */\n.cgg-dlg label.cgg-bbrow{flex-direction:row;text-align:left;font-size:14px;font-weight:400;color:var(--text)}\n''')
 
 # 0-6) 보낸 기록 위치 «설정 › 알림 › 보낸 기록» · ‹ 알림으로
 rep('''    else if(S.tab==="settings")sub=(SETSUB.filter(function(x){return x[0]===S.setSub;})[0]||[])[1]||"";''',
