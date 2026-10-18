@@ -2188,14 +2188,15 @@ tr.lateRow2 .lateMark,.lateMark.r2{background:var(--danger)}
 <!-- ---- PC: 보낸 기록 ---- -->
 <section id="vOutbox" hidden>
   <div class="dashhead"><h2>보낸 기록</h2>
-  <div class="sub2">보낸 알림과 못 보낸 알림이 모두 남아요. 못 보낸 건 다시 보낼 수 있어요.</div></div>
+  <div class="sub2">보낸 메시지와 못 보낸 메시지가 모두 남아요. 못 보낸 건 다시 보낼 수 있어요.</div>
+  <button class="btn" id="obBack" type="button" style="margin-top:8px">‹ 알림으로</button></div>
   <div id="outboxBody"></div>
 </section>
 
 <!-- ---- PC: 알림 ---- -->
 <section id="vSend" hidden>
   <div class="dashhead"><h2>알림</h2>
-    <div class="sub2">문자와 알림톡을 누구에게 어떻게 보낼지 정해요.</div></div>
+    <div class="sub2">메시지를 누구에게 어떻게 보낼지 정해요.</div></div>
   <div id="sendBody"></div>
   <div class="card" id="coCardNtf">
     <h2>PC 알림창 <span class="rt">현장에서 입고·출고가 되면 PC에 알려 줘요</span></h2>
@@ -8821,6 +8822,12 @@ function wbxRows(who,company){
   }finally{B.month=keep.month;B.unit=keep.unit;B.scope=keep.scope;B.zero=keep.zero;B.made=keep.made;}
   return rows;
 }
+function wbxMark(G){
+  var o={id:G.month+"|dealer|"+G.who+"|"+(G.company||""),month:G.month,unit:"dealer",name:G.name,company:G.company||"",
+         cars:G.cars,amount:G.amount,sentAt:nowIso(),reservedAt:"",sentBy:S.me?S.me.name:"",updatedAt:nowIso(),bundle:true};
+  S.bills=Object.assign({},S.bills||{});S.bills[o.id]=o;
+  return S.db?S.db.collection("bills").doc(o.id).set(o):Promise.resolve();
+}
 function wbxRange(ms){
   if(!ms.length)return "";
   var a=ms[0].split("-"),z=ms[ms.length-1].split("-");
@@ -8882,17 +8889,16 @@ function wbxSend(x,due,test){
       .then(function(o){
         if(o.status!=="보냄"&&o.status!=="예약")return {ok:false,why:o.err||"보내지 못했어요"};
         if(test)return {ok:true};
-        /* 묶은 달마다 «보냄» 표시 (billKey 가 B.month 를 봐서 달마다 잠깐 바꿔요) */
-        var keep={month:B.month,unit:B.unit};
-        return rows.reduce(function(pr,r){return pr.then(function(){B.month=String(r.id);B.unit="dealer";return markBilled(r.bill,true);});},Promise.resolve())
-          .then(function(){B.month=keep.month;B.unit=keep.unit;return {ok:true};},function(e){B.month=keep.month;B.unit=keep.unit;return {ok:true,why:"보냄 표시를 못 남겼어요"};});
+        /* 묶은 달마다 «보냄» 표시 — 딜러 열쇠(달|dealer|딜러|상사)를 바로 만들어 남겨요(화면의 달은 그대로) */
+        return Promise.all(rows.map(function(r){return wbxMark(r.bill);}))
+          .then(function(){return {ok:true};},function(){return {ok:true,why:"보냄 표시를 못 남겼어요"};});
       });
   });
 }
 function wbxGo(L,due,test){
   CGG.bundle.run(L,function(x){return wbxSend(x,due,test);},function(out){
     var ok=out.filter(function(r){return r.ok;}).length;
-    if(test){ if(ok)toast("내 번호로 시험 알림을 보냈어요. 휴대폰을 확인해 주세요."); else toast("시험 알림을 보내지 못했어요 — "+((out[0]&&out[0].why)||""),true); return; }
+    if(test){ if(ok)toast("내 번호로 시험 메시지를 보냈어요. 휴대폰을 확인해 주세요."); else toast("시험 메시지를 보내지 못했어요 — "+((out[0]&&out[0].why)||""),true); return; }
     if(ok===out.length)toast(ok+"명에게 밀린 달 청구서를 보냈어요");
     else CGG.dialog({size:"confirm",title:(out.length-ok)+"명에게 못 보냈어요",
       body:CGG.list(out.filter(function(r){return !r.ok;}).map(function(r){return r.item.name+" — "+r.why;}))+(ok?'<p>'+ok+'명에게는 보냈어요.</p>':''),cancel:"확인"});
@@ -13416,6 +13422,7 @@ function sendErrText(raw){
   return kmsg(t.replace(/\s*\{[\s\S]*\}\s*/, "").trim(), "보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");
 }
 function renderOutbox(){
+  if($("obBack"))$("obBack").onclick=function(){S.setSub="send";decideMode(false);window.scrollTo(0,0);};   /* v137 보낸 기록은 알림 안 */
   /* 숫자 4칸 — 다른 화면과 같은 자리 */
   var OBL = S.outbox || [];
   var nSent = OBL.filter(function(o){return o.status==="보냄";}).length;
@@ -13459,7 +13466,7 @@ gTable("obTable",OB,[
       Promise.all(ids.map(function(id){return S.db?S.db.collection("outbox").doc(id).delete():null;}))
        .then(function(){S.outbox=S.outbox.filter(function(o){return ids.indexOf(o.id)<0;});
          OB.sel={};toast("지웠어요");renderOutbox();});},
-    empty:"보낸 알림이 없어요."});
+    empty:"보낸 메시지가 없어요."});
   $("obRetry").onclick=function(){
     var ids=Object.keys(OB.sel||{});
     if(!ids.length)return toast("먼저 줄을 골라 주세요",true);
@@ -13490,13 +13497,13 @@ gTable("obTable",OB,[
 }
 function renderSend(){
   var c=sendCfg();
-  /* v137 보낸 기록은 «알림» 안 — 맨 위에 한 줄 (공통 1.12 · 체크와 같은 자리) */
+  /* v137 보낸 기록은 «알림» 안 — 맨 위 카드(메뉴 지도 «설정 › 알림 › 보낸 기록» · 체크는 다음 판에 같은 카드) */
   var obl=S.outbox||[], obSent=obl.filter(function(o){return o.status==="보냄";}).length, obFail=obl.filter(function(o){return o.status==="실패";}).length;
   $("sendBody").innerHTML=
   '<div class="card" id="sendOutbox"><h2>보낸 기록 <span class="rt">'+(obFail?'<span style="color:var(--stop)">못 보냄 '+obFail+'건</span>':'보냄 '+obSent+'건')+'</span></h2>'+
    '<div class="hint" style="margin:-6px 0 12px">보낸 메시지를 보고, 못 보낸 것은 다시 보내요.</div>'+
    '<button class="btn'+(obFail?' primary':'')+'" id="sendObGo">보낸 기록 열기</button></div>'+
-  '<div class="card"><h2>문자 발송 연동 <span class="rt">'+(sendReady()?'<span style="color:var(--good)">설정됨</span>':'<span style="color:var(--warn)">아직 연결 안 됨</span>')+'</span></h2>'+
+  '<div class="card"><h2>메시지 발송 연동 <span class="rt">'+(sendReady()?'<span style="color:var(--good)">설정됨</span>':'<span style="color:var(--warn)">아직 연결 안 됨</span>')+'</span></h2>'+
    '<div class="hint" style="margin:-6px 0 12px">알림 보내기가 준비되면 출고 알림과 청구 알림이 <b>자동으로</b> 나가요. 준비 전에는 지금처럼 문자 앱이 열려요.</div>'+
    
    '<div class="row3">'+
@@ -16068,7 +16075,7 @@ function jPage(){
     var g=JGROUP[S.tab]||"",sub="";
     if(S.tab==="ledger")sub="입고 · 출고 내역";
     else if(S.tab==="outlog")sub=(wDSubs().filter(function(x){return x[0]===(S.dSub||"outlog");})[0]||[])[1]||"";
-    else if(S.tab==="settings")sub=(SETSUB.filter(function(x){return x[0]===S.setSub;})[0]||[])[1]||"";
+    else if(S.tab==="settings")sub=(S.setSub==="outbox")?"알림 › 보낸 기록":((SETSUB.filter(function(x){return x[0]===S.setSub;})[0]||[])[1]||"");
     var heads=document.querySelectorAll(".cgg-main section:not([hidden]) .dashhead");
     Array.prototype.forEach.call(heads,function(h){
       if(h.offsetParent===null)return;

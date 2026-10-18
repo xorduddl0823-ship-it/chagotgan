@@ -48,7 +48,7 @@ rep('''function renderSend(){
 ''',
 '''function renderSend(){
   var c=sendCfg();
-  /* v137 보낸 기록은 «알림» 안 — 맨 위에 한 줄 (공통 1.12 · 체크와 같은 자리) */
+  /* v137 보낸 기록은 «알림» 안 — 맨 위 카드(메뉴 지도 «설정 › 알림 › 보낸 기록» · 체크는 다음 판에 같은 카드) */
   var obl=S.outbox||[], obSent=obl.filter(function(o){return o.status==="보냄";}).length, obFail=obl.filter(function(o){return o.status==="실패";}).length;
   $("sendBody").innerHTML=
   '<div class="card" id="sendOutbox"><h2>보낸 기록 <span class="rt">'+(obFail?'<span style="color:var(--stop)">못 보냄 '+obFail+'건</span>':'보냄 '+obSent+'건')+'</span></h2>'+
@@ -104,6 +104,12 @@ function wbxRows(who,company){
     });
   }finally{B.month=keep.month;B.unit=keep.unit;B.scope=keep.scope;B.zero=keep.zero;B.made=keep.made;}
   return rows;
+}
+function wbxMark(G){
+  var o={id:G.month+"|dealer|"+G.who+"|"+(G.company||""),month:G.month,unit:"dealer",name:G.name,company:G.company||"",
+         cars:G.cars,amount:G.amount,sentAt:nowIso(),reservedAt:"",sentBy:S.me?S.me.name:"",updatedAt:nowIso(),bundle:true};
+  S.bills=Object.assign({},S.bills||{});S.bills[o.id]=o;
+  return S.db?S.db.collection("bills").doc(o.id).set(o):Promise.resolve();
 }
 function wbxRange(ms){
   if(!ms.length)return "";
@@ -166,10 +172,9 @@ function wbxSend(x,due,test){
       .then(function(o){
         if(o.status!=="보냄"&&o.status!=="예약")return {ok:false,why:o.err||"보내지 못했어요"};
         if(test)return {ok:true};
-        /* 묶은 달마다 «보냄» 표시 (billKey 가 B.month 를 봐서 달마다 잠깐 바꿔요) */
-        var keep={month:B.month,unit:B.unit};
-        return rows.reduce(function(pr,r){return pr.then(function(){B.month=String(r.id);B.unit="dealer";return markBilled(r.bill,true);});},Promise.resolve())
-          .then(function(){B.month=keep.month;B.unit=keep.unit;return {ok:true};},function(e){B.month=keep.month;B.unit=keep.unit;return {ok:true,why:"보냄 표시를 못 남겼어요"};});
+        /* 묶은 달마다 «보냄» 표시 — 딜러 열쇠(달|dealer|딜러|상사)를 바로 만들어 남겨요(화면의 달은 그대로) */
+        return Promise.all(rows.map(function(r){return wbxMark(r.bill);}))
+          .then(function(){return {ok:true};},function(){return {ok:true,why:"보냄 표시를 못 남겼어요"};});
       });
   });
 }
@@ -198,6 +203,12 @@ $("bMake").onclick=function(){
 
 # 0-5) 공통 1.13 의 «.cgg-dlg label{flex-direction:column}» 가 밀린 달 고르기 줄(.cgg-bbrow)까지 세로로 세워요 → 디자인 방에 알림 · 고쳐질 때까지 워시에서만 바로잡기
 rep('''<style id="cgg-j4-wash-done">\n''', '''<style id="cgg-j4-wash-done">\n/* v137 공통 1.13 고쳐질 때까지: 밀린 달 고르기 줄은 가로 한 줄 (체크 v56 .chk-bb 와 같은 모양) */\n.cgg-dlg label.cgg-bbrow{flex-direction:row;text-align:left;font-size:14px;font-weight:400;color:var(--text)}\n''')
+
+# 0-6) 보낸 기록 위치 «설정 › 알림 › 보낸 기록» · ‹ 알림으로
+rep('''    else if(S.tab==="settings")sub=(SETSUB.filter(function(x){return x[0]===S.setSub;})[0]||[])[1]||"";''',
+'''    else if(S.tab==="settings")sub=(S.setSub==="outbox")?"알림 › 보낸 기록":((SETSUB.filter(function(x){return x[0]===S.setSub;})[0]||[])[1]||"");''')
+rep('''function renderOutbox(){''', '''function renderOutbox(){
+  if($("obBack"))$("obBack").onclick=function(){S.setSub="send";decideMode(false);window.scrollTo(0,0);};   /* v137 보낸 기록은 알림 안 */''')
 
 # 1) 부품 넣기 — 거래처 부품 바로 뒤
 rep(CPT13, CPT13 + "\n" + ATA)
@@ -278,6 +289,13 @@ for a, b in [("체크한 번호가 문자·알림톡에 들어가요", "체크�
              ("출고 · 문자·알림톡 · 사진", "출고 · 메시지 · 사진"),
              ("보낸 문자 · 알림톡을 보고", "보낸 메시지를 보고"),
              ("내역·출고 기록·자재", "내역·배달 기록·자재"),
+             ('<div class="sub2">문자와 알림톡을 누구에게 어떻게 보낼지 정해요.</div>', '<div class="sub2">메시지를 누구에게 어떻게 보낼지 정해요.</div>'),
+             ('<div class="sub2">보낸 알림과 못 보낸 알림이 모두 남아요. 못 보낸 건 다시 보낼 수 있어요.</div></div>',
+              '<div class="sub2">보낸 메시지와 못 보낸 메시지가 모두 남아요. 못 보낸 건 다시 보낼 수 있어요.</div>\n  <button class="btn" id="obBack" type="button" style="margin-top:8px">‹ 알림으로</button></div>'),
+             ("'<div class=\"card\"><h2>문자 발송 연동 <span class=\"rt\">'", "'<div class=\"card\"><h2>메시지 발송 연동 <span class=\"rt\">'"),
+             ("내 번호로 시험 알림을 보냈어요. 휴대폰을 확인해 주세요.", "내 번호로 시험 메시지를 보냈어요. 휴대폰을 확인해 주세요."),
+             ("시험 알림을 보내지 못했어요 — ", "시험 메시지를 보내지 못했어요 — "),
+             ("보낸 알림이 없어요", "보낸 메시지가 없어요"),
              ("<li><b>기기 지우기는 시연 관리자만</b> 할 수 있어요. 대표·직원 화면에서는 목록만 보여요.</li>",
               "<li><b>기기 지우기는 시연 관리자만</b> 할 수 있어요. 대표·직원 화면에서는 목록만 보여요. (로그인 잠금 화면에서는 대표도 안 쓰는 기기를 내보낼 수 있어요)</li>"),
              ("<li>들어갈 수 없다는 안내(<b>들어올 수 없어요</b>)가 뜨면 <b>차곳간에 문의</b>해 주세요. 쓰던 기기에서 로그아웃하면 자리가 나고, 그때 [다시 시도]를 누르면 들어와요.</li>",
