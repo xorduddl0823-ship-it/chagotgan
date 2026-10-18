@@ -34,6 +34,7 @@ BANDS.recv=function(){
 /* ── 세금계산서 › 보낸 계산서만 보기 ── */
 var ah=AFTER.hometax;
 AFTER.hometax=function(){ if(ah) ah.apply(this,arguments);
+  document.querySelectorAll("#main [data-v55go]").forEach(function(x){ x.onclick=function(){ go(x.getAttribute("data-v55go")); }; });
   var b=$("txDoneOnly"); if(b) b.onclick=function(){ TXFIL="done"; var f=$("txFil"); if(f) f.value="done"; refresh(["tax"]); };
 };
 
@@ -45,9 +46,9 @@ function rangeOf(k){
   var m1=t.slice(0,8)+"01", pe=ymd(new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), 0))), p1=pe.slice(0,8)+"01";
   return k==="today"?[t,t] : k==="yday"?[y,y] : k==="7"?[w,t] : k==="month"?[m1,t] : k==="prev"?[p1,pe] : k==="30"?[ymd(new Date(n.getTime()-29*864e5)),t] : ["",""];
 }
-var PER={dep:{k:"month"}, drv:{k:"30"}};
+var PER={dep:{k:"month"}, drv:{k:"month"}};
 window.perSet=function(id,k){ var r=rangeOf(k); PER[id]={k:k, f:r[0], t:r[1]}; if(ts(id==="dep"?"dep":"drv")) ts(id==="dep"?"dep":"drv").page=1; };
-perSet("dep","month"); perSet("drv","30");
+perSet("dep","month"); perSet("drv","month");
 function dayOf(d){ var m=String(d.day||d.at||"").match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/); return m?m[1]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[3]).slice(-2):""; }
 window.perFilter=function(id,L){ var P=PER[id]||{}; if(!P.f&&!P.t) return (L||[]).slice();
   return (L||[]).filter(function(d){ var x=dayOf(d); return x && (!P.f||x>=P.f) && (!P.t||x<=P.t); }); };
@@ -61,37 +62,44 @@ function perWire(){
   document.querySelectorAll("[data-pergo]").forEach(function(b){ b.onclick=function(){ var id=b.getAttribute("data-pergo"), f=($("pf-"+id)||{}).value||"", t=($("pt-"+id)||{}).value||"";
     if(f&&t&&f>t){ var z=f; f=t; t=z; } PER[id]={k:"", f:f, t:t}; var x=ts(id); if(x) x.page=1; draw(); }; });
 }
+if(NEEDS.deposit && NEEDS.deposit.indexOf("set")<0) NEEDS.deposit=NEEDS.deposit.concat(["set"]);   /* 통장 연결 여부(OFFICE) */
 var ad=AFTER.deposit;
 AFTER.deposit=function(){ if(ad) ad.apply(this,arguments); perWire();
   var c=$("depBankGo"); if(c) c.onclick=function(){ go("popbill"); };
   /* 워시처럼 표 아래로: 팝빌에서 가져오기 칸 */
   var pull=$("depPull"), pc=pull&&pull.closest(".card"), bank=$("depBankGo"), bc=bank&&bank.closest(".card");
-  if(pc&&bc&&bc.parentNode){ bc.parentNode.insertBefore(pc, bc); var h=pc.querySelector("h3"); if(h) h.textContent="팝빌에서 가져오기 · 다시 맞추기"; }
+  var tb=$("dep-blk"), tc=tb&&tb.closest(".card");
+  if(pc&&tc&&tc.parentNode){ tc.parentNode.insertBefore(pc, tc.nextSibling); var h=pc.querySelector("h3"); if(h) h.textContent="팝빌에서 가져오기 · 다시 맞추기"; }
+  /* 기간 고르기는 위 기간 칸 하나만 — 가져올 날 수는 고른 기간에서 셈해요 */
+  var dd=$("depDays"); if(dd){ dd.hidden=true; dd.setAttribute("aria-hidden","true"); }
+  if(pull&&dd){ var sync=function(){ var P=PER.dep||{}, f=P.f?Date.parse(P.f+"T00:00:00+09:00"):0, days=f?Math.ceil((Date.now()-f)/864e5)+1:7;
+      var pick="31"; ["3","7","14","31"].some(function(v){ if(days<=Number(v)){ pick=v; return true; } return false; }); dd.value=pick; };
+    pull.addEventListener("pointerdown", sync); pull.addEventListener("keydown", sync); sync(); }
 };
 var av=AFTER.deliv;
 AFTER.deliv=function(){ if(av) av.apply(this,arguments); perWire(); };
 
 /* ── 입·출금 내역 › 받을 금액 ── */
-PAGE.recv=function(){
+PAGE.recv=function(){   /* 워시 «받을 금액»과 같은 칸 */
   var L=(BILLS||[]).filter(function(b){ return Number(b.left)>0; }).map(function(b){
-    return {id:b.id, name:b.name, total:Number(b.total)||0, paid:Number(b.paid)||0, left:Number(b.left)||0, sent:b.sent?"보냄":"안 보냄", _q:b.name}; });
-  var s=0, part=0; L.forEach(function(r){ s+=r.left; if(r.paid>0) part++; });
-  return head("받을 금액 <em>"+won(s)+"원</em>", ymText(ST.ym)+" 청구서 가운데 아직 다 안 들어온 곳이에요. 입금이 들어오면 «입금·출금»에서 맞춰요.")+
+    return {id:b.id, name:b.name, comp:b.comp||b.issuer||"", ym:ST.ym, cnt:Number(b.cnt)||0, left:Number(b.left)||0, paid:Number(b.paid)||0, _q:b.name+" "+(b.comp||"")}; });
+  var s=0, got=0; L.forEach(function(r){ s+=r.left; }); (BILLS||[]).forEach(function(b){ got+=Number(b.paid)||0; });
+  return head("받을 금액","청구서를 보냈는데 아직 다 안 들어온 돈이에요. 입금이 들어오면 «입금·출금»에서 청구서와 맞춰요.")+
     '<div class="tools">'+ymPicker("rcYm","청구 달")+'</div>'+
-    sums([["받을 곳",won(L.length)+"곳"],["받을 금액",won(s)+"원",s?"bad":""],["일부 입금",won(part)+"곳"],["청구서",won((BILLS||[]).length)+"곳"]])+
-    card("받을 곳","이름을 누르면 월별 청구서로 가요.",
+    sums([["받을 금액",won(s)+"원","warn"],["지금까지 받은 금액",won(got)+"원","good"],["가장 오래된 건",L.length?Number(String(ST.ym).slice(5,7))+"월":"없음"],["남은 건수",won(L.length)+"건"]])+
+    card("받을 곳","",
       tableBlock("rcv",[
-        {k:"name",t:"청구처",name:true,fmt:function(v){ return '<a href="#" data-rcgo="1"><b>'+esc(v)+'</b></a>'; }},
-        {k:"total",t:"청구",num:true,fmt:function(v){ return won(v); }},
-        {k:"paid",t:"들어온 돈",num:true,fmt:function(v){ return won(v); }},
-        {k:"left",t:"받을 금액",num:true,fmt:function(v){ return '<span style="color:var(--danger);font-weight:800">'+won(v)+'</span>'; }},
-        {k:"sent",t:"청구서",fmt:function(v){ return '<span class="cgg-st '+(v==="보냄"?"done":"chk")+'">'+esc(v)+'</span>'; }}
-      ], L, {}))+
-    CGG.help("받을 금액 = 청구 − 들어온 돈이에요. 입금은 «입금·출금»에서 청구서와 맞추면 여기서 빠져요.","이 화면 사용법");
+        {k:"name",t:"딜러",name:true,fmt:function(v){ return '<b>'+esc(v)+'</b>'; }},
+        {k:"comp",t:"상사",fmt:function(v){ return esc(v||"—"); }},
+        {k:"ym",t:"청구 기간",kind:"id",fmt:function(v){ return esc(ymText(v)); }},
+        {k:"cnt",t:"대수",num:true,fmt:function(v){ return won(v)+"대"; }},
+        {k:"left",t:"받을 금액",num:true,fmt:function(v){ return '<b style="color:var(--warn)">'+won(v)+'원</b>'; }}
+      ], L, {actions:function(r){ return [{key:"in",label:"입금 확인",attr:"data-rcgo",val:r.id}]; }}))+
+    CGG.help("«입금 확인»을 누르면 입·출금 내역으로 가요. 들어온 줄을 골라 «선택한 줄 청구서에 맞추기»를 누르면 여기서 빠져요.","이 화면 사용법");
 };
 NEEDS.recv=["bill"];
 AFTER.recv=function(){ wireTable("rcv",function(){ draw(); }); wireYm("rcYm",["bill"]);
-  document.querySelectorAll("[data-rcgo]").forEach(function(a){ a.onclick=function(e){ e.preventDefault(); go("bill"); }; });
+  document.querySelectorAll("[data-rcgo]").forEach(function(a){ a.onclick=function(e){ e.preventDefault(); perSet("dep","all"); var x=ts("dep"); x.tf="확인 필요"; go("deposit"); }; });
 };
 
 /* ── 설정 › 우리 사업장 (거래처 화면에서 나눔) ── */
@@ -112,32 +120,58 @@ PAGE.office=function(){
 NEEDS.office=NEEDS.partner;
 AFTER.office=function(){ if(AFTER.partner) AFTER.partner.apply(this,arguments); };
 
+/* ── 설정 › 입금 자동 확인 = 팝빌 + 문자 자동수집(메뉴 지도: set/sms 없어짐) ── */
+var _pp=PAGE.popbill, _psms=PAGE.sms;
+PAGE.popbill=function(){
+  var tmp=document.createElement("div"); tmp.innerHTML=_psms.apply(this,arguments); var hd=tmp.querySelector(".cgg-head"); if(hd) hd.remove();
+  return _pp.apply(this,arguments)+'<details class="chk-fold" id="v55Sms"><summary>문자 자동수집 (보조) · 펼쳐 보기</summary>'+tmp.innerHTML+'</details>';
+};
+NEEDS.popbill=(NEEDS.popbill||[]).concat((NEEDS.sms||[]).filter(function(x){ return (NEEDS.popbill||[]).indexOf(x)<0; }));
+var _ap=AFTER.popbill;
+AFTER.popbill=function(){ if(_ap) _ap.apply(this,arguments); if(AFTER.sms) AFTER.sms.apply(this,arguments); };
+
+/* ── 설정 › 알림 — 발신번호 칸(#smsFrom · 메뉴 지도 spot) ── */
+var _pa=PAGE.alarm;
+PAGE.alarm=function(){
+  return _pa.apply(this,arguments)+'<div class="card" id="smsFrom"><h3>발신번호 (문자 보내는 번호)</h3><p class="csub">알림톡이 안 갈 때 문자로 대신 보내는 번호예요. 지금 번호: <b>'+esc(OFFICE.sms_from||"아직 없음")+'</b></p>'+
+    '<div class="tools"><button type="button" class="btn" data-v55go="office">우리 사업장에서 바꾸기</button></div></div>';
+};
+if(NEEDS.alarm){ if(NEEDS.alarm.indexOf("set")<0) NEEDS.alarm=NEEDS.alarm.concat(["set"]); } else NEEDS.alarm=["set"];
+var _aa=AFTER.alarm;
+AFTER.alarm=function(){ if(_aa) _aa.apply(this,arguments); document.querySelectorAll("#main [data-v55go]").forEach(function(x){ x.onclick=function(){ go(x.getAttribute("data-v55go")); }; }); };
+
 /* ── 설정 › 자료 올리기 (카모두 명부 · 첫날 쓰는 순서) ── */
-PAGE.roster=function(){
+function rosterCards(){
   var own=isOwner();
-  return head("명부 올리기","카모두에서 받은 상사 · 딜러 명부를 올려요. 처음 쓰는 날은 아래 «첫날 쓰는 순서»대로 하면 돼요.")+
+  return ''+
   card("카모두 상사명부 · 딜러명부","카모두 상사리스트 · 딜러리스트 엑셀을 그대로 올려요. 영업 · 재직만 들어가고, 이미 있는 이름은 건너뛰어요.",
     own?'<div class="tools"><button type="button" class="btn primary" id="rsComp">① 상사명부 올리기</button><button type="button" class="btn primary" id="rsDealer">② 딜러명부 올리기</button><button type="button" class="btn" id="rsTpl">거래처 양식 받기 (CSV)</button></div>'
        :'<p class="note">명부 올리기는 대표만 할 수 있어요.</p>')+
-  card("접수리스트 · 나스 엑셀","카모두 접수리스트와 나스 전산외 · 정비비 엑셀은 매출 › 자료 올리기에서 올려요.",
-    '<div class="tools"><button type="button" class="btn" id="rsFiles">매출 › 자료 올리기로 가기</button></div>')+
+
   card("첫날 쓰는 순서","위에서부터 하나씩 하면 그달 청구서까지 나와요.",
     '<ol class="v55-steps">'+
     '<li><b>카모두 상사명부</b> 올리기 — 위 «① 상사명부 올리기»</li>'+
     '<li><b>카모두 딜러명부</b> 올리기 — 위 «② 딜러명부 올리기»</li>'+
     '<li><b>단가표</b> «가온 규칙으로 맞추기» <button type="button" class="btn small" data-v55go="price">단가표로</button></li>'+
-    '<li><b>접수리스트</b> 올리기 (청구할 달) <button type="button" class="btn small" data-v55go="files">매출 › 자료 올리기로</button></li>'+
+    '<li><b>접수리스트</b> 올리기 (청구할 달) — 아래 «엑셀 올리기» 칸</li>'+
     '<li><b>청구서</b> 확인 — 청구처 수 · 총계가 나스 «가온 정산»과 같으면 맞아요 <button type="button" class="btn small" data-v55go="bill">월별 청구서로</button></li>'+
     '</ol>');
 };
-NEEDS.roster=["set"];
-AFTER.roster=function(){
+var _pf=PAGE.files;
+PAGE.files=function(){   /* 맨 위에 명부 칸 · 첫날 순서 */
+  var tmp=document.createElement("div"); tmp.innerHTML=_pf.apply(this,arguments);
+  var h=tmp.querySelector(".cgg-head"), box=document.createElement("div"); box.innerHTML=rosterCards();
+  if(h&&h.parentNode){ var ref=h.nextSibling; while(box.firstChild) h.parentNode.insertBefore(box.firstChild, ref); }
+  return tmp.innerHTML;
+};
+function rosterWire(){
   var o=function(){ if(COMPS===null){ tell("아직 쓸 수 없어요","서버를 새로 올려야 쓸 수 있어요(체크 서버 v34). 차곳간에 알려 주세요."); return; } if(window.chkCsvOpen) chkCsvOpen(); };
   var a=$("rsComp"); if(a) a.onclick=o; var b=$("rsDealer"); if(b) b.onclick=o;
   var t=$("rsTpl"); if(t) t.onclick=function(){ if(window.chkCsvTpl) chkCsvTpl(); };
-  var f=$("rsFiles"); if(f) f.onclick=function(){ go("files"); };
-  document.querySelectorAll("[data-v55go]").forEach(function(x){ x.onclick=function(){ go(x.getAttribute("data-v55go")); }; });
-};
+  document.querySelectorAll("#main [data-v55go]").forEach(function(x){ x.onclick=function(){ go(x.getAttribute("data-v55go")); }; });
+}
+var _af=AFTER.files;
+AFTER.files=function(){ if(_af) _af.apply(this,arguments); rosterWire(); };
 
 })();
 </script>
