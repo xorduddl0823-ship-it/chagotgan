@@ -12,7 +12,7 @@ function taxPayOf(g){
   return {paid:paid,left:Math.max(0,(g.amount||0)-paid)};
 }
 function taxIssuedReal(g){var d=taxDoc(g);return !!(d&&d.status==="발급"&&!d.test);}
-function taxUnpaidText(g){return "입금 뒤 발급돼요"+(g.paid>0?(" (받은 "+wonExact(g.paid)+" · 남은 "+wonExact(g.left)+")"):"");}
+function taxUnpaidText(g){return "입금 뒤 발급돼요 (받은 "+wonExact(g.paid||0)+" · 남은 "+wonExact(g.left||0)+")";}
 /* 서버 sb23 에 같이 보내는 묶음 정보 */
 function taxBillOf(g){
   return {month:T.month||"",key:g.key,dealer:g.dealer||"",company:g.company||"",
@@ -91,9 +91,9 @@ function htxLim(f){ if(HTX_LIM[f]) return HTX_LIM[f]; var m=f.match(/^item\d:(�
 function htxMake(pick, part, parts, warn){
   var wb=XLSX.read(HTX_TPL_B64_W,{type:"base64"}), sh=wb.Sheets["엑셀업로드양식"], H=sh&&htxHead(sh);
   for(var si=0;!H&&si<wb.SheetNames.length;si++){ sh=wb.Sheets[wb.SheetNames[si]]; H=htxHead(sh); }
-  if(!H) throw new Error("양식 칸을 찾지 못했어요");
+  if(!H) throw new Error("양식이 바뀌었어요 — 차곳간에 알려 주세요");
   var F=H.labels.map(htxField), need=["kind","date","s:biz","b:biz","supply","tax","item1:일자","item1:품목","pay"], miss=need.filter(function(k){ return F.indexOf(k)<0; });
-  if(miss.length) throw new Error("양식 칸 "+miss.join(", "));
+  if(miss.length) throw new Error("양식이 바뀌었어요 — 차곳간에 알려 주세요");
   var used=F.map(function(f,c){ return f?c:-1; }).filter(function(c){ return c>=0; }), r=H.hr+1, ymd=lastDayOf(T.month).ymd;
   while(r<=H.R.e.r && !used.every(function(c){ var x=sh[XLSX.utils.encode_cell({r:r,c:c})]; return !x||x.v===""||x.v==null; })) r++;
   pick.forEach(function(g){ var items=htxItems(g);
@@ -114,19 +114,18 @@ function exportHometax(all){
   var base=all.filter(function(g){return !sel.length||T.sel[g.key];});
   var pick=base.filter(function(g){return g.issue&&!g.unpaid&&!taxIssuedReal(g);});
   var unpaidN=base.filter(function(g){return g.unpaid&&!taxIssuedReal(g);}).length, noBizN=base.filter(function(g){return !g.issue;}).length;
-  if(!pick.length)return toast("넣을 곳이 없어요 — 입금 완료 · 아직 발급 안 한 곳이 없어요"+(unpaidN?(" (입금 전 "+unpaidN+"곳은 입금 뒤 발급돼요)"):""),true);
+  if(!pick.length)return toast("넣을 곳이 없어요 — 입금 완료 · 아직 발급 안 한 곳이 없어요"+(unpaidN?(" (입금 전 "+unpaidN+"건은 입금 뒤 발급돼요)"):""),true);
   var go=function(){
     var parts=Math.ceil(pick.length/100), tot=pick.reduce(function(s,g){return s+g.amount;},0);
     ask("홈택스 일괄발급 양식을 내려받을까요? ("+periodLabel(T.month)+" · 입금 완료만 · 영수)\n\n"+
         "받는 곳 · "+wWho(pick.map(function(g){return g.issuerName;}))+"\n"+
         pick.length+"건"+(parts>1?(" (100건씩 파일 "+parts+"개)"):"")+" · 합계 "+wonExact(tot)+" (부가세 포함)"+
-        (unpaidN?("\n입금 전 "+unpaidN+"곳은 빼요 — 입금 뒤 발급돼요."):"")+
-        (noBizN?("\n사업자번호가 없거나 틀린 "+noBizN+"곳은 빼요."):"")+
+        (unpaidN?("\n입금 전 "+unpaidN+"건은 빼요 — 입금 뒤 발급돼요."):"")+
+        (noBizN?("\n사업자번호가 없거나 틀린 "+noBizN+"건은 빼요."):"")+
         "\n\n홈택스 일괄발급 화면에서 이 파일을 불러와요(발급은 한 번에 50건씩).",
       function(){
         var warn=[], chain=Promise.resolve();
-        try{ for(var i=0;i<parts;i++)(function(i){ chain=chain.then(function(){ return htxMake(pick.slice(i*100,(i+1)*100), i+1, parts, warn); }); })(i); }
-        catch(e){ return toast("양식을 만들지 못했어요 — 차곳간에 알려 주세요",true); }
+        for(var i=0;i<parts;i++)(function(i){ chain=chain.then(function(){ return htxMake(pick.slice(i*100,(i+1)*100), i+1, parts, warn); }); })(i);
         chain.then(function(){ toast("홈택스 양식 "+parts+"개("+pick.length+"건)를 받았어요"+(warn.length?(" · 길이가 넘쳐 줄인 칸 "+warn.length+"개"):""),!!warn.length); },
           function(e){ toast("양식을 만들지 못했어요 — "+errMsg(e),true); });
       },"내려받기");

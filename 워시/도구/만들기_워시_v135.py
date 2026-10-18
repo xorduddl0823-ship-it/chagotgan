@@ -27,7 +27,7 @@ rep('var APP_VER="워시 v134 · UI 3.0 · 2026-10-18";', 'var APP_VER="워시 v
 # 0) 공통 표(gTable) — 줄마다 고르기 잠그기(opt.selOff) · 회색 줄(opt.rowOff). 쓰지 않는 표는 그대로
 rep('''   (opt.sel?('<th class="c-chk"><input type="checkbox" class="gall"'+
      ((list.length&&list.every(function(r){return st.sel&&st.sel[opt.id(r)];}))?" checked":"")+'></th>'):"")+''',
-'''   (opt.sel?('<th class="c-chk"><input type="checkbox" class="gall"'+
+'''   (opt.sel?('<th class="c-chk"><input type="checkbox" class="gall"'+((opt.selOff&&list.length&&list.every(function(r){return opt.selOff(r);}))?' disabled title="'+esc(opt.offText||"")+'"':'')+
      ((list.some(function(r){return !(opt.selOff&&opt.selOff(r));})&&list.every(function(r){return (opt.selOff&&opt.selOff(r))||(st.sel&&st.sel[opt.id(r)]);}))?" checked":"")+'></th>'):"")+''')
 rep('''    return '<tr data-i="'+ri+'">'+(opt.sel?'<td class="c-chk"><input type="checkbox" class="gsel"'+(st.sel&&st.sel[opt.id(r)]?" checked":"")+'></td>':"")+''',
 '''    var off=!!(opt.selOff&&opt.selOff(r));
@@ -54,7 +54,7 @@ rep('''  var gs=taxGroups();
   var okList=gs.filter(function(g){return g.issue;});
   var noBiz=gs.length-okList.length;''', '''  var gs=taxGroups();
   gs.forEach(function(g){if(g.unpaid&&T.sel)delete T.sel[g.key];});   /* v135 입금 전 줄은 고를 수 없어요 */
-  var okList=gs.filter(function(g){return g.issue&&!g.unpaid;});
+  var okList=gs.filter(function(g){return g.issue&&!g.unpaid&&!taxIssuedReal(g);});   /* 띠 · 홈과 같은 셈 */
   var noBiz=gs.filter(function(g){return !g.issue;}).length;
   var unpaidN=gs.filter(function(g){return g.unpaid&&!taxIssuedReal(g);}).length;''')
 rep('''  var cars=gs.reduce(function(s,g){return s+g.cars;},0);
@@ -75,7 +75,7 @@ rep('''  var gs=all.filter(function(g){return T.sel[g.key];});
   var done=gs.filter(function(g){var d=taxDoc(g);return d&&d.status==="발급"&&!d.test;});''', '''  var gs=all.filter(function(g){return T.sel[g.key]&&!g.unpaid;});   /* v135 입금 완료만 */
   if(!gs.length)return toast("입금 완료된 곳만 발급할 수 있어요 — 입금 전인 곳은 입금 뒤 발급돼요",true);
   var done=gs.filter(function(g){var d=taxDoc(g);return d&&d.status==="발급"&&!d.test;});''')
-rep('''    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key)};''', '''    if(g.unpaid){ fail++; return next(); }   /* v135 한 번 더 — 입금 전은 보내지 않아요 */
+rep('''    var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key)};''', '''    if(g.unpaid){ return next(); }   /* v135 한 번 더 — 입금 전은 보내지 않아요(앞에서 이미 빠져 거의 없음) */
     var req={test:c.test,corpNum:digits(sup.bizNo),userId:c.userId,doc:pbDoc(g,key),bill:taxBillOf(g)};''')
 rep('''  var pay=(S.cfg&&S.cfg.payType)==="01"?"영수":"청구";
   var lines=g.itemList.map''', '''  var pay="영수";   /* v135 입금 완료만 발급 → 늘 영수 */
@@ -92,6 +92,6 @@ rep('''  if(tab==="tax"){var n=0;try{n=taxGroups().filter(function(g){var d=taxD
 rep('''    var gs=taxGroups().filter(function(g){var d=taxDoc(g);return !(d&&d.status==="발급"&&!d.test);});''', '''    var gs=taxGroups().filter(function(g){var d=taxDoc(g);return !g.unpaid&&!(d&&d.status==="발급"&&!d.test);});   /* v135 입금 완료만 */''')
 # 5) CSS — 잠긴 줄 회색
 rep('''#hdrOld,#homeOld{display:none!important}''', '''#hdrOld,#homeOld{display:none!important}
-tr.goff td{background:var(--surface2);color:var(--muted)} tr.goff .tag{opacity:.75} .c-chk input:disabled{opacity:.45;cursor:not-allowed}''')
+tr.goff td,tr.goff td.c-chk,tr.goff td.c-name{background:var(--surface2);color:var(--muted)} tr.goff .tag{opacity:.75} .c-chk input:disabled{opacity:.45;cursor:not-allowed}''')
 
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
