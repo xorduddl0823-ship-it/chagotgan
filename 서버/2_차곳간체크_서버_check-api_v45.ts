@@ -787,7 +787,8 @@ async function invoiceRows(ctx: Ctx, invoiceId: string) {
   /* v40(체크 방 지적): 이 검사소 청구서인지 먼저 확인 — 남의 청구서 줄을 id 로 못 읽게 */
   const { data: inv } = await db.from("check_invoice").select("id").eq("office_id", ctx.office.id).eq("id", S(invoiceId)).maybeSingle();
   if (!inv) throw new Error("이 검사소 청구서가 아닙니다.");          // 보안(중간 · v25부터 있던 것): 남의 청구서는 거절
-  const { data } = await db.from("check_invoice_row").select("*").eq("invoice_id", inv.id);
+  /* v45(체크 v52): 줄마다 차 번호판·검사일(수출 가성능 금액 넣기 창) — 이 검사소 청구서 줄의 차만 */
+  const { data } = await db.from("check_invoice_row").select("*, car:car_id(plate,check_date)").eq("invoice_id", inv.id);
   return data ?? [];
 }
 
