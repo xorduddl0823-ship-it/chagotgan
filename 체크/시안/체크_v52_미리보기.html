@@ -11032,9 +11032,9 @@ function hometaxGo(){
   var noBiz=pick.filter(function(t){ return digits(t.biz).length!==10; }).length;
   if(!digits((OFFICE||{}).popbill_corp||(OFFICE||{}).biz_no)){ tell("우리 사업장 사업자번호가 비어 있어요","설정 › 거래처 › 우리 사업장에서 사업자등록번호를 먼저 넣어 주세요."); return; }
   var parts=Math.ceil(pick.length/100), tot=pick.reduce(function(a,t){ return a+(Number(t.total)||0); },0);
-  ask({title:"홈택스 일괄발급 양식을 내려받을까요?\n"+ymText(ST.ym)+"분 · 입금 완료만 · 영수(01)",
+  ask({title:"홈택스 일괄발급 양식을 내려받을까요?", sub:ymText(ST.ym)+"분 · 입금 완료만 · 영수(01)",
        k1:"몇 건", v1:pick.length+"건"+(parts>1?" (100건씩 파일 "+parts+"개)":""), k2:"얼마", v2:won(tot)+"원 (부가세 포함)",
-       warn:"홈택스 공식 양식(일반) 그대로예요. 홈택스 › 전자(세금)계산서 › 일괄발급에서 이 파일을 올려요(발급은 한 번에 50건씩)."+(noBiz?" 사업자번호가 10자리가 아닌 곳 "+noBiz+"곳이 있어요.":""), yes:"내려받기"}, function(){
+       warn:"홈택스 공식 양식(일반) 그대로예요. 홈택스 일괄발급 화면에서 이 파일을 불러와요(발급은 한 번에 50건씩)."+(parts>1?" 파일이 여러 개라 브라우저가 «여러 파일 내려받기»를 물으면 «허용»을 눌러요.":"")+(noBiz?" 사업자번호가 10자리가 아닌 곳 "+noBiz+"곳이 있어요.":""), yes:"내려받기"}, function(){
     var warn=[];
     try{ for(var i=0;i<parts;i++) makeFile(pick.slice(i*100,(i+1)*100), i+1, parts, warn); }
     catch(e){ tell("양식을 만들지 못했어요","차곳간에 알려 주세요. ("+esc(String(e&&e.message||""))+")"); return; }
