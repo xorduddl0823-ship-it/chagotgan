@@ -39,7 +39,7 @@ assert ('version:"cgg-j4 %s"' % CV) in s
 # 판 이름
 rep('ver:"체크 v55.1", date:"10/18"', 'ver:"체크 %s", date:"10/18"' % V)
 rep('$("hdVer").textContent="체크 v55.1 · "', '$("hdVer").textContent="체크 %s · "' % V)
-rep('<!-- 체크 v55.1 (', ('<!-- 체크 v56.1 (v56 + 공통 부품 1.13 바꿔 끼우기) · ' if N else '') + '<!-- 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (')
+rep('<!-- 체크 v55.1 (', '<!-- ' + ('체크 v56.1 (v56 + 공통 부품 1.13 바꿔 끼우기) · ' if N else '') + '체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (')
 
 # ═══ ③-A3 표 = 공통 1.12 모양(워시 표) — 위 «넓은 찾기 · 상태 칩 · 20개씩 · 빨간 지우기», 칸 머리 ↕, 아래 «처음 · 이전 · 1 / N · 모두 N줄 · 다음 · 맨뒤», 할 일 단추는 표 아래 줄
 #    표 안 동작(wireTable · picked · data-* 이름)은 그대로 — 모양만 바꿔요
@@ -167,7 +167,7 @@ if N:
         (ra?'<span class="ra">'+ra+'</span>':'')+'</div>'; }).join("")""",
     """      var MF=opt.mobileFields?cols.map(function(c,k){ return opt.mobileFields.indexOf(c.k)>=0?k:-1; }).filter(function(k){ return k>0; })
                               :kinds.map(function(kd,k){ return (k>0&&(kd==="money"||kd==="state"||kd==="date"||kd==="time"))?k:-1; }).filter(function(k){ return k>0; });   /* v56.1 (1.13 R02~R05) */
-      var rest=cols.map(function(c,k){ return (k<2||MF.indexOf(k)>=0)?"":tbPlain(cellHtml(c,r)); }).filter(Boolean).join(" · ");
+      var rest=opt.mobileFields?"":cols.map(function(c,k){ return (k<2||MF.indexOf(k)>=0)?"":tbPlain(cellHtml(c,r)); }).filter(Boolean).join(" · ");   /* 1.13: mobileFields 를 주면 긴 줄 없음 */
       var ra=hasAct?acts(r):"";
       return '<div class="cgg-mrow"><input type="checkbox" class="pk" data-k="'+esc(key)+'"'+(s.sel[key]?" checked":"")+' aria-label="선택">'+
         '<span class="t"><b>'+cellHtml(cols[0],r)+(sub&&MF.indexOf(1)<0?'<span>'+esc(sub)+'</span>':'')+'</b>'+(rest?'<small>'+esc(rest)+'</small>':'')+
@@ -175,6 +175,11 @@ if N:
         (ra?'<span class="ra">'+ra+'</span>':'')+'</div>'; }).join("")""")
     # 청구서 표 폰 칸 (디자인 권장: 청구액 · 받을 금액 · 기한 · 발송 — 체크 청구서엔 기한 칸이 없어 셋)
     rep("    ], billShown(), {pick:true,", "    ], billShown(), {pick:true, mobileFields:[\"total\",\"left\",\"sendState\"],   /* v56.1 폰 칸 */")
+
+# v56.1 검사 일꾼: 메뉴 지도 1.13 이름 «월별 장부» 와 화면 제목 · 카드 제목 맞추기, 청구서 «입금 대기» 칸 이름 = 워시 «받을 금액»(이름만)
+if N:
+    rep('  card("달마다 장부","달을 누르면 그 달 청구서로 가요.', '  card("월별 장부","달을 누르면 그 달 청구서로 가요.')
+    rep('      {k:"left",t:"입금 대기",num:true,fmt:function(v){return v>0?', '      {k:"left",t:"받을 금액",num:true,fmt:function(v){return v>0?')
 
 #@@끝
 

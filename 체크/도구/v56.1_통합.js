@@ -258,8 +258,8 @@ AFTER.bill=function(){ if(_ab) _ab.apply(this,arguments);
   b2.onclick=function(){ var L=sel(); if(!L.length) L=BILLS.filter(function(b){ return b.left>0; }); L=L.filter(function(b){ return b.left>0; });
     if(!L.length){ tell("입금 대기인 곳이 없어요","이 달 청구서는 모두 입금됐어요."); return; } bundleMany(L); };
 };
-/* ⑦ 화면 제목 = 메뉴 지도 이름 (대조표 B12 «거래처 관리» · 휴지통 · 받는 곳 합치기 · 보험료 맞춰 보기 · 알림톡 문구) */
-var TT={"청구처 묶음":"받는 곳 합치기","보험료 대조":"보험료 맞춰 보기","거래처":"거래처 관리","지운 내역":"휴지통","알림톡 템플릿":"알림톡 문구"};
+/* ⑦ 화면 제목 = 메뉴 지도 이름 (1.13 메뉴 지도: 청구처 묶음 · 월별 장부 · 보험료 맞춰 보기 · 거래처 관리 · 휴지통 · 알림톡 문구) */
+var TT={"달마다 장부":"월별 장부","보험료 대조":"보험료 맞춰 보기","거래처":"거래처 관리","지운 내역":"휴지통","알림톡 템플릿":"알림톡 문구"};
 var CR={billtpl:"설정 › 알림 › 알림톡 문구", trash:"사람 단추 › 휴지통", delivtrash:"휴지통 › 지운 배달 기록", help:"머리말 › 도움말"};
 var _hd=head;
 window.head=head=function(t,p){

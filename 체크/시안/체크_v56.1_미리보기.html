@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1668C4">
 <title>체크 v56.1 미리보기</title>
-<!-- 체크 v56.1 (v56 + 공통 부품 1.13 바꿔 끼우기) · <!-- 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
+<!-- 체크 v56.1 (v56 + 공통 부품 1.13 바꿔 끼우기) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231668C4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script>
 /* ═══ 미리보기 전용 — 서버로 가는 요청을 가로채서 지어낸 자료로 답합니다 (실제 서버 연결 없음) ═══ */
@@ -4022,7 +4022,7 @@ function tableBlock(id, cols, rows, opt){
       var key=rk(r,i), sub=cols[1]&&kinds[1]!=="money"&&kinds[1]!=="state"?tbPlain(cellHtml(cols[1],r)):"";
       var MF=opt.mobileFields?cols.map(function(c,k){ return opt.mobileFields.indexOf(c.k)>=0?k:-1; }).filter(function(k){ return k>0; })
                               :kinds.map(function(kd,k){ return (k>0&&(kd==="money"||kd==="state"||kd==="date"||kd==="time"))?k:-1; }).filter(function(k){ return k>0; });   /* v56.1 (1.13 R02~R05) */
-      var rest=cols.map(function(c,k){ return (k<2||MF.indexOf(k)>=0)?"":tbPlain(cellHtml(c,r)); }).filter(Boolean).join(" · ");
+      var rest=opt.mobileFields?"":cols.map(function(c,k){ return (k<2||MF.indexOf(k)>=0)?"":tbPlain(cellHtml(c,r)); }).filter(Boolean).join(" · ");   /* 1.13: mobileFields 를 주면 긴 줄 없음 */
       var ra=hasAct?acts(r):"";
       return '<div class="cgg-mrow"><input type="checkbox" class="pk" data-k="'+esc(key)+'"'+(s.sel[key]?" checked":"")+' aria-label="선택">'+
         '<span class="t"><b>'+cellHtml(cols[0],r)+(sub&&MF.indexOf(1)<0?'<span>'+esc(sub)+'</span>':'')+'</b>'+(rest?'<small>'+esc(rest)+'</small>':'')+
@@ -5160,7 +5160,7 @@ PAGE.bill=function(){
         ?'<span class="tag" style="background:var(--good-soft);color:var(--good)">끊음</span>'
         :'<span class="tag" style="background:var(--warn-soft);color:var(--warn)">안 끊음</span>';}},
       {k:"total",t:"총금액",num:true,fmt:function(v){return '<b>'+won(v)+'</b>';}},
-      {k:"left",t:"입금 대기",num:true,fmt:function(v){return v>0?'<span style="color:var(--danger);font-weight:800">'+won(v)+'</span>':'0';}},
+      {k:"left",t:"받을 금액",num:true,fmt:function(v){return v>0?'<span style="color:var(--danger);font-weight:800">'+won(v)+'</span>':'0';}},
       {k:"tel",t:"보낼 번호",fmt:function(v){return v?esc(v)
         :'<span class="tag" style="background:var(--danger-soft);color:var(--danger)">번호 없음</span>';}},
       {k:"sendState",t:"발송",state:true,fmt:function(v){
@@ -11615,7 +11615,7 @@ PAGE.history=function(){
   (H.length?"":'<div class="msg info">월별 청구서에서 청구서를 만들면 여기에 쌓여요.</div>')+
   (function(){ var b=0,g=0; H.forEach(function(r){ b+=r.bill; g+=r.got; });
     return sums([["청구 합계",won(b)+"원"],["입금 합계",won(g)+"원"],["남은 금액",won(Math.max(0,b-g))+"원",b>g?"bad":"good"],["기록한 달",won(H.length)+"달"]]); })()+
-  card("달마다 장부","달을 누르면 그 달 청구서로 가요. 금액은 부가세 포함이에요.",
+  card("월별 장부","달을 누르면 그 달 청구서로 가요. 금액은 부가세 포함이에요.",
     tableBlock("his",[
       {k:"ym",t:"청구 달",name:true,fmt:function(v){ return '<a href="#" data-hisym="'+esc(v)+'"><b>'+esc(ymText(v))+'</b></a>'; }},
       {k:"n",t:"검사 대수",num:true,fmt:function(v){ return won(v)+"대"; }},
@@ -12225,8 +12225,8 @@ AFTER.bill=function(){ if(_ab) _ab.apply(this,arguments);
   b2.onclick=function(){ var L=sel(); if(!L.length) L=BILLS.filter(function(b){ return b.left>0; }); L=L.filter(function(b){ return b.left>0; });
     if(!L.length){ tell("입금 대기인 곳이 없어요","이 달 청구서는 모두 입금됐어요."); return; } bundleMany(L); };
 };
-/* ⑦ 화면 제목 = 메뉴 지도 이름 (대조표 B12 «거래처 관리» · 휴지통 · 받는 곳 합치기 · 보험료 맞춰 보기 · 알림톡 문구) */
-var TT={"청구처 묶음":"받는 곳 합치기","보험료 대조":"보험료 맞춰 보기","거래처":"거래처 관리","지운 내역":"휴지통","알림톡 템플릿":"알림톡 문구"};
+/* ⑦ 화면 제목 = 메뉴 지도 이름 (1.13 메뉴 지도: 청구처 묶음 · 월별 장부 · 보험료 맞춰 보기 · 거래처 관리 · 휴지통 · 알림톡 문구) */
+var TT={"달마다 장부":"월별 장부","보험료 대조":"보험료 맞춰 보기","거래처":"거래처 관리","지운 내역":"휴지통","알림톡 템플릿":"알림톡 문구"};
 var CR={billtpl:"설정 › 알림 › 알림톡 문구", trash:"사람 단추 › 휴지통", delivtrash:"휴지통 › 지운 배달 기록", help:"머리말 › 도움말"};
 var _hd=head;
 window.head=head=function(t,p){
