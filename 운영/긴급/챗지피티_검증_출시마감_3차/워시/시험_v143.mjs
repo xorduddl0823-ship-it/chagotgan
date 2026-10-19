@@ -182,7 +182,7 @@ for (const how of ['새로고침','다시 로그인']) {
     const t=document.querySelector('#toast.show,.cgg-toast:not([hidden])'); return {res,sent:__PV.sent().length-n0,status:l.status,rid:l.rid,id:l.id,toast:t?t.textContent:''}; });
   ok('⑨ 답을 잃은 발송 → 보낸 기록 «확인 중»',r.status==='확인 중',JSON.stringify(r));
   ok('⑨ 공급자에 1번만(문자로 또 안 보냄 · 자동 다시 없음)',r.sent===1,r.sent+'번');
-  ok('⑨ 안내 글 «확인 중 — 보낸 기록에서 확인해 주세요»',/확인 중 — 보낸 기록에서 확인/.test(r.res+' '+r.toast),r.res);
+  ok('⑨ 안내 글 «갔는지 아직 몰라요 — 보낸 기록에서 확인해 주세요»',/갔는지 아직 몰라요 — 보낸 기록에서 확인/.test(r.res+' '+r.toast),r.res);
   ok('⑨ 보낸 기록에 rid 24자 남음',/^[a-z0-9]{24}$/.test(r.rid||''),r.rid);
   // 보낸 기록 화면: 확인 중 안내 · [다시 보내기](일부러) = 새 rid
   await p.evaluate(()=>{__t.SS().setSub='outbox';__t.tab('settings');}); await W(p,800);
@@ -191,11 +191,25 @@ for (const how of ['새로고침','다시 로그인']) {
   const picked=await p.evaluate(()=>{const rows=[...document.querySelectorAll('#outboxBody tr')].filter(tr=>/확인 중/.test(tr.innerText));
     const cb=rows.length&&rows[0].querySelector('input[type=checkbox]'); if(cb){cb.click();return true;} return false;});
   await p.evaluate(()=>{window.__N1=__PV.sent().length;document.getElementById('obRetry').click();}); await W(p,600);
-  const warn=await p.evaluate(()=>{const t=document.querySelector('#toast.show,.cgg-toast:not([hidden])');return t?t.textContent:'';});
+  const warn=await p.evaluate(()=>{const a=document.getElementById('askbox');return a&&a.classList.contains('show')?a.innerText:'';});
   await p.evaluate(()=>{const bs=[...document.querySelectorAll('#askbox button,.cgg-dim:not([hidden]) button,.cgg-dlg button')].filter(x=>x.offsetParent&&/다시 보내기/.test(x.textContent));bs.length&&bs[bs.length-1].click();}); await W(p,2000);
   const r3=await p.evaluate(()=>{const s=__PV.sent().slice(window.__N1);return s.map(x=>x.rid);});
-  ok('⑨ [다시 보내기] 전에 «이미 갔을 수 있어요» 알림',picked&&/이미 갔을 수 있어요/.test(warn),warn);
+  ok('⑨ [다시 보내기] 확인 창 안에 «이미 갔을 수 있어요»',picked&&/이미 갔을 수 있어요/.test(warn),warn.replace(/\n/g,' ').slice(0,90));
   ok('⑨ 일부러 [다시 보내기] = 새 rid',r3.length===1&&/^[a-z0-9]{24}$/.test(r3[0])&&r3[0]!==r.rid,r3.join(',')+' ← '+r.rid);
+  // 홈 할 일 · 보낸 기록 띠 · 숫자 칸 (다시 보내기 전 상태를 새 페이지에서)
+  { const seedC=await p.evaluate(()=>JSON.parse(JSON.stringify(__PV.DB())));
+    const q=await page('?ata=on&srv=15',seedC,1366,1000);
+    await q.evaluate(()=>{const ob=__PV.DB().outbox;Object.values(ob).forEach(o=>{if(o.rid&&o.status==='보냄'&&o.type==='시험')o.status='확인 중';});});
+    await q.evaluate(()=>{const o=Object.values(__PV.DB().outbox).find(x=>x.status==='확인 중');});
+    await q.evaluate(async()=>{await __t.G().load(true);});
+    await q.evaluate(()=>{__t.SS().setSub='outbox';__t.tab('settings');}); await W(q,600);
+    const ob=await q.evaluate(()=>(document.getElementById('outboxBody')||{}).innerText||'');
+    ok('⑨ 보낸 기록 띠 · 숫자 칸에 «확인 중»',/갔는지 확인 필요 \d+건/.test(ob)&&/확인 중 \d+건/.test(ob),ob.split('\n').filter(x=>/확인/.test(x)).slice(0,3).join(' / '));
+    await q.evaluate(()=>{__t.tab('home');}); await W(q,800);
+    await q.evaluate(()=>{const m=document.querySelector('#dashTodo .todoMore');m&&m.click();}); await W(q,500);   // 할 일이 3건 넘으면 «모두 보기»
+    const hm=await q.evaluate(()=>document.body.innerText);
+    ok('⑨ 홈 할 일에 «확인 필요»',/갔는지 확인 필요/.test(hm),hm.split('\n').filter(x=>/확인 필요/.test(x)).slice(0,2).join(' / '));
+    ok('⑨ 페이지 오류 없음(2)',!q._errs.length,q._errs.join(' | ')); await q.close(); }
   ok('⑨ 페이지 오류 없음',!p._errs.length,p._errs.join(' | ')); await p.close(); }
 
 // ⑩ 알림톡 → 문자 대체는 같은 rid(한 발송 업무) · 저장 성공 기록은 발송 실패로 안 없어짐(새로고침 뒤에도)
@@ -204,7 +218,7 @@ for (const how of ['새로고침','다시 로그인']) {
     __t.hq().off=false;
     const res=await __t.out(i).then(()=>'ok',e=>'ERR '+(e&&e.message||e)); await new Promise(r=>setTimeout(r,1200));
     const s=__PV.sent().slice(n0); return {res,n:s.length,kinds:s.map(x=>x.kind+'/'+(x.ataKey||'')),rids:s.map(x=>x.rid)}; });
-  ok('⑩ 대체 문자도 같은 rid',r.rids.length===2&&new Set(r.rids).size===1,JSON.stringify(r));
+  ok('⑩ 알림톡이 확실히 실패(답 받음) → 문자로 대신 · 새 rid(서버가 실패 답도 기억하므로)',r.rids.length===2&&r.rids[0]!==r.rids[1]&&/^MMS|^SMS|^LMS|^AUTO/.test(r.kinds[1]),JSON.stringify(r));
   await p.close(); }
 { const p=await page('?ata=on&nofrom=1',null,1366,1000);
   const r=await p.evaluate(async()=>{ const rec=__t.recs().find(x=>x.phone); __t.cfg('send',Object.assign({},__t.SS().cfg.send||{},{from:''}));

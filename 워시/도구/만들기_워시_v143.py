@@ -35,7 +35,8 @@ rep('''function supaRpc(fn,args){
 var WRID={cur:"",lost:{},W:{}};
 ("apiSet apiSetMany apiDel apiWipeDemo sendMsg cancelSchedule shopBiz pbIssue pbModify userAdd userEdit userDel userPw userPhone "+
  "inviteAdd inviteDel bankLink bankUnlink driveUpload driveUploadMany trialUse joinPlanSet cfgVoice "+
- "billIssue billOff billStart cashAsk payConfirm payStart noticeHide").split(" ").forEach(function(k){WRID.W[k]=1;});
+ "billIssue billOff billStart cashAsk payConfirm payStart noticeHide paidSay").split(" ").forEach(function(k){WRID.W[k]=1;});
+var WUNK="갔는지 아직 몰라요 — 보낸 기록에서 확인해 주세요";   /* 결과 불명 안내 (한 곳에서) */
 function wNewRid(){var A="abcdefghijklmnopqrstuvwxyz0123456789",a=new Uint8Array(24);
   try{crypto.getRandomValues(a);}catch(e){for(var i=0;i<24;i++)a[i]=Math.floor(Math.random()*256);}
   return Array.prototype.map.call(a,function(x){return A[x%36];}).join("");}
@@ -69,9 +70,10 @@ rep('''GS.send=function(body){return gsCall("sendMsg",[JSON.stringify(body)]).th
 '''GS.send=function(body,rid){var p;WRID.cur=rid||"";try{p=gsCall("sendMsg",[JSON.stringify(body)]);}finally{WRID.cur="";}return p.then(function(t){''')
 rep('''      templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||"",sendKey:String(o.id||"")};   /* v142 보내기 멱등 키 */''',
 '''      templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||""};
-    if(!o.rid)o.rid=wNewRid();   /* v143 보낸 기록 한 줄 = 발송 한 건 = rid 하나 (알림톡 → 문자 대체도 같은 rid) */''')
+    if(!o.rid)o.rid=wNewRid();   /* v143 보낸 기록 한 줄 = 발송 한 건 = rid 하나 (같은 일 재시도는 같은 rid) */''')
 rep('''        o.sentKind=body.kind;
         return GS.send(body);''', '''        o.sentKind=body.kind;
+        o.rid=wNewRid();   /* 알림톡은 «안 감»이 확실(답을 받은 실패) — 문자는 새 rid (서버가 실패 답도 rid 로 기억하므로) */
         return GS.send(body,o.rid);''')
 rep('''    return GS.send(body).then(function(res){''', '''    return GS.send(body,o.rid).then(function(res){''')
 # 결과 불명이면 문자로 대신 보내지 않아요
@@ -88,7 +90,7 @@ rep('''  }).catch(function(e){
     o.status="실패";''', '''  }).catch(function(e){
     if(wUnknown(e)){   /* v143 결과 불명 — 자동으로 다시 보내지 않고 «확인 중» */
       o.status="확인 중";o.err="";
-      return saveJob(o).catch(function(){}).then(function(){throw {message:"확인 중 — 보낸 기록에서 확인해 주세요",unknown:true};});
+      return saveJob(o).catch(function(){}).then(function(){throw {message:WUNK,unknown:true};});
     }
     o.status="실패";''')
 # 자동 발송 알림: 확인 중이면 문자 앱도 열지 않아요
@@ -96,7 +98,7 @@ rep('''      .catch(function(){
         toast("자동 발송 실패 — 보낸 기록에 남겼어요. 문자 앱으로 보내요",true);
         if(openFallback)openFallback();
       });''', '''      .catch(function(e){
-        if(wUnknown(e))return toast("확인 중 — 보낸 기록에서 확인해 주세요",true);   /* v143 갔을 수도 있어서 문자 앱을 열지 않아요 */
+        if(wUnknown(e))return toast(WUNK,true);   /* v143 갔을 수도 있어서 문자 앱을 열지 않아요 */
         toast("자동 발송 실패 — 보낸 기록에 남겼어요. 문자 앱으로 보내요",true);
         if(openFallback)openFallback();
       });''')
@@ -109,10 +111,75 @@ rep('''    var jobs=(S.outbox||[]).filter(function(o){return ids.indexOf(o.id)>=
 '''    var jobs=(S.outbox||[]).filter(function(o){return ids.indexOf(o.id)>=0&&o.status!=="예약";});
     if(!jobs.length)return toast("다시 보낼 건이 없어요 (예약 건은 빼고)",true);
     var nChk=jobs.filter(function(o){return o.status==="확인 중";}).length;   /* v143 */
-    if(nChk)toast("«확인 중» "+nChk+"건은 이미 갔을 수 있어요 — 받는 분께 확인한 뒤 보내 주세요",true);''')
+    var chkTxt=nChk?("※ «확인 중» "+nChk+"건은 이미 갔을 수 있어요 — 받는 분께 확인한 뒤 보내 주세요\\n\\n"):"";''')
+rep('''    ask("받는 곳 · "+wWho(jobs.map(function(o){return wNameOf(o.to)||o.to;}))+"\\n몇 건 · "+jobs.length+"건\\n얼마 · 약 "+won(jobs.length*8)''',
+    '''    ask(chkTxt+"받는 곳 · "+wWho(jobs.map(function(o){return wNameOf(o.to)||o.to;}))+"\\n몇 건 · "+jobs.length+"건\\n얼마 · 약 "+won(jobs.length*8)''')
 # 보낸 기록 상태 칸: 확인 중 안내
 rep('''        (o.err?(' <small style="color:var(--danger)">'+esc(sendErrText(o.err))+'</small>'):"");}},''',
 '''        (o.err?(' <small style="color:var(--danger)">'+esc(sendErrText(o.err))+'</small>'):"")+
         (o.status==="확인 중"?' <small style="color:var(--warn)">갔는지 아직 몰라요 — 받는 분께 확인한 뒤 필요하면 다시 보내 주세요</small>':"");}},   /* v143 */''')
+
+# 꼭2: 출고 카드 «확인 중» (보내는 중/대기 중으로 보이지 않게)
+rep('''              : (sm&&sm.status==="실패"?'<span style="color:var(--danger)">알림 보내기 실패</span>'
+                                      :'알림 보내는 중…'))+''',
+'''              : (sm&&sm.status==="실패"?'<span style="color:var(--danger)">알림 보내기 실패</span>'
+                                      :(sm&&sm.status==="확인 중"?'<span style="color:var(--warn)">알림 갔는지 확인 중 — 보낸 기록에서 봐 주세요</span>':'알림 보내는 중…')))+''')
+rep('''      :(s2.status==="실패"?'<span style="color:var(--danger)">알림 보내기 실패</span>':"알림 대기 중"));''',
+'''      :(s2.status==="실패"?'<span style="color:var(--danger)">알림 보내기 실패</span>':(s2.status==="확인 중"?'<span style="color:var(--warn)">알림 갔는지 확인 중 — 보낸 기록에서 봐 주세요</span>':"알림 대기 중")));''')
+# 출고 기록 숫자 · 상태 칸
+rep('''    else if(s2&&s2.status==="실패")fail++;
+    if(r.outPhotoId||r.photoId)photo++;''', '''    else if(s2&&s2.status==="실패")fail++;
+    else if(s2&&s2.status==="확인 중")chk++;   /* v143 */
+    if(r.outPhotoId||r.photoId)photo++;''')
+rep('''    '<div class="sum"><span>못 보냄</span><b style="color:'+(fail?"var(--danger)":"")+'">'+fail+'건</b></div>';''',
+'''    '<div class="sum"><span>못 보냄</span><b style="color:'+(fail?"var(--danger)":"")+'">'+fail+'건</b>'+(chk?'<small style="color:var(--warn)">확인 중 '+chk+'건</small>':'')+'</div>';''')
+rep('''        var c=s2.status==="보냄"?"paid":s2.status==="실패"?"out":"in";
+        return '<span class="tag '+c+'">'+esc(s2.status)+'</span>';}},''',
+'''        var c=s2.status==="보냄"?"paid":s2.status==="실패"?"out":(s2.status==="확인 중"?"chk":"in");
+        return '<span class="tag '+c+'">'+esc(s2.status)+'</span>';}},''')
+rep('''.tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:800}
+/* 출고가 늦어지는 차''', '''.tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:800}
+.tag.chk{background:var(--card);color:var(--warn);box-shadow:inset 0 0 0 1px var(--warn)}   /* v143 확인 중 = 확인 필요(주황 테두리) */
+/* 출고가 늦어지는 차''')
+# 꼭3: 홈 할 일 · 보낸 기록 띠 · 숫자 칸에 «확인 중»
+rep('''  var failed=(S.outbox||[]).filter(function(o){return o.status==="실패";});
+  var lateList=lateCars();''', '''  var failed=(S.outbox||[]).filter(function(o){return o.status==="실패";});
+  var chkOb=(S.outbox||[]).filter(function(o){return o.status==="확인 중";});   /* v143 */
+  var lateList=lateCars();''')
+rep('''    [failed.length,"알림 보내기 실패","보낸 기록에서 다시 보낼 수 있어요",function(){''',
+'''    [failed.length+chkOb.length,chkOb.length?"알림 보내기 실패 · 확인 필요":"알림 보내기 실패",
+      chkOb.length?("갔는지 확인 필요 "+chkOb.length+"건"+(failed.length?(" · 실패 "+failed.length+"건"):"")+" — 보낸 기록에서 봐 주세요"):"보낸 기록에서 다시 보낼 수 있어요",function(){''')
+rep('''  var nWait = OBL.filter(function(o){return o.status==="예약";}).length;
+  var smsLeft = null;''', '''  var nWait = OBL.filter(function(o){return o.status==="예약";}).length;
+  var nChk = OBL.filter(function(o){return o.status==="확인 중";}).length;   /* v143 */
+  var smsLeft = null;''')
+rep('''  var failBar = nFail ? ('<div class="obbar">'+''', '''  var failBar = (nFail||nChk) ? ('<div class="obbar">'+''')
+rep('''      '<div class="tx"><b>발송 실패 '+nFail+'건</b>'+
+        '<small>누르면 실패한 '+nFail+'건이 모두 골라져요</small></div>'+
+      '<button class="btn primary" id="obFailPick">실패한 건 고르기</button>'+''',
+'''      '<div class="tx"><b>'+(nFail?'발송 실패 '+nFail+'건':'')+(nFail&&nChk?' · ':'')+(nChk?'<span style="color:var(--warn)">갔는지 확인 필요 '+nChk+'건</span>':'')+'</b>'+
+        '<small>'+(nFail?'누르면 실패한 '+nFail+'건이 모두 골라져요':'받는 분께 갔는지 확인한 뒤 필요하면 다시 보내 주세요')+'</small></div>'+
+      (nFail?'<button class="btn primary" id="obFailPick">실패한 건 고르기</button>':'')+''')
+rep('''      '<div class="sum"><span>발송 실패</span><b style="color:var(--danger)">'+nFail+'건</b></div>'+''',
+'''      '<div class="sum"><span>발송 실패</span><b style="color:var(--danger)">'+nFail+'건</b>'+(nChk?'<small style="color:var(--warn)">확인 중 '+nChk+'건</small>':'')+'</div>'+''')
+rep('''      var cls=o.status==="보냄"?"paid":(o.status==="실패"?"out":"in");
+      return '<span class="tag '+cls+'">'+esc(o.status)+'</span>'+''',
+'''      var cls=o.status==="보냄"?"paid":(o.status==="실패"?"out":(o.status==="확인 중"?"chk":"in"));
+      return '<span class="tag '+cls+'">'+esc(o.status)+'</span>'+''')
+# 권장: 직원 주소 안내 · 출고 문구 시험 · 추가 작업 알림 · 밀린 달 묶음 — «확인 중»이면 «다시 하세요» 대신 WUNK
+rep('''      .catch(function(e){$("lkSendMsg").style.color="var(--danger)";
+        $("lkSendMsg").textContent="보내지 못했어요. 다시 시도해 주세요.";toast("보내지 못했어요. 다시 시도해 주세요.",true);});''',
+'''      .catch(function(e){var u=wUnknown(e);$("lkSendMsg").style.color=u?"var(--warn)":"var(--danger)";
+        $("lkSendMsg").textContent=u?WUNK:"보내지 못했어요. 다시 시도해 주세요.";toast(u?WUNK:"보내지 못했어요. 다시 시도해 주세요.",true);});''')
+rep('''    .catch(function(e){$("osMsg").style.color="var(--danger)";$("osMsg").textContent="보내지 못했어요. 다시 시도해 주세요.";});''',
+'''    .catch(function(e){var u=wUnknown(e);$("osMsg").style.color=u?"var(--warn)":"var(--danger)";$("osMsg").textContent=u?WUNK:"보내지 못했어요. 다시 시도해 주세요.";});''')
+rep('''      }).catch(function(e){ bt.disabled=false; bt.textContent="알림톡으로 보내기"; toast(kmsg(e,"보내지 못했어요. 잠시 뒤 다시 시도해 주세요."),true); });''',
+'''      }).catch(function(e){ if(wUnknown(e)){ bt.textContent="갔는지 확인 중"; toast(WUNK,true); return; }   /* v143 갔을 수 있어 단추를 잠가 둬요 */
+        bt.disabled=false; bt.textContent="알림톡으로 보내기"; toast(kmsg(e,"보내지 못했어요. 잠시 뒤 다시 시도해 주세요."),true); });''')
+rep('''          .then(function(){return {ok:true};},function(){return {ok:true,why:"보냄 표시를 못 남겼어요"};});
+      });''', '''          .then(function(){return {ok:true};},function(){return {ok:true,why:"보냄 표시를 못 남겼어요"};});
+      },function(e){ if(wUnknown(e))return {ok:false,unk:true,why:WUNK}; throw e; });   /* v143 */''')
+rep('''    else CGG.dialog({size:"confirm",title:(out.length-ok)+"명에게 못 보냈어요",''',
+'''    else CGG.dialog({size:"confirm",title:(out.length-ok)+"명에게 못 보냈어요"+(out.some(function(r){return r.unk;})?" · 확인 필요":""),''')
 
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
