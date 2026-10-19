@@ -1,0 +1,169 @@
+diff --git "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.5.html" "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.6.html"
+index b64aa37..ff73e23 100644
+--- "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.5.html"
++++ "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.6.html"
+@@ -5,7 +5,7 @@
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#1668C4">
+ <title>차곳간체크</title>
+-<!-- 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
++<!-- 체크 v56.6 (v56.5 + 기록 저장 믿음 · 알림 결과 · 대표님 10/19 최우선) · 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
+ <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231668C4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+@@ -3394,7 +3394,7 @@ function chkHdr(){
+   var sig=[nm,ln,who,(ST&&ST.role)||"",ps?ps.value:""].join("|");
+   if(CHK_H && CHK_SIG===sig && $("hdrTop").firstChild){ chkHdrSync(); return; }
+   CHK_SIG=sig;
+-  CHK_H=CGG.header($("hdrTop"),{product:"체크", sub:"성능점검 정산", ver:"체크 v56.5", date:"10/19",
++  CHK_H=CGG.header($("hdrTop"),{product:"체크", sub:"성능점검 정산", ver:"체크 v56.6", date:"10/19",
+     biz:{name:nm||"—", line:ln},
+     find:{mode:"nav", feats:chkFeats(), onGo:chkGoFeat},
+     notice:function(){ if(window.ccwNotice) window.ccwNotice(); },
+@@ -4908,7 +4908,7 @@ function billAtaText(b, due){
+     "문의 "+(OFFICE.tel||"")+"\n\n"+
+     "본 안내는 "+shop+"의 요청으로 차곳간이 보내드립니다.";
+ }
+-function howTxt(h){ h=String(h||"").toLowerCase(); return h==="ata"?"알림톡":h==="mms"?"사진 문자":(h==="lms"||h==="sms")?"문자":"—"; }
++function howTxt(h){ h=String(h||"").toLowerCase(); return h==="ata"?"알림톡":h==="mms"?"사진 문자":h==="lms"?"문자(장문)":h==="sms"?"문자(단문)":"—";   /* v56.6 */ }
+ function billSendResult(){
+   var R=BS_LAST; if(!R || R.ym!==ST.ym) return "";
+   var ok=R.results.filter(function(x){return x.ok;}).length;
+@@ -6029,7 +6029,7 @@ function delivAct(what){
+     bar(won(ids.length)+"건을 다시 보내는 중…","info"); busy(true);
+     call("deliv_resend",[ST.key,ids]).then(function(r){
+       busy(false); clearPick("drv");
+-      bar("다시 보냄 — 성공 "+won((r&&r.ok)||0)+"건 · 실패 "+won((r&&r.bad)||0)+"건","ok");
++      bar("다시 보냄 — 성공 "+won((r&&r.ok)||0)+"건 · 실패 "+won((r&&r.bad)||0)+"건"+((r&&r.bad)?" — 실패한 줄은 «알림» 칸에서 까닭을 보고 다시 보내 주세요.":""),(r&&r.bad)?"err":"ok");   /* v56.6 */
+       refresh(["deliv"]);
+     }).catch(fail);
+     }, "딜러에게 알림톡이 다시 나가요. (안 되면 문자로 자동)");
+@@ -7796,7 +7796,7 @@ function openApp(){
+     /* 판 번호는 짧게 — 앞의 판 번호만 남깁니다 (전체는 마우스를 올리면 보입니다) */
+   var _v=String(ST.ver||"");
+   var _m=_v.match(/v[\d.]+/i);
+-  $("hdVer").textContent="체크 v56.5 · "+(_m?("서버 "+_m[0]):"");
++  $("hdVer").textContent="체크 v56.6 · "+(_m?("서버 "+_m[0]):"");
+   $("hdVer").title=_v||"";
+     $("dbState").innerHTML='연결됨 <span id="clock"></span>';
+     CHK_CONN=true; try{ chkHdrSync(); }catch(e){}   /* v50: 머리말 «연결됨» (초록 점) */
+@@ -10441,7 +10441,7 @@ after("fee", function(){
+   var box=document.createElement("div"); box.id="v50fee"; var card=cb&&cb.closest(".card"); if(card) card.appendChild(box);
+   function paint(){ box.innerHTML=F.rules.length?'<div class="cgg-twrap" style="margin-top:10px"><table class="cgg-table" style="min-width:0"><thead><tr><th>검사자</th><th>방식</th><th class="n">금액</th><th></th></tr></thead><tbody>'+
+       F.rules.map(function(r,i){ return '<tr><td>'+esc(r.who)+'</td><td>'+esc(r.how)+'</td><td class="n">'+esc(r.how==="한 대마다"?won(r.amt)+"원":r.amt+"%")+'</td><td class="c"><button type="button" class="cgg-btn sm danger" data-fdel="'+i+'">빼기</button></td></tr>'; }).join("")+
+-      '</tbody></table></div><p class="note">이 PC에 적어 뒀어요. 모든 PC · 청구서에 들어가는 것은 다음 서버 판부터예요.</p>':'';
++      '</tbody></table></div><p class="note">바꾸면 바로 서버에 저장돼요. 저장이 안 되면 맨 위에 빨간 글이 떠요.</p>':'';
+     Array.prototype.forEach.call(box.querySelectorAll("[data-fdel]"),function(b){ b.onclick=function(){ F.rules.splice(Number(b.getAttribute("data-fdel")),1); feeSet(F); paint(); }; }); }
+   if(cb){ cb.checked=!!F.on; cb.onchange=function(){ F.on=cb.checked; feeSet(F); bar(cb.checked?"수수료 계산을 켰어요 (이 PC)":"수수료 계산을 껐어요","ok"); }; }
+   on("+ 규칙 추가", function(){
+@@ -12318,5 +12318,110 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
+   if(!document.getElementById("wrap").hidden){ drawTabs(); if(typeof draw==="function") draw(); }
+ })();
+ </script>
++<script>
++/* ═══ 체크 v56.6 — 기록 저장 믿음 (대표님 10/19 최우선 · 운영/긴급/2026-10-19_기록_알림톡_출시마감_요청.md «체크» 줄)
++   돈 셈 · 서버 부르기 함수(call) 본문은 그대로 두고, 바깥에서 감싸요.
++   ① 같은 일 표시(rid): 저장 · 고치기 · 지우기 · 보내기 창구에만 «한 번 누름»마다 무작위 24자를 몸통 {shop, token, fn, args, rid} 에 붙여요.
++      답을 못 받은 일(연결 끊김 · 답 못 읽음)을 다시 하면 같은 rid — 서버가 같은 rid 를 한 번만 처리하면 두 번 생기지 않아요(서버 방 약속).
++   ② 겹침 막기: 같은 창구 · 같은 내용이 아직 처리 중이면 새로 보내지 않고 처음 것의 답을 같이 받아요(연속 클릭 · 엔터 두 번).
++      확인 창 단추를 0.8초 안에 또 누르면 무시하고, 화면 단추는 저장이 끝날 때까지 잠가요.
++   ③ 실패하면 «저장됨»이 아니라 빨간 글 + «다시 하기» 단추(처음 누른 단추를 다시 눌러 줘요).
++   ④ 검사자 수수료(feeRules)처럼 실패를 조용히 넘기던 저장도 빨간 글로 알려요. ═══ */
++(function(){
++  if(typeof window.call!=="function" || typeof API==="undefined") return;
++  var WR={};
++  ("bankDel bankSave billBundleSend billGroupSet billSend carFeeSet companyDel companySave dealerAddMissing dealerDel dealerSave "+
++   "delivApproveDealer delivRejectDealer depositApply depositDel depositImport depositKind depositMatch depositRestore depositUnapply "+
++   "excelPut feeRules importLegacy insMatch invoiceBuild invoiceDel invoiceMove invoiceRekey invoiceUnsend officeSave popJoin "+
++   "priceDel priceSave relink remindOff remindRuleSave remindSend smsConf staffAdd staffEdit taxIssue taxSkip tplSave "+
++   "deliv_update deliv_cancel deliv_trash deliv_resend deliv_fillBlanks deliv_saveConf deliv_addDest deliv_accountAdd deliv_accountEdit").split(" ").forEach(function(k){ WR[k]=1; });
++  /* 읽기로 쓰는 경우(빈 args) — feeRules() · smsConf() 는 읽기 */
++  function isWrite(fn,args){ if(!WR[fn]) return false; if((fn==="feeRules"||fn==="smsConf") && !(args&&args.length)) return false; return true; }
++  var A="abcdefghijklmnopqrstuvwxyz0123456789";
++  function newRid(){ var a=new Uint8Array(24); try{ crypto.getRandomValues(a); }catch(e){ for(var i=0;i<24;i++) a[i]=Math.floor(Math.random()*256); }
++    return Array.prototype.map.call(a,function(x){ return A[x%36]; }).join(""); }
++  var FLY={}, LOST={}, CUR="";
++  function keyOf(fn,args){ var s=""; try{ s=JSON.stringify(args||[]); }catch(e){ s=String(Math.random()); } return fn+"|"+s; }
++  function unknown(m){ return /연결이 잠시 끊겼|서버에서 답을 받지 못했|Failed to fetch|NetworkError|Load failed|timed? ?out/i.test(String(m||"")); }
++
++  /* 몸통에 rid 붙이기 — call 이 fetch 를 바로(같은 차례에) 부르는 동안만 */
++  var rawFetch=window.fetch;
++  window.fetch=function(url,opt){
++    if(CUR && String(url)===String(API) && opt && typeof opt.body==="string"){
++      try{ var b=JSON.parse(opt.body); if(b && typeof b==="object" && !b.rid){ b.rid=CUR; opt=Object.assign({},opt,{body:JSON.stringify(b)}); } }catch(e){}
++    }
++    return rawFetch.apply(this,[url,opt]);
++  };
++
++  /* 누른 단추 기억 (다시 하기 · 잠그기) */
++  var LAST={el:null,t:0}, PAGEBTN={el:null,t:0}, TAPS=[];
++  document.addEventListener("click",function(ev){
++    var b=ev.target&&ev.target.closest&&ev.target.closest("button,[role=button],a.btn,a.cgg-btn");
++    if(!b || b.hasAttribute("data-v566-retry")) return;
++    var now=Date.now();
++    var dup=TAPS.filter(function(x){ return x.el===b && now-x.t<800; }).length;
++    TAPS=TAPS.filter(function(x){ return now-x.t<800; }); TAPS.push({el:b,t:now});
++    if(dup && b.closest(".cgg-dlg,#ovl,.sheet,.cgg-sheet")){ ev.preventDefault(); ev.stopImmediatePropagation(); return; }   /* 확인 창 단추를 0.8초 안 두 번 (화면 단추는 저장 중 잠금으로 막아요) */
++    LAST={el:b,t:now};
++    if(!b.closest(".cgg-dlg,#ovl,.sheet,.cgg-sheet")) PAGEBTN={el:b,t:now};
++  },true);
++
++  function lockBtn(b){ if(!b || b.disabled) return null; b.disabled=true; b.setAttribute("aria-busy","true"); return b; }
++  function unlockBtn(b){ if(!b) return; b.disabled=false; b.removeAttribute("aria-busy"); }
++
++  /* 다시 하기 단추 */
++  function retryBtn(origin){
++    return function(){
++      var target=(origin.el&&origin.el.isConnected&&!origin.el.closest("[hidden]"))?origin.el:(origin.page&&origin.page.isConnected?origin.page:null);
++      if(target){ target.disabled=false; target.click(); }
++      else if(typeof bar==="function") bar("처음 누른 단추를 다시 눌러 주세요.","info");
++    };
++  }
++  function niceMsgSafe(m){ try{ return typeof niceMsg==="function"?niceMsg(m):String(m||"저장하지 못했어요. 다시 시도해 주세요."); }catch(e){ return "저장하지 못했어요. 다시 시도해 주세요."; } }
++  function showRetry(origin, msg){
++    setTimeout(function(){
++      var where=null, m=document.querySelector("#bar .msg.err");
++      /* 누른 단추가 열린 창(배달 상세 · 시트) 안이면 맨 위 알림이 창에 가려요 — 창 안에 빨간 글 + 다시 하기 */
++      var box=origin.el&&origin.el.isConnected&&origin.el.closest(".modal,.sheet,.cgg-sheet");
++      if(box && box.getClientRects().length){
++        var old=box.querySelector("[data-v566-err]"); if(old) old.remove();
++        var d=document.createElement("div"); d.className="msg err"; d.setAttribute("data-v566-err","1"); d.setAttribute("role","alert");
++        d.style.margin="0 0 10px"; d.textContent=(m&&m.firstChild&&m.firstChild.nodeType===3?m.firstChild.nodeValue:"")||niceMsgSafe(msg);
++        var host=origin.el.parentNode; host.parentNode.insertBefore(d,host); where=d;
++      }
++      else if(m) where=m;
++      else{   /* 화면 안 알림 칸(say) — 대화 창 안은 그 창 단추로 다시 해요 */
++        var cand=Array.prototype.filter.call(document.querySelectorAll("#main .err, #main .msg.err"),function(e){
++          return e.offsetParent!==null && !e.closest(".cgg-dlg,#ovl") && (!msg || String(e.textContent).indexOf(String(msg).slice(0,12))>=0); });
++        where=cand[cand.length-1]||null;
++      }
++      if(!where || where.querySelector("[data-v566-retry]")) return;
++      var r=document.createElement("button"); r.type="button"; r.className="cgg-btn sm"; r.setAttribute("data-v566-retry","1");
++      r.style.marginLeft="10px"; r.textContent="다시 하기"; r.onclick=retryBtn(origin); where.appendChild(r);
++    },0);
++  }
++
++  var raw=window.call;
++  window.call=function(fn,args){
++    if(!isWrite(fn,args)) return raw.apply(this,arguments);
++    var k=keyOf(fn,args);
++    if(FLY[k]) return FLY[k];   /* 같은 일이 처리 중 — 새로 보내지 않음 */
++    var lost=LOST[k], rid=(lost && Date.now()-lost.t<30*60000) ? lost.rid : newRid();
++    var now=Date.now(), origin={el:(now-LAST.t<4000)?LAST.el:null, page:(now-PAGEBTN.t<60000)?PAGEBTN.el:null};
++    var locked=lockBtn(origin.el && !origin.el.closest(".cgg-dlg,#ovl") ? origin.el : null);
++    var p;
++    CUR=rid; try{ p=raw.apply(this,arguments); } finally{ CUR=""; }
++    FLY[k]=p;
++    p.then(function(){ delete FLY[k]; delete LOST[k]; unlockBtn(locked); },
++      function(e){ delete FLY[k]; unlockBtn(locked);
++        var m=e&&e.message;
++        if(unknown(m)) LOST[k]={rid:rid,t:Date.now()}; else delete LOST[k];
++        if(fn==="feeRules" && typeof bar==="function") bar("검사자 수수료를 서버에 저장하지 못했어요 — "+(m||"다시 시도해 주세요."),"err");
++        showRetry(origin, m); });
++    return p;
++  };
++  window.chkV566={isWrite:isWrite, fly:function(){ return Object.keys(FLY).length; }};
++})();
++</script>
+ </body>
+ </html>
