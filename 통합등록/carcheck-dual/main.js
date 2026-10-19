@@ -2305,7 +2305,7 @@ function diagHosts(site) {
 }
 
 async function diagSnap(d) {
-  const wins = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && w !== windows.main && w.webContents.session === d.win.webContents.session);
+  const wins = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && w !== windows.main && w.webContents.session === d.ses);
   const frames = [];
   const expr = pageExpr({ includeCode: loadConfig().diagScripts === true });     // 코드 파일 내용은 기본으로 받지 않음
   for (const w of wins) {
@@ -2346,7 +2346,7 @@ function observeLoop(d) {
     try { await tick(); } finally { busyTick = false; }
   }, 1000);
   async function tick() {
-    const wins = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && w !== windows.main && w.webContents.session === d.win.webContents.session);
+    const wins = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && w !== windows.main && w.webContents.session === d.ses);
     for (const w of wins) {
       let fr = [];
       try { fr = [w.webContents.mainFrame].concat((w.webContents.mainFrame.framesInSubtree || []).filter((f) => f !== w.webContents.mainFrame)); } catch {}
@@ -2368,7 +2368,7 @@ async function diagFinish(site, abortedWhy) {
   delete diagState[site];
   if (!abortedWhy) { try { await diagSnap(d); } catch {} }
   BrowserWindow.getAllWindows().forEach((w) => {
-    if (!w.isDestroyed() && w !== d.win && w !== windows.main && w.webContents.session === d.win.webContents.session) { try { w.close(); } catch {} }
+    if (!w.isDestroyed() && w !== d.win && w !== windows.main && w.webContents.session === d.ses) { try { w.close(); } catch {} }
   });
   await d.ds.stop();
   const raw = { site, mode: d.observe ? 'observe' : 'block', startedAt: d.startedAt, endedAt: new Date().toISOString(), aborted: abortedWhy || null, requests: d.rec.summary(), snaps: d.snaps };
@@ -2412,7 +2412,7 @@ ipcMain.handle('diag:start', flowCall(async (a) => {
   const observe = a.observe === true;
   const rec = createDiagRecorder({ siteHosts: hosts, readPaths: (siteConfig.REAL[site] || {}).diagReadPaths || [], observe,
                                    allowStatic: (siteConfig.REAL[site] || {}).diagAllowStatic === true });      // 정적 파일도 기본 차단
-  const st = { site, rec, win, snaps: [], observe, startedAt: new Date().toISOString() };
+  const st = { site, rec, win, ses: win.webContents.session, snaps: [], observe, startedAt: new Date().toISOString() };   // 세션은 따로 잡아 둠(기록 중 창이 닫혀도 끝내기가 되게)
   st.ds = startDiagSession({ win, rec, onAbort: (why) => {
     diagFinish(site, why).then((r) => {
       if (r && r.ok === false && /진단 중이 아니에요/.test(r.error || '')) return;   // 이미 [진단 끝]으로 마무리 중이면 보내지 않음

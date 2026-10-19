@@ -672,7 +672,7 @@ function diagUi() {
   if (!DIAG_SUB) DIAG_SUB = $('#diag-sub').textContent;
   $('#diag-title').textContent = obs ? '관찰 기록 (직원이 평소처럼 등록)' : '전산 진단 (저장 안 함)';
   $('#diag-sub').textContent = obs
-    ? '관찰 기록은 아무것도 막지 않아요. 직원이 평소처럼 실제 차를 등록하고 [저장]도 직접 누르면, 프로그램은 어느 주소로 어떤 칸 이름이 가는지만 기록해요(값은 가림). 한 번에 한 전산, 차 한 대만 해요. 로그인은 시작 전에 해 주세요.'
+    ? '아무것도 막지 않아요. 평소처럼 등록·[저장]하면 주소·칸 이름만 기록해요(값은 가림). 한 번에 한 전산씩 해요.'
     : DIAG_SUB;
   //  창을 닫아도 진단 중인 것이 보이게 — 아래 단추 글자·색을 바꾸고, 보내기 단추는 끈다(관찰 기록 때는 평소 전송 단추를 그대로 씀)
   $('#btn-diag').textContent = diagSite ? (diagObserve ? '관찰 기록 중 (' : '전산 진단 중 (') + DIAG_NAME[diagSite] + ') · 눌러서 열기' : '전산 진단 (저장 안 함)';
@@ -680,15 +680,16 @@ function diagUi() {
   ['#btn-send-cm', '#btn-send-ci', '#btn-send-all'].forEach((q) => { const b = $(q); if (b) b.disabled = !!diagSite && !diagObserve; });
   if ($('#btn-auto')) $('#btn-auto').disabled = !!diagSite;
   $('#diag-state').textContent = diagNote || (diagSite && diagObserve
-    ? DIAG_NAME[diagSite] + ' 관찰 기록 중이에요. 이 창을 [닫기] 하고 평소처럼 이 차를 끝까지 등록해 주세요(전송·사진·[저장]까지). 화면 칸은 저절로 기록돼요. 다 끝나면 아래 [관찰 기록 중] 단추로 다시 열어 [기록 끝]을 눌러 주세요.'
+    ? DIAG_NAME[diagSite] + ' 관찰 기록 중 — [닫기] → 평소처럼 끝까지 등록 → 아래 [관찰 기록 중] → [기록 끝]. 기록 중에는 전산 창을 닫지 마세요.'
     : diagSite
     ? DIAG_NAME[diagSite] + ' 진단 중이에요. ' + DIAG_NAME[diagSite] + ' 창에서 ' + (diagSite === 'entry' ? '로그인(문자 인증)한 뒤 ' : '') +
       '보고 싶은 화면을 열 때마다 [지금 화면 칸 기록]을 눌러 주세요. [저장]은 누르지 마세요.'
-    : '진단할 전산 창을 먼저 열고 로그인한 뒤 [진단 시작]을 눌러 주세요(창은 [닫기] 뒤 맨 위 [카인포 창]·[경기조합 창] 단추로 열어요). 엔트리는 [엔트리 창 열기]로 로그인(문자 인증)부터 해요.');
+    : '전산 창을 먼저 열고 로그인한 뒤 [' + (obs ? '관찰 기록 시작' : '진단 시작') + ']을 눌러 주세요(창은 [닫기] 뒤 맨 위 [카인포 창]·[경기조합 창] 단추로 열어요). 엔트리는 [엔트리 창 열기]로 로그인(문자 인증)부터 해요.');
 }
-/** 진단 단추를 누르는 동안 전부 끄고, 끝나면(오류여도) 다시 맞춤 — 두 번 눌러 꼬이지 않게 */
+/** 진단 단추를 누르는 동안 전부 끄고, 끝나면(오류여도) 다시 맞춤 — 두 번 눌러 꼬이지 않게(관찰 기록 체크도 잠금) */
 async function diagBusy(fn) {
   document.querySelectorAll('#diag button').forEach((b) => { b.disabled = true; });
+  $('#diag-observe').disabled = true;
   try { await fn(); } finally { diagUi(); }
 }
 function initDiag() {
@@ -707,9 +708,10 @@ function initDiag() {
     if (!/^https:\/\//.test(url)) { diagNote = '엔트리 주소를 https:// 로 시작하게 넣어 주세요.'; return; }
     try { const c = (await window.api.getConfig()) || {}; await window.api.setConfig({ ...c, entryUrl: url }); } catch { diagNote = '엔트리 주소를 저장하지 못했어요.'; return; }
     const r = await window.api.diag.openEntry();
-    diagNote = r && r.ok ? '엔트리 창을 열었어요. 그 창에서 로그인(문자 인증)한 뒤 [엔트리 진단 시작]을 눌러 주세요.' : '엔트리 창을 열지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭');
+    diagNote = r && r.ok ? '엔트리 창을 열었어요. 그 창에서 로그인(문자 인증)한 뒤 [엔트리 ' + ($('#diag-observe').checked ? '관찰 기록 시작' : '진단 시작') + ']을 눌러 주세요.' : '엔트리 창을 열지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭');
   }));
-  document.querySelectorAll('.diag-sites button[data-site]').forEach((b) => b.addEventListener('click', () => diagBusy(async () => {
+  document.querySelectorAll('.diag-sites button[data-site]').forEach((b) => b.addEventListener('click', () => { const obs = $('#diag-observe').checked; return diagBusy(async () => {
+    //  눌렀을 때의 체크 상태(obs)로 시작 — 기다리는 사이 바뀌어도 그대로
     //  엔트리 주소는 이 칸에 넣은 것을 설정에 저장해 쓴다(파일을 직접 고치지 않아도 되게)
     if (b.dataset.site === 'entry') {
       const url = $('#diag-entry-url').value.trim();
@@ -719,16 +721,17 @@ function initDiag() {
         await window.api.setConfig({ ...c, entryUrl: url });
       } catch { diagNote = '엔트리 주소를 저장하지 못했어요.'; return; }
     }
-    const obs = $('#diag-observe').checked;
     const r = await window.api.diag.start(b.dataset.site, obs);
     if (!r || !r.ok) { diagNote = (obs ? '관찰 기록을' : '진단을') + ' 시작하지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭'); return; }
     diagSite = b.dataset.site;
     diagObserve = obs;
     diagNote = '';
-  })));
+  }); }));
   $('#diag-snap').addEventListener('click', () => diagBusy(async () => {
     const r = await window.api.diag.snap(diagSite);
-    diagNote = r && r.ok ? DIAG_NAME[diagSite] + ' 진단 중 · 지금 화면의 단추·칸 이름을 기록했어요(' + r.snaps + '번째). 다른 화면도 열어 보고 다시 눌러 주세요.' : '화면 칸을 기록하지 못했어요.';
+    diagNote = !(r && r.ok) ? '화면 칸을 기록하지 못했어요.'
+      : diagObserve ? DIAG_NAME[diagSite] + ' 관찰 기록 중 · 지금 화면 칸을 기록했어요(' + r.snaps + '번째). [닫기] 하고 등록을 이어 가요.'
+        : DIAG_NAME[diagSite] + ' 진단 중 · 지금 화면의 단추·칸 이름을 기록했어요(' + r.snaps + '번째). 다른 화면도 열어 보고 다시 눌러 주세요.';
   }));
   $('#diag-stop').addEventListener('click', () => diagBusy(async () => {
     const site = diagSite;
@@ -757,7 +760,7 @@ function diagReport(r) {
         { title: '개인정보 검사', items: ['가린 것: ' + (masked.join(' · ') || '없음'), '남은 것: ' + (left.join(' · ') || '없음')], cls: left.length ? 'warn' : 'muted', noCount: true },
         { title: '기록', items: ['요청 ' + (r.passed || 0) + '건 · 화면 칸 기록 ' + (r.snaps || 0) + '번', r.file || '기록 파일 없음'], cls: 'muted', noCount: true },
       ],
-      note: r.file ? '9_진단파일_검사.bat 으로 검사한 뒤 [통과]한 파일을 방에 보내 주세요.' : '기록 파일은 만들지 않았어요.',
+      note: r.file ? '9_진단파일_검사.bat 으로 검사한 뒤 [통과]한 파일을 클로드 대화에 올려 주세요.' : '기록 파일은 만들지 않았어요.',
     }]);
     return;
   }

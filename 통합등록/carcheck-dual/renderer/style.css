@@ -252,7 +252,7 @@ button.ghost.diag-on { color: var(--warn); border-color: var(--warn); font-weigh
 /* 전산 진단 — 전산 고르기 단추 줄 */
 .diag-sites { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
 .diag-mode { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin-top: 8px; }
-.diag-mode input { margin-top: 3px; flex: none; }
+.diag-mode input { width: 18px; height: 18px; padding: 0; margin-top: 2px; flex: none; }
 .diag-url { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .diag-url input { flex: 1; }
 
