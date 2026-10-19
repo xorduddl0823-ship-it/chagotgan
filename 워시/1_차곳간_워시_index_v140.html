@@ -11189,7 +11189,7 @@ function renderTax(){
         if(d.status==="발급")return '<span class="tag paid">'+(d.test?"시험 ":"")+'발행됨</span>'+
           (d.nts?(' <small>'+esc(d.nts)+'</small>'):"")+
           (d.nts?(' <button class="btn" data-pbfix="'+esc(g.key)+'" style="padding:4px 9px;font-size:12px;margin-left:6px">수정발행</button>'):"");
-        return '<span class="tag out">실패</span> <small style="color:var(--danger)">'+esc(kmsg(d.err,"발행하지 못했어요 — 사업자번호·이메일을 확인해 주세요"))+'</small>';}},
+        return '<span class="tag out">실패</span> <small style="color:var(--danger)">'+esc(kmsg(d.err,"발행하지 못했어요 — 팝빌 충전 잔액 · 사업자번호 · 이메일을 확인해 주세요"))+'</small>';}},
     {k:"items",label:"품목",val:function(g){return g.itemList.length;},
       html:function(g){return esc(g.itemList.map(function(i){return i.name+"×"+i.qty;}).join(", "))+
         (g.itemList.length>4?' <span style="color:var(--warn)">(4줄 넘음 — 나머지는 기타로 묶임)</span>':"");}}
@@ -12793,7 +12793,7 @@ function pbCardHtml(){
      ? '<div class="plate-result" style="background:var(--good-soft);color:var(--good);margin:12px 0 0">'+
        '준비가 끝났어요. 위 표에서 고른 건이 <b>국세청까지 바로</b> 나가요.</div>'
      : '<div class="plate-result" style="background:var(--warn-soft);color:var(--warn);margin:12px 0 0">'+
-       '아직 준비가 남았어요. 그때까지는 <b>[홈택스 일괄발급 엑셀 받기]</b> 로 쓰시면 돼요.'+
+       '아직 준비가 남았어요. 그때까지는 <b>[홈택스 일괄발급 양식 내려받기]</b> 로 쓰시면 돼요.'+
        (S2.why?('<div style="margin-top:5px;font-weight:400;font-size:12.5px">'+esc(S2.why)+'</div>'):"")+'</div>')+
    '<div class="row3" style="margin-top:14px">'+
     '<div style="align-self:flex-end"><label class="chip"><input type="checkbox" id="pb_test" style="width:22px;height:22px;vertical-align:-5px"'+(S2.test?" checked":"")+'> 시험 발행 (진짜로 안 나가요)</label></div>'+
@@ -14887,7 +14887,7 @@ var HELP=[
   "<ul><li><b>공급자(우리 사업장)</b>: <b>설정 → 우리 사업장</b>에서 상호·사업자번호·대표자·주소·업태·종목·이메일을 한 번 넣고 저장. [사업자등록증 사진으로 채우기]도 돼요.</li>"+
   "<li>발행 대상: 딜러가 <b>개인사업자</b>면 그 딜러에게, 아니면 <b>소속 상사</b>로 발행돼요. 사업자번호가 없는 곳은 빨갛게 표시 → 설정 → 거래처 관리에서 채우세요.</li>"+
   "<li>옵션: 상사별로 한 장에 묶기, 작업 중인 차 포함, 금액이 부가세 별도인지, 영수/청구.</li>"+
-  "<li><b>[홈택스 일괄발급 엑셀 받기]</b>: 홈택스 → 전자세금계산서 → 일괄발급에 그대로 올리면 돼요(100건씩 나눠 받음).</li>"+
+  "<li><b>[홈택스 일괄발급 양식 내려받기]</b>: 홈택스 → 전자세금계산서 → 일괄발급에 그대로 올리면 돼요(100건씩 나눠 받음).</li>"+
   "<li><b>버튼 한 번으로 국세청까지</b>: 팝빌을 켜면 엑셀을 홈택스에 올리지 않아도 돼요. 표에서 고른 건이 바로 나가요. 켜기 전에 <b>인증서를 한 번 등록</b>해야 하는데, 거래 은행에서 <b>전자세금계산서용 인증서</b>(보통 연 4,400원)를 받아 팝빌 사이트에서 등록하시면 돼요. 은행 업무용(금융거래용) 인증서로는 안 돼요.</li>"+
   "<li><b>수정발행</b>: 잘못 나갔으면 표의 <b>[수정발행]</b> 버튼을 눌러요. 「금액이 바뀌었어요 / 거래가 취소됐어요 / 잘못 적었어요 / 일부를 돌려줬어요 / 실수로 두 번 나갔어요」 중에 고르시면, 몇 장이 어떻게 나가는지 알려드린 뒤 처리해요.</li>"+
   "<li><b>시험 모드</b>: 켜 두면 진짜 발행이 되지 않아요. 처음에는 시험 모드로 한 건 해보고, 잘 되면 끄세요.</li>"+
