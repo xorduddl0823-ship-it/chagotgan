@@ -168,8 +168,8 @@ footer {
   display: flex; justify-content: space-between; align-items: center;
   padding: 12px 20px; background: var(--panel); border-top: 1px solid var(--line);
 }
-footer .right { display: flex; gap: 8px; }
-footer .left { display: flex; gap: 8px; }
+footer .right { display: flex; gap: 8px; flex-wrap: wrap; }
+footer .left { display: flex; gap: 8px; flex-wrap: wrap; }
 button {
   font: inherit; padding: 8px 14px; border-radius: 6px; cursor: pointer;
   border: 1px solid var(--line); background: #fff; color: var(--text);

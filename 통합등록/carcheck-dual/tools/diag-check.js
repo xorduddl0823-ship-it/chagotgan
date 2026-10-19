@@ -38,7 +38,7 @@ function reviewText(text) {
   let d = {};
   try { d = JSON.parse(text); } catch { return '(읽을 수 없는 파일)'; }
   const lines = new Set();
-  const add = (k, v) => { const s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); if (s) lines.add(k + ' | ' + s.slice(0, 120)); };
+  const add = (k, v) => { const s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); if (s) lines.add(k + ' | ' + s); };   // 자르지 않음(보내는 파일의 글자를 전부 보여 줌)
   for (const e of ((d.requests || {}).entries || [])) {
     if (e.kind === 'click') { add('누른 단추', [e.text, e.id].filter(Boolean).join(' · ')); continue; }
     add('요청', [e.method, e.host, e.path, e.status != null ? '응답 ' + e.status : ''].filter(Boolean).join(' '));
@@ -51,10 +51,14 @@ function reviewText(text) {
       (f.buttons || []).forEach((b) => add('화면 단추', [b.text, b.id].filter(Boolean).join(' · ')));
       (f.fields || []).forEach((x) => add('입력 칸', [x.label, x.placeholder, x.id, x.name].filter(Boolean).join(' · ')));
       (f.tables || []).forEach((t) => add('표 머리글', (t.headers || []).join(' · ')));
+      //  화면 뼈대(HTML)에 남은 글자(머리글·이름표·단추 글자 등)와 속성 값도 한 조각씩
+      const html = String((f.page && f.page.html) || '');
+      html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').split(/<[^>]*>/).forEach((s) => add('화면 글자', s));
+      (html.match(/\s(?:title|alt|placeholder|value|aria-label|name|id)="[^"]+"/gi) || []).forEach((a) => add('화면 속성', a.trim()));
     }
   }
-  const out = [...lines].sort().slice(0, 3000);
-  return ['[검토용] ' + (d.site || '') + ' 기록 파일에 들어 있는 글자 전부(값은 이미 가림)',
+  const out = [...lines].sort();
+  return ['[검토용] ' + (d.site || '') + ' 기록 파일의 요청·단추·칸·표 머리글·화면 글자 전부(값은 이미 가림)',
     '아래에 사람 이름 · 전화번호 · 차량번호 · 차대번호 · 주소 · 아이디처럼 보이는 것이 있으면 이 기록 파일을 보내지 마세요.',
     '단추 이름 · 칸 이름 · 주소 경로(/ct/... 같은 것)만 보이면 괜찮아요.', ''].concat(out).join('\n') + '\n';
 }

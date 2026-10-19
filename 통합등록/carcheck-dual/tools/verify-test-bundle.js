@@ -188,7 +188,7 @@ if (electron) {
   const app4 = runApp(P, { CARCHECK_SMOKE_DIAG: '1', CARCHECK_SMOKE_OBSERVE: '1' });
   const ol = line(app4.out, 'SMOKE-DIAG');
   const obsFiles = fs.existsSync(diagDir) ? fs.readdirSync(diagDir).filter((f) => /^diag-carinfo-관찰-.*\.json$/.test(f)) : [];
-  ok(/실제 등록 관찰 중/.test(ol) && /실제 등록 관찰 끝/.test(ol) && obsFiles.length === 1, '실제 등록 관찰 시작(대상 차량 확인) → 관찰 끝 → «관찰» 기록 파일이 시험판 기록 폴더(diag\\)에 생김', ol.slice(0, 200));
+  ok(/관찰 중 —/.test(ol) && /실제 등록 관찰 끝/.test(ol) && obsFiles.length === 1, '실제 등록 관찰 시작(대상 차량 확인) → 관찰 끝 → «관찰» 기록 파일이 시험판 기록 폴더(diag\\)에 생김', ol.slice(0, 200));
   ok(!app4.touched.length, '관찰 기록 중에도 업무용 폴더를 열어 보지 않음', app4.touched.slice(0, 3).join(' | '));
 } else ok(false, '프로그램 실행 확인 — Electron 이 없어 못 함(1_준비 뒤 다시)');
 

@@ -53,7 +53,7 @@ const so = spawnSync(cmd, smokeArgs, { encoding: 'utf8', timeout: 90000, env: { 
 const ol = String(so.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-DIAG')) || '';
 const oc = String(so.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-OBSERVE-CONFIRM')) || '';
 const obsOk = /카인포/.test(oc) && /00가0000/.test(oc) && /실제로 등록/.test(oc) &&
-  /실제 등록 관찰 중/.test(ol) && /실제 등록 관찰 끝/.test(ol) && /diag-carinfo-관찰-/.test(ol) && !/화면 칸 기록 0번/.test(ol);
+  /관찰 중 —/.test(ol) && /실제 등록 관찰 끝/.test(ol) && /diag-carinfo-관찰-/.test(ol) && !/화면 칸 기록 0번/.test(ol);
 console.log((obsOk ? 'ok' : 'not ok') + ' - 실제 프로그램: [실제 등록 관찰] → 전산·대상 차량 확인 → 막지 않고 기록 · 화면 칸 저절로 기록 → «관찰» 기록 파일' + (obsOk ? '' : '\n  error: ' + oc + ' / ' + (ol || String(so.stderr || '').slice(-300))));
 if (!obsOk) process.exit(1);
 

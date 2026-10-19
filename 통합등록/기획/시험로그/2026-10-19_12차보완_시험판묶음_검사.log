@@ -1,0 +1,49 @@
+# 묶음: 차곳간_시험판_20261019.zip · 파일 66개 · 푼 곳 /tmp/cc-bundle-XfAC17/unzipped
+ok 1 - 모든 파일 이름에 UTF-8 표시(윈도우 압축 풀기에서 한글 이름이 안 깨짐)
+ok 2 - «0_먼저읽기» 안내서가 맨 위와 프로그램 폴더 안에 모두 있음
+ok 3 - 안내서는 메모장에서 바로 열리는 글자판(UTF-8 BOM · CRLF)
+ok 4 - 안내서에 준비·차 1대 실제 등록 관찰(카인포→경기조합→엔트리)·자동+눈 검사가 다 있음
+ok 5 - test-install.json 이 정확히 들어 있음 — dataFolder = carcheck-dual-시험판  # {"dataFolder":"carcheck-dual-시험판","note":"시험판 표시 — 이 파일이 있으면 기록 폴더를 업무용(carcheck-dual)과 따로 씁니다. 지우지 마세요."}
+ok 6 - test-install.json 은 프로그램 폴더 안에만(맨 위에는 없음)
+ok 7 - 프로그램·도구·bat·파일 목록이 다 있음(23개)
+ok 8 - 넣으면 안 되는 것(기록·설정·로그인 정보·진단 기록·node_modules·개발 시험)이 없음
+ok 9 - package.json — 1_준비.bat(npm install)으로 Electron 만 받으면 실행됨
+ok 10 - 시험판_파일목록.txt 가 묶음의 모든 파일을 적고 있음
+ok 11 - bat 0_업무용기록_백업.bat — cp949·CRLF·cd /d "%~dp0"·chcp 뒤 영어 글자만·부르는 도구(tools/backup-data.js) 있음  # {"crlf":true,"cd":true,"utf8Bad":false,"afterAscii":true,"there":true,"cmds":["node tools\\backup-data.js"]}
+ok 12 - bat 1_준비.bat — CRLF·cd /d "%~dp0"  # {"crlf":true,"cd":true}
+ok 13 - bat 2_실행.bat — CRLF·cd /d "%~dp0"  # {"crlf":true,"cd":true}
+ok 14 - bat 3_설치파일_만들기.bat — CRLF·cd /d "%~dp0"  # {"crlf":true,"cd":true}
+ok 15 - bat 4_exe_새로만들기.bat — CRLF·cd /d "%~dp0"  # {"crlf":true,"cd":true}
+ok 16 - bat 5_절개도_기둥맞추기.bat — CRLF·cd /d "%~dp0"  # {"crlf":true,"cd":true}
+ok 17 - bat 6_절개도_맞추기.bat — CRLF·cd /d "%~dp0"  # {"crlf":true,"cd":true}
+ok 18 - bat 7_전산진단_켜기.bat — cp949·CRLF·cd /d "%~dp0"·chcp 뒤 영어 글자만·부르는 도구(tools/diag-on.js) 있음  # {"crlf":true,"cd":true,"utf8Bad":false,"afterAscii":true,"there":true,"cmds":["node tools\\diag-on.js"]}
+ok 19 - bat 8_전산진단_끄기.bat — cp949·CRLF·cd /d "%~dp0"·chcp 뒤 영어 글자만·부르는 도구(tools/diag-on.js) 있음  # {"crlf":true,"cd":true,"utf8Bad":false,"afterAscii":true,"there":true,"cmds":["node tools\\diag-on.js off"]}
+ok 20 - bat 9_진단파일_검사.bat — cp949·CRLF·cd /d "%~dp0"·chcp 뒤 영어 글자만·부르는 도구(tools/diag-check.js) 있음  # {"crlf":true,"cd":true,"utf8Bad":false,"afterAscii":true,"there":true,"cmds":["node tools\\diag-check.js"]}
+# 가짜 업무용 기록 폴더: 파일 5개(설정·가짜 로그인 정보·작업 기록·사이트 로그인 상태 흉내)
+ok 21 - 0_업무용기록_백업.bat — 업무용 기록을 문서\차곳간_백업 으로 복사  # 업무용 기록을 백업했어요: 파일 3개
+ok 22 - 백업에 설정·작업 기록은 있고 로그인 정보(credentials.json)·사이트 로그인 상태(Partitions)는 없음  # config.json, jobs.jsonl, records.jsonl
+ok 23 - 백업 뒤 업무용 폴더 그대로(복사만)
+ok 24 - (대조) 파일 열기 기록 장치가 업무용 폴더 읽기를 잡아냄 — 백업 bat 은 읽으므로 잡혀야 정상  # 잡힌 줄 24
+ok 25 - 7_전산진단_켜기.bat — 시험판 기록 폴더(carcheck-dual-시험판)의 설정만 켬  # 전산 진단을 켰어요. 프로그램을 다시 켜면 아래쪽에 [전산 진단 (저장 안 함)] 단추가 보여요.
+ok 26 - 7_전산진단_켜기.bat 은 업무용 폴더를 열어 보지도 않음(파일 열기 기록)
+ok 27 - 프로그램 실행 — 기록 폴더 = %APPDATA%\carcheck-dual-시험판(업무용과 따로)  # SMOKE-PROBE userDataFull=/tmp/cc-bundle-XfAC17/pc-with-production/AppData/Roaming/carcheck-dual-시험판 diagButton=true
+ok 28 - 프로그램 창 제목 끝에 «시험판(업무용과 기록 따로)»  # SMOKE-INSTALL wtitle=성능점검 이중등록 — 시험판(업무용과 기록 따로) userData=carcheck-dual-시험판
+ok 29 - 7번으로 켠 뒤 프로그램에 [전산 진단 (저장 안 함)] 단추가 보임  # SMOKE-PROBE userDataFull=/tmp/cc-bundle-XfAC17/pc-with-production/AppData/Roaming/carcheck-dual-시험판 diagButton=true
+ok 30 - 프로그램은 업무용 폴더를 열어 보지도 않음(파일 열기 기록)
+ok 31 - 진단 시작 → 진단 끝 → 기록 파일이 시험판 기록 폴더(diag\)에 생김  # SMOKE-DIAG button=true state="카인포 진단 중이에요. 카인포 창에서 보고 싶은 화면을 열 때마다 [지금 화면 칸 기록]을 눌러 주세요. [저장]은 누르지 마세요." report="전산 진단 끝 | 카인포 — 화면 구조를 기록했어요서버로 안 보내고 막은 요청 (1)없음개인정보 검사가린 것: 없음남은 것: 없음기록막은 요청 0건 · 화면
+ok 32 - 진단 중에도 업무용 폴더를 열어 보지 않음
+ok 33 - 실제 등록 관찰 시작(대상 차량 확인) → 관찰 끝 → «관찰» 기록 파일이 시험판 기록 폴더(diag\)에 생김  # SMOKE-DIAG button=true state="카인포 관찰 중 — [닫기] → 평소처럼 등록 → 아래 [관찰 중] → [관찰 끝]. 오류가 나면 바로 [관찰 끝] 뒤 목록에서 등록 상태를 확인해요." report="실제 등록 관찰 끝 | 카인포 — 주소·칸 이름을 기록했어요(등록 상태는 직접 확인)실제 등록 상태 확인카인포 목록에서 이 차가 실제로 
+ok 34 - 관찰 기록 중에도 업무용 폴더를 열어 보지 않음
+ok 35 - 9_진단파일_검사.bat — 프로그램이 만든 진단 기록 파일은 [통과]  # 기록 폴더: /tmp/cc-bundle-XfAC17/pc-with-production/AppData/Roaming/carcheck-dual-시험판/diag / [통과] diag-carinfo-20261019-074357.json /         눈으로 확인: diag-carinfo-20261019-074357.검토용.txt
+ok 36 - 9_진단파일_검사.bat — 통과한 파일마다 «검토용» 글 파일(사람 눈 확인용)을 만듦  # diag-carinfo-20261019-074357.검토용.txt, diag-carinfo-관찰-20261019-074407.검토용.txt
+ok 37 - 9_진단파일_검사.bat — 개인정보·세션 값이 든 파일은 [보내지 마세요] · 값은 화면에 안 나옴  # 기록 폴더: /tmp/cc-bundle-XfAC17/pc-with-production/AppData/Roaming/carcheck-dual-시험판/diag / [통과] diag-carinfo-20261019-074357.json /         눈으로 확인: diag-carinfo-20261019-074357.검토용.txt / [통과] diag-carinfo-관찰-20261019-074407.json
+ok 38 - 9_진단파일_검사.bat 은 업무용 폴더를 열어 보지도 않음
+ok 39 - 8_전산진단_끄기.bat — 시험판 설정만 끔  # 전산 진단을 껐어요. 프로그램을 다시 켜면 단추가 사라져요.
+ok 40 - 8_전산진단_끄기.bat 은 업무용 폴더를 열어 보지도 않음
+ok 41 - 8번으로 끈 뒤 프로그램에 진단 단추가 안 보임  # SMOKE-PROBE userDataFull=/tmp/cc-bundle-XfAC17/pc-with-production/AppData/Roaming/carcheck-dual-시험판 diagButton=false
+ok 42 - 모든 시험 뒤 업무용 기록 폴더의 파일·폴더 7개가 그대로(내용·크기·고친 시각 · 새 파일 없음)
+# 가짜 APPDATA 안: carcheck-dual, carcheck-dual-시험판
+ok 43 - 업무용 폴더가 없는 PC — 시험판은 업무용 폴더(carcheck-dual)를 만들지 않고 시험판 폴더만 씀  # carcheck-dual-시험판
+ok 44 - 시험판 표시가 없는 폴더(업무용)에서는 7번이 진단을 켜지 않고 업무용 설정도 안 바꿈  # 이 폴더는 시험판이 아니에요(test-install.json 없음). 업무용 프로그램에서는 진단을 켜지 않아요.
+
+# 결과: 44 / 44 통과 (파일 열기 기록: strace 사용)
