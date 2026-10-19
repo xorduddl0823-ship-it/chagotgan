@@ -30,6 +30,8 @@ rep("이 PC에 적어 뒀어요. 모든 PC · 청구서에 들어가는 것은 �
     "바꾸면 바로 서버에 저장돼요. 저장이 안 되면 맨 위에 빨간 글이 떠요.")
 rep('bar(cb.checked?"수수료 계산을 켰어요 (이 PC)":"수수료 계산을 껐어요","ok");', 'bar(cb.checked?"수수료 계산을 켰어요":"수수료 계산을 껐어요","ok");')
 rep('bar("규칙을 넣었어요 (이 PC).","ok");', 'bar("규칙을 넣었어요.","ok");')
+# ⑤ 검색에 안 나오게 (총괄 10/19 · 워시 v141 과 같게)
+rep('<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">', '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<meta name="robots" content="noindex,nofollow">')
 # ① 감싸기 — 맨 끝(모든 화면 함수가 만들어진 뒤)
 rep("</script>\n</body>", "</script>\n" + open(os.path.join(HERE, "v56.6_기록.js"), encoding="utf-8").read() + "</body>")
 open(OUT, "w", encoding="utf-8").write(s)

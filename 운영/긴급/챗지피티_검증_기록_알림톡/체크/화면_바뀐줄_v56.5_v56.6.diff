@@ -1,9 +1,12 @@
 diff --git "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.5.html" "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.6.html"
-index b64aa37..14727c9 100644
+index b64aa37..c322746 100644
 --- "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.5.html"
 +++ "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.6.html"
-@@ -5,7 +5,7 @@
+@@ -3,9 +3,10 @@
+ <head>
+ <meta charset="utf-8">
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
++<meta name="robots" content="noindex,nofollow">
  <meta name="theme-color" content="#1668C4">
  <title>차곳간체크</title>
 -<!-- 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
@@ -11,7 +14,7 @@ index b64aa37..14727c9 100644
  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231668C4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-@@ -3394,7 +3394,7 @@ function chkHdr(){
+@@ -3394,7 +3395,7 @@ function chkHdr(){
    var sig=[nm,ln,who,(ST&&ST.role)||"",ps?ps.value:""].join("|");
    if(CHK_H && CHK_SIG===sig && $("hdrTop").firstChild){ chkHdrSync(); return; }
    CHK_SIG=sig;
@@ -20,7 +23,7 @@ index b64aa37..14727c9 100644
      biz:{name:nm||"—", line:ln},
      find:{mode:"nav", feats:chkFeats(), onGo:chkGoFeat},
      notice:function(){ if(window.ccwNotice) window.ccwNotice(); },
-@@ -4908,7 +4908,7 @@ function billAtaText(b, due){
+@@ -4908,7 +4909,7 @@ function billAtaText(b, due){
      "문의 "+(OFFICE.tel||"")+"\n\n"+
      "본 안내는 "+shop+"의 요청으로 차곳간이 보내드립니다.";
  }
@@ -29,7 +32,7 @@ index b64aa37..14727c9 100644
  function billSendResult(){
    var R=BS_LAST; if(!R || R.ym!==ST.ym) return "";
    var ok=R.results.filter(function(x){return x.ok;}).length;
-@@ -6029,7 +6029,7 @@ function delivAct(what){
+@@ -6029,7 +6030,7 @@ function delivAct(what){
      bar(won(ids.length)+"건을 다시 보내는 중…","info"); busy(true);
      call("deliv_resend",[ST.key,ids]).then(function(r){
        busy(false); clearPick("drv");
@@ -38,7 +41,7 @@ index b64aa37..14727c9 100644
        refresh(["deliv"]);
      }).catch(fail);
      }, "딜러에게 알림톡이 다시 나가요. (안 되면 문자로 자동)");
-@@ -7796,7 +7796,7 @@ function openApp(){
+@@ -7796,7 +7797,7 @@ function openApp(){
      /* 판 번호는 짧게 — 앞의 판 번호만 남깁니다 (전체는 마우스를 올리면 보입니다) */
    var _v=String(ST.ver||"");
    var _m=_v.match(/v[\d.]+/i);
@@ -47,7 +50,7 @@ index b64aa37..14727c9 100644
    $("hdVer").title=_v||"";
      $("dbState").innerHTML='연결됨 <span id="clock"></span>';
      CHK_CONN=true; try{ chkHdrSync(); }catch(e){}   /* v50: 머리말 «연결됨» (초록 점) */
-@@ -10441,9 +10441,9 @@ after("fee", function(){
+@@ -10441,9 +10442,9 @@ after("fee", function(){
    var box=document.createElement("div"); box.id="v50fee"; var card=cb&&cb.closest(".card"); if(card) card.appendChild(box);
    function paint(){ box.innerHTML=F.rules.length?'<div class="cgg-twrap" style="margin-top:10px"><table class="cgg-table" style="min-width:0"><thead><tr><th>검사자</th><th>방식</th><th class="n">금액</th><th></th></tr></thead><tbody>'+
        F.rules.map(function(r,i){ return '<tr><td>'+esc(r.who)+'</td><td>'+esc(r.how)+'</td><td class="n">'+esc(r.how==="한 대마다"?won(r.amt)+"원":r.amt+"%")+'</td><td class="c"><button type="button" class="cgg-btn sm danger" data-fdel="'+i+'">빼기</button></td></tr>'; }).join("")+
@@ -59,7 +62,7 @@ index b64aa37..14727c9 100644
    on("+ 규칙 추가", function(){
      CGG.dialog({size:"form", title:"수수료 규칙 추가", desc:"검사자마다 한 대에 얼마 또는 검사비의 몇 %를 줄지 정해요.",
        body:'<label class="f" for="fWho">검사자 이름</label><input type="text" id="fWho" maxlength="20" style="width:100%;margin-bottom:10px">'+
-@@ -10452,7 +10452,7 @@ after("fee", function(){
+@@ -10452,7 +10453,7 @@ after("fee", function(){
        ok:"넣기", cancel:"닫기",
        onOk:function(){ var w=String(($("fWho")||{}).value||"").trim(), a=Number(($("fAmt")||{}).value), h=(document.querySelector('#fHow [aria-pressed="true"]')||{}).getAttribute?document.querySelector('#fHow [aria-pressed="true"]').getAttribute("data-h"):"한 대마다", e=$("fErr");
          if(!w||!(a>0)){ e.hidden=false; e.textContent="검사자 이름과 금액을 넣어 주세요."; return false; }
@@ -68,7 +71,7 @@ index b64aa37..14727c9 100644
      Array.prototype.forEach.call(document.querySelectorAll("#fHow [data-h]"),function(b){ b.onclick=function(){
        Array.prototype.forEach.call(document.querySelectorAll("#fHow [data-h]"),function(x){ var o=x===b; x.setAttribute("aria-pressed",o); x.classList.toggle("pri",o); }); }; });
    });
-@@ -12318,5 +12318,116 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
+@@ -12318,5 +12319,116 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
    if(!document.getElementById("wrap").hidden){ drawTabs(); if(typeof draw==="function") draw(); }
  })();
  </script>
