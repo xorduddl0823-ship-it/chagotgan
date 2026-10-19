@@ -1,0 +1,60 @@
+diff --git "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.7.html" "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.8.html"
+index afe5ea4..a0e5255 100644
+--- "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.7.html"
++++ "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.8.html"
+@@ -6,7 +6,7 @@
+ <meta name="robots" content="noindex,nofollow">
+ <meta name="theme-color" content="#1668C4">
+ <title>차곳간체크</title>
+-<!-- 체크 v56.7 (v56.6 + 알림 «확인 중» · 출시마감 3차 10/19) · 체크 v56.6 (v56.5 + 기록 저장 믿음 · 알림 결과 · 대표님 10/19 최우선) · 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
++<!-- 체크 v56.8 (v56.7 + 처리 중 · 확인 중이면 같은 rid · 서버 v54 이름) · 체크 v56.7 (v56.6 + 알림 «확인 중» · 출시마감 3차 10/19) · 체크 v56.6 (v56.5 + 기록 저장 믿음 · 알림 결과 · 대표님 10/19 최우선) · 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
+ <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231668C4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+@@ -3395,7 +3395,7 @@ function chkHdr(){
+   var sig=[nm,ln,who,(ST&&ST.role)||"",ps?ps.value:""].join("|");
+   if(CHK_H && CHK_SIG===sig && $("hdrTop").firstChild){ chkHdrSync(); return; }
+   CHK_SIG=sig;
+-  CHK_H=CGG.header($("hdrTop"),{product:"체크", sub:"성능점검 정산", ver:"체크 v56.7", date:"10/19",
++  CHK_H=CGG.header($("hdrTop"),{product:"체크", sub:"성능점검 정산", ver:"체크 v56.8", date:"10/19",
+     biz:{name:nm||"—", line:ln},
+     find:{mode:"nav", feats:chkFeats(), onGo:chkGoFeat},
+     notice:function(){ if(window.ccwNotice) window.ccwNotice(); },
+@@ -7797,7 +7797,7 @@ function openApp(){
+     /* 판 번호는 짧게 — 앞의 판 번호만 남깁니다 (전체는 마우스를 올리면 보입니다) */
+   var _v=String(ST.ver||"");
+   var _m=_v.match(/v[\d.]+/i);
+-  $("hdVer").textContent="체크 v56.7 · "+(_m?("서버 "+_m[0]):"");
++  $("hdVer").textContent="체크 v56.8 · "+(_m?("서버 "+_m[0]):"");
+   $("hdVer").title=_v||"";
+     $("dbState").innerHTML='연결됨 <span id="clock"></span>';
+     CHK_CONN=true; try{ chkHdrSync(); }catch(e){}   /* v50: 머리말 «연결됨» (초록 점) */
+@@ -12346,7 +12346,7 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
+     return Array.prototype.map.call(a,function(x){ return A[x%36]; }).join(""); }
+   var FLY={}, LOST={}, CUR="";
+   function keyOf(fn,args){ var s=""; try{ s=JSON.stringify(args||[]); }catch(e){ s=String(Math.random()); } return fn+"|"+s; }
+-  function unknown(m){ return /연결이 잠시 끊겼|서버에서 답을 받지 못했|Failed to fetch|NetworkError|Load failed|timed? ?out/i.test(String(m||"")); }
++  function unknown(m){ return /연결이 잠시 끊겼|서버에서 답을 받지 못했|Failed to fetch|NetworkError|Load failed|timed? ?out|^처리 중이에요|^확인 중/i.test(String(m||"")); }   /* v56.8: 서버가 처리 중 · 확인 중이면 결과를 모름 — 다시 할 때 같은 rid */
+ 
+   /* 몸통에 rid 붙이기 — call 이 fetch 를 바로(같은 차례에) 부르는 동안만 */
+   var rawFetch=window.fetch;
+@@ -12442,8 +12442,8 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
+   if(typeof window.call!=="function") return;
+   var MSG="확인 중 — 보낸 기록에서 확인해 주세요";
+   var SEND={billSend:1, remindSend:1, billBundleSend:1, deliv_resend:1};
+-  function unsure(x){ return !!x && (x.unsure===true || x.state==="확인 중" || /^확인 중/.test(String(x.why||""))); }
+-  function isUnsureErr(e){ return !!e && (e.unsure===true || /^확인 중/.test(String(e.message||""))); }
++  function unsure(x){ return !!x && (x.unsure===true || x.unknown===true || x.checking===true || x.state==="확인 중" || /^확인 중/.test(String(x.why||""))); }   /* v56.8: 서버 v54 checking · unknown */
++  function isUnsureErr(e){ return !!e && (e.unsure===true || /^확인 중|^처리 중이에요/.test(String(e.message||""))); }
+   try{ var st=document.createElement("style"); st.textContent="@media (max-width:600px){ [data-v567-log]{min-height:42px;padding:0 14px} }"; document.head.appendChild(st); }catch(e){}
+   function goLog(){ try{ go("sendlog"); }catch(e){} }
+   function barInfo(text){
+@@ -12486,7 +12486,7 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
+       if(Array.isArray(r.results)){
+         r.results.forEach(function(x){ if(unsure(x)){ x.ok=false; x.why=MSG; u++; } else if(x.ok) ok++; else bad++; });
+       } else if(fn==="billBundleSend"){ if(unsure(r)){ r.ok=false; r.why=MSG; } }
+-      else if(fn==="deliv_resend"){ u=Number(r.unsure)||0; ok=Number(r.ok)||0; bad=Number(r.bad)||0; unit="건"; }
++      else if(fn==="deliv_resend"){ u=Number(r.unsure)||Number(r.checking)||0; ok=Number(r.ok)||0; bad=Number(r.bad)||0; unit="건"; }
+       if(u && fn!=="billBundleSend") setTimeout(function(){   /* 보내기 함수가 맨 위 글을 쓴 뒤 — 숫자를 셋으로 나눠 다시 */
+         var sent=ok?won(ok)+(unit==="명"?"명에게 보냈어요. ":unit==="곳"?"곳에 보냈어요. ":"건을 보냈어요. "):"";
+         var t=sent+"확인 중 "+won(u)+unit+" — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요."+(bad?" 못 보낸 "+won(bad)+unit+"은 아래에서 까닭을 확인해 주세요.":"");
