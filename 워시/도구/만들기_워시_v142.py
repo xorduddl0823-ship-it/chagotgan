@@ -66,9 +66,8 @@ rep('''          set:function(obj){
 rep('''function gsDB(){
   function colRef(name){''',
 '''/* v142 저장 실패 모음 — 같은 기록(종류 · id)은 한 줄로. [다시 하기]는 같은 id 로 다시 보내요(서버가 덮어써서 두 번 안 생겨요) */
-var WSAVE={fail:{}};
+var WSAVE={fail:{},busy:false};
 function wSaveOk(name,id){
-  if(WSAVE.inIdem&&name==="intakes"&&WSAVE.inIdem.id===id)WSAVE.inIdem=null;   /* 저장됐으면 다음 입고는 새 id */
   if(!WSAVE.fail[name+"/"+id])return;
   delete WSAVE.fail[name+"/"+id]; wSaveBar();
 }
@@ -81,19 +80,28 @@ function wSaveBar(){
   var keys=Object.keys(WSAVE.fail), b=$("wSaveBar");
   if(!keys.length){ if(b)b.remove(); try{setDbState(true);}catch(e){} return; }
   try{setDbState(false,"저장하지 못한 기록 "+keys.length+"건");}catch(e){}
-  if(!b){ b=document.createElement("div"); b.id="wSaveBar"; b.className="banner warn"; b.setAttribute("role","alert");
+  if(!b){ b=document.createElement("div"); b.id="wSaveBar"; b.className="banner stop"; b.setAttribute("role","alert");
     var bn=$("banner"); if(bn&&bn.parentNode)bn.parentNode.insertBefore(b,bn.nextSibling); else document.body.insertBefore(b,document.body.firstChild); }
   var f=WSAVE.fail[keys[0]];
-  b.innerHTML='<b>저장하지 못한 기록이 '+keys.length+'건 있어요.</b> '+esc(f.why||"")+
-    ' <span style="white-space:nowrap">화면에서는 저장 전으로 되돌렸어요.</span> '+
-    '<button type="button" class="btn primary" id="wSaveRetry" style="margin-left:6px">다시 하기</button>';
+  b.title=f.why||"";
+  b.innerHTML='<b>저장 못 한 기록 '+keys.length+'건</b> — 인터넷을 확인하고 [다시 하기]를 눌러 주세요. '+
+    '<button type="button" class="btn primary" id="wSaveRetry" style="margin-left:6px"'+(WSAVE.busy?' disabled':'')+'>'+(WSAVE.busy?'다시 저장하는 중…':'다시 하기')+'</button>';
   $("wSaveRetry").onclick=function(){
-    var bt=this; bt.disabled=true; bt.textContent="다시 저장하는 중…";
+    if(WSAVE.busy)return;
+    WSAVE.busy=true; var bt=this; bt.disabled=true; bt.textContent="다시 저장하는 중…";
     var list=Object.keys(WSAVE.fail).map(function(k){return WSAVE.fail[k];});
+    var idem=WSAVE.inIdem;
     Promise.all(list.map(function(x){
       var d=S.db.collection(x.name).doc(x.id);
-      return (x.op==="del"?d.delete():d.set(x.obj)).then(function(){return true;},function(){return false;});
+      return (x.op==="del"?d.delete():d.set(x.obj)).then(function(){
+        /* 입고를 띠에서 살렸으면: 입력 칸 비우고(다시 눌러 두 번 생기지 않게) 입고 알림도 보내요 */
+        if(idem&&x.name==="intakes"&&x.op==="set"&&x.id===idem.id){
+          WSAVE.inIdem=null; try{banner("");resetForm();}catch(e){}
+          try{if(autoInOn()&&canNotify()&&x.obj.phone)sendInMsg(x.obj,"입고 알림",null);}catch(e){}
+        }
+        return true;},function(){return false;});
     })).then(function(r){
+      WSAVE.busy=false; wSaveBar();
       var ok=r.filter(Boolean).length;
       if(ok===r.length)toast(ok+"건을 저장했어요"); else toast((r.length-ok)+"건은 아직 저장하지 못했어요 — 인터넷 연결을 확인해 주세요",true);
       try{renderAll();}catch(e){}
@@ -102,6 +110,9 @@ function wSaveBar(){
 }
 function gsDB(){
   function colRef(name){''')
+
+rep('.banner.warn{background:var(--warn-soft);color:var(--warn);display:block}',
+    '.banner.warn{background:var(--warn-soft);color:var(--warn);display:block}\n.banner.stop{background:var(--danger-soft);color:var(--danger);display:block}   /* v142 저장 못 한 기록 띠 */')
 
 # 2) 입고 등록 멱등 키 — 저장이 끝날 때까지 같은 내용이면 같은 id
 rep('''  var id="in_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
@@ -119,7 +130,7 @@ rep('''  saveRec(rec)
     WSAVE.inIdem=null;   /* v142 저장 끝 — 다음 입고는 새 id */
     resetForm();renderAll();''')
 rep('''  .catch(function(e){banner("입고를 저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");toast(errMsg(e),true);})''',
-'''  .catch(function(e){banner("입고를 저장하지 못했어요. 입력한 내용은 그대로 있어요 — 인터넷 연결을 확인하고 [입고 등록]을 다시 눌러 주세요(같은 차는 한 번만 저장돼요).");toast(errMsg(e),true);})''')
+'''  .catch(function(e){banner("입고를 저장하지 못했어요. 인터넷을 확인하고 [입고 등록]을 다시 눌러 주세요.");toast(errMsg(e),true);})''')
 
 # 저장 실패가 남아 있으면 머리말은 «저장 안 됨» 그대로(주기적 동기화가 «저장됨»으로 덮지 않게) · 입력 칸을 비우면 멱등 키도 비워요
 rep('''function setDbState(ok,why){
@@ -167,14 +178,19 @@ rep('''      /* 옛 Code.gs — 하나씩 저장해요 */
 rep('''      templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||""};''',
 '''      templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||"",sendKey:String(o.id||"")};   /* v142 보내기 멱등 키 */''')
 
+rep('  var plan=ataPlan(o);\n', '  var plan=ataPlan(o);\n  o.ataTried=!!(plan||(o.hq&&!HQATA.off));   /* v142 알림톡을 실제로 시도했는지 — «대신 문자» 표시용 */\n')
+# 7) 자동 발송 알림 글도 같은 말
+rep('toast(x&&x.sentKind==="ATA"?"알림톡을 보냈어요":"문자를 보냈어요");return x;})',
+    'toast(x&&x.via?sentHow(x):(x&&x.sentKind==="ATA"?"알림톡을 보냈어요":"문자를 보냈어요"));return x;})')
+
 # 3) 보낸 결과 말 — 알림톡 · 대체 문자 · 실패
 rep('''function sentHow(o){var v=o&&o.via;return v==="ata"?"알림톡을 보냈어요":(v==="sms"?"문자로 보냈어요":"보냈어요");}''',
 '''function sentHow(o){var v=o&&o.via;   /* v142 알림톡이 안 가서 문자로 간 것은 «대신» 이라고 알려요 */
-  var wantAta=!!(o&&(o.hq||o.ata||o.forceAta||o.kind==="ATA"));
+  var wantAta=!!(o&&o.ataTried);
   return v==="ata"?"알림톡을 보냈어요":(v==="sms"?(wantAta?"알림톡이 안 가서 문자로 대신 보냈어요":"문자로 보냈어요"):"보냈어요");}''')
 rep('''      html:function(o){var k=o.sentKind||o.kind||"";return esc(KIND_NAME[k]||k);}},''',
 '''      html:function(o){var k=o.sentKind||o.kind||"";
-        if(o.status==="보냄"&&o.via==="sms"&&(o.hq||o.ata||o.forceAta||o.kind==="ATA"))return esc("문자(알림톡 대신)");   /* v142 */
+        if(o.status==="보냄"&&o.via==="sms"&&o.ataTried)return esc("문자(알림톡 대신)");   /* v142 */
         return esc(KIND_NAME[k]||k);}},''')
 
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
