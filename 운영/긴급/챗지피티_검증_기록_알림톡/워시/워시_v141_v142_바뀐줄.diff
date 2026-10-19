@@ -1,0 +1,197 @@
+--- "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v141.html"	2026-10-19 03:13:01.297201414 +0000
++++ "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v142.html"	2026-10-19 07:51:28.340230021 +0000
+@@ -4314,6 +4314,7 @@
+ function hhmm(t){var d=new Date(t||Date.now());
+   return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+ function setDbState(ok,why){
++  if(ok&&typeof WSAVE!=="undefined"&&WSAVE.fail&&Object.keys(WSAVE.fail).length){ok=false;why="저장하지 못한 기록 "+Object.keys(WSAVE.fail).length+"건";}   /* v142 */
+   DB_OK=!!ok;
+   var el=$("dbState");if(!el)return;
+   var narrow=(S.mode!=="pc");
+@@ -4700,7 +4701,7 @@
+   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
+     b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
+ }
+-var APP_VER="워시 v141 · UI 3.0 · 2026-10-19";
++var APP_VER="워시 v142 · UI 3.0 · 2026-10-19";
+ /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
+ var LAYOUTS=["top","side","icon"];
+ function layoutMode(){
+@@ -5477,13 +5478,21 @@
+ function saveMany(rows){
+   rows=(rows||[]).filter(function(r){return r&&r.col&&r.id;});
+   if(!rows.length)return Promise.resolve();
++  var prevs=rows.map(function(r){var c=GS.cache[r.col]||{};return {had:Object.prototype.hasOwnProperty.call(c,r.id),v:c[r.id]};});
+   rows.forEach(function(r){
+     GS.cache[r.col]=GS.cache[r.col]||{};GS.cache[r.col][r.id]=r.data;});
+   var cols={};rows.forEach(function(r){cols[r.col]=1;});
+   Object.keys(cols).forEach(fireSubs);
++  /* v142 끝내 저장하지 못하면 화면을 저장 전으로 되돌리고 실패 띠에 올려요 */
++  function undo(e){
++    rows.forEach(function(r,i){var c=GS.cache[r.col];if(c&&c[r.id]===r.data){if(prevs[i].had)c[r.id]=prevs[i].v;else delete c[r.id];}
++      wSaveFail(r.col,r.id,"set",r.data,e);});
++    Object.keys(cols).forEach(fireSubs);
++    throw e;}
++  function ok(v){rows.forEach(function(r){wSaveOk(r.col,r.id);});return v;}
+   if(rows.length===1||GS.newCode===false)
+     return Promise.all(rows.map(function(r){
+-      return gsCall("apiSet",[r.col,r.id,JSON.stringify(r.data)]);}));
++      return gsCall("apiSet",[r.col,r.id,JSON.stringify(r.data)]);})).then(ok,undo);
+   return gsCall("apiSetMany",[JSON.stringify(rows.map(function(r){
+       return {col:r.col,id:r.id,data:JSON.stringify(r.data)};}))])
+     .then(function(t){
+@@ -5494,7 +5503,7 @@
+       /* 옛 Code.gs — 하나씩 저장해요 */
+       return Promise.all(rows.map(function(r){
+         return gsCall("apiSet",[r.col,r.id,JSON.stringify(r.data)]);}));
+-    });
++    }).then(ok,undo);
+ }
+ function cfgBaks(){
+   return Object.keys(S.settingsAll||{}).filter(function(k){return k.indexOf("bak_")===0;})
+@@ -5774,7 +5783,10 @@
+ 
+   var label=btn.textContent;
+   btn.disabled=true;btn.textContent="등록 중…";
+-  var id="in_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
++  /* v142 멱등 키 — 실패 뒤 다시 눌러도(같은 상사 · 딜러 · 차량번호 · 금액) 같은 id 로 보내서 두 번 생기지 않아요 */
++  var idemK=[company,dealer,plate,total].join("|");
++  var id=(WSAVE.inIdem&&WSAVE.inIdem.k===idemK&&Date.now()-WSAVE.inIdem.at<600000)?WSAVE.inIdem.id:("in_"+Date.now()+"_"+Math.random().toString(36).slice(2,7));
++  WSAVE.inIdem={k:idemK,id:id,at:(WSAVE.inIdem&&WSAVE.inIdem.id===id)?WSAVE.inIdem.at:Date.now()};   /* 10분 안의 다시 누르기만 같은 id */
+   var rec={id:id,company:company,dealer:dealer,phone:$("fPhone").value.trim(),plate:plate,
+     model:carType(),works:works,total:total,memo:$("fMemo").value.trim(),photoId:"",
+     spot:($("fSpot")?$("fSpot").value.trim():""),
+@@ -5788,6 +5800,7 @@
+   /* 글자만 먼저 저장해서 바로 끝내요 — 사진은 뒤에서 올라가요 */
+   saveRec(rec)
+   .then(function(){
++    WSAVE.inIdem=null;   /* v142 저장 끝 — 다음 입고는 새 id */
+     resetForm();renderAll();
+     var inAuto=!!(autoInOn()&&canNotify()&&rec.phone);
+     var inP=inAuto?sendInMsg(rec,"입고 알림",null):null;
+@@ -5795,7 +5808,7 @@
+     else savedSheet(rec,inP);
+     if(pend)photoLater(rec,mainB,memoB);
+   })
+-  .catch(function(e){banner("입고를 저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");toast(errMsg(e),true);})
++  .catch(function(e){banner("입고를 저장하지 못했어요. 입력한 내용은 그대로 있어요 — 인터넷 연결을 확인하고 [입고 등록]을 다시 눌러 주세요(같은 차는 한 번만 저장돼요).");toast(errMsg(e),true);})
+   .then(function(){btn.disabled=false;btn.textContent=label;});
+ }
+ /* 사진을 뒤에서 올리고, 다 올라가면 그 줄에 붙여요 */
+@@ -5887,6 +5900,7 @@
+   $("okList").onclick=function(){closeSheet();S.tab="out";decideMode(false);window.scrollTo(0,0);};
+ }
+ function resetForm(){
++  if(typeof WSAVE!=="undefined")WSAVE.inIdem=null;   /* v142 */
+   if(window.WPT)WPT.ok="";
+   $("fPlate").value="";$("fMemo").value="";
+   if($("fSpot"))$("fSpot").value="";
+@@ -13407,7 +13421,7 @@
+     var kind=o.kind||c.mode||"AUTO";if(kind==="ATA")kind="AUTO";
+     var body={token:c.token||"",to:digits(o.to),from:digits(c.from),text:o.text,
+       kind:kind,imageB64:b64||"",type:o.type||"",
+-      templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||""};
++      templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||"",sendKey:String(o.id||"")};   /* v142 보내기 멱등 키 */
+     if(plan){body.kind="ATA";body.templateId=plan.tpl;body.pfId=plan.pfId;
+       body.variables=plan.vars;body.text=plan.text;body.disableSms=!plan.fallback;}
+     else if(o.hq&&!HQATA.off){body.kind="ATA";body.ataKey=o.hq.key;body.variables=o.hq.vars;body.imageB64="";body.disableSms=false;
+@@ -13464,7 +13478,9 @@
+ }
+ /* ===== 차곳간 UI 1.0 — 보낸 기록 (설정 ▸ 알림에서 떼어냈어요) ===== */
+ /* v124 — 보낸 방식 말하기: 서버가 res.via(ata/sms)를 주면 그대로, 없으면 «보냈어요» */
+-function sentHow(o){var v=o&&o.via;return v==="ata"?"알림톡을 보냈어요":(v==="sms"?"문자로 보냈어요":"보냈어요");}
++function sentHow(o){var v=o&&o.via;   /* v142 알림톡이 안 가서 문자로 간 것은 «대신» 이라고 알려요 */
++  var wantAta=!!(o&&(o.hq||o.ata||o.forceAta||o.kind==="ATA"));
++  return v==="ata"?"알림톡을 보냈어요":(v==="sms"?(wantAta?"알림톡이 안 가서 문자로 대신 보냈어요":"문자로 보냈어요"):"보냈어요");}
+ /* 보내기 실패 이유를 쉬운 말로 — 영어 코드는 감춥니다 */
+ function sendErrText(raw){
+   if(window.CGG&&CGG.sendWhy)return CGG.sendWhy(raw);   /* v139 공통 1.13.2 (같은 셈 · 쉬운 말) */
+@@ -13513,7 +13529,9 @@
+     {k:"type",label:"종류"},
+     {k:"to",label:"받는 번호"},
+     {k:"kind",label:"방식",val:function(o){return o.sentKind||o.kind||"";},
+-      html:function(o){var k=o.sentKind||o.kind||"";return esc(KIND_NAME[k]||k);}},
++      html:function(o){var k=o.sentKind||o.kind||"";
++        if(o.status==="보냄"&&o.via==="sms"&&(o.hq||o.ata||o.forceAta||o.kind==="ATA"))return esc("문자(알림톡 대신)");   /* v142 */
++        return esc(KIND_NAME[k]||k);}},
+     {k:"status",label:"상태",html:function(o){
+       var cls=o.status==="보냄"?"paid":(o.status==="실패"?"out":"in");
+       return '<span class="tag '+cls+'">'+esc(o.status)+'</span>'+
+@@ -16972,6 +16990,41 @@
+   return {docs:Object.keys(m).map(function(k){
+     return {id:k,exists:true,data:function(){return m[k];}};})};
+ }
++/* v142 저장 실패 모음 — 같은 기록(종류 · id)은 한 줄로. [다시 하기]는 같은 id 로 다시 보내요(서버가 덮어써서 두 번 안 생겨요) */
++var WSAVE={fail:{}};
++function wSaveOk(name,id){
++  if(WSAVE.inIdem&&name==="intakes"&&WSAVE.inIdem.id===id)WSAVE.inIdem=null;   /* 저장됐으면 다음 입고는 새 id */
++  if(!WSAVE.fail[name+"/"+id])return;
++  delete WSAVE.fail[name+"/"+id]; wSaveBar();
++}
++function wSaveFail(name,id,op,obj,e){
++  if(GS.demo&&!S.db)return;
++  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e)};
++  wSaveBar();
++}
++function wSaveBar(){
++  var keys=Object.keys(WSAVE.fail), b=$("wSaveBar");
++  if(!keys.length){ if(b)b.remove(); try{setDbState(true);}catch(e){} return; }
++  try{setDbState(false,"저장하지 못한 기록 "+keys.length+"건");}catch(e){}
++  if(!b){ b=document.createElement("div"); b.id="wSaveBar"; b.className="banner warn"; b.setAttribute("role","alert");
++    var bn=$("banner"); if(bn&&bn.parentNode)bn.parentNode.insertBefore(b,bn.nextSibling); else document.body.insertBefore(b,document.body.firstChild); }
++  var f=WSAVE.fail[keys[0]];
++  b.innerHTML='<b>저장하지 못한 기록이 '+keys.length+'건 있어요.</b> '+esc(f.why||"")+
++    ' <span style="white-space:nowrap">화면에서는 저장 전으로 되돌렸어요.</span> '+
++    '<button type="button" class="btn primary" id="wSaveRetry" style="margin-left:6px">다시 하기</button>';
++  $("wSaveRetry").onclick=function(){
++    var bt=this; bt.disabled=true; bt.textContent="다시 저장하는 중…";
++    var list=Object.keys(WSAVE.fail).map(function(k){return WSAVE.fail[k];});
++    Promise.all(list.map(function(x){
++      var d=S.db.collection(x.name).doc(x.id);
++      return (x.op==="del"?d.delete():d.set(x.obj)).then(function(){return true;},function(){return false;});
++    })).then(function(r){
++      var ok=r.filter(Boolean).length;
++      if(ok===r.length)toast(ok+"건을 저장했어요"); else toast((r.length-ok)+"건은 아직 저장하지 못했어요 — 인터넷 연결을 확인해 주세요",true);
++      try{renderAll();}catch(e){}
++    });
++  };
++}
+ function gsDB(){
+   function colRef(name){
+     var q={
+@@ -16987,19 +17040,32 @@
+           get:function(){var m=GS.cache[name]||{};
+             return Promise.resolve({id:id,exists:!!m[id],data:function(){return m[id];}});},
+           set:function(obj){
+-            GS.cache[name]=GS.cache[name]||{};GS.cache[name][id]=obj;
++            GS.cache[name]=GS.cache[name]||{};
++            var had=Object.prototype.hasOwnProperty.call(GS.cache[name],id), prev=GS.cache[name][id];
++            GS.cache[name][id]=obj;
+             fireSubs(name);                                  // 화면은 바로 갱신 (서버 기다리지 않음)
+             return gsCall("apiSet",[name,id,JSON.stringify(obj)]).then(function(r){
+               var v=typeof r==="string"?(function(){try{return JSON.parse(r);}catch(e){return null;}})():r;
+               if(v&&v.rev)GS.rev=String(v.rev);              // 내가 낸 변경이니 다시 안 불러와요
+-              return r;});},
++              wSaveOk(name,id);
++              return r;},function(e){
++              /* v142 저장 실패 — 화면을 저장 전으로 되돌리고(«저장됨»으로 보이지 않게) 실패 띠 + 다시 하기 */
++              if(GS.cache[name]&&GS.cache[name][id]===obj){ if(had)GS.cache[name][id]=prev; else delete GS.cache[name][id]; fireSubs(name); }
++              wSaveFail(name,id,"set",obj,e);
++              throw e;});},
+           delete:function(){
++            var had=!!(GS.cache[name]&&Object.prototype.hasOwnProperty.call(GS.cache[name],id)), prev=had?GS.cache[name][id]:null;
+             if(GS.cache[name])delete GS.cache[name][id];
+             fireSubs(name);
+             return gsCall("apiDel",[name,id]).then(function(r){
+               var v=typeof r==="string"?(function(){try{return JSON.parse(r);}catch(e){return null;}})():r;
+               if(v&&v.rev)GS.rev=String(v.rev);
+-              return r;});},
++              wSaveOk(name,id);
++              return r;},function(e){
++              /* v142 지우기 실패 — 화면에 다시 보여요 */
++              if(had&&GS.cache[name]&&!Object.prototype.hasOwnProperty.call(GS.cache[name],id)){ GS.cache[name][id]=prev; fireSubs(name); }
++              wSaveFail(name,id,"del",null,e);
++              throw e;});},
+           onSnapshot:function(cb){
+             var fire=function(){var m=GS.cache[name]||{};
+               cb({id:id,exists:!!m[id],data:function(){return m[id];}});};
