@@ -1,5 +1,5 @@
 #!/bin/sh
-# 워시 v143 시험 — 저장소 맨 위에서: sh 운영/긴급/챗지피티_검증_출시마감_3차/워시/시험_돌리기.sh
+# 워시 v143 시험 — 저장소 맨 위에서: sh 운영/긴급/챗지피티_검증_출시마감_3차/화면/워시/시험_돌리기.sh
 # 필요: python3 · node · playwright(+chromium). 실제 서버 · 실제 발송 없음(미리보기 가짜 서버).
 set -e
 D=$(dirname "$0"); OUT=${OUT:-/tmp/wash_v143_test}; mkdir -p "$OUT/pv143"

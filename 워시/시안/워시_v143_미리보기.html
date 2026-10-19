@@ -13588,23 +13588,23 @@ function sendNow(o){
         body.kind=o.kind||c.mode||"AUTO";if(body.kind==="ATA")body.kind="AUTO";
         delete body.ataKey;delete body.variables;delete body.disableSms;delete body.rec;delete body.codes;body.imageB64=b2||"";
         o.sentKind=body.kind;
-        o.rid=wNewRid();   /* 알림톡은 «안 감»이 확실(답을 받은 실패) — 문자는 새 rid (서버가 실패 답도 rid 로 기억하므로) */
         return GS.send(body,o.rid);
       });
     }
     return GS.send(body,o.rid).then(function(res){
       /* 본사 템플릿이 아직 없거나 옛 서버 → 문자로 (이 화면에서는 다시 묻지 않음) */
       if(body.ataKey&&!(res&&res.ok)&&/템플릿 ID|채널 ID|pfId/.test(String((res&&(res.error||res.message))||""))){
-        if(!(o.hq&&o.hq.soft))HQATA.off=true; return asSms();
+        if(!(o.hq&&o.hq.soft))HQATA.off=true; return res;   /* v143 대체는 서버가(sb29) — 화면은 다시 보내지 않고 «실패»로 */
       }
       return res;
     },function(err){
       /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
-      if(body.ataKey&&!wUnknown(err)) return asSms();   /* v143 답을 못 받았으면(갔을 수도 있음) 문자로 또 보내지 않아요 */
+      throw err;   /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */
       throw err;
     });
   }).then(function(res){
-    if(res&&!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message})))throw {message:String(res.error||res.message||"확인 중"),unknown:true};
+    /* 서버 sb29 «확인 중»: {ok:false,checking:true} · 보냈지만 완료 기록 실패 {ok:true,checking:true} */
+    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message})))))throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
       o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";
       if(o.via==="sms"&&o.sentKind==="ATA")o.sentKind="AUTO"; else if(o.via==="ata")o.sentKind="ATA";}
@@ -17001,7 +17001,7 @@ function supaRpc(fn,args){
     .then(function(r){return r.text();},function(){lost();throw {message:"서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",unknown:true};})
     .then(function(t){
       var j;try{j=JSON.parse(t);}catch(e){lost();throw {message:"서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",unknown:true};}
-      if(j&&j.__err){if(wUnknown({message:j.__err}))lost();else done();throw {message:j.__err};}
+      if(j&&j.__err){var u=!!j.__checking||wUnknown({message:j.__err});if(u)lost();else done();throw {message:j.__err,unknown:u};}
       done();
       return j?j.result:null;
     });

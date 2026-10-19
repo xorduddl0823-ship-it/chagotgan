@@ -213,12 +213,19 @@ for (const how of ['새로고침','다시 로그인']) {
   ok('⑨ 페이지 오류 없음',!p._errs.length,p._errs.join(' | ')); await p.close(); }
 
 // ⑩ 알림톡 → 문자 대체는 같은 rid(한 발송 업무) · 저장 성공 기록은 발송 실패로 안 없어짐(새로고침 뒤에도)
-{ const p=await page('',null,1366,1000);   /* 알림톡 코드 없음 → 서버가 ok:false → 화면이 문자로 대신 */
-  const r=await p.evaluate(async()=>{ const i=__t.recs().findIndex(x=>x.phone); const n0=__PV.sent().length;
-    __t.hq().off=false;
-    const res=await __t.out(i).then(()=>'ok',e=>'ERR '+(e&&e.message||e)); await new Promise(r=>setTimeout(r,1200));
-    const s=__PV.sent().slice(n0); return {res,n:s.length,kinds:s.map(x=>x.kind+'/'+(x.ataKey||'')),rids:s.map(x=>x.rid)}; });
-  ok('⑩ 알림톡이 확실히 실패(답 받음) → 문자로 대신 · 새 rid(서버가 실패 답도 기억하므로)',r.rids.length===2&&r.rids[0]!==r.rids[1]&&/^MMS|^SMS|^LMS|^AUTO/.test(r.kinds[1]),JSON.stringify(r));
+{ const p=await page('',null,1366,1000);   /* 알림톡 코드 없음 → 서버가 ok:false → 화면은 문자를 따로 안 보냄(대체는 서버 sb29 안에서) */
+  const r=await p.evaluate(async()=>{ const i=__t.recs().findIndex(x=>x.phone); const n0=__PV.sent().length; __t.hq().off=false;
+    await __t.out(i).catch(()=>0); await new Promise(r=>setTimeout(r,1200));
+    const s=__PV.sent().slice(n0); const ob=Object.values(__PV.DB().outbox||{}); const l=ob[ob.length-1]||{}; return {n:s.length,status:l.status}; });
+  ok('⑩ 알림톡 실패 답 → 화면은 문자를 따로 안 보냄(서버가 대체) · «실패»',r.n===1&&r.status==='실패',JSON.stringify(r));
+  await p.close(); }
+// ⑪ 서버 sb29 «확인 중» 답 모양 3가지 → «확인 중» · 자동 다시 없음
+for (const [name,set] of [['{ok:false,checking:true}',"window.__CHK='no'"],['{ok:true,checking:true}',"window.__CHK='ok'"],['__err + __checking',"window.__CHKERR=1"]]) {
+  const p=await page('?ata=on&srv=15',null,1366,1000);
+  const r=await p.evaluate(async(set)=>{ eval(set); const i=__t.recs().findIndex(x=>x.phone); const n0=__PV.sent().length;
+    const res=await __t.inn(i).then(()=>'ok',e=>'ERR '+(e&&e.message||e)); await new Promise(r=>setTimeout(r,1200));
+    const ob=Object.values(__PV.DB().outbox||{}); const l=ob[ob.length-1]||{}; const t=document.querySelector('#toast.show,.cgg-toast:not([hidden])'); return {res:res+' '+(t?t.textContent:''),status:l.status,more:__PV.sent().length-n0}; },set);
+  ok('⑪ 서버 답 '+name+' → «확인 중» · 다시 안 보냄',r.status==='확인 중'&&r.more<=1&&/갔는지 아직 몰라요/.test(r.res),JSON.stringify(r));
   await p.close(); }
 { const p=await page('?ata=on&nofrom=1',null,1366,1000);
   const r=await p.evaluate(async()=>{ const rec=__t.recs().find(x=>x.phone); __t.cfg('send',Object.assign({},__t.SS().cfg.send||{},{from:''}));

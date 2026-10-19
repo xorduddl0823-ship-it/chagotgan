@@ -3,9 +3,9 @@
   디자인 · 새 기능 없음. 돈 셈 그대로(전체검사.js 돈 지문 같아야 해요).
   1) 서버 약속(sb28): 쓰기 창구 몸통 맨 위에 rid(소문자 · 숫자 24자). 읽기 창구엔 안 붙여요(처음 답이 24시간 고정되니까).
      · 사용자 «한 번 누름»마다 새 rid. 답을 못 받은 일(연결 끊김 · 답 못 읽음)을 같은 내용으로 다시 하면 같은 rid(30분 안).
-     · 보내기: 보낸 기록 한 줄(o)마다 rid 하나 — 알림톡 → 문자 대체도 같은 rid(한 발송 업무). 보낸 기록의 [다시 보내기]는 새 rid.
+     · 보내기: 보낸 기록 한 줄(o)마다 rid 하나. 알림톡 → 문자 대체는 서버(sb29)가 같은 rid 안에서 — 화면은 따로 문자를 안 보내요. 보낸 기록의 [다시 보내기]는 새 rid.
      · v142 의 sendKey 는 빼요(서버가 따로 받지 않음).
-  2) 결과 불명(답을 못 받음 · 서버 «처리 중/확인 중»): 보낸 기록 상태 «확인 중», 글 «확인 중 — 보낸 기록에서 확인해 주세요».
+  2) 결과 불명(답을 못 받음 · 서버 «처리 중/확인 중» · sb29 checking/__checking): 보낸 기록 상태 «확인 중», 글 «확인 중 — 보낸 기록에서 확인해 주세요».
      자동으로 다시 보내지 않아요(문자로 대신 보내기 · 문자 앱 열기도 안 해요).
 운영 v111 · 시험판 v125 · v126 ~ v142 은 덮어쓰지 않는다.
 """
@@ -58,7 +58,7 @@ function supaRpc(fn,args){
     .then(function(r){return r.text();},function(){lost();throw {message:"서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",unknown:true};})
     .then(function(t){
       var j;try{j=JSON.parse(t);}catch(e){lost();throw {message:"서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",unknown:true};}
-      if(j&&j.__err){if(wUnknown({message:j.__err}))lost();else done();throw {message:j.__err};}
+      if(j&&j.__err){var u=!!j.__checking||wUnknown({message:j.__err});if(u)lost();else done();throw {message:j.__err,unknown:u};}
       done();
       return j?j.result:null;
     });
@@ -73,18 +73,20 @@ rep('''      templateId:"",scheduledDate:o.scheduledDate||"",ref:o.ref||"",sendK
     if(!o.rid)o.rid=wNewRid();   /* v143 보낸 기록 한 줄 = 발송 한 건 = rid 하나 (같은 일 재시도는 같은 rid) */''')
 rep('''        o.sentKind=body.kind;
         return GS.send(body);''', '''        o.sentKind=body.kind;
-        o.rid=wNewRid();   /* 알림톡은 «안 감»이 확실(답을 받은 실패) — 문자는 새 rid (서버가 실패 답도 rid 로 기억하므로) */
         return GS.send(body,o.rid);''')
 rep('''    return GS.send(body).then(function(res){''', '''    return GS.send(body,o.rid).then(function(res){''')
 # 결과 불명이면 문자로 대신 보내지 않아요
 rep('''      /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
       if(body.ataKey) return asSms();''', '''      /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
-      if(body.ataKey&&!wUnknown(err)) return asSms();   /* v143 답을 못 받았으면(갔을 수도 있음) 문자로 또 보내지 않아요 */''')
+      throw err;   /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */''')
+rep('''        if(!(o.hq&&o.hq.soft))HQATA.off=true; return asSms();''',
+    '''        if(!(o.hq&&o.hq.soft))HQATA.off=true; return res;   /* v143 대체는 서버가(sb29) — 화면은 다시 보내지 않고 «실패»로 */''')
 # 서버가 «결과 불명»을 답으로 줄 때도(ok 아님 + unknown/확인 중) 같은 처리
 rep('''  }).then(function(res){
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";''',
 '''  }).then(function(res){
-    if(res&&!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message})))throw {message:String(res.error||res.message||"확인 중"),unknown:true};
+    /* 서버 sb29 «확인 중»: {ok:false,checking:true} · 보냈지만 완료 기록 실패 {ok:true,checking:true} */
+    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message})))))throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";''')
 rep('''  }).catch(function(e){
     o.status="실패";''', '''  }).catch(function(e){

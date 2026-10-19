@@ -15,7 +15,11 @@ r('''      var out;
       try{ out = {result: answer(body.fn, body.args)}; }catch(e){ out = {__err: String(e && e.message || e)}; }''',
 '''      var out; window.__RIDS=window.__RIDS||[]; window.__RIDS.push({fn:body.fn,rid:body.rid||""}); window.__IDEM=window.__IDEM||{};
       var ik=body.rid?(body.fn+"|"+body.rid):"";
-      if(ik&&window.__IDEM[ik]){ out=window.__IDEM[ik]; }
+      if(body.fn==="sendMsg"&&window.__CHKERR){ window.__CHKERR=0; out={__err:"확인 중이에요 — 보낸 기록에서 확인해 주세요. 자동으로 다시 보내지 않아요.",__checking:true}; }
+      else if(body.fn==="sendMsg"&&window.__CHK){ var cm=window.__CHK; window.__CHK=0;   /* 서버 sb29 «확인 중» 답 */
+        if(cm==="ok") SENT.push({rid:body.rid||"",kind:"ATA",ataKey:"chk",vars:null,text:"",to:""});
+        out={result:JSON.stringify(cm==="ok"?{ok:true,id:"P",groupId:"G",via:"ata",checking:true,checkMsg:"확인 중이에요 — 보낸 기록에서 확인해 주세요. 자동으로 다시 보내지 않아요."}:{ok:false,checking:true,error:"확인 중이에요 — 보낸 기록에서 확인해 주세요. 자동으로 다시 보내지 않아요."})}; }
+      else if(ik&&window.__IDEM[ik]){ out=window.__IDEM[ik]; }
       else{ window.__CURRID=body.rid||"";
         try{ out = {result: answer(body.fn, body.args)}; }catch(e){ out = {__err: String(e && e.message || e)}; }
         window.__CURRID="";
