@@ -1,0 +1,20 @@
+diff --git "a/\354\262\264\355\201\254/driver/index_v30.html" "b/\354\262\264\355\201\254/driver/index_v31.html"
+index 2ee083b..def266f 100644
+--- "a/\354\262\264\355\201\254/driver/index_v30.html"
++++ "b/\354\262\264\355\201\254/driver/index_v31.html"
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<!-- 기사 앱 v30 (v29 + 알림 «확인 중» · 10/19) · 기사 앱 v29 (v28 + 도착 보내기 같은 일 표시 rid · 다시 보내기 · 10/19) -->
++<!-- 기사 앱 v31 (v30 + 서버 v54 확인 중 이름 · 10/19) · 기사 앱 v30 (v29 + 알림 «확인 중» · 10/19) · 기사 앱 v29 (v28 + 도착 보내기 같은 일 표시 rid · 다시 보내기 · 10/19) -->
+ <html lang="ko">
+ <head>
+ <base target="_top">
+@@ -1089,7 +1089,7 @@ function doSend(force){
+       $('m-no').onclick=closeModal; $('m-ok').onclick=function(){ doSend(true); }; return;
+     }
+     var row=r.row, ok=row.발송결과!=='실패';
+-    if(row.발송결과==='확인 중'){ unsureDone(row); return; }   /* v30 */
++    if(r.checking===true || row.발송결과==='확인 중'){ unsureDone(row); return; }   /* v30 · v31: 서버 v54 checking */
+     clearDraft();                                  /* 보냈으니 저장본은 지웁니다 (다시 열어도 같은 건이 안 나오게) */
+     var rec2=(ls(RECENT)||[]).filter(function(x){ return x!==S.dest; }); rec2.unshift(S.dest); ls(RECENT, rec2.slice(0,30));
+     freqAdd(S.dest);
