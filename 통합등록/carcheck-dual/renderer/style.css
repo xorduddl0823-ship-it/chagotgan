@@ -273,3 +273,6 @@ button.ghost { color: var(--muted); }
 .cred-row label { flex: none; width: 64px; font-size: 12px; color: var(--muted); }
 .cred-row input { flex: 1; }
 .cred-row .cred-clear { flex: none; font-size: 12px; padding: 6px 10px; }
+
+/* 등록 흐름 단추 — 설정 flow 가 켜졌을 때만 보임 */
+button.hidden { display: none; }

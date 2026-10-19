@@ -166,3 +166,13 @@ test('저장 요청이 나갔고 결과가 불확실하면 작업 기록에서 �
   assert.throws(() => log.cancelSubmit(id, 'carinfo', { sentCount: g.sentCount }), /확실하지 않아/);
   assert.strictEqual(log.canSubmit(id, 'carinfo').ok, false);
 });
+
+test('사진 올리기(fillAllow)는 값 넣기 단계에서만 통과 — 저장 허락 뒤·잠금 뒤에는 붙잡음', () => {
+  const g = createSaveGuard({ siteHosts: ['site.example'], savePatterns: ['/save'], fillAllow: ['/photo/upload'] });
+  assert.strictEqual(g.onRequest(req('/photo/upload', 'POST', 'ajax')), 'ignore', '값 넣기 중 사진 올리기 통과');
+  assert.strictEqual(g.onRequest(req('/save', 'POST', 'ajax')), 'hold', '저장은 여전히 막힘');
+  g.unlock();
+  assert.strictEqual(g.onRequest(req('/photo/upload', 'POST', 'ajax')), 'pass', '저장 단계에선 사진 요청도 저장 요청으로 셈(한 번만)');
+  g.seal();
+  assert.strictEqual(g.onRequest(req('/photo/upload', 'POST', 'ajax')), 'hold');
+});

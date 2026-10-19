@@ -51,6 +51,8 @@ contextBridge.exposeInMainWorld('api', {
     resolve:      (o) => ipcRenderer.invoke('flow:resolve', o),
     finish:       (o) => ipcRenderer.invoke('flow:finish', o),
     resume:       ()  => ipcRenderer.invoke('flow:resume'),
+    runAll:       (o) => ipcRenderer.invoke('flow:runAll', o),
+    onProgress:   (fn) => { ipcRenderer.removeAllListeners('flow:progress'); ipcRenderer.on('flow:progress', (_e, info) => fn(info)); },
     forceClose:   (o) => ipcRenderer.invoke('flow:forceClose', o),
     releaseAfterForce: (o) => ipcRenderer.invoke('flow:releaseAfterForce', o),
   },

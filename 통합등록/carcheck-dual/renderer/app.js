@@ -505,6 +505,100 @@ async function send(ids) {
   report('전송 결과', blocks);
 }
 
+/* ─────────── 세 전산 자동 등록 (대표님 10/19 최종 지시 · 설정 flow 가 켜졌을 때만) ───────────
+ *  입력 화면의 같은 자료(위 121칸 · 사진)를 그대로 쓴다. 정상이면 끝까지 사람 조작 없음.
+ *  멈추면 «어느 차 · 어느 전산 · 까닭 · 단계 · 할 일»을 보여 주고 [이어 하기]로 이어 간다. */
+let autoStop = null;   // 멈춘 작업 { jobId }
+
+/** 저장 전 확인 창(화면 가운데) — [저장]이면 true */
+function askAuto(title, text) {
+  return new Promise((resolve) => {
+    $('#auto-confirm-title').textContent = title;
+    $('#auto-confirm-text').textContent = text;
+    $('#auto-confirm').classList.remove('hidden');
+    const done = (v) => { $('#auto-confirm').classList.add('hidden'); $('#auto-confirm-yes').onclick = null; $('#auto-confirm-no').onclick = null; resolve(v); };
+    $('#auto-confirm-yes').onclick = () => done(true);
+    $('#auto-confirm-no').onclick = () => done(false);
+  });
+}
+
+async function autoRegister(resumeJobId) {
+  const { data, required } = collect();
+  if (!resumeJobId && required.length) {
+    report('필수 항목이 비어 있어요', [{ ok: false, title: '먼저 채워 주세요', lists: [{ title: '빈 칸', items: required, cls: 'warn' }] }]);
+    return;
+  }
+  const go = resumeJobId
+    ? await askAuto('멈춘 곳부터 이어서 저장할까요?', '작업 번호 ' + resumeJobId + ' · 차량 ' + (data.carNo || '-') + ' · 저장된 곳은 다시 저장하지 않아요.')
+    : await askAuto('세 전산에 저장할까요?', '차량 ' + data.carNo + ' · 1대 · 카인포 → 카모두 → 엔트리 3곳에 차례로 저장해요.');
+  if (!go) return;
+  window.api.flow.onProgress((info) => busy((info.siteName ? info.siteName + ' · ' : '') + info.step + (info.note ? ' — ' + info.note : '') + '…'));
+  busy('세 전산 자동 등록을 시작해요…');
+  let res;
+  try {
+    res = await window.api.flow.runAll(resumeJobId ? { jobId: resumeJobId, data } : { carNo: data.carNo, vin: data.vin, data });
+  } finally {
+    unbusy();
+  }
+  if (res && res.ok === false && res.detail && res.detail.needDealerPick) {
+    const chosen = await pickRow(res.detail.rows || []);
+    if (!chosen) { showAutoStop({ ...res, reason: '딜러를 고르지 않았어요.', action: '딜러를 고른 뒤 [이어 하기]를 눌러 주세요.' }); return; }
+    busy('고른 딜러로 채우는 중…');
+    const done = await window.api.pickDealer({ name: data.dealerName, row: chosen.i });
+    unbusy();
+    if (!done || !done.ok) { showAutoStop({ ...res, reason: (done && done.error) || '고른 딜러로 채우지 못했어요.' }); return; }
+    return runResume(res.jobId);
+  }
+  if (res && res.ok) {
+    autoStop = null;
+    $('#btn-auto-resume').classList.add('hidden');
+    return autoRegisterDone(res, data);
+  }
+  showAutoStop(res || { reason: '알 수 없는 오류' });
+}
+
+async function autoRegisterDone(res, data) {
+  {
+    const n = res.numbers || {};
+    await window.api.saveRecord({ carNo: res.carNo, checkNo: n.carinfo, data });
+    report('세 전산 등록 끝', [{
+      ok: true,
+      title: res.carNo + ' — 세 곳 모두 저장했어요',
+      lists: [
+        { title: '점검번호', items: ['카인포 ' + (n.carinfo || '번호 못 받음'), '카모두 ' + (n.carmodoo || '번호 못 받음'), '엔트리 ' + (n.entry || '번호 못 받음')], cls: 'good' },
+        { title: '걸린 시간', items: [Math.round((res.ms || 0) / 1000) + '초'], cls: 'muted' },
+      ],
+      note: (n.carinfo && n.carmodoo && n.entry) ? '세 전산 번호가 모두 같아요. 확인만 해 주세요.' : '받지 못한 번호가 있어요. 해당 전산에서 확인해 주세요.',
+    }]);
+  }
+}
+
+/** 딜러를 고른 바로 뒤 — 방금 [저장]을 확인한 같은 작업이라 확인 창 없이 이어 간다 */
+async function runResume(jobId) {
+  const { data } = collect();
+  busy('이어서 등록하는 중…');
+  let res;
+  try { res = await window.api.flow.runAll({ jobId, data }); } finally { unbusy(); }
+  if (res && res.ok) { autoStop = null; $('#btn-auto-resume').classList.add('hidden'); return autoRegisterDone(res, data); }
+  return showAutoStop(res || { reason: '알 수 없는 오류' });
+}
+
+function showAutoStop(res) {
+  autoStop = res.jobId ? { jobId: res.jobId } : null;
+  $('#btn-auto-resume').classList.toggle('hidden', !autoStop);
+  report('자동 등록 멈춤', [{
+    ok: false,
+    title: (res.siteName || '등록') + (res.step ? ' · ' + res.step : '') + ' 에서 멈췄어요',
+    lists: [
+      { title: '차량', items: [res.carNo || '-'] },
+      { title: '까닭', items: [res.reason || res.error || '알 수 없음'], cls: 'warn' },
+      { title: '할 일', items: [res.action || '내용을 확인해 주세요.'], cls: 'muted' },
+      { title: '작업 번호', items: [res.jobId || '-'], cls: 'muted' },
+    ],
+    note: res.jobId ? '고친 뒤 [이어 하기]를 누르면 멈춘 곳부터 이어 가요.' : '',
+  }]);
+}
+
 /* ───────────────────────── 시작 ───────────────────────── */
 
 (async function init() {
@@ -542,6 +636,16 @@ async function send(ids) {
     })
   );
   $('#btn-prepare').addEventListener('click', () => prepareCarinfo().catch((e) => { unbusy(); alert(e.message); }));
+  //  등록 흐름이 켜져 있으면 [세 전산 자동 등록]을 보인다(꺼져 있으면 예전 화면 그대로)
+  try {
+    const cfgF = await window.api.getConfig();
+    if (cfgF && cfgF.flow === true && window.api.flow) {
+      $('#btn-auto').classList.remove('hidden');
+      $('#btn-send-all').classList.remove('primary');
+      $('#btn-auto').addEventListener('click', () => autoRegister().catch((e) => { unbusy(); showAutoStop({ reason: e.message }); }));
+      $('#btn-auto-resume').addEventListener('click', () => autoStop && autoRegister(autoStop.jobId).catch((e) => { unbusy(); showAutoStop({ reason: e.message }); }));
+    }
+  } catch {}
   $('#btn-send-cm').addEventListener('click', () => send(['carmodoo']));
   $('#btn-send-ci').addEventListener('click', () => send(['carinfo']));
   $('#btn-send-all').addEventListener('click', () => send(['carmodoo', 'carinfo']));

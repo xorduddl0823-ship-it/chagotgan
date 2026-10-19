@@ -31,6 +31,14 @@ const line = String(sm.stdout || '').split('\n').find((l) => l.startsWith('SMOKE
 const smokeOk = /main-title=성능점검 이중등록/.test(line);
 console.log((smokeOk ? 'ok' : 'not ok') + ' - 실제 프로그램(main.js)이 바뀐 코드로 뜨고 입력 화면이 열림' + (smokeOk ? '' : '\n  error: ' + (line || String(sm.stderr || '').slice(-300))));
 if (!smokeOk) process.exit(1);
+
+//  실제 프로그램의 [세 전산 자동 등록] 단추 → 엔진까지 이어지는지(실제 전산 주소는 막아 둠) —
+//  실제 전산 설정이 비어 있으므로 저장 전에 «자동 등록 멈춤»과 쉬운 까닭이 나와야 정상
+const sf = spawnSync(cmd, smokeArgs, { encoding: 'utf8', timeout: 90000, env: { ...process.env, CARCHECK_SMOKE: '1', CARCHECK_SMOKE_FLOW: '1' } });
+const fl = String(sf.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-FLOW')) || '';
+const flowOk = /button=true/.test(fl) && /자동 등록 멈춤/.test(fl) && /카인포 목록 칸 설정이 아직 없습니다/.test(fl);
+console.log((flowOk ? 'ok' : 'not ok') + ' - 실제 프로그램: [세 전산 자동 등록] → 엔진 → 설정 미확정이라 저장 전에 멈추고 쉬운 까닭 표시' + (flowOk ? '' : '\n  error: ' + (fl || String(sf.stderr || '').slice(-300))));
+if (!flowOk) process.exit(1);
 if (r.status !== 0) {
   const err = String(r.stderr || '').split('\n').filter((l) => !/dbus|bus\.cc|viz_main|shared_image|one_copy|Fontconfig|gpu/i.test(l)).slice(-15).join('\n');
   if (err.trim()) process.stdout.write('--- stderr ---\n' + err + '\n');

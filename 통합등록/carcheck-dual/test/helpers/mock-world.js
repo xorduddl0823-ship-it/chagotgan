@@ -58,7 +58,9 @@ function createWorld(opts = {}) {
     }
     const v = g ? g.onRequest({ id, url: 'https://' + host[site] + '/save', method: 'POST', kind: 'ajax' }) : 'pass';
     if (v !== 'pass') return v;
+    if (w.faults[site] === 'hangNoSave') return 'pass-no-response';         // 요청은 나갔는데 응답 없음(서버 저장 안 됨)
     const no = commit(site, ctx);
+    if (w.faults[site] === 'hang') return 'saved-no-response:' + no;        // 저장은 됐는데 응답이 안 옴
     if (w.faults[site] === 'serverErrorButSaved') g.onResponse(id, 500);
     else if (w.faults[site] === 'networkLost') g.onNetworkError(id);
     else g.onResponse(id, 200);
@@ -74,6 +76,8 @@ function createWorld(opts = {}) {
       async saveOutcome() { return guards.carinfo.outcome(); },
       async coverage() { return guards.carinfo ? guards.carinfo.coverage() : { windows: 0, unattachedWindows: [] }; },
       async seal() { guards.carinfo.seal(); },
+      async clickSave() { w.calls.push('carinfo.clickSave'); return clickSave('carinfo'); },
+      async timeout() { guards.carinfo.onTimeout(); },
     },
     carmodoo: {
       async fill(data, extra) {
@@ -89,11 +93,14 @@ function createWorld(opts = {}) {
       async saveOutcome() { return guards.carmodoo.outcome(); },
       async coverage() { return guards.carmodoo ? guards.carmodoo.coverage() : { windows: 0, unattachedWindows: [] }; },
       async seal() { guards.carmodoo.seal(); },
+      async clickSave() { w.calls.push('carmodoo.clickSave'); return clickSave('carmodoo'); },
+      async timeout() { guards.carmodoo.onTimeout(); },
       async readList(car) { return w.carmodoo.rows.filter((x) => !car || x.carNo === car.carNo); },
     },
     entry: {
       async loginState() { return { loggedIn: w.entry.loggedIn, canRead: w.entry.loggedIn }; },
       async readNext() { return w.entry.next; },
+      async refresh() { w.calls.push('entry.refresh'); },
       async fill(data, extra) {
         //  엔트리는 «다음 번호»로 카인포 기록을 끌어온다 — 다음 번호가 어긋나 있으면 다른 차가 끌려온다
         ctx.carNo = data.carNo; ctx.vin = data.vin;
@@ -110,6 +117,8 @@ function createWorld(opts = {}) {
       async saveOutcome() { return guards.entry.outcome(); },
       async coverage() { return guards.entry ? guards.entry.coverage() : { windows: 0, unattachedWindows: [] }; },
       async seal() { guards.entry.seal(); },
+      async clickSave() { w.calls.push('entry.clickSave'); return clickSave('entry'); },
+      async timeout() { guards.entry.onTimeout(); },
       async readList(car) { return w.entry.rows.filter((x) => !car || x.carNo === car.carNo); },
     },
   };

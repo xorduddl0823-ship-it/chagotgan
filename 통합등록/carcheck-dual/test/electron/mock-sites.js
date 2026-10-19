@@ -43,6 +43,11 @@ function createMockSites() {
       });
       return;
     }
+    if (u.pathname === '/api/photo' && req.method === 'POST') { S.photos = (S.photos || 0) + 1; return send(200, 'application/json', '{"ok":true}'); }
+    if (u.pathname === '/api/entryState') {
+      const row = S.carinfo.find((r) => r[0] === entryNext()) || [];
+      return send(200, 'application/json', JSON.stringify({ logged: !S.faults.entryLoggedOut, next: entryNext(), row }));
+    }
     if (u.pathname === '/upload' && req.method === 'POST') { S.saves.foreign = (S.saves.foreign || 0) + 1; return send(200, 'text/plain', 'ok'); }
     if (u.pathname === '/upload') {
       return send(200, 'text/html', page('upload', '<form id=f method=post action="/upload"><input name=a value=1></form>', 'document.getElementById("f").submit();'));
@@ -78,15 +83,21 @@ function createMockSites() {
         };`));
     }
     if (u.pathname === '/entry') {
-      const logged = !S.faults.entryLoggedOut;
-      const row = S.carinfo.find((r) => r[0] === entryNext()) || [];
+      //  흉내 엔트리 — 로그인 상태·다음 번호를 스스로 새로 읽는다(자동 등록 중 사람이 새로고침하지 않으므로)
       return send(200, 'text/html', page('엔트리 흉내',
-        (logged ? '<b id=who>가온</b><span id=nextNo>' + entryNext() + '</span>' : '<input type=password>') +
-        '<button id=btnLoad>불러오기</button><span id=ldNo></span><span id=ldCar></span><span id=ldVin></span>' +
+        '<div id=auth></div><button id=btnLoad>불러오기</button><span id=ldNo></span><span id=ldCar></span><span id=ldVin></span>' +
         '<button id=btnSave>저장</button><table id=list><tbody></tbody></table>',
         LIST_JS + `
         loadList('entry');
-        const ROW = ${JSON.stringify(row)};
+        let ROW = [];
+        async function tick(){
+          try {
+            const st = await (await fetch('/api/entryState')).json();
+            auth.innerHTML = st.logged ? '<b id=who>가온</b><span id=nextNo>' + st.next + '</span>' : '<input type=password>';
+            ROW = st.row || [];
+          } catch (e) {}
+        }
+        tick(); setInterval(tick, 150);
         document.getElementById('btnLoad').onclick = () => { ldNo.textContent = ROW[0]||''; ldCar.textContent = ROW[1]||''; ldVin.textContent = ROW[2]||''; };
         document.getElementById('btnSave').onclick = async () => {
           try { await fetch('/api/save', { method:'POST', body: JSON.stringify({ site:'entry', checkNo: ldNo.textContent, carNo: ldCar.textContent }) }); } catch (e) {}

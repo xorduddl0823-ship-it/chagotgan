@@ -43,7 +43,12 @@ async function setup(faults = {}) {
   }
   const js = (s, code) => wins[s].webContents.executeJavaScript(code, true);
   const fillFns = {
-    carinfo: async (d) => { await js('carinfo', 'carNo.value=' + JSON.stringify(d.carNo) + ';vin.value=' + JSON.stringify(d.vin) + ';1'); return { filled: ['차량번호', '차대번호'], missing: [] }; },
+    carinfo: async (d) => {
+      await js('carinfo', 'carNo.value=' + JSON.stringify(d.carNo) + ';vin.value=' + JSON.stringify(d.vin) + ';1');
+      //  사진 올리기 흉내 — 값 넣기 단계의 쓰기 요청(fillAllow)이라 통과해야 함
+      const up = await js('carinfo', 'fetch("/api/photo",{method:"POST",body:"x"}).then(function(r){return r.status;}).catch(function(){return "blocked";})');
+      return { filled: ['차량번호', '차대번호', '사진 ' + up], missing: up === 200 ? [] : ['사진 올리기 막힘'] };
+    },
     carmodoo: async (d) => { await js('carmodoo', 'carNo.value=' + JSON.stringify(d.carNo) + ';1'); return { filled: ['차량번호'], missing: [] }; },
     entry: async () => ({ filled: [], missing: [] }),
   };
@@ -214,6 +219,62 @@ app.whenReady().then(async () => {
     console.log('INFO 팝업 첫 요청: 잠긴 동안 서버 도착 ' + leakedLocked + '건 · 허락 뒤 결과 ' + JSON.stringify({ manual: r.manual, saves: t.M.S.saves.carinfo }));
     assert.strictEqual(leakedLocked, 0, '잠긴 동안 팝업 첫 요청이 새어 나감');
     assert.strictEqual(r.manual, true, '팝업 저장은 자동으로 끝내지 않고 사람 확인: ' + JSON.stringify(r));
+    await t.done();
+  });
+
+  await scenario('완전 자동: runAll 한 번 → 사진 포함 값 넣기·[저장](프로그램)·번호 검증·닫기까지 사람 조작 0번, 창도 안 나옴', async () => {
+    const t = await setup();
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r.ok, true, JSON.stringify(r));
+    assert.deepStrictEqual(r.numbers, { carinfo: 'T-0201', carmodoo: 'T-0201', entry: 'T-0201' });
+    assert.deepStrictEqual(t.M.S.saves, { carinfo: 1, carmodoo: 1, entry: 1 });
+    assert.strictEqual(t.M.S.photos, 1, '사진 올리기는 값 넣기 단계에서 통과');
+    assert.strictEqual(t.jobLog.get(r.jobId).closed, true);
+    BrowserWindow.getAllWindows().forEach((w) => assert.strictEqual(w.isVisible(), false));
+    assert.strictEqual(BrowserWindow.getFocusedWindow(), null);
+    console.log('INFO 자동 등록 1대 걸린 시간(흉내 사이트): ' + r.ms + 'ms · 전산별 ' + JSON.stringify(r.times));
+    await t.done();
+  });
+
+  await scenario('완전 자동: 세 대 연속 — 한 대씩 차례로, 번호 각각 맞음', async () => {
+    const t = await setup();
+    const cars = [CAR, { carNo: '34나5678', vin: 'KMHYY00YYYY654321' }, { carNo: '56다1122', vin: 'KMHZZ00ZZZZ111222' }];
+    const out = [];
+    for (const c of cars) {
+      const r = await t.flow.runAll({ ...c, data: c }, { pollMs: 50, waitMs: 8000 });
+      assert.strictEqual(r.ok, true, JSON.stringify(r));
+      out.push(r);
+    }
+    assert.deepStrictEqual(out.map((r) => r.numbers.entry), ['T-0201', 'T-0202', 'T-0203']);
+    assert.deepStrictEqual(t.M.S.saves, { carinfo: 3, carmodoo: 3, entry: 3 });
+    console.log('INFO 자동 등록 3대 걸린 시간(흉내 사이트): ' + out.map((r) => r.ms + 'ms').join(' · '));
+    await t.done();
+  });
+
+  await scenario('완전 자동: 서버가 저장하고 500 → 멈춤(«다시 저장 안 함» 안내) → 이어 하기에서 목록으로 확인하고 끝까지, 두 번 등록 없음', async () => {
+    const t = await setup({ carinfo500: true });
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(r.siteName, '카인포');
+    assert.match(r.action, /다시 저장은 하지 않았어요/);
+    t.M.S.faults.carinfo500 = false;
+    const r2 = await t.flow.runAll({ jobId: r.jobId, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r2.ok, true, JSON.stringify(r2));
+    assert.deepStrictEqual(t.M.S.saves, { carinfo: 1, carmodoo: 1, entry: 1 });
+    await t.done();
+  });
+
+  await scenario('완전 자동: 엔트리 로그아웃이면 카인포 저장 전에 멈추고, 로그인 뒤 이어 하면 끝까지', async () => {
+    const t = await setup({ entryLoggedOut: true });
+    await sleep(300);
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r.ok, false);
+    assert.match(r.action, /문자 인증/);
+    assert.strictEqual(t.M.S.saves.carinfo, 0);
+    t.M.S.faults.entryLoggedOut = false;
+    await sleep(300);
+    const r2 = await t.flow.runAll({ jobId: r.jobId, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r2.ok, true, JSON.stringify(r2));
     await t.done();
   });
 

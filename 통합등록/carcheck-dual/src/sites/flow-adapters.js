@@ -50,7 +50,7 @@ function createElectronAdapters(o) {
 
   function needCols(site) {
     const l = C[site] && C[site].list;
-    if (!l || !l.rows || !l.cols) throw new Error(site + ' 목록 칸 설정이 아직 없습니다(10/19 화면 확인 필요).');
+    if (!l || !l.rows || !l.cols) throw new Error(({ carinfo: '카인포', carmodoo: '카모두', entry: '엔트리' })[site] + ' 목록 칸 설정이 아직 없습니다(실제 화면 확인 필요).');
     return l;
   }
   async function rowsOf(site, car) {
@@ -67,7 +67,7 @@ function createElectronAdapters(o) {
         const win = o.getWindow(site);
         if (!win) throw new Error(site + ' 창이 없습니다.');
         const guard = createSaveGuard({ siteHosts: cfg.hosts, savePatterns: cfg.savePatterns, saveGetPatterns: cfg.saveGetPatterns,
-                                        readAllow: cfg.readAllow, confirmed: cfg.confirmed, popupAuto: cfg.popupAuto === true });
+                                        readAllow: cfg.readAllow, fillAllow: cfg.fillAllow, confirmed: cfg.confirmed, popupAuto: cfg.popupAuto === true });
         const hold = attachSaveHold(win, guard, { name: site });
         ctl[site] = { guard, hold };
         const ok = await hold.ready;                      // 붙이기가 끝난 뒤에 돌려준다(그 전 저장 요청이 새지 않게)
@@ -75,6 +75,18 @@ function createElectronAdapters(o) {
       },
       async unlockSave() { return ctl[site] ? ctl[site].guard.unlock() : false; },
       async seal() { if (ctl[site]) ctl[site].guard.seal(); },
+      async timeout() { if (ctl[site]) ctl[site].guard.onTimeout(); },
+      /**
+       * 그 전산 [저장] 누르기 — 프로그램이 누른다(대표님 10/19 최종 지시: 정상이면 사람 조작 없음).
+       *  저장 통제기가 한 번 허락한 상태에서만 요청이 나간다. 단추를 못 찾으면 false(요청이 안 나가 notSent 로 처리됨).
+       */
+      async clickSave() {
+        const sel = C[site] && C[site].saveButton;
+        if (!sel) return false;
+        const ok = await inAnyFrame(o.getWindow(site), '(function(){var b=document.querySelector(' + JSON.stringify(sel) + ');' +
+          'if(!b||b.disabled)return null;b.click();return true;})()');
+        return ok === true;
+      },
       async readList(car) { return rowsOf(site, car); },
       async saveOutcome() { return ctl[site] ? ctl[site].guard.outcome() : { result: 'unknownPath', reasons: ['저장 통제기가 걸려 있지 않음'] }; },
       async coverage() { return ctl[site] ? ctl[site].guard.coverage() : { windows: 0, unattachedWindows: ['(통제기 없음)'] }; },
@@ -118,6 +130,19 @@ function createElectronAdapters(o) {
       return { loggedIn: !!who, canRead: !!who && !!next };
     },
     async readNext() { return inAnyFrame(o.getWindow('entry'), textExpr(C.entry.nextNumber)); },
+    /** 엔트리 화면 새로 고치기 — 다시 그려져 로그인 표시나 로그인 칸이 보일 때까지(최대 6초) */
+    async refresh() {
+      const w = o.getWindow('entry');
+      if (!w) return;
+      //  새로 고치기 전에 통제기는 그대로(창이 같으면 개발자 연결도 유지된다)
+      await new Promise((res) => { const t = setTimeout(res, 6000); w.webContents.once('did-finish-load', () => { clearTimeout(t); res(); }); w.webContents.reload(); });
+      const until = Date.now() + 6000;
+      while (Date.now() < until) {
+        const seen = await inAnyFrame(w, '(function(){return document.querySelector(' + JSON.stringify(C.entry.loggedIn) + ')||document.querySelector("input[type=password]")?true:null;})()');
+        if (seen) return;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    },
     async fill(data, extra) {
       const r = o.fillFns.entry ? await o.fillFns.entry(data, extra || {}) : { filled: [], missing: [] };
       const cfg = C.entry;

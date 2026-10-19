@@ -19,12 +19,34 @@
  *   4. 저장 단계에서 팝업이 열리면 자동으로 끝내지 않고 사람 확인(manualCheck)
  *   5. 연결 모듈이 없는 전산(엔트리)은 «미구현»으로 멈추고 끝난 것처럼 보이지 않음
  *
- *  사람이 하는 일(대신하지 않음): 각 전산 [저장] · 문자 인증 · 차대번호 일부 일치 확인 · 불확실·팝업 저장 정리
+ *  2026-10-19 대표님 최종 지시: «한 번 입력 → 세 전산 자동 등록 → 자동 검증 → 최종 결과 확인»
+ *   → runAll(): 정상이면 사람 조작 없이 카인포 → 카모두 → 엔트리를 값 넣기 · [저장](프로그램이 누름) · 번호 검증까지 이어 간다.
+ *     이상하면(번호 다름 · 다른 차 의심 · 로그인 만료 · 중복 의심 · 저장 불확실 · 알 수 없는 경로 · 딜러 고르기 필요)
+ *     그 자리에서 멈추고 explain() 으로 «어느 차 · 어느 전산 · 무슨 까닭 · 어느 단계 · 무엇을 하면 되는지»를 돌려준다.
+ *   → 불확실은 다시 저장하지 않는다(목록으로만 확인). 지우기·취소·재등록은 하지 않는다.
+ *   → 연결 모듈은 clickSave()(그 전산 [저장] 누르기)를 갖춰야 한다.
+ *
+ *  사람이 하는 일(대신하지 않음): 문자 인증 · 딜러 동명이인 고르기 · 차대번호 일부 일치 확인 · 멈춘 작업 정리
  *  설정이 확정되지 않았으면(siteConfirmed[site] false) 저장 허락을 하지 않는다 — 모의 환경(mock:true)만 예외.
  */
 const nc = require('./number-check');
 
 const ORDER = ['carinfo', 'carmodoo', 'entry'];
+const NAME = { carinfo: '카인포', carmodoo: '카모두', entry: '엔트리' };
+const STEP = { precheck: '엔트리 로그인 확인', fill: '값 넣기', allow: '저장 전 확인', save: '저장', verify: '저장 뒤 번호 확인', entryNext: '엔트리 번호 규칙 확인', finish: '마무리' };
+
+/** 멈춘 까닭 → 담당자가 할 일 (쉬운 말 한 줄) */
+function actionFor(r, site) {
+  if (r.needLogin) return '엔트리에 로그인(업무폰 문자 인증)한 뒤 [이어 하기]를 눌러 주세요.';
+  if (r.needDealerPick) return '같은 이름 딜러가 여럿이에요. 목록에서 고른 뒤 [이어 하기]를 눌러 주세요.';
+  if (r.notImplemented) return '엔트리 자동 등록은 아직 준비 중이에요. 엔트리는 직접 등록해 주세요.';
+  if (r.needsConfirm) return '화면에서 차대번호 17자리를 직접 비교해 같으면 [같아요]를 눌러 주세요.';
+  if (r.manual || r.uncertain) return (NAME[site] || site) + ' 목록에서 이 차가 저장됐는지 확인하고 «저장됨 / 안 됨»을 골라 주세요. 다시 저장은 하지 않았어요.';
+  if (r.stopped) return '번호가 어긋났어요. 카인포·카모두를 지우고 다시 등록(대표님 직접)한 뒤 «관리자 확인으로 정리»를 해 주세요.';
+  if (r.missing) return '못 넣은 칸을 확인해 고친 뒤 [이어 하기]를 눌러 주세요.';
+  if (r.unconfirmed) return '이 전산의 실제 화면 설정이 아직 확정되지 않았어요(개발 쪽 일).';
+  return '내용을 확인한 뒤 [이어 하기]를 눌러 주세요.';
+}
 
 function today(now) {
   const d = now();
@@ -116,7 +138,8 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
       }
       const extra = site === 'carinfo' ? {} : { checkNo: carinfoNo(j) };
       const r = await A[site].fill(data, extra);
-      if (r.missing && r.missing.length) return { ok: false, missing: r.missing, reason: '못 넣은 칸이 있어 저장 단계로 가지 않습니다.' };
+      if (r.needDealerPick) return { ok: false, needDealerPick: true, rows: r.rows || [], reason: '딜러(사원)를 골라야 합니다.' };
+      if (r.missing && r.missing.length) return { ok: false, missing: r.missing, reason: '못 넣은 칸이 있어 저장 단계로 가지 않습니다: ' + r.missing.slice(0, 5).join(' · ') };
       jobLog.mark(jobId, site, 'filled');
       return { ok: true, filled: r.filled || [] };
     },
@@ -127,7 +150,7 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
       needPrev(j, site);
       if (notImplemented(site)) return NOT_IMPL(site);
       if (!mock && confirmed[site] !== true) {
-        return { ok: false, reason: site + ' 의 저장 경로 설정이 아직 확인되지 않아 저장을 허락하지 않습니다(통제 범위 미확정).' };
+        return { ok: false, unconfirmed: true, reason: site + ' 의 저장 경로 설정이 아직 확인되지 않아 저장을 허락하지 않습니다(통제 범위 미확정).' };
       }
       const cov = await A[site].coverage();
       if (!cov || cov.windows < 1 || (cov.unattachedWindows && cov.unattachedWindows.length)) {
@@ -255,7 +278,109 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
     },
 
     resume() { return jobLog.resumeList(); },
+
+    /**
+     * 한 번에 끝까지 — 정상이면 사람 조작 없이 세 전산 등록 · 검증 · 작업 닫기.
+     *  jobId 를 주면 그 작업을 이어 한다(멈춘 뒤 [이어 하기] · 프로그램을 다시 켠 뒤). 끝난 전산은 건너뛴다.
+     *  불확실(저장했는지 모름)인 전산은 다시 저장하지 않고 목록으로만 확인한다.
+     *  opts: { onStep(info), pollMs, waitMs, sendWaitMs }  — waitMs: 저장 뒤 응답 기다리는 한도(넘으면 불확실)
+     *        sendWaitMs: [저장]을 누른 뒤 저장 요청이 나타나기를 기다리는 한도(넘도록 없으면 «안 나감»)
+     *  돌려주는 것: { ok:true, jobId, numbers, ms } 또는 explain 모양 { ok:false, jobId, carNo, site, siteName, step, reason, action, … }
+     */
+    async runAll({ jobId, carNo, vin, data } = {}, opts = {}) {
+      const t0 = Date.now();
+      const pollMs = opts.pollMs || 200, waitMs = opts.waitMs || 30000;
+      const say = (site, step, note) => { try { opts.onStep && opts.onStep({ site, siteName: NAME[site] || '', step: STEP[step] || step, note: note || '' }); } catch {} };
+      const times = {};
+      const fail = (site, step, r) => ({ ok: false, jobId, carNo: (jobLog.get(jobId) || {}).carNo || carNo, site, siteName: NAME[site] || '',
+        step: STEP[step] || step, reason: r.reason || (r.reasons || []).join(' · ') || '알 수 없는 까닭', action: actionFor(r, site), detail: r, ms: Date.now() - t0 });
+
+      if (!jobId) {
+        try {
+          const s0 = await this.start({ carNo, vin });
+          jobId = s0.jobId;
+        } catch (e) {
+          //  같은 차의 끝나지 않은 작업 = 중복 등록 의심 → 새로 시작하지 않고 이어 하기로
+          const dup = /끝나지 않은 작업/.test(e.message);
+          return { ok: false, carNo, site: dup ? '' : 'carinfo', siteName: dup ? '' : '카인포', step: '시작', reason: e.message,
+                   action: dup ? '같은 차가 이미 등록 중이에요. 새로 시작하지 말고 그 작업을 [이어 하기] 해 주세요.' : actionFor({ unconfirmed: /설정/.test(e.message) }, 'carinfo'),
+                   detail: { duplicate: dup }, ms: Date.now() - t0 };
+        }
+      }
+      const j0 = job(jobId);
+      //  엔트리 먼저 확인 — 카인포를 저장한 뒤 엔트리가 끊겨 있으면 순서가 꼬이므로(설계서 2판)
+      if (state(j0, 'carinfo') !== 'done') {
+        say('entry', 'precheck');
+        const pre = await this.entryPrecheck(jobId);
+        if (!pre.ok && !pre.notImplemented) return fail('entry', 'precheck', pre);
+      }
+      for (const site of ORDER) {
+        const ts = Date.now();
+        let j = job(jobId);
+        let st = state(j, site);
+        if (st === 'done') continue;
+        if (st === 'stopped') return fail(site, 'verify', { stopped: true, reason: (j.sites[site] && j.sites[site].lastReason) || '멈춘 작업입니다.' });
+        if (site === 'entry' && notImplemented('entry')) return fail('entry', 'fill', NOT_IMPL('entry'));
+        //  엔트리 번호 규칙: 엔트리가 매길 «다음 번호»가 이 차 카인포 번호와 같아야(다르면 다른 차 기록이 끌려옴)
+        if (site === 'entry' && (st === 'none' || st === 'filled')) {
+          say(site, 'entryNext');
+          //  엔트리 화면이 예전 «다음 번호»를 보여 줄 수 있다 — 새로 고친 뒤 한 번만 읽는다(어긋남을 다시 읽어 넘기지 않음)
+          if (A.entry.refresh) await A.entry.refresh();
+          const ls = await A.entry.loginState();
+          if (!ls.loggedIn || !ls.canRead) return fail(site, 'entryNext', { needLogin: true, reason: '엔트리 로그인이 끊겼습니다.' });
+          const next = nc.normNo(await A.entry.readNext());
+          const want = carinfoNo(j);
+          if (!next || next !== want) return fail(site, 'entryNext', { stopped: false, reason: '엔트리 다음 번호(' + (next || '읽지 못함') + ')가 이 차 카인포 번호(' + want + ')와 다릅니다 — 다른 차 기록이 끌려올 수 있어 멈췄어요.', mismatch: true });
+        }
+        if (st === 'uncertain') {
+          //  다시 저장하지 않는다 — 목록으로만 확인
+          say(site, 'verify', '저장 여부 목록 확인');
+          const c = await this.confirmFromList(jobId, site);
+          if (!c.ok) return fail(site, 'verify', c);
+          times[site] = Date.now() - ts;
+          continue;
+        }
+        if (st === 'saveConfirmed') {
+          const c = await this.confirmFromList(jobId, site);
+          if (!c.ok) return fail(site, 'verify', c);
+          times[site] = Date.now() - ts;
+          continue;
+        }
+        say(site, 'fill');
+        const f = await this.fill(jobId, site, data || {});
+        if (!f.ok) return fail(site, 'fill', f);
+        say(site, 'allow');
+        const a = await this.allowSave(jobId, site);
+        if (!a.ok) return fail(site, 'allow', a);
+        say(site, 'save');
+        if (!A[site].clickSave) return fail(site, 'save', { reason: NAME[site] + ' [저장] 누르기 기능이 없습니다.', unconfirmed: true });
+        //  단추를 못 찾아도 여기서 판단하지 않는다 — 저장 요청이 안 나갔으면 notSent(취소), 나갔으면 afterSave 가 판단
+        await A[site].clickSave();
+        //  응답 기다리기 (한도를 넘으면 불확실)
+        //  단추를 누른 직후에는 저장 요청이 아직 안 나갔을 수 있다(사이트가 잠깐 뒤에 보냄) —
+        //  «안 나감»은 sendWaitMs 동안 기다려도 요청이 없을 때만 판단한다(Electron 모의 시험에서 찾은 문제)
+        const sendUntil = Date.now() + (opts.sendWaitMs || 3000);
+        const until = Date.now() + waitMs;
+        for (;;) {
+          const o = await A[site].saveOutcome();
+          if (o.result === 'notSent' && Date.now() < sendUntil) { await new Promise((r) => setTimeout(r, pollMs)); continue; }
+          if (o.result !== 'waiting') break;
+          if (Date.now() > until) { if (A[site].timeout) await A[site].timeout(); break; }
+          await new Promise((r) => setTimeout(r, pollMs));
+        }
+        say(site, 'verify');
+        const v = await this.afterSave(jobId, site);
+        if (!v.ok) return fail(site, v.notSent ? 'save' : 'verify', v.notSent ? { ...v, reason: NAME[site] + ' [저장] 요청이 나가지 않았어요(단추를 못 찾았거나 화면이 막힘).', missing: ['저장 단추'] } : v);
+        times[site] = Date.now() - ts;
+      }
+      say('', 'finish');
+      const fin = this.finish(jobId);
+      if (!fin.ok) return fail('', 'finish', { reason: (fin.reasons || []).join(' · ') });
+      const j = job(jobId);
+      return { ok: true, jobId, carNo: j.carNo, numbers: { carinfo: j.sites.carinfo.checkNo, carmodoo: j.sites.carmodoo.checkNo, entry: j.sites.entry.checkNo },
+               ms: Date.now() - t0, times };
+    },
   };
 }
 
-module.exports = { createRegisterFlow, ORDER };
+module.exports = { createRegisterFlow, ORDER, NAME, actionFor };

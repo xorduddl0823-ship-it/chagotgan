@@ -49,6 +49,9 @@
       <button id="btn-send-cm">경기조합만</button>
       <button id="btn-send-ci">카인포만</button>
       <button id="btn-send-all" class="primary">두 곳 동시 전송</button>
+      <!-- 등록 흐름(설정 flow 가 켜졌을 때만 보임) — 한 번 입력 → 세 전산 자동 등록 → 자동 검증 -->
+      <button id="btn-auto-resume" class="hidden">이어 하기</button>
+      <button id="btn-auto" class="primary hidden">세 전산 자동 등록</button>
     </div>
   </footer>
 
@@ -58,6 +61,15 @@
       <p class="sub">검색 결과가 여러 건입니다. 등록할 딜러를 골라 주세요.</p>
       <div id="picker-list" class="picker-list"></div>
       <div class="panel-foot"><button id="picker-cancel" class="ghost">취소</button></div>
+    </div>
+  </div>
+
+  <!-- 세 전산 자동 등록 — 저장하기 전 한 번 확인(되돌리기 어려운 일) -->
+  <div id="auto-confirm" class="overlay hidden">
+    <div class="panel">
+      <h2 id="auto-confirm-title">세 전산에 저장할까요?</h2>
+      <p class="sub" id="auto-confirm-text"></p>
+      <div class="panel-foot"><button id="auto-confirm-no" class="ghost">취소</button><button id="auto-confirm-yes" class="primary">저장</button></div>
     </div>
   </div>
 

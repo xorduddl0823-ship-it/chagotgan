@@ -2144,6 +2144,17 @@ const siteConfig = require('./src/sites/site-config');
 
 let flowCtx = null;
 
+/** 흐름의 값 넣기 = 기존 전송(sendToSite) 그대로 — 입력 화면의 같은 자료(121칸·사진)를 쓴다 */
+async function flowSend(site, data) {
+  const C = siteConfig.REAL[site] || {};
+  const withPhotos = Array.isArray(C.fillAllow) && C.fillAllow.length > 0;
+  const r = await sendToSite(site, withPhotos ? data : noPhotos(data));
+  if (r && r.needDealerPick) return { needDealerPick: true, rows: r.rows || [], filled: [], missing: [] };
+  if (!r || !r.ok) return { filled: [], missing: [(r && r.error) || '전송 실패'] };
+  const hasPhoto = Object.keys(data || {}).some((k) => /^photo\d+$/.test(k) && String(data[k] || '').trim());
+  return { ...r, missing: (r.missing || []).concat(!withPhotos && hasPhoto ? ['사진 — 이 전산의 사진 올리기 경로가 아직 확인되지 않아 보내지 않음'] : []) };
+}
+
 /** 사진 칸(photo1~8) 뺀 값 */
 function noPhotos(data) {
   const out = {};
@@ -2168,10 +2179,9 @@ function flow() {
     config: C,
     getWindow: (s) => (s === 'entry' ? null : siteWindow(s, 'auto')),
     fillFns: {
-      //  흐름에서는 사진을 같이 보내지 않는다 — 통제기가 먼저 걸려 있어 사진 올리기(쓰기 요청)도 막히기 때문.
-      //  사진은 저장 경로 설정(site-config)이 확정된 뒤 «사진 올리기 허락» 단계로 따로 넣는다.
-      carinfo: async (data) => { const r = await sendToSite('carinfo', noPhotos(data)); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
-      carmodoo: async (data) => { const r = await sendToSite('carmodoo', noPhotos(data)); return r.ok ? r : { filled: [], missing: [r.error || '전송 실패'] }; },
+      //  사진: 그 전산의 사진 올리기 주소(site-config fillAllow)가 정해졌을 때만 같이 보낸다 — 아니면 통제기가 막으므로 빼고 알림
+      carinfo: async (data) => flowSend('carinfo', data),
+      carmodoo: async (data) => flowSend('carmodoo', data),
       entry: async () => ({ filled: [], missing: ['엔트리 연결 모듈이 아직 없습니다(10/19 화면 확인 뒤)'] }),
     },
   });
@@ -2193,6 +2203,11 @@ ipcMain.handle('flow:confirmFromList', flowCall((a) => flow().flow.confirmFromLi
 ipcMain.handle('flow:resolve', flowCall((a) => { flow().jobLog.resolve(a.jobId, a.site, a.outcome, { by: a.by }); return { ok: true }; }));
 ipcMain.handle('flow:finish', flowCall((a) => flow().flow.finish(a.jobId)));
 ipcMain.handle('flow:resume', flowCall(() => ({ ok: true, ...flow().flow.resume() })));
+/*  한 번에 끝까지(대표님 10/19 최종 지시) — 정상이면 사람 조작 없이 세 전산 등록·검증. 진행은 'flow:progress' 로 알림.
+ *  arg: { carNo, vin, data } 새 작업 · { jobId, data } 이어 하기 */
+ipcMain.handle('flow:runAll', flowCall((a) => flow().flow.runAll(
+  { jobId: a.jobId, carNo: a.carNo, vin: a.vin, data: a.data || {} },
+  { onStep: (info) => { try { windows.main && !windows.main.isDestroyed() && windows.main.webContents.send('flow:progress', info); } catch {} } })));
 //  관리자 — PIN 은 화면에서 받아 여기(메인)에서만 확인하고, 확인 표는 화면으로 내보내지 않는다
 ipcMain.handle('admin:isSet', flowCall(() => ({ ok: true, set: flow().admin.isSet() })));
 ipcMain.handle('admin:setPin', flowCall((a) => { flow().admin.setPin(a.pin, a.currentPin); return { ok: true }; }));
@@ -2214,11 +2229,26 @@ ipcMain.handle('flow:releaseAfterForce', flowCall((a) => {
 /*  시험용 실행(CARCHECK_SMOKE=1): 실제 기록 폴더를 건드리지 않게 임시 폴더를 쓰고, 입력 화면이 뜨면 끝낸다 */
 if (process.env.CARCHECK_SMOKE === '1') {
   app.setPath('userData', fs.mkdtempSync(path.join(require('os').tmpdir(), 'cc-smoke-')));
+  //  시험 중에는 실제 전산 주소로 나가지 않게 막아 둔 주소로 바꾼다(접속 거부되는 내 PC 주소)
+  Object.keys(SITES).forEach((k) => { SITES[k].home = SITES[k].list = SITES[k].form = 'http://127.0.0.1:9/' + k; });
+  if (process.env.CARCHECK_SMOKE_FLOW === '1') fs.writeFileSync(path.join(app.getPath('userData'), 'config.json'), JSON.stringify({ flow: true }));
   app.whenReady().then(() => {
     setTimeout(async () => {
       let title = '';
       try { title = await windows.main.webContents.executeJavaScript('document.title', true); } catch {}
       console.log('SMOKE main-title=' + title + ' handlers=' + ['flow:start', 'site:send', 'admin:setPin'].filter((h) => ipcMain._invokeHandlers ? ipcMain._invokeHandlers.has(h) : true).length);
+      if (process.env.CARCHECK_SMOKE_FLOW === '1') {
+        //  입력 화면의 [세 전산 자동 등록]을 눌러 본다 — 실제 전산 설정이 비어 있으니 저장 전에 멈춰야 정상
+        const wc = windows.main.webContents;
+        const shown = await wc.executeJavaScript('!document.getElementById("btn-auto").classList.contains("hidden")', true);
+        await wc.executeJavaScript('Object.assign(state,{carNo:"12가3456",vin:"KMHXX00XXXX123456",dealerName:"시험딜러",checkDate:"2026-10-19",carModel:"시험차",carYear:"2020",inspStart:"2026-01-01",inspEnd:"2027-12-31",mileage:"45210"}); document.getElementById("btn-auto").click(); setTimeout(function(){ var y=document.getElementById("auto-confirm-yes"); if(y) y.click(); }, 300); 1', true);
+        let rep = null;
+        for (let i = 0; i < 60 && !rep; i++) {
+          await new Promise((r) => setTimeout(r, 250));
+          rep = await wc.executeJavaScript('(function(){var r=document.getElementById("report");if(!r||r.classList.contains("hidden"))return null;return {title:r.querySelector("h2").textContent,body:document.getElementById("report-body").textContent.slice(0,400)};})()', true);
+        }
+        console.log('SMOKE-FLOW button=' + shown + ' report=' + JSON.stringify(rep));
+      }
       app.exit(0);
     }, 1500);
   });

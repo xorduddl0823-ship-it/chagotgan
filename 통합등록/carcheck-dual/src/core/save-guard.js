@@ -33,11 +33,13 @@ function compile(list) {
   return (list || []).map((p) => (p instanceof RegExp ? p : new RegExp(String(p), 'i')));
 }
 
-function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, readAllow, confirmed, popupAuto } = {}) {
+function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, readAllow, fillAllow, confirmed, popupAuto } = {}) {
   const hosts = new Set([].concat(siteHosts || [], siteHost || []).map((h) => String(h).toLowerCase()).filter(Boolean));
   const saveRe = compile(savePatterns);
   const saveGetRe = compile(saveGetPatterns);
   const allowRe = compile(readAllow);
+  //  값 넣기 단계에서만 통과시키는 쓰기 요청(예: 사진 올리기) — 저장 허락 뒤·잠금(봉인) 뒤에는 통과 안 함
+  const fillRe = compile(fillAllow);
 
   let unlocked = false;
   let sent = 0;
@@ -64,6 +66,7 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
     const isGet = m === 'GET' || m === 'HEAD';
     if (h && hosts.size && !hosts.has(h)) return isGet ? 'ignore' : 'foreignWrite';
     if (isGet) return saveGetRe.some((r) => r.test(url)) ? 'write' : 'ignore';
+    if (!savePhase && !sealed && fillRe.some((r) => r.test(url)) && !saveRe.some((r) => r.test(url))) return 'ignore';
     if (allowRe.some((r) => r.test(url)) && !saveRe.some((r) => r.test(url))) return 'ignore';
     return 'write';
   }

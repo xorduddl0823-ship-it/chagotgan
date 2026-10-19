@@ -12,6 +12,7 @@
  *  모양:
  *    hosts          그 전산이 쓰는 주소(host). 여기 없는 주소로 가는 쓰기 요청 = 알 수 없는 저장 경로
  *    savePatterns   저장 요청 주소 무늬 · saveGetPatterns GET 저장 무늬 · readAllow 잠긴 동안에도 보내도 되는 조회 무늬
+ *    fillAllow      값 넣기 단계에서만 보내도 되는 쓰기 요청 무늬(사진 올리기 등) · saveButton 그 전산 [저장] 단추 선택자
  *    list           { rows: 목록 줄 선택자, cols: { checkNo, carNo, vin, date, status } — 칸 순서(0부터) }
  *    carmodoo       autoAssign(«자동 부여» 체크 선택자 — 체크=자동) · numberField(성능점검번호 칸)
  *    entry          loggedIn(로그인 됐을 때만 있는 것) · nextNumber · numberInput · loadButton · loaded{entryNo,carNo,vin}
@@ -21,13 +22,13 @@ const REAL = {
   carinfo: {
     confirmed: false,
     hosts: ['ai.carinfo.co.kr'],
-    savePatterns: [], saveGetPatterns: [], readAllow: [],
+    savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
     list: { rows: '#carcheckTable tbody tr', cols: null },               // 칸 순서 모름 — 10/19
   },
   carmodoo: {
     confirmed: false,
     hosts: ['ck.carmodoo.com'],
-    savePatterns: [], saveGetPatterns: [], readAllow: [],
+    savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
     autoAssign: null,                                                    // 10/19
     numberField: '#j_assocNumber',                                       // schema.js 의 «조합 성능번호» — 같은 칸인지 10/19 확인
     list: { rows: null, cols: null },
@@ -35,7 +36,7 @@ const REAL = {
   entry: {
     confirmed: false,
     hosts: [],                                                           // 엔트리 주소 — 10/19
-    savePatterns: [], saveGetPatterns: [], readAllow: [],
+    savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
     loggedIn: null, nextNumber: null, numberInput: null, loadButton: null,
     loaded: { entryNo: null, carNo: null, vin: null },
     list: { rows: null, cols: null },
@@ -44,7 +45,7 @@ const REAL = {
 
 /** 모의 시험용 흉내 사이트 설정 (host 는 시험이 정함) */
 function mockConfig(host) {
-  const base = { confirmed: true, hosts: [host], savePatterns: ['/api/save'], saveGetPatterns: [], readAllow: ['/api/list'] };
+  const base = { confirmed: true, hosts: [host], savePatterns: ['/api/save'], saveGetPatterns: [], readAllow: ['/api/list'], fillAllow: ['/api/photo'], saveButton: '#btnSave' };
   return {
     carinfo: { ...base, list: { rows: '#list tbody tr', cols: { checkNo: 0, carNo: 1, vin: 2, date: 3, status: 4 } } },
     carmodoo: { ...base, autoAssign: '#autoNo', numberField: '#checkNo', list: { rows: '#list tbody tr', cols: { checkNo: 0, carNo: 1 } } },
