@@ -74,6 +74,11 @@ check("같은 거절 · «처리 중» 아님 · 기록 없음", !!f1.__err && !
 const n0 = sent.length;
 await call("billSend", [{ ym: "2026-10", ids: ["iA"] }], TA);
 check("rid 없는 예전 화면은 예전처럼(10분 막기는 그대로)", sent.length === n0, sent.length - n0);
+const RS = "u".repeat(24);
+store.cgg_idem.push({ product: "check", tenant: "oA", who: "01000000031", fn: "officeSave", rid: RS, state: "run", at: new Date(Date.now() - 6 * 60000).toISOString() });
+const st = await call("officeSave", [{ tel: "031-777-7777" }], TA, RS);
+check("(보안 방 낮음) 6분 넘게 남은 «처리 중» 줄은 다시 처리", st.result?.ok === true && store.check_office[0].tel === "031-777-7777", st);
+check("저장된 답에 비밀값 이름 칸 없음", !store.cgg_idem.some((x: any) => /"[^"]*(pw|pass|secret|token|key|sid|otp)[^"]*":/i.test(JSON.stringify(x.result ?? null))));
 check("판 v53", /v53/.test(JSON.stringify(await call("ping"))));
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);

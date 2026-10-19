@@ -81,6 +81,23 @@ w0 = writes();
 await call("apiSet", ["intakes", "i1", JSON.stringify({ plate: "11가1111" })], A, "SHA1", R1);
 check("하루 지난 rid 는 새 요청으로", writes() === w0 + 1);
 
+console.log("④-2 (보안 방 중간) 비밀번호가 든 답은 저장 안 함 · 끊겨 남은 «처리 중»");
+const RP = "p".repeat(24);
+const p1 = await call("userPw", ["01000000009"], A, "SHA1", RP);
+const p2 = await call("userPw", ["01000000009"], A, "SHA1", RP);
+check("비밀번호 초기화는 rid 목록 밖 → 표에 줄이 안 생김(임시 비밀번호가 안 남음)", typeof p1.result?.pw === "string" && !store.cgg_idem.some((x: any) => x.fn === "userPw") &&
+  !JSON.stringify(store.cgg_idem).includes(String(p1.result?.pw)), store.cgg_idem.map((x: any) => x.fn));
+check("그래서 같은 rid 라도 매번 새로 처리(새 임시 비밀번호)", typeof p2.result?.pw === "string" && p2.result.pw !== p1.result.pw);
+check("저장된 답 어디에도 비밀값 이름 칸(pw·key·token·secret·sid)이 없음", !store.cgg_idem.some((x: any) => /"[^"]*(pw|pass|secret|token|key|sid|otp)[^"]*":/i.test(JSON.stringify(x.result ?? null))), store.cgg_idem.map((x: any) => x.result));
+const RS = "u".repeat(24);
+store.cgg_idem.push({ product: "wash", tenant: "SHA1", who: "01000000001", fn: "apiSet", rid: RS, state: "run", at: new Date(Date.now() - 6 * 60000).toISOString() });
+w0 = writes();
+const st = await call("apiSet", ["intakes", "i9", JSON.stringify({ plate: "99가9999", createdAt: new Date().toISOString() })], A, "SHA1", RS);
+check("6분 넘게 남은 «처리 중» 줄은 낡은 것으로 보고 다시 처리", st.result?.ok === true && writes() === w0 + 1, st);
+store.cgg_idem.push({ product: "wash", tenant: "SHA1", who: "01000000001", fn: "apiSet", rid: "v".repeat(24), state: "run", at: new Date(Date.now() - 60000).toISOString() });
+const st2 = await call("apiSet", ["intakes", "i9", "{}"], A, "SHA1", "v".repeat(24));
+check("1분 된 «처리 중»은 그대로 «처리 중이에요»", /처리 중이에요/.test(st2.__err || ""), st2);
+
 console.log("⑤ 발송 기록(wash_sendlog) — 번호 가림 · 글은 길이만");
 const lg = store.wash_sendlog[store.wash_sendlog.length - 1] || {};
 check("받는 번호 가림", lg.to_num === "010-****-4444", lg);

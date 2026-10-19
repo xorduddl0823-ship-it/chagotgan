@@ -1,9 +1,10 @@
 --- "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb27.ts"	2026-10-18 14:42:25.380602049 +0000
-+++ "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb28.ts"	2026-10-19 08:28:00.307405432 +0000
-@@ -10,6 +10,15 @@
++++ "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb28.ts"	2026-10-19 08:46:05.857579275 +0000
+@@ -10,6 +10,16 @@
  //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
  //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
  // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
++// sb28 (2026-10-19) 보안 방(중간): rid 는 쓰기 목록 기능만 · 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시.
 +// sb28 (2026-10-19) 기록·알림톡 마감: 발송 기록(wash_sendlog) 새 줄은 받는 번호 가림 · 글 대신 길이만 · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 업체+사람+기능+rid · 체크 v53 과 같음).
 +// sb28 (2026-10-19) 긴급(중복 사업자번호 · 운영/긴급/2026-10-19_중복사업자번호_검증요청.md) — 다른 곳이 쓰는 사업자번호는 어디로도 못 들어가게:
 +//   ① 설정 저장(write · settings/config)의 supplier.bizNo: 이 업체에 등록된 번호가 있으면 그 번호로 덮고, 없으면 다른 곳(워시·체크·본사)이
@@ -16,7 +17,7 @@
  // sb27 (2026-10-18) 워시 방 찾음(총괄): «밀린 달 한꺼번에»는 최근 달 코드로만 보내서, 묶인 예전 달 코드엔 받은 번호가 안 남아
  //   보기 화면 «밀린 달 목록»(보낸 것만)에서 빠질 수 있었음 → sendMsg(ataKey bill)가 codes:[…](묶인 달 보기코드)를 받으면,
  //   이 업체 · 기한 안 · 같은 받는 곳(열쇠의 달 뒤가 같음)인 코드에만 받은 번호를 함께 남김(24개까지). 기록만 — 돈 셈 · 보내기는 그대로. SQL 없음.
-@@ -147,7 +156,7 @@
+@@ -147,7 +157,7 @@
  import { crypto as stdCrypto } from "jsr:@std/crypto@1";
  import { encodeBase64, decodeBase64 } from "jsr:@std/encoding@1/base64";
  
@@ -25,7 +26,7 @@
  const sb = createClient(
    Deno.env.get("SUPABASE_URL")!,
    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-@@ -592,14 +601,29 @@
+@@ -592,14 +602,29 @@
    const { data } = await sb.from("wash_rev").select("rev").eq("shop", shop).eq("demo", demo).maybeSingle();
    return String(data?.rev ?? 1);
  }
@@ -56,7 +57,7 @@
    const { data, error } = await sb.rpc("wash_write", { p_shop: shop, p_demo: demo, p_rows: clean });
    if (error) throw new Error("저장 실패: " + error.message);
    return String(data);
-@@ -862,8 +886,10 @@
+@@ -862,8 +887,10 @@
  async function sendLog(shop: string, row: any) {
    try {
      await sb.from("wash_sendlog").insert({
@@ -69,7 +70,7 @@
      });
    } catch (_) { /* 기록 실패가 발송을 막지 않게 */ }
  }
-@@ -2508,21 +2534,65 @@
+@@ -2508,21 +2535,65 @@
  /* sb15(보안 W-H1): 이 번호를 «다른 곳»이 쓰고 있으면 이유를 돌려줍니다 (없으면 "").
     다른 워시 업체 · 체크 검사소(사업자번호·팝빌 번호) · 차곳간 본사 — 모두 같은 팝빌 연동 아래라 남의 이름 발행을 막습니다.
     확인을 못 하면(표 읽기 실패) 막는 쪽으로 봅니다. */
@@ -140,7 +141,7 @@
  }
  /* sb15(보안 W-H1 남은 위험): 처음 넣은 사업자번호는 본사가 확인(biz_ok_at)한 뒤에만 실제 발행·인증서·팝빌 가입.
     지금 있는 업체는 SQL 11 이 «확인됨»으로 시작. 칸이 없으면(SQL 11 전) 그대로 둠. */
-@@ -2536,7 +2606,7 @@
+@@ -2536,7 +2607,7 @@
      return data.biz_ok_at !== null;
    } catch (_) { return false; }
  }
@@ -149,7 +150,7 @@
  async function pbIssue(shop: string, json: string) {
    let req: any = {};
    try { req = JSON.parse(json); } catch { return { ok: false, error: "요청을 읽지 못했습니다" }; }
-@@ -2807,8 +2877,16 @@
+@@ -2807,8 +2878,16 @@
        if (nb && nb !== ob) {
          if (ob) throw new Error("사업자번호는 한 번 넣으면 바꿀 수 없습니다. 바꾸시려면 차곳간(010-9559-3663)으로 알려 주세요.");
          if (nb.length !== 10) throw new Error("사업자번호 10자리를 넣어 주세요.");
@@ -167,7 +168,7 @@
        }
      }
      if (v.ceo     !== undefined) patch.ceo     = String(v.ceo || "").trim();
-@@ -2817,7 +2895,11 @@
+@@ -2817,7 +2896,11 @@
      if (v.jongmok !== undefined) patch.jongmok = String(v.jongmok || "").trim();
      if (v.email   !== undefined) patch.tax_email = String(v.email || "").trim();
      if (!Object.keys(patch).length) return { ok: true };
@@ -180,7 +181,7 @@
      dbCheck(error, "업체");
      /* sb15: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
      if (patch.biz_no) {
-@@ -4642,7 +4724,17 @@
+@@ -4642,7 +4725,17 @@
      if (v.lockDays  !== undefined) patch.lock_days  =
        (v.lockDays === "" || v.lockDays === null) ? null : Math.min(180, Math.max(0, Number(v.lockDays) || 0));
      /* 세금계산서용 사업자 정보 */
@@ -199,7 +200,7 @@
      if (v.ceo      !== undefined) patch.ceo       = String(v.ceo).trim();
      if (v.addr     !== undefined) patch.addr      = String(v.addr).trim();
      if (v.upte     !== undefined) patch.upte      = String(v.upte).trim();
-@@ -4677,7 +4769,15 @@
+@@ -4677,7 +4770,15 @@
      if (v.smsFrom !== undefined) patch.sms_from = digits(v.smsFrom) || null;
      if (v.spareReset) { patch.spare_used = 0; patch.warn_at = null; patch.stop_warn_at = null; }
      if (!Object.keys(patch).length) return { ok: true };
@@ -215,7 +216,7 @@
      dbCheck(error, "업체");
      /* 이용을 멈추면 그 업체의 로그인 열쇠를 전부 지웁니다 */
      if (v.active === false) await sb.from("wash_sessions").delete().eq("shop", code);
-@@ -5472,6 +5572,70 @@
+@@ -5472,6 +5573,70 @@
      return { ok: true, list: data || [] };
    },
    /* sb15: 사업자번호 확인 목록 — 워시 업체 + 체크 검사소 (확인 안 된 것 먼저) — [] */
@@ -286,7 +287,7 @@
    hqBizList: async (shop, _a, ss) => {
      hqOnly(shop, ss);
      const { data: ws, error } = await sb.from("wash_shops").select("shop,name,biz_no,biz_ok_at,biz_set_at,owner_phone,ceo").neq("biz_no", "").limit(2000);
-@@ -6173,7 +6337,10 @@
+@@ -6173,7 +6338,10 @@
        const PRICE: Record<string, number> = { ata: 13, sms: 18, lms: 45, mms: 110 };
        (data || []).forEach((r: any) => {
          let m = String(r.method || "").toLowerCase();
@@ -298,7 +299,7 @@
          stats[m].cnt++; stats[m].won += PRICE[m];
        });
      } catch (_) { stats.error = "발송 기록을 읽지 못했습니다"; }
-@@ -6799,6 +6966,38 @@
+@@ -6799,6 +6967,54 @@
    },
  };
  
@@ -306,6 +307,21 @@
 +   화면이 쓰기 요청에 rid(영문 소문자·숫자 24자)를 붙이면 (제품 · 업체 · 사람 · 기능 · rid)를 한 줄로 잡고,
 +   같은 열쇠가 다시 오면 다시 하지 않고 처음 답을 그대로 돌려줌 · 처리 중이면 «처리 중이에요» · 실패하면 줄을 지움 · 표가 없으면 예전처럼 */
 +const IDEM_BUSY = "처리 중이에요. 잠시 뒤 다시 확인해 주세요.";
++/** 저장할 답에서 비밀값 칸을 뺌(보안 방 · 비밀번호·열쇠·토큰이 표에 남지 않게) — 이름에 pw/pass/secret/token/key/sid 가 든 칸 */
++function idemScrub(v: unknown, depth = 0): unknown {
++  if (depth > 6 || v === null || typeof v !== "object") return v;
++  if (Array.isArray(v)) return v.slice(0, 500).map((x) => idemScrub(x, depth + 1));
++  const o: Record<string, unknown> = {};
++  for (const k of Object.keys(v as Record<string, unknown>)) {
++    if (/pw|pass|secret|token|key|sid|otp/i.test(k)) continue;
++    o[k] = idemScrub((v as any)[k], depth + 1);
++  }
++  return o;
++}
++const IDEM_STALE_MS = 5 * 60000;   // «처리 중» 줄이 5분 넘게 남으면(중간에 끊김) 낡은 줄로 보고 다시 처리
++/* sb28(보안 방 중간): rid 를 받는 기능은 «쓰기 목록»만 — 직원 계정·비밀번호(UFN)·본사(hq…)·결제(payStart/payConfirm: 주문번호로 따로 막음)·읽기는 빼요 */
++const IDEM_FNS = new Set(["apiSet", "apiSetMany", "apiDel", "apiWipeDemo", "driveUpload", "driveUploadMany", "sendMsg", "cancelSchedule",
++  "shopBiz", "viewBill", "pbIssue", "billIssue", "billOff", "cashAsk", "noticeHide", "joinPlanSet", "trialUse"]);
 +async function idemRun(tenant: string, who: string, fn: string, rid: string, run: () => Promise<unknown>): Promise<unknown> {
 +  const key = { product: "wash", tenant: String(tenant || "").slice(0, 80), who: digits(who).slice(0, 80), fn: String(fn || "").slice(0, 60), rid };
 +  if (!key.tenant || !key.who) return await run();
@@ -314,7 +330,8 @@
 +  if (error && String((error as any).code || "") === "23505") {
 +    const { data: had } = await sb.from("cgg_idem").select("state,result,at").eq("product", "wash").eq("tenant", key.tenant)
 +      .eq("who", key.who).eq("fn", key.fn).eq("rid", rid).maybeSingle();
-+    if (had && Date.now() - Date.parse(String(had.at || "")) > 24 * 3600e3) {
++    const age = Date.now() - Date.parse(String((had && had.at) || ""));
++    if (had && (age > 24 * 3600e3 || (had.state !== "done" && age > IDEM_STALE_MS))) {   // 하루 지남 · 끊겨 남은 «처리 중»
 +      await same();
 +      ({ error } = await sb.from("cgg_idem").insert({ ...key, state: "run" }));
 +      if (error) throw new Error(IDEM_BUSY);
@@ -328,7 +345,7 @@
 +  }
 +  try {
 +    const out = await run();
-+    await sb.from("cgg_idem").update({ state: "done", result: out ?? null, done_at: new Date().toISOString() })
++    await sb.from("cgg_idem").update({ state: "done", result: idemScrub(out ?? null), done_at: new Date().toISOString() })
 +      .eq("product", "wash").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
 +    if (Math.random() < 0.02) sb.from("cgg_idem").delete().lt("at", new Date(Date.now() - 24 * 3600e3).toISOString()).then(() => {}, () => {});
 +    return out;
@@ -337,7 +354,7 @@
  Deno.serve(async (req) => {
    if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
    let body: any = {};
-@@ -6875,10 +7074,11 @@
+@@ -6875,10 +7091,11 @@
      }
  
      // 대표가 직원 로그인 계정을 관리하는 기능
@@ -348,7 +365,7 @@
      if (!f) return out({ __err: "지원하지 않는 기능입니다. 화면을 새로 고쳐 주세요." });
 +    const rid = String(body.rid || "");
 +    /* sb28: 열쇠 = 업체 + 사람 + 기능 + rid (로그인한 사람만 · rid 만으로는 남의 답을 못 받음) */
-+    if (ss && /^[a-z0-9]{24}$/.test(rid)) return out({ result: await idemRun(shop, String(ss.phone || ""), fn, rid, () => Promise.resolve(f(shop, args, ss))) });
++    if (ss && /^[a-z0-9]{24}$/.test(rid) && IDEM_FNS.has(fn)) return out({ result: await idemRun(shop, String(ss.phone || ""), fn, rid, () => Promise.resolve(f(shop, args, ss))) });
      return out({ result: await f(shop, args, ss) });
    } catch (e) {
      const em = e instanceof Error ? e.message : String(e);
