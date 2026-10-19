@@ -639,7 +639,7 @@ function showAutoStop(res) {
 }
 
 /* ─────────── 전산 진단 (8차 · 설정 diagnose 가 켜졌을 때만) ───────────
- *  고른 전산 창에서 평소처럼 눌러 보면, 저장·신규등록·사진 요청은 서버로 가지 않고 «무슨 주소·무슨 칸 이름»만 기록된다. */
+ *  고른 전산 창의 화면 구조를 기록한다. 저장·신규등록·사진·전송 요청은 막도록 되어 있지만(모의 시험 기준), 실제 전산에서는 그 단추를 누르지 않는다(10차). */
 let diagSite = null;
 let diagNote = '';      // 상태 줄에 잠깐 보일 말(실패·기록 결과) — 없으면 기본 안내
 const DIAG_NAME = { carinfo: '카인포', carmodoo: '경기조합', entry: '엔트리' };   // 위쪽 단추 이름과 같게
@@ -718,13 +718,14 @@ function diagReport(r) {
   report(r.aborted ? '전산 진단 중단' : '전산 진단 끝', [{
     ok: !!r.ok && !r.aborted,
     tone: r.ok && !r.aborted ? 'ok' : 'warn',
-    title: r.aborted ? name + ' — 진단을 멈췄어요: ' + r.aborted : r.ok ? name + ' — 서버로 보내지 않고 기록만 했어요' : name + ' — ' + (r.error || '진단 기록을 남기지 못했어요'),
+    title: r.aborted ? name + ' — 진단을 멈췄어요: ' + r.aborted : r.ok ? name + ' — 화면 구조를 기록했어요' : name + ' — ' + (r.error || '진단 기록을 남기지 못했어요'),
     lists: [
       { title: '서버로 안 보내고 막은 요청', items: (r.heldPaths || []).length ? r.heldPaths : ['없음'], cls: 'muted' },
       { title: '개인정보 검사', items: ['가린 것: ' + (masked.join(' · ') || '없음'), '남은 것: ' + (left.join(' · ') || '없음')], cls: left.length ? 'warn' : 'muted', noCount: true },
       { title: '기록', items: ['막은 요청 ' + (r.held || 0) + '건 · 화면 칸 기록 ' + (r.snaps || 0) + '번', r.file || '기록 파일 없음'], cls: 'muted', noCount: true },
     ],
-    note: '요청 막기를 풀었어요 — 이제부터 이 전산 창에서 누르는 [저장]은 실제로 저장돼요. 진단 중에 눌렀던 [저장]은 다시 보내지 않아요. ' +
+    //  막기를 켠 적이 있을 때만(정상 끝·스스로 멈춤) «풀었어요» 안내
+    note: (r.ok || r.aborted || r.held != null ? '요청 막기를 풀었어요 — 이제부터 이 전산 창에서 누르는 [저장]은 실제로 저장돼요. 진단 중에 실수로 단추를 눌렀다면 그 전산 목록에서 바뀐 것이 없는지 확인해 주세요. ' : '') +
       (r.file ? '이 기록 파일을 방에 보내 주세요. 개인정보는 가리고 다시 검사했어요.' : '기록 파일은 만들지 않았어요.'),
   }]);
 }

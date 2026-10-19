@@ -2,8 +2,9 @@
  *  사람이 따로 적으면 코드와 어긋나므로, 설정 파일에서 바로 뽑는다.
  *  실행: node tools/config-check.js            → 표(마크다운)
  *        node tools/config-check.js --json     → 기계용
- *  상태: 비어 있음 · 짐작(확인 필요) · 사진으로 확인(진단으로 다시 확인) · 진단으로 확인
- *  «진단으로 확인»은 진단 기록 파일로 맞춘 뒤 CONFIRMED 에 적는다(지금은 없음). */
+ *  상태(10차 — 사진과 내부 이름을 섞지 않음):
+ *    비어 있음 · 짐작(확인 필요) · 사진: 글자·모양만 확인(내부 이름 미확인) · 진단: 내부 이름 확인(근거: 진단 기록 파일)
+ *  «진단: 내부 이름 확인»은 진단 기록 파일로 맞춘 뒤 CONFIRMED 에 «근거»와 함께 적는다(지금은 없음). */
 const { REAL } = require('../src/sites/site-config');
 
 //  화면 사진(10/19)으로 글자·모양을 본 것 — 내부 이름(id)은 아직 진단 전
@@ -17,7 +18,22 @@ const FROM_PHOTO = new Set([
 const GUESSED = new Set([
   'carinfo.list.rows', 'carinfo.prepare.formNo', 'carinfo.prepare.formCarNo', 'carinfo.list.vinFromForm', 'carmodoo.numberField',
 ]);
-const CONFIRMED = new Set([]);
+//  진단 기록으로 내부 이름까지 맞춘 것 — { '전산.경로': '근거(진단 파일 이름·화면)' } (지금은 없음)
+const CONFIRMED = new Map([]);
+//  근거 — 사진·코드에서 온 값이 «어디서» 왔는지
+const EVIDENCE = {
+  'carinfo.saveButtonText': '10/19 사진 — 점검 화면 오른쪽 위 [저장]', 'carinfo.list.cols': '10/19 사진 — 목록 머리글 순서',
+  'carinfo.list.savedStatus': '10/19 사진 — 저장된 차 «점검완료»', 'carinfo.prepare.createsRow': '10/19 사진 — [확인] 뒤 목록에 «점검중» 줄',
+  'carinfo.photoPhase': '10/19 사진 — 점검완료 차에 사진', 'carmodoo.saveButtonText': '10/19 대표님 답 — [저장]만(접수저장 아님)',
+  'carmodoo.list.cols': '10/19 사진 — 접수차량 리스트 머리글', 'carmodoo.photoPhase': '기존 프로그램 — ④ 탭에서 저장 전에 올림',
+  'entry.saveButtonText': '10/19 사진 — 맨 아래 [저장]', 'entry.quick.openText': '10/19 사진 — 오른쪽 위 [간편 접수]',
+  'entry.quick.loadText': '10/19 사진 — [불러오기]', 'entry.quick.failCloseText': '10/19 사진 — 실패 안내 [확인]',
+  'entry.loadRetry.failText': '10/19 사진 — «성능 불러오기가 실패하였습니다»', 'entry.detail.openText': '10/19 사진 — 목록 [성능점검]',
+  'entry.list.cols': '10/19 사진 — 성능점검 현황 머리글', 'entry.numberDigitsOnly': '10/19 사진 — «26-28-604413»',
+  'carinfo.list.rows': '기존 프로그램 코드(src/carinfo-prepare.js · #carcheckTable)', 'carinfo.prepare.formNo': '기존 프로그램 코드(carinfo-prepare.js · #checkNo)',
+  'carinfo.prepare.formCarNo': '기존 프로그램 코드(carinfo-prepare.js · #carNo)', 'carinfo.list.vinFromForm': '기존 프로그램 코드(filler.js · #vin1/#vin2)',
+  'carmodoo.numberField': '기존 프로그램 코드(schema.js · #j_assocNumber «조합 성능번호»)', 'carinfo.hosts': '기존 프로그램', 'carmodoo.hosts': '기존 프로그램',
+};
 
 //  전산별로 필요한 설정 — [경로, 쉬운 이름, 어떻게 확인하나]
 const NEED = {
@@ -86,28 +102,31 @@ function empty(v) {
 function statusOf(site, path) {
   const key = site + '.' + path;
   const v = get(REAL[site], path);
-  if (CONFIRMED.has(key)) return '진단으로 확인';
+  if (CONFIRMED.has(key)) return '진단: 내부 이름 확인';
   if (path === 'hosts' && !empty(v)) return '확인(주소)';
-  if (path === 'loadRetry.pureRead') return v === true ? '진단으로 확인' : '확인 전(지금은 다시 하기 안 함)';
+  if (path === 'loadRetry.pureRead') return v === true ? '진단: 확인' : '확인 전(지금은 다시 하기 안 함)';
   if (empty(v) || v === false && path !== 'numberDigitsOnly') return '비어 있음';
   if (GUESSED.has(key)) return '짐작(확인 필요)';
-  if (FROM_PHOTO.has(key)) return '사진으로 확인(진단으로 다시 확인)';
+  if (FROM_PHOTO.has(key)) return '사진: 글자·모양만 확인(내부 이름 미확인)';
   return '값 있음(확인 필요)';
 }
 
 const rows = [];
 for (const site of Object.keys(NEED)) {
-  for (const [path, label, how] of NEED[site]) rows.push({ site, path, label, how, status: statusOf(site, path), confirmed: !!REAL[site].confirmed });
+  for (const [path, label, how] of NEED[site]) {
+    const key = site + '.' + path;
+    rows.push({ site, path, label, how, status: statusOf(site, path), evidence: CONFIRMED.get(key) || EVIDENCE[key] || '—', confirmed: !!REAL[site].confirmed });
+  }
 }
 if (process.argv.includes('--json')) { console.log(JSON.stringify(rows, null, 1)); process.exit(0); }
 
 const NAME = { carinfo: '카인포', carmodoo: '경기조합(카모두)', entry: '엔트리' };
 for (const site of Object.keys(NEED)) {
   const rs = rows.filter((r) => r.site === site);
-  const open = rs.filter((r) => !/^(확인|진단으로 확인)/.test(r.status)).length;
+  const open = rs.filter((r) => !/^(확인|진단:)/.test(r.status)).length;
   console.log('### ' + NAME[site] + ' — 남은 항목 ' + open + ' / ' + rs.length + ' · 자동 저장 ' + (REAL[site].confirmed ? '켜짐' : '꺼짐(confirmed:false)') + '\n');
-  console.log('| 설정 | 무엇 | 지금 상태 | 확인 방법 |');
-  console.log('|---|---|---|---|');
-  rs.forEach((r) => console.log('| `' + r.path + '` | ' + r.label + ' | ' + r.status + ' | ' + r.how + ' |'));
+  console.log('| 설정 | 무엇 | 지금 상태 | 근거 | 확인 방법 |');
+  console.log('|---|---|---|---|---|');
+  rs.forEach((r) => console.log('| `' + r.path + '` | ' + r.label + ' | ' + r.status + ' | ' + r.evidence + ' | ' + r.how + ' |'));
   console.log('');
 }

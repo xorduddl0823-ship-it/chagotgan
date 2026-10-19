@@ -27,7 +27,7 @@ process.stdout.write(out.split('\n').filter((l) => /^(ok|not ok|#|  error|INFO)/
 const root = path.join(__dirname, '..', '..');
 const smokeArgs = full.slice(0, full.length - args.length).concat([root]);
 const sm = spawnSync(cmd, smokeArgs, { encoding: 'utf8', timeout: 60000, env: { ...process.env, CARCHECK_SMOKE: '1' } });
-const line = String(sm.stdout || '').split('\n').find((l) => l.startsWith('SMOKE')) || '';
+const line = String(sm.stdout || '').split('\n').find((l) => l.startsWith('SMOKE main-title')) || '';
 const smokeOk = /main-title=성능점검 이중등록/.test(line);
 console.log((smokeOk ? 'ok' : 'not ok') + ' - 실제 프로그램(main.js)이 바뀐 코드로 뜨고 입력 화면이 열림' + (smokeOk ? '' : '\n  error: ' + (line || String(sm.stderr || '').slice(-300))));
 if (!smokeOk) process.exit(1);
@@ -47,6 +47,19 @@ const dl = String(sd.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-D
 const diagOk = /button=true/.test(dl) && /진단 중/.test(dl) && /전산 진단 끝/.test(dl) && /diag-carinfo-/.test(dl);
 console.log((diagOk ? 'ok' : 'not ok') + ' - 실제 프로그램: [전산 진단] → 카인포 진단 시작 → 진단 끝 → 기록 파일 안내' + (diagOk ? '' : '\n  error: ' + (dl || String(sd.stderr || '').slice(-300))));
 if (!diagOk) process.exit(1);
+
+//  (10차) 시험판 표시(test-install.json)가 있으면 기록 폴더를 업무용과 따로 쓰고 창 제목에 «시험판» — 확인 뒤 표시 파일은 지움
+const marker = path.join(root, 'test-install.json');
+const hadMarker = fs.existsSync(marker);
+if (!hadMarker) fs.writeFileSync(marker, JSON.stringify({ dataFolder: 'carcheck-dual-시험판' }));
+let ti = '';
+try {
+  const st = spawnSync(cmd, smokeArgs, { encoding: 'utf8', timeout: 60000, env: { ...process.env, CARCHECK_SMOKE: '1' } });
+  ti = String(st.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-INSTALL')) || '';
+} finally { if (!hadMarker) fs.unlinkSync(marker); }
+const tiOk = /wtitle=.*시험판/.test(ti) && /userData=carcheck-dual-시험판/.test(ti);
+console.log((tiOk ? 'ok' : 'not ok') + ' - 시험판: 기록 폴더를 업무용(carcheck-dual)과 따로 쓰고 창 제목에 «시험판»' + (tiOk ? '' : '\n  error: ' + ti));
+if (!tiOk) process.exit(1);
 if (r.status !== 0) {
   const err = String(r.stderr || '').split('\n').filter((l) => !/dbus|bus\.cc|viz_main|shared_image|one_copy|Fontconfig|gpu/i.test(l)).slice(-15).join('\n');
   if (err.trim()) process.stdout.write('--- stderr ---\n' + err + '\n');

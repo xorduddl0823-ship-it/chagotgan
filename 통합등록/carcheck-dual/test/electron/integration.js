@@ -13,7 +13,7 @@ const { createRegisterFlow } = require('../../src/core/register-flow');
 const { createElectronAdapters } = require('../../src/sites/flow-adapters');
 const { mockConfig } = require('../../src/sites/site-config');
 const quiet = require('../../src/sites/quiet-window');
-const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag } = require('../../src/sites/diag-recorder');
+const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag, endpointsOf } = require('../../src/sites/diag-recorder');
 const { startDiagSession, loadedScripts } = require('../../src/sites/diag-session');
 
 app.commandLine.appendSwitch('disable-gpu');
@@ -45,6 +45,8 @@ async function setup(faults = {}) {
     await wins[s].loadURL(M.base + (s === 'entry' && faults.entryPage ? faults.entryPage : '/' + s));
   }
   const js = (s, code) => wins[s].webContents.executeJavaScript(code, true);
+  //  흉내 엔트리는 로그인 표시를 0.15초마다 다시 그린다 — 그려진 뒤에 시작(시험 시작이 그보다 빠르면 «로그인 필요»로 잘못 보임)
+  if (!faults.entryLoggedOut) await until(() => js('entry', '!!(document.getElementById("who")||document.getElementById("whoName"))'), 3000);
   const fillFns = {
     carinfo: async (d) => {
       await js('carinfo', 'carNo.value=' + JSON.stringify(d.carNo) + ';vin.value=' + JSON.stringify(d.vin) + ';1');
@@ -461,7 +463,7 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
-  await scenario('(9차) 사이트 코드 읽기: 이미 불러온 코드를 메모리에서 읽음 — 서버 요청 0건 · 저장 주소(/api/save)를 [저장]을 안 눌러도 알 수 있음 · 가리기 적용', async () => {
+  await scenario('(9·10차) 사이트 코드 읽기: 이미 불러온 코드를 메모리에서 읽음 — 서버 요청 0건 · 파일에는 코드 원본 없이 «주소 글자»(/api/save)만', async () => {
     const t = await setup({ noPrepare: true });
     const w = t.wins.carinfo;
     await w.loadURL(t.M.base + '/scriptpage');
@@ -471,8 +473,11 @@ app.whenReady().then(async () => {
     assert.strictEqual(t.M.S.hits['/app.js'] || 0, before, '코드를 다시 받으러 서버에 가지 않음');
     const app = code.find((c) => /\/app\.js$/.test(c.src));
     assert.ok(app && /\/api\/save/.test(app.code), '저장 주소가 코드에 보임');
-    const masked = JSON.stringify(maskDiag(code).data);
-    assert.ok(!masked.includes('010-4444-5555'), '코드 속 전화번호도 가림');
+    //  (10차) 파일에는 코드 원본이 아니라 «주소처럼 보이는 글자»만 남김
+    const kept = code.map((c) => ({ src: c.src, size: c.size, endpoints: endpointsOf(c.code) }));
+    assert.deepStrictEqual(kept.find((c) => /app\.js$/.test(c.src)).endpoints, ['/api/save']);
+    const text = JSON.stringify(maskDiag(kept).data);
+    assert.ok(!text.includes('function') && !text.includes('010-4444-5555'), '코드 원본·코드 속 전화번호 없음');
     await d.ds.stop();
     await t.done();
   });

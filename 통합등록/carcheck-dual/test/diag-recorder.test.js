@@ -89,3 +89,15 @@ test('화면 뼈대 저장: 표 칸 글자·입력 값·선택지·페이지 코
   assert.strictEqual(r.path, '/main');
   assert.strictEqual(r.scripts.length, 0);
 });
+
+test('(10차) 진단 파일 따로 검사: 고객정보·차대번호·인증·세션·코드 원본이 있으면 걸리고, 가린 파일은 통과 — 값은 결과에 안 나옴', () => {
+  const { checkFile } = require('../tools/diag-check');
+  const { maskDiag } = require('../src/sites/diag-recorder');
+  const dirty = JSON.stringify({ requests: { entries: [{ path: '/car/12가3456' }] }, snaps: [{ frames: [{ title: 'JSESSIONID=abc', fields: [{ id: 'KMHXX00XXXX123456' }] }], code: [{ code: 'x' }] }], note: 'Authorization: Bearer abcdefghij1234567890' });
+  const f = checkFile(dirty);
+  assert.ok(f['차량번호'] >= 1 && f['차대번호'] >= 1, JSON.stringify(f));
+  assert.ok(f['세션 쿠키 이름(JSESSIONID 등)'] === 1 && f['인증 머리글(Authorization·Bearer)'] >= 1 && f['사이트 코드 원본'] === 1);
+  assert.ok(!JSON.stringify(f).includes('3456') && !JSON.stringify(f).includes('abc'), '값은 결과에 없음');
+  const clean = JSON.stringify(maskDiag({ requests: { entries: [{ path: '/car/12가3456', bodyKeys: ['carNo'] }] }, snaps: [{ frames: [{ buttons: [{ text: '저장', id: 'btnSave' }], fields: [{ tag: 'input', id: 'carNo', name: 'carNo', type: 'text' }, { id: 'dealerHp', name: 'dealerHp' }] }] }] }).data);
+  assert.deepStrictEqual(checkFile(clean), {});
+});

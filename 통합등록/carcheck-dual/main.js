@@ -2,6 +2,14 @@
 const { app, BrowserWindow, ipcMain, session, safeStorage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+/*  시험판(10차) — 프로그램 폴더에 test-install.json 이 있으면 «기록 폴더»를 업무용과 따로 쓴다.
+ *  업무용(%APPDATA%\carcheck-dual)의 설정·로그인 정보·작업 기록·사이트 로그인 상태를 읽지도 고치지도 않는다.
+ *  이 파일은 시험용 PC 묶음에만 넣는다(저장소·업무용 판에는 없음). */
+const TEST_INSTALL = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'test-install.json'), 'utf8')); } catch { return null; } })();
+if (TEST_INSTALL && /^[\w가-힣.\-]{3,60}$/.test(String(TEST_INSTALL.dataFolder || '')) && String(TEST_INSTALL.dataFolder) !== 'carcheck-dual') {
+  app.setPath('userData', path.join(app.getPath('appData'), String(TEST_INSTALL.dataFolder)));
+}
 const { GROUPS, OPT, historyFromParts } = require('./src/schema');
 const { buildScript } = require('./src/filler');
 const { buildPrepareScript } = require('./src/carinfo-prepare');
@@ -145,6 +153,8 @@ function createMainWindow() {
   });
   windows.main.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   windows.main.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  //  시험판이면 창 제목에 표시(업무용과 헷갈리지 않게)
+  if (TEST_INSTALL) windows.main.webContents.on('did-finish-load', () => { try { windows.main.setTitle(windows.main.getTitle() + ' — 시험판(업무용과 기록 따로)'); } catch {} });
 }
 
 /**
@@ -2188,7 +2198,7 @@ function noPhotos(data) {
 /** 흐름 작업이 그 전산을 쓰는 중이면 기존 단추를 막는다(통제기 우회 방지) — 흐름이 꺼져 있으면 언제나 null */
 function legacyBlock(site) {
   //  진단 중인 전산은 기존 단추(전송·신규등록·사진 등)도 막는다 — 요청이 서버로 안 가는데 된 것처럼 보이지 않게(8차 화면 검사)
-  if (typeof diagState !== 'undefined' && diagState[site]) return '이 전산은 지금 진단 중이에요(저장이 서버로 가지 않아요). [진단 끝]을 누른 뒤 다시 해 주세요.';
+  if (typeof diagState !== 'undefined' && diagState[site]) return '이 전산은 지금 진단 중이에요. [진단 끝]을 누른 뒤 다시 해 주세요.';
   if (loadConfig().flow !== true) return null;
   try { return flow().flow.legacyBlocked(site); } catch { return null; }
 }
@@ -2264,7 +2274,7 @@ ipcMain.handle('flow:releaseAfterForce', flowCall((a) => {
  *  진단 중에는 그 전산 세션 전체(본 창·팝업·iframe)에서 «안전한 조회»만 나간다 — 두 겹 막기(src/sites/diag-session.js).
  *  막는 장치가 붙지 않은 창이 생기면 진단을 중단한다. 파일에 쓰기 전에 개인정보를 가리고 다시 검사해, 남아 있으면 파일을 만들지 않는다.
  *  로그인(문자 인증)은 진단 «전»에 사람이 한다 — 진단 중에는 로그인 요청도 막히므로. */
-const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag } = require('./src/sites/diag-recorder');
+const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag, endpointsOf } = require('./src/sites/diag-recorder');
 const { startDiagSession, loadedScripts } = require('./src/sites/diag-session');
 const diagState = {};                                    // site → { rec, ds, win, snaps, startedAt }
 
@@ -2301,9 +2311,12 @@ async function diagSnap(d) {
       } catch {}
     }
   }
-  //  (9차) 사이트 코드 — 설정 diagScripts:true 일 때만. 네트워크로 받지 않고 «이미 불러와 메모리에 있는 코드»를 개발자 연결로 읽음(요청 0건)
+  //  (9차) 사이트 코드 — 설정 diagScripts:true 일 때만(기본 꺼짐). 네트워크로 받지 않고 «이미 불러와 메모리에 있는 코드»를 읽음(요청 0건)
+  //  (10차) 코드 원본은 파일에 남기지 않는다 — 코드 안의 «주소처럼 보이는 글자»만(endpointsOf)
   let code = [];
-  if (loadConfig().diagScripts === true) { try { code = await loadedScripts(d.win, diagHosts(d.site)); } catch {} }
+  if (loadConfig().diagScripts === true) {
+    try { code = (await loadedScripts(d.win, diagHosts(d.site))).map((c) => ({ src: c.src, size: c.size, endpoints: endpointsOf(c.code) })); } catch {}
+  }
   d.snaps.push({ at: new Date().toISOString(), frames: maskDiag(frames).data, code: maskDiag(code).data });   // 기록하는 순간 가림(메모리에도 가린 것만)
   return d.snaps.length;
 }
@@ -2334,13 +2347,17 @@ async function diagFinish(site, abortedWhy) {
   return { ok: true, ...base, file };
 }
 
+//  진단은 «시험판»에서만(10차) — 업무용 프로그램에서는 설정을 켜도 동작하지 않음(시험 실행 CARCHECK_SMOKE 만 예외)
+const DIAG_ALLOWED = !!TEST_INSTALL || process.env.CARCHECK_SMOKE === '1';
 ipcMain.handle('diag:openEntry', flowCall(async () => {
+  if (!DIAG_ALLOWED) return { ok: false, error: '진단은 시험판(업무용과 따로 푼 폴더)에서만 해요.' };
   if (loadConfig().diagnose !== true) return { ok: false, error: '진단 기능이 꺼져 있어요.' };
   if (diagState.entry) return { ok: false, error: '엔트리는 지금 진단 중이에요.' };
   diagEntryWindow(true);
   return { ok: true };
 }));
 ipcMain.handle('diag:start', flowCall(async (a) => {
+  if (!DIAG_ALLOWED) return { ok: false, error: '진단은 시험판(업무용과 따로 푼 폴더)에서만 해요.' };
   if (loadConfig().diagnose !== true) return { ok: false, error: '진단 기능이 꺼져 있어요.' };
   const site = a.site;
   if (!['carinfo', 'carmodoo', 'entry'].includes(site)) return { ok: false, error: '알 수 없는 전산이에요.' };
@@ -2377,6 +2394,7 @@ ipcMain.handle('flow:status', flowCall(async () => { let impl = false; try { imp
 
 /*  시험용 실행(CARCHECK_SMOKE=1): 실제 기록 폴더를 건드리지 않게 임시 폴더를 쓰고, 입력 화면이 뜨면 끝낸다 */
 if (process.env.CARCHECK_SMOKE === '1') {
+  const decidedUserData = app.getPath('userData');                     // 시험판 표시로 정해진 기록 폴더(시험 확인용 — 아래에서 임시 폴더로 바꿈)
   app.setPath('userData', fs.mkdtempSync(path.join(require('os').tmpdir(), 'cc-smoke-')));
   //  시험 중에는 실제 전산 주소로 나가지 않게 막아 둔 주소로 바꾼다(접속 거부되는 내 PC 주소)
   Object.keys(SITES).forEach((k) => { SITES[k].home = SITES[k].list = SITES[k].form = 'http://127.0.0.1:9/' + k; });
@@ -2386,6 +2404,7 @@ if (process.env.CARCHECK_SMOKE === '1') {
     setTimeout(async () => {
       let title = '';
       try { title = await windows.main.webContents.executeJavaScript('document.title', true); } catch {}
+      console.log('SMOKE-INSTALL wtitle=' + windows.main.getTitle() + ' userData=' + path.basename(decidedUserData));
       console.log('SMOKE main-title=' + title + ' handlers=' + ['flow:start', 'site:send', 'admin:setPin'].filter((h) => ipcMain._invokeHandlers ? ipcMain._invokeHandlers.has(h) : true).length);
       if (process.env.CARCHECK_SMOKE_FLOW === '1') {
         //  입력 화면의 [세 전산 자동 등록]을 눌러 본다 — 실제 전산 설정이 비어 있으니 저장 전에 멈춰야 정상

@@ -268,7 +268,23 @@ async function pageSnapshot(opt) {
 const pageExpr = (opt) => '(' + pageSnapshot.toString() + ')(' + JSON.stringify(opt || {}) + ')';
 const PAGE_EXPR = pageExpr({});
 
+/**
+ * 코드에서 «주소처럼 보이는 글자»만 뽑는다(10차) — 코드 원본은 파일에 남기지 않는다.
+ *  따옴표 안의 «/로 시작하는 경로»(예 "/ct/carcheck_save.do", '/api/entry/load')만, 최대 300개
+ */
+function endpointsOf(code) {
+  const out = new Set();
+  const re = /["'`](\/[A-Za-z0-9_\-./]{2,120})["'`?]/g;
+  let m;
+  while ((m = re.exec(String(code || ''))) && out.size < 300) {
+    const p = m[1];
+    if (/\.(png|jpe?g|gif|svg|css|woff2?|ttf|ico|map)$/i.test(p) || /^\/\//.test(p)) continue;
+    out.add(p);
+  }
+  return [...out].sort();
+}
+
 /** 기록 한 줄을 남기는 순간 바로 가림(메모리에도 가린 것만 둠) */
 function maskEntry(e) { const at = e.at; const d = maskDiag(e).data; d.at = at; return d; }
 
-module.exports = { createDiagRecorder, decide, ELEMENTS_EXPR, PAGE_EXPR, pageExpr, bodyKeys, WRITE_WORDS, maskDiag, checkDiag };
+module.exports = { endpointsOf, createDiagRecorder, decide, ELEMENTS_EXPR, PAGE_EXPR, pageExpr, bodyKeys, WRITE_WORDS, maskDiag, checkDiag };

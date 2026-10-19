@@ -1,2 +1,5 @@
 node_modules/
 dist/
+
+# 시험판 표시(10차) — 시험용 PC 묶음에만 넣음. 저장소·업무용 판에는 넣지 않음
+test-install.json
