@@ -8,7 +8,7 @@ const ok=(name,cond,info='')=>{ (cond?pass++:fail++); const l=(cond?'통과':'�
 async function page(q='',seed=null,w=1366,h=1000){ const p=await b.newPage({viewport:{width:w,height:h}}); p._errs=[];
   p.on('pageerror',e=>p._errs.push(String(e))); p.on('dialog',d=>{p._errs.push('NATIVE '+d.message()); d.accept();});
   if(seed) await p.addInitScript(s=>{window.__SEEDDB=JSON.parse(s);},JSON.stringify(seed));
-  await p.goto('file://'+SP+'/pv143/t.html'+q); await p.waitForTimeout(2500); return p; }
+  await p.goto('file://'+SP+'/pv'+(process.env.V||'143')+'/t.html'+q); await p.waitForTimeout(2500); return p; }
 const W=(p,ms=900)=>p.waitForTimeout(ms);
 const dbs=p=>p.evaluate(()=>document.getElementById('dbState').textContent);
 const bar=p=>p.evaluate(()=>{const x=document.getElementById('wSaveBar');return x?x.innerText:'';});
@@ -182,7 +182,7 @@ for (const how of ['새로고침','다시 로그인']) {
     const t=document.querySelector('#toast.show,.cgg-toast:not([hidden])'); return {res,sent:__PV.sent().length-n0,status:l.status,rid:l.rid,id:l.id,toast:t?t.textContent:''}; });
   ok('⑨ 답을 잃은 발송 → 보낸 기록 «확인 중»',r.status==='확인 중',JSON.stringify(r));
   ok('⑨ 공급자에 1번만(문자로 또 안 보냄 · 자동 다시 없음)',r.sent===1,r.sent+'번');
-  ok('⑨ 안내 글 «갔는지 아직 몰라요 — 보낸 기록에서 확인해 주세요»',/갔는지 아직 몰라요 — 보낸 기록에서 확인/.test(r.res+' '+r.toast),r.res);
+  ok('⑨ 안내 글 «확인 중 — 보낸 기록에서 확인해 주세요»',/(확인 중|갔는지 아직 몰라요) — 보낸 기록에서 확인/.test(r.res+' '+r.toast),r.res);
   ok('⑨ 보낸 기록에 rid 24자 남음',/^[a-z0-9]{24}$/.test(r.rid||''),r.rid);
   // 보낸 기록 화면: 확인 중 안내 · [다시 보내기](일부러) = 새 rid
   await p.evaluate(()=>{__t.SS().setSub='outbox';__t.tab('settings');}); await W(p,800);
@@ -220,12 +220,12 @@ for (const how of ['새로고침','다시 로그인']) {
   ok('⑩ 알림톡 실패 답 → 화면은 문자를 따로 안 보냄(서버가 대체) · «실패»',r.n===1&&r.status==='실패',JSON.stringify(r));
   await p.close(); }
 // ⑪ 서버 sb29 «확인 중» 답 모양 3가지 → «확인 중» · 자동 다시 없음
-for (const [name,set] of [['{ok:false,checking:true}',"window.__CHK='no'"],['{ok:true,checking:true}',"window.__CHK='ok'"],['__err + __checking',"window.__CHKERR=1"],['__err(글에 «확인 중» 없음) + __checking',"window.__CHKERR=2"]]) {
+for (const [name,set] of [['{ok:false,checking:true}',"window.__CHK='no'"],['{ok:true,checking:true}',"window.__CHK='ok'"],['__err + __checking',"window.__CHKERR=1"],['__err(글에 «확인 중» 없음) + __checking',"window.__CHKERR=2"],['{ok:false,unsure:true}(체크와 같은 이름)',"window.__CHK='unsure'"],['__err + __unsure(체크와 같은 이름)',"window.__CHKERR=3"]]) {
   const p=await page('?ata=on&srv=15',null,1366,1000);
   const r=await p.evaluate(async(set)=>{ eval(set); const i=__t.recs().findIndex(x=>x.phone); const n0=__PV.sent().length;
     const res=await __t.inn(i).then(()=>'ok',e=>'ERR '+(e&&e.message||e)); await new Promise(r=>setTimeout(r,1200));
     const ob=Object.values(__PV.DB().outbox||{}); const l=ob[ob.length-1]||{}; const t=document.querySelector('#toast.show,.cgg-toast:not([hidden])'); return {res:res+' '+(t?t.textContent:''),status:l.status,more:__PV.sent().length-n0}; },set);
-  ok('⑪ 서버 답 '+name+' → «확인 중» · 다시 안 보냄',r.status==='확인 중'&&r.more<=1&&/갔는지 아직 몰라요/.test(r.res),JSON.stringify(r));
+  ok('⑪ 서버 답 '+name+' → «확인 중» · 다시 안 보냄',r.status==='확인 중'&&r.more<=1&&/(확인 중|갔는지 아직 몰라요) — 보낸 기록/.test(r.res),JSON.stringify(r));
   await p.close(); }
 { const p=await page('?ata=on&nofrom=1',null,1366,1000);
   const r=await p.evaluate(async()=>{ const rec=__t.recs().find(x=>x.phone); __t.cfg('send',Object.assign({},__t.SS().cfg.send||{},{from:''}));
