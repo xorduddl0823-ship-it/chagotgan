@@ -84,7 +84,7 @@ cut("function hdrFill(){\n  $(\"meName\")", "function gmsg(x,bad){",
     find:{mode:"nav", feats:FEATS, onGo:goFeat},
     notice:function(){ jgo("noti"); }, help:helpSheet, link:copyLink, refresh:function(){ $("btnReload").click(); },
     /* 자동 새로고침 · 저장 표시는 관리에 없던 기능이라 넣지 않아요 (요청서 ① — 새 기능 없음) */
-    me:{name:WHO.name||"관리자", role:WHO.role, sub:"본사 관리자", items:function(){ return [
+    me:{name:WHO.name||"관리자", role:WHO.role, sub:"마이페이지 · 화면 설정", items:function(){ return [
       {key:"me",icon:"user",label:"마이페이지",note:"관리자 계정"}, "-",
       {key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()}, "-",
       {key:"out",icon:"out",label:"로그아웃"}]; },
@@ -174,7 +174,17 @@ function addCrumb(){
     (c.tagName==="BUTTON"||c.classList.contains("btns")?acts:hello).appendChild(c); });
   dh.innerHTML=""; dh.classList.add("cgg-head"); dh.appendChild(hello); if(acts.children.length) dh.appendChild(acts);
 }
+function kpiFix(){
+  Array.prototype.forEach.call($("main").querySelectorAll(".opsTop,.secTop,.ntSum"),function(box){
+    var items=Array.prototype.map.call(box.children,function(k){
+      var t=k.querySelector(".t,span"), v=k.querySelector(".v,b"), x=k.querySelector(".s");
+      var lab=t?t.textContent.trim():"", val=v?v.textContent.trim():"";
+      return {label:lab, value:val, unit:"", delta:x?"":null, vs:x?x.textContent.trim():"",
+        tone:k.classList.contains("warn")?(/위험/.test(lab)?"stop":"due"):"", zeroMuted:true}; });
+    var el=document.createElement("div"); box.parentNode.replaceChild(el,box); CGG.kpis(el,items); });
+}
 try{ new MutationObserver(addCrumb).observe($("main"),{childList:true}); }catch(e){}
+try{ new MutationObserver(function(){ if($("main").querySelector(".opsTop,.secTop,.ntSum")) kpiFix(); }).observe($("main"),{childList:true,subtree:true}); }catch(e){}
 ''')
 
 # ② 홈 — CGG.home 차례 (계산은 v4.8.3 그대로 · 그리기만 공통 부품)
@@ -217,9 +227,9 @@ cut("  var h =\n    /* ② 말하는 제목 — 숫자는 파랑 (J안) */", "/*
                 title:t[1]+(isMemo?"":" "+String(t[0])+"건"), sub:t[2]||" "}; }),
       total:pick.length, onPick:function(i){ top3[i][3](); window.scrollTo(0,0); }, onAll:function(){ todoSheet(todos, todoBtn); }},
     kpis:[{label:"업체", value:String(Number(s.shops)||0), unit:"곳", delta:"", vs:"진행 중 "+Math.max(0,(s.shops||0)-(s.shopsOff||0))+"곳 · 보류 "+(s.shopsOff||0)+"곳"},
-      {label:"이번 달 들어온 금액", value:paid.toLocaleString("ko-KR"), unit:"원", tone:"in", delta:"", vs:"받은 비율 "+(billed?Math.round(paid/billed*100):0)+"%"},
+      {label:"이번 달 들어온 금액", value:paid.toLocaleString("ko-KR"), unit:"원", delta:"", vs:"받은 비율 "+(billed?Math.round(paid/billed*100):0)+"%"},
       {label:"이번 달 나간 금액", value:(Number(s.expMonth)||0).toLocaleString("ko-KR"), unit:"원", delta:"", vs:"남은 것 "+won(prof)},
-      {label:"못 받은 금액", value:unpaidAmt.toLocaleString("ko-KR"), unit:"원", tone:"due", zeroMuted:true, delta:"", vs:unpaid.length?("입금 대기 "+unpaid.length+"건"):"없어요"}],
+      {label:"못 받은 금액", value:unpaidAmt.toLocaleString("ko-KR"), unit:"원", delta:"", vs:unpaid.length?("입금 대기 "+unpaid.length+"건"):"없어요"}],
     cal:{y:Y, m:M, today:(Y===now.getFullYear()&&M===now.getMonth()+1)?now.getDate():0, days:days,
       legend:[["w","유지비 결제일","chk"],["b","업체 이용 기한","run"],["r","체험 끝","stop"],["m","할 일","done"]], amtLabel:"그날 유지비",
       onMove:function(n){ if(n===0) CALM=null; else CALM=new Date(CALM.getFullYear(), CALM.getMonth()+n, 1); render(); },
@@ -380,7 +390,7 @@ rep("실제 잔액은 「연결된 곳 상태 새로 받기」로 맞춰", "실�
 
 # 폰 «이름표: 값» 3칸 — 미리보기 11판과 같은 칸 (업체 관리 · 가입 코드 · 결제 내역 · 세금계산서 등)
 rep('    id:"tShops", rows:rows, search:["name","shop","owner_phone"],', '    id:"tShops", rows:rows, search:["name","shop","owner_phone"], mf:["plan","endAt","active"],')
-rep('    id:"tUsers", rows:(D.users||[]).slice(), search:["name","phone","shopName"],', '    id:"tUsers", rows:(D.users||[]).slice(), search:["name","phone","shopName"], mf:["shopName","role","active"],')
+rep('    id:"tUsers", rows:(D.users||[]).slice(), search:["name","phone","shopName"],', '    id:"tUsers", rows:(D.users||[]).slice(), search:["name","phone","shopName"], mf:["active","last_login","created_at"],')
 rep('    id:"tPays", rows:(D.pays||[]).slice(), search:["shopName","biz_name","period","id"],', '    id:"tPays", rows:(D.pays||[]).slice(), search:["shopName","biz_name","period","id"], mf:["amount","status","period"],')
 rep('    id:"tInv", rows:(D.invites||[]).slice(), search:["phone","biz_name"],', '    id:"tInv", rows:(D.invites||[]).slice(), search:["phone","biz_name"], mf:[["biz_name","업체"],"used_at","expires_at"],')
 rep('    id:"tTax", rows:rows, search:["name","period"], sortKey:"at", sortDir:"desc",', '    id:"tTax", rows:rows, search:["name","period"], sortKey:"at", sortDir:"desc", mf:["amount","st","at"],')
@@ -419,6 +429,25 @@ rep("""        return '<div class="j-kpi"><small><i style="background:'+x[2]+'">
 rep('''        {k:"name", label:"무엇에", w:200, html:function(r){ return '<b>'+esc(r.name)+'</b>'; }},''',
     '''        {k:"name", label:"무엇에", w:200, isName:true, html:function(r){ return '<b>'+esc(r.name)+'</b>'; }},''')
 
+rep('    id:"tSvc", rows:list, search:["name","what","code"], sortKey:"sort",', '    id:"tSvc", rows:list, search:["name","what","code"], sortKey:"sort", mf:["balance","next_due","_st"],')
+# 업체 관리 — 11판처럼 숫자 칸 4개(업체 · 진행 중 · 보류 · 문자 다 씀) — 목록에서 셈만, 서버 요청 없음
+rep('''    '<div id="tShops"></div>';
+  var rows = (D.shops||[]).filter(function(s){ return s.shop!=="ADMIN"; });''',
+'''    '<div id="shK"></div><div id="tShops"></div>';
+  var rows = (D.shops||[]).filter(function(s){ return s.shop!=="ADMIN"; });
+  var shOff=rows.filter(function(r){ return r.active===false; }).length, shOut=rows.filter(function(r){ var u=usageOf(r); return u.smsLeft===0; }).length;
+  CGG.kpis($("shK"),[{label:"업체",value:String(rows.length),unit:"곳"},{label:"진행 중",value:String(rows.length-shOff),unit:"곳",tone:"in"},
+    {label:"보류",value:String(shOff),unit:"곳",tone:"due",zeroMuted:true},{label:"문자 다 씀",value:String(shOut),unit:"곳",tone:"stop",zeroMuted:true}]);''')
+# 알림톡 템플릿 검수 칸 — 원래 자료 말 «통과» 그대로
+rep('''(x[3]==="통과"?"완료":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))''', '''(x[3]==="통과"?"통과":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))''')
+# 세금계산서 확인 창 칸 이름 — 누구에게 · 몇 건 · 얼마
+rep('''      "받는 곳: "+sh.name+(sh.biz_no?" ("+bizFmt(sh.biz_no)+")":"")+"\\n건수: 1장\\n합계: "+won(total)''',
+    '''      "누구에게: "+sh.name+(sh.biz_no?" ("+bizFmt(sh.biz_no)+")":"")+"\\n몇 건: 1장\\n얼마: "+won(total)''')
+# 관리자 계정 — 영어 «ADMIN» 대신 «본사»
+rep("' · 자리 '+esc(me.shop||\"\")+'", "' · '+esc(me.shop===\"ADMIN\"?\"본사 관리자\":(me.shop||\"\"))+'")
+# 충전 단가표 «남는 것» — 손해(0 아래)는 빨강
+rep('''<td class="num" style="color:var(--ok);font-weight:700">'+won(v-r[2])+'</td></tr>''', '''<td class="num" style="color:'+(v-r[2]<0?"var(--stop)":"var(--done)")+';font-weight:700">'+won(v-r[2])+'</td></tr>''')
+
 # 표 안 번호 칸 고정폭 글꼴(v4.4)은 빼요 — 11판 표와 같은 글꼴
 rep(".cgg-table td .cgg-st+.cgg-st{margin-left:4px} .cgg-table td.mono{font-family:ui-monospace,Menlo,monospace;font-size:13px}", ".cgg-table td .cgg-st+.cgg-st{margin-left:4px}")
 
@@ -431,7 +460,10 @@ rep(MK, '''/* 관리 v4.9 — 미리보기 11판 «관리» 모양 맞춤 (화�
 .cgg-tblock,.cgg-tblock .cgg-pager{line-height:normal}
 .cgg-tblock .cgg-ttop select{width:auto;min-width:0;max-width:none}
 .cgg-head .hello small.jcrumb{font-weight:400}
-#pplSw .pill{flex:none;width:auto}
+.pill{flex:none;width:auto;justify-self:start}
+.cgg-nil{color:var(--muted)}
+#pplQ{flex:1 1 180px;min-width:0}
+/* 옛 숫자 칸(운영 상태 · 보안 점검 · 공지사항)을 공통 숫자 칸 모양으로 — kpiFix 가 바꿔요 */
 .sheetbg{background:#0B254573}
 .sheet{box-shadow:0 24px 60px #0B254559}
 @media (max-width:600px){ .card{padding:14px 14px;margin-bottom:12px} .dashhead.cgg-head .hello .sub2{font-size:12.5px;margin-top:3px} }

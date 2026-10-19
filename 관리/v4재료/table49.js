@@ -12,7 +12,10 @@ var TRANK = {name:0,id:1,text:2,date:3,time:3,num:4,money:4,state:5,act:6};
 function tStrip(h){ return String(h==null?"":h).replace(/<[^>]*>/g," ").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,"&").replace(/\s+/g," ").trim(); }
 /* 예전 알약(pill) 색 → 공통 상태 칩 네 가지 */
 var TPILL = {ok:"done",run:"run",wait:"chk",off:"stop",gray:"run",bad:"stop",warn:"chk",done:"done",chk:"chk",stop:"stop"};
-function tChipify(h){ return String(h).replace(/class="pill(?: (\w+))?"/g,function(_,c){ return 'class="cgg-st '+(TPILL[c]||"run")+'"'; }); }
+/* 11판 상태 색 — 같은 말은 늘 같은 색 (진행 중 초록 · 보류 · 안 이어짐 주황) */
+var TWORD = {"진행 중":"done","보류":"chk","안 이어짐":"chk","보류 · 멈춤":"chk"};
+function tChipify(h){ return String(h).replace(/class="pill(?: (\w+))?">([^<]*)</g,function(_,c,w){ return 'class="cgg-st '+(TWORD[w]||TPILL[c]||"run")+'">'+w+'<'; })
+  .replace(/class="pill(?: (\w+))?"/g,function(_,c){ return 'class="cgg-st '+(TPILL[c]||"run")+'"'; }); }
 function tTone(t){ t=String(t||"");
   if(/실패|지남|막힘|멈|보류|꺼짐|오류|안 됨|끊|정리|기한 지남|못/.test(t)) return "stop";
   if(/확인|기다|대기|전$|입금 전|곧|남음|심사|중간/.test(t)) return "chk";
@@ -25,7 +28,7 @@ function tKind(c,i){
   if(/상태|^결과$|^지금$/.test(L)) return "state";
   if(c.num) return /금액|원|요금|잔액|합계|비용|캐시|달마다/.test(L)?"money":"num";
   if(/코드|번호|주문|아이디|휴대폰|사업자/.test(L)) return "id";
-  if(/시각|^때$|보낸 때|넣은 때|^언제$/.test(L)) return "id";
+  if(/시각|^때$|보낸 때|넣은 때|^언제$/.test(L)) return "time";
   if(/날$|날짜|일$|기한|기간|마지막|달치/.test(L)) return "date";
   return "text"; }
 function makeTable(o){
@@ -44,7 +47,8 @@ function makeTable(o){
       return {c:c,kind:k,i:i}; });
   var si=-1; cols.forEach(function(x){ if(x.kind==="state"){ if(si<0) si=x.i; else x.kind="text"; } });
   var actCols=cols.filter(function(x){ return x.kind==="act"; });
-  var shown=cols.filter(function(x){ return x.kind!=="act"; }).sort(function(a,b){ return (TRANK[a.kind]-TRANK[b.kind]) || (a.i-b.i); });
+  var shown=cols.filter(function(x){ return x.kind!=="act"; });   /* 1.13.2 와 같게 화면이 준 차례 그대로 — 이름 칸만 맨 앞(틀 고정) */
+  var nmX=shown.filter(function(x){ return x.kind==="name"; })[0]; if(nmX && shown[0]!==nmX){ shown.splice(shown.indexOf(nmX),1); shown.unshift(nmX); }
   var stateCol=si>=0?o.cols[si]:null;
   /* 폰 «이름표: 값» 칸 — 화면이 mf 를 주면 그대로, 아니면 날짜 · 금액 · 상태 칸에서 3칸까지(1.13.2 · 미리보기 11판처럼 3칸) */
   var byK={}; shown.forEach(function(x){ byK[x.c.k]=x; });
@@ -61,13 +65,15 @@ function makeTable(o){
             .replace(/class="btn( danger| primary)?"/g,function(_,d){ return 'class="cgg-btn sm'+(d===" danger"?" danger":"")+'"'; }); }
   function stateH(r){ var h=tChipify(cellH(stateCol,r));
     return /cgg-st/.test(h) ? h : (tStrip(h)?'<span class="cgg-st '+tTone(tStrip(h))+'">'+h+'</span>':''); }
-  function cellX(x,r){ return x.kind==="state"?stateH(r):tChipify(cellH(x.c,r)); }
+  function cellX(x,r){ var h=x.kind==="state"?stateH(r):tChipify(cellH(x.c,r)), t=tStrip(h); return (t===""||t==="-")&&!/<(button|input|select|a)\b/.test(h)?'<span class="cgg-nil">—</span>':h; }
   /* 다시 그려도 줄 버튼이 하는 일 지키기 — data-… 값이 같은 새 버튼에 그대로 */
   var MINE=/^data-(tab|k|p|q|size|msort|fp|id)$/;
   function keep(){ var m={}; Array.prototype.forEach.call(host.querySelectorAll("button,span.cgg-btn,span.btn"),function(b){ if(!b.onclick) return;
       for(var i=0;i<b.attributes.length;i++){ var a=b.attributes[i]; if(a.name.indexOf("data-")===0 && !MINE.test(a.name)){ m[a.name+"\u0001"+a.value]=b.onclick; break; } } }); return m; }
   function restore(m){ Array.prototype.forEach.call(host.querySelectorAll("button,span.cgg-btn,span.btn"),function(b){
       for(var i=0;i<b.attributes.length;i++){ var a=b.attributes[i], f=m[a.name+"\u0001"+a.value]; if(f){ b.onclick=f; break; } } }); }
+  function findPh(){ var L=(o.search||[]).map(function(k){ var c=o.cols.filter(function(x){ return x.k===k; })[0]; return c&&c.label?String(c.label):""; }).filter(function(v,i,a){ return v&&a.indexOf(v)===i; });
+    return L.length?L.slice(0,3).join(" · "):"검색"; }
   function emptyTxt(){ return esc((typeof o.empty==="function"?o.empty(o.rows||[]):o.empty)||"조건에 맞는 자료가 없어요."); }
 
   function draw(focusK){
@@ -92,7 +98,7 @@ function makeTable(o){
     var rid=function(r,ri){ return o.rowId ? o.rowId(r) : ri; };   /* 예전 표와 같은 값 (rowId 없으면 이 쪽 안 차례) */
     var fset=(o.filters||[]).some(function(f){ return st.f[f.k]!==undefined && st.f[f.k]!==""; });
     /* 위 한 줄 — 넓은 찾기 칸 · 상태 칩 · 거르기 알약 · «20개씩» (1.12 워시 모양) */
-    var h='<div class="cgg-ttop"><label class="cgg-find"><input id="'+o.id+'_q" data-q="1" placeholder="'+esc(o.find||"검색")+'" value="'+esc(st.q)+'" aria-label="검색"></label>'+
+    var h='<div class="cgg-ttop"><label class="cgg-find"><input id="'+o.id+'_q" data-q="1" placeholder="'+esc(o.find||findPh())+'" value="'+esc(st.q)+'" aria-label="검색"></label>'+
       (tabs?'<div class="cgg-tchips" role="group" aria-label="상태로 거르기">'+tabs.map(function(t){
         var n=base.filter(function(r){ return !t[0] || tabVal(r)===t[0]; }).length;
         return '<button type="button" class="cgg-fp'+(st.tab===t[0]?' on':'')+'" data-tab="'+esc(t[0])+'" aria-pressed="'+(st.tab===t[0])+'">'+esc(t[1])+' <b>'+n+'</b></button>'; }).join("")+'</div>':'')+

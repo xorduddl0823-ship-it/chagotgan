@@ -2264,7 +2264,10 @@ input[type=checkbox]:checked::after{opacity:1}
 .cgg-tblock,.cgg-tblock .cgg-pager{line-height:normal}
 .cgg-tblock .cgg-ttop select{width:auto;min-width:0;max-width:none}
 .cgg-head .hello small.jcrumb{font-weight:400}
-#pplSw .pill{flex:none;width:auto}
+.pill{flex:none;width:auto;justify-self:start}
+.cgg-nil{color:var(--muted)}
+#pplQ{flex:1 1 180px;min-width:0}
+/* 옛 숫자 칸(운영 상태 · 보안 점검 · 공지사항)을 공통 숫자 칸 모양으로 — kpiFix 가 바꿔요 */
 .sheetbg{background:#0B254573}
 .sheet{box-shadow:0 24px 60px #0B254559}
 @media (max-width:600px){ .card{padding:14px 14px;margin-bottom:12px} .dashhead.cgg-head .hello .sub2{font-size:12.5px;margin-top:3px} }
@@ -3906,7 +3909,10 @@ var TRANK = {name:0,id:1,text:2,date:3,time:3,num:4,money:4,state:5,act:6};
 function tStrip(h){ return String(h==null?"":h).replace(/<[^>]*>/g," ").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,"&").replace(/\s+/g," ").trim(); }
 /* 예전 알약(pill) 색 → 공통 상태 칩 네 가지 */
 var TPILL = {ok:"done",run:"run",wait:"chk",off:"stop",gray:"run",bad:"stop",warn:"chk",done:"done",chk:"chk",stop:"stop"};
-function tChipify(h){ return String(h).replace(/class="pill(?: (\w+))?"/g,function(_,c){ return 'class="cgg-st '+(TPILL[c]||"run")+'"'; }); }
+/* 11판 상태 색 — 같은 말은 늘 같은 색 (진행 중 초록 · 보류 · 안 이어짐 주황) */
+var TWORD = {"진행 중":"done","보류":"chk","안 이어짐":"chk","보류 · 멈춤":"chk"};
+function tChipify(h){ return String(h).replace(/class="pill(?: (\w+))?">([^<]*)</g,function(_,c,w){ return 'class="cgg-st '+(TWORD[w]||TPILL[c]||"run")+'">'+w+'<'; })
+  .replace(/class="pill(?: (\w+))?"/g,function(_,c){ return 'class="cgg-st '+(TPILL[c]||"run")+'"'; }); }
 function tTone(t){ t=String(t||"");
   if(/실패|지남|막힘|멈|보류|꺼짐|오류|안 됨|끊|정리|기한 지남|못/.test(t)) return "stop";
   if(/확인|기다|대기|전$|입금 전|곧|남음|심사|중간/.test(t)) return "chk";
@@ -3919,7 +3925,7 @@ function tKind(c,i){
   if(/상태|^결과$|^지금$/.test(L)) return "state";
   if(c.num) return /금액|원|요금|잔액|합계|비용|캐시|달마다/.test(L)?"money":"num";
   if(/코드|번호|주문|아이디|휴대폰|사업자/.test(L)) return "id";
-  if(/시각|^때$|보낸 때|넣은 때|^언제$/.test(L)) return "id";
+  if(/시각|^때$|보낸 때|넣은 때|^언제$/.test(L)) return "time";
   if(/날$|날짜|일$|기한|기간|마지막|달치/.test(L)) return "date";
   return "text"; }
 function makeTable(o){
@@ -3938,7 +3944,8 @@ function makeTable(o){
       return {c:c,kind:k,i:i}; });
   var si=-1; cols.forEach(function(x){ if(x.kind==="state"){ if(si<0) si=x.i; else x.kind="text"; } });
   var actCols=cols.filter(function(x){ return x.kind==="act"; });
-  var shown=cols.filter(function(x){ return x.kind!=="act"; }).sort(function(a,b){ return (TRANK[a.kind]-TRANK[b.kind]) || (a.i-b.i); });
+  var shown=cols.filter(function(x){ return x.kind!=="act"; });   /* 1.13.2 와 같게 화면이 준 차례 그대로 — 이름 칸만 맨 앞(틀 고정) */
+  var nmX=shown.filter(function(x){ return x.kind==="name"; })[0]; if(nmX && shown[0]!==nmX){ shown.splice(shown.indexOf(nmX),1); shown.unshift(nmX); }
   var stateCol=si>=0?o.cols[si]:null;
   /* 폰 «이름표: 값» 칸 — 화면이 mf 를 주면 그대로, 아니면 날짜 · 금액 · 상태 칸에서 3칸까지(1.13.2 · 미리보기 11판처럼 3칸) */
   var byK={}; shown.forEach(function(x){ byK[x.c.k]=x; });
@@ -3955,13 +3962,15 @@ function makeTable(o){
             .replace(/class="btn( danger| primary)?"/g,function(_,d){ return 'class="cgg-btn sm'+(d===" danger"?" danger":"")+'"'; }); }
   function stateH(r){ var h=tChipify(cellH(stateCol,r));
     return /cgg-st/.test(h) ? h : (tStrip(h)?'<span class="cgg-st '+tTone(tStrip(h))+'">'+h+'</span>':''); }
-  function cellX(x,r){ return x.kind==="state"?stateH(r):tChipify(cellH(x.c,r)); }
+  function cellX(x,r){ var h=x.kind==="state"?stateH(r):tChipify(cellH(x.c,r)), t=tStrip(h); return (t===""||t==="-")&&!/<(button|input|select|a)\b/.test(h)?'<span class="cgg-nil">—</span>':h; }
   /* 다시 그려도 줄 버튼이 하는 일 지키기 — data-… 값이 같은 새 버튼에 그대로 */
   var MINE=/^data-(tab|k|p|q|size|msort|fp|id)$/;
   function keep(){ var m={}; Array.prototype.forEach.call(host.querySelectorAll("button,span.cgg-btn,span.btn"),function(b){ if(!b.onclick) return;
       for(var i=0;i<b.attributes.length;i++){ var a=b.attributes[i]; if(a.name.indexOf("data-")===0 && !MINE.test(a.name)){ m[a.name+"\u0001"+a.value]=b.onclick; break; } } }); return m; }
   function restore(m){ Array.prototype.forEach.call(host.querySelectorAll("button,span.cgg-btn,span.btn"),function(b){
       for(var i=0;i<b.attributes.length;i++){ var a=b.attributes[i], f=m[a.name+"\u0001"+a.value]; if(f){ b.onclick=f; break; } } }); }
+  function findPh(){ var L=(o.search||[]).map(function(k){ var c=o.cols.filter(function(x){ return x.k===k; })[0]; return c&&c.label?String(c.label):""; }).filter(function(v,i,a){ return v&&a.indexOf(v)===i; });
+    return L.length?L.slice(0,3).join(" · "):"검색"; }
   function emptyTxt(){ return esc((typeof o.empty==="function"?o.empty(o.rows||[]):o.empty)||"조건에 맞는 자료가 없어요."); }
 
   function draw(focusK){
@@ -3986,7 +3995,7 @@ function makeTable(o){
     var rid=function(r,ri){ return o.rowId ? o.rowId(r) : ri; };   /* 예전 표와 같은 값 (rowId 없으면 이 쪽 안 차례) */
     var fset=(o.filters||[]).some(function(f){ return st.f[f.k]!==undefined && st.f[f.k]!==""; });
     /* 위 한 줄 — 넓은 찾기 칸 · 상태 칩 · 거르기 알약 · «20개씩» (1.12 워시 모양) */
-    var h='<div class="cgg-ttop"><label class="cgg-find"><input id="'+o.id+'_q" data-q="1" placeholder="'+esc(o.find||"검색")+'" value="'+esc(st.q)+'" aria-label="검색"></label>'+
+    var h='<div class="cgg-ttop"><label class="cgg-find"><input id="'+o.id+'_q" data-q="1" placeholder="'+esc(o.find||findPh())+'" value="'+esc(st.q)+'" aria-label="검색"></label>'+
       (tabs?'<div class="cgg-tchips" role="group" aria-label="상태로 거르기">'+tabs.map(function(t){
         var n=base.filter(function(r){ return !t[0] || tabVal(r)===t[0]; }).length;
         return '<button type="button" class="cgg-fp'+(st.tab===t[0]?' on':'')+'" data-tab="'+esc(t[0])+'" aria-pressed="'+(st.tab===t[0])+'">'+esc(t[1])+' <b>'+n+'</b></button>'; }).join("")+'</div>':'')+
@@ -4211,9 +4220,9 @@ function viewSummary(){
                 title:t[1]+(isMemo?"":" "+String(t[0])+"건"), sub:t[2]||" "}; }),
       total:pick.length, onPick:function(i){ top3[i][3](); window.scrollTo(0,0); }, onAll:function(){ todoSheet(todos, todoBtn); }},
     kpis:[{label:"업체", value:String(Number(s.shops)||0), unit:"곳", delta:"", vs:"진행 중 "+Math.max(0,(s.shops||0)-(s.shopsOff||0))+"곳 · 보류 "+(s.shopsOff||0)+"곳"},
-      {label:"이번 달 들어온 금액", value:paid.toLocaleString("ko-KR"), unit:"원", tone:"in", delta:"", vs:"받은 비율 "+(billed?Math.round(paid/billed*100):0)+"%"},
+      {label:"이번 달 들어온 금액", value:paid.toLocaleString("ko-KR"), unit:"원", delta:"", vs:"받은 비율 "+(billed?Math.round(paid/billed*100):0)+"%"},
       {label:"이번 달 나간 금액", value:(Number(s.expMonth)||0).toLocaleString("ko-KR"), unit:"원", delta:"", vs:"남은 것 "+won(prof)},
-      {label:"못 받은 금액", value:unpaidAmt.toLocaleString("ko-KR"), unit:"원", tone:"due", zeroMuted:true, delta:"", vs:unpaid.length?("입금 대기 "+unpaid.length+"건"):"없어요"}],
+      {label:"못 받은 금액", value:unpaidAmt.toLocaleString("ko-KR"), unit:"원", delta:"", vs:unpaid.length?("입금 대기 "+unpaid.length+"건"):"없어요"}],
     cal:{y:Y, m:M, today:(Y===now.getFullYear()&&M===now.getMonth()+1)?now.getDate():0, days:days,
       legend:[["w","유지비 결제일","chk"],["b","업체 이용 기한","run"],["r","체험 끝","stop"],["m","할 일","done"]], amtLabel:"그날 유지비",
       onMove:function(n){ if(n===0) CALM=null; else CALM=new Date(CALM.getFullYear(), CALM.getMonth()+n, 1); render(); },
@@ -4392,8 +4401,11 @@ function viewShops(){
   $("main").innerHTML =
     '<div class="dashhead"><h2>업체 관리</h2>'+
     '<div class="sub2">줄을 누르면 고칠 수 있어요. 차곳간 본사 계정은 목록에서 빼 두었어요.</div></div>'+
-    '<div id="tShops"></div>';
+    '<div id="shK"></div><div id="tShops"></div>';
   var rows = (D.shops||[]).filter(function(s){ return s.shop!=="ADMIN"; });
+  var shOff=rows.filter(function(r){ return r.active===false; }).length, shOut=rows.filter(function(r){ var u=usageOf(r); return u.smsLeft===0; }).length;
+  CGG.kpis($("shK"),[{label:"업체",value:String(rows.length),unit:"곳"},{label:"진행 중",value:String(rows.length-shOff),unit:"곳",tone:"in"},
+    {label:"보류",value:String(shOff),unit:"곳",tone:"due",zeroMuted:true},{label:"문자 다 씀",value:String(shOut),unit:"곳",tone:"stop",zeroMuted:true}]);
   makeTable({
     id:"tShops", rows:rows, search:["name","shop","owner_phone"], mf:["plan","endAt","active"],
     sortKey:"name", rowId:function(r){ return r.shop; },
@@ -4633,7 +4645,7 @@ function viewUsers(){
     '<div class="sub2">모든 업체의 대표·직원 계정이에요. 줄을 누르면 고칠 수 있어요.</div></div>'+
     '<div id="tUsers"></div>';
   makeTable({
-    id:"tUsers", rows:(D.users||[]).slice(), search:["name","phone","shopName"], mf:["shopName","role","active"],
+    id:"tUsers", rows:(D.users||[]).slice(), search:["name","phone","shopName"], mf:["active","last_login","created_at"],
     sortKey:"shopName", rowId:function(r){ return r.phone; },
     onRow:function(ph){ userSheet(ph); },
     filters:[
@@ -5341,7 +5353,7 @@ function cashDraw(){
       return '<tr><td class="c-name" style="left:0">'+esc(r[1])+'</td>'+
         '<td class="num"><input type="number" id="pr_'+r[0]+'" value="'+v+'" style="width:110px;text-align:right"></td>'+
         '<td class="num">'+won(r[2])+'</td>'+
-        '<td class="num" style="color:var(--ok);font-weight:700">'+won(v-r[2])+'</td></tr>';
+        '<td class="num" style="color:'+(v-r[2]<0?"var(--stop)":"var(--done)")+';font-weight:700">'+won(v-r[2])+'</td></tr>';
     }).join("")+'</tbody></table></div>'+
     '<div class="saveRow"><button class="btn primary sm" id="prSave">단가 저장</button>'+
     '<span class="cnt">알림톡은 사진문자의 8분의 1이에요 — 연결하면 원가가 크게 내려가요</span></div></div>';
@@ -6082,7 +6094,7 @@ function viewMe(){
     '<div class="sub2">아이디나 비밀번호를 바꾸면 모든 기기에서 로그아웃되고 다시 로그인해야 해요.</div></div>'+
     '<div class="card">'+
       '<label class="f">지금 아이디</label><input type="text" value="'+esc(me.who||"")+'" disabled>'+
-      '<div class="hint">이름 '+esc(me.name||"")+' · 자리 '+esc(me.shop||"")+'</div>'+
+      '<div class="hint">이름 '+esc(me.name||"")+' · '+esc(me.shop==="ADMIN"?"본사 관리자":(me.shop||""))+'</div>'+
     '</div>'+
     '<div class="card">'+
       '<label class="f">새 아이디 (안 바꾸려면 비워 두세요)</label>'+
@@ -6123,7 +6135,7 @@ function viewSvc(){
     '</div><div id="tSvc"></div>';
   $("main").innerHTML = h;
   makeTable({
-    id:"tSvc", rows:list, search:["name","what","code"], sortKey:"sort",
+    id:"tSvc", rows:list, search:["name","what","code"], sortKey:"sort", mf:["balance","next_due","_st"],
     rowId:function(r){ return r.code; }, onRow:function(code){ svcSheet(code); },
     cols:[
       {k:"name", label:"서비스", w:170, stick:true, html:function(r){ return '<b>'+esc(r.name)+'</b>'; }},
@@ -6655,7 +6667,7 @@ function taxSheet(code,payId){
     var real = D.hq && D.hq.pb_test===false;
     if(taxPaid(pay.id)) return toast("이 결제로는 이미 세금계산서를 보냈어요",true);
     confirmBox("세금계산서를 보낼까요?",
-      "받는 곳: "+sh.name+(sh.biz_no?" ("+bizFmt(sh.biz_no)+")":"")+"\n건수: 1장\n합계: "+won(total)+" (공급가액 "+won(supply)+" + 부가세 "+won(total-supply)+")"+
+      "누구에게: "+sh.name+(sh.biz_no?" ("+bizFmt(sh.biz_no)+")":"")+"\n몇 건: 1장\n얼마: "+won(total)+" (공급가액 "+won(supply)+" + 부가세 "+won(total-supply)+")"+
       "\n결제: "+String(pay.id)+" · "+(per||"-")+"\n방식: "+(real?"실제 발행 — 국세청으로 바로 가요":"시험 발행 — 국세청에는 가지 않아요"),
       "보내기", real, function(){
       taxSend(sh,code,{ payId:String(pay.id), amount:supply, period:per, itemName:item, memo:memo });
@@ -7277,7 +7289,7 @@ function ataDraw(){
       ATA_LIST.map(function(x){
         var code=String(ATA.tpls[x[0]]||"");
         return '<tr><td class="c-name">'+esc(x[1])+'</td><td>'+esc(x[2])+'</td>'+
-          '<td class="mid"><span class="pill '+(x[3]==="통과"?"ok":"wait")+'">'+(x[3]==="통과"?"완료":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))+'</span></td>'+
+          '<td class="mid"><span class="pill '+(x[3]==="통과"?"ok":"wait")+'">'+(x[3]==="통과"?"통과":(x[3]==="심사 대기"||x[3]==="등록 전"?x[3]:"확인 필요"))+'</span></td>'+
           '<td><input type="text" data-ata="'+x[0]+'" value="'+esc(code)+'" placeholder="비어 있음" style="height:36px;font-size:13.5px;font-family:ui-monospace,monospace"></td>'+
           '<td class="mid" data-ataway="'+x[0]+'">'+ataWay(code,x[0])+'</td></tr>'; }).join("")+
       '</tbody></table></div>'+
@@ -8095,7 +8107,7 @@ function hdrFill(){
     find:{mode:"nav", feats:FEATS, onGo:goFeat},
     notice:function(){ jgo("noti"); }, help:helpSheet, link:copyLink, refresh:function(){ $("btnReload").click(); },
     /* 자동 새로고침 · 저장 표시는 관리에 없던 기능이라 넣지 않아요 (요청서 ① — 새 기능 없음) */
-    me:{name:WHO.name||"관리자", role:WHO.role, sub:"본사 관리자", items:function(){ return [
+    me:{name:WHO.name||"관리자", role:WHO.role, sub:"마이페이지 · 화면 설정", items:function(){ return [
       {key:"me",icon:"user",label:"마이페이지",note:"관리자 계정"}, "-",
       {key:"lay",icon:"pc",label:"화면 설정",note:CGG.layout.name()}, "-",
       {key:"out",icon:"out",label:"로그아웃"}]; },
@@ -8238,7 +8250,17 @@ function addCrumb(){
     (c.tagName==="BUTTON"||c.classList.contains("btns")?acts:hello).appendChild(c); });
   dh.innerHTML=""; dh.classList.add("cgg-head"); dh.appendChild(hello); if(acts.children.length) dh.appendChild(acts);
 }
+function kpiFix(){
+  Array.prototype.forEach.call($("main").querySelectorAll(".opsTop,.secTop,.ntSum"),function(box){
+    var items=Array.prototype.map.call(box.children,function(k){
+      var t=k.querySelector(".t,span"), v=k.querySelector(".v,b"), x=k.querySelector(".s");
+      var lab=t?t.textContent.trim():"", val=v?v.textContent.trim():"";
+      return {label:lab, value:val, unit:"", delta:x?"":null, vs:x?x.textContent.trim():"",
+        tone:k.classList.contains("warn")?(/위험/.test(lab)?"stop":"due"):"", zeroMuted:true}; });
+    var el=document.createElement("div"); box.parentNode.replaceChild(el,box); CGG.kpis(el,items); });
+}
 try{ new MutationObserver(addCrumb).observe($("main"),{childList:true}); }catch(e){}
+try{ new MutationObserver(function(){ if($("main").querySelector(".opsTop,.secTop,.ntSum")) kpiFix(); }).observe($("main"),{childList:true,subtree:true}); }catch(e){}
 
 
 /* 이미 로그인해 둔 기기라면 바로 들어갑니다 */
