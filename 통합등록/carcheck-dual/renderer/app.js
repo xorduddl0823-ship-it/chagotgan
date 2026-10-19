@@ -537,6 +537,12 @@ function askAuto(title, text) {
   });
 }
 
+/** 엔트리 연결 모듈이 아직 없으면 확인 창에 분명히 적는다(8차 검수) */
+async function entryNotReady() {
+  try { const s = await window.api.flow.status(); if (s && s.ok && s.entryImplemented) return ''; } catch {}
+  return ' ※ 엔트리 자동 등록은 아직 준비 중이에요 — 카인포·경기조합(카모두)까지 하고 멈춰요. 엔트리는 직접 등록해 주세요.';
+}
+
 async function autoRegister(resumeJobId) {
   const { data, required } = collect();
   if (!resumeJobId && required.length) {
@@ -545,7 +551,7 @@ async function autoRegister(resumeJobId) {
   }
   const go = resumeJobId
     ? await askAuto('멈춘 곳부터 이어서 등록할까요?', '작업 번호 ' + resumeJobId + ' · 차량 ' + (data.carNo || '-') + ' · 이미 등록된 곳은 다시 등록하지 않아요.')
-    : await askAuto('세 전산에 등록할까요?', '차량 ' + data.carNo + ' · 1대 · 카인포 → 카모두 → 엔트리 3곳에 차례로 등록해요.');
+    : await askAuto('세 전산에 등록할까요?', '차량 ' + data.carNo + ' · 1대 · 카인포 → 경기조합(카모두) → 엔트리 3곳에 차례로 등록해요.' + (await entryNotReady()));
   if (!go) return;
   window.api.flow.onProgress(autoProgress);
   busy('세 전산 자동 등록을 시작해요…');
@@ -636,11 +642,11 @@ function showAutoStop(res) {
  *  고른 전산 창에서 평소처럼 눌러 보면, 저장·신규등록·사진 요청은 서버로 가지 않고 «무슨 주소·무슨 칸 이름»만 기록된다. */
 let diagSite = null;
 let diagNote = '';      // 상태 줄에 잠깐 보일 말(실패·기록 결과) — 없으면 기본 안내
-const DIAG_NAME = { carinfo: '카인포', carmodoo: '카모두', entry: '엔트리' };
+const DIAG_NAME = { carinfo: '카인포', carmodoo: '경기조합', entry: '엔트리' };   // 위쪽 단추 이름과 같게
 function diagUi() {
   $('#diag-snap').disabled = !diagSite;
   $('#diag-stop').disabled = !diagSite;
-  document.querySelectorAll('.diag-sites button').forEach((b) => { b.disabled = !!diagSite; });
+  document.querySelectorAll('.diag-sites button').forEach((b) => { b.disabled = !!diagSite; });   // 엔트리 창 열기 포함
   $('#diag-entry-url').disabled = !!diagSite;              // 진단 중에는 주소를 바꿔도 반영되지 않으므로 잠금
   //  창을 닫아도 진단 중인 것이 보이게 — 아래 단추 글자·색을 바꾸고, 보내기 단추는 끈다
   $('#btn-diag').textContent = diagSite ? '전산 진단 중 (' + DIAG_NAME[diagSite] + ') · 눌러서 열기' : '전산 진단 (저장 안 함)';
@@ -648,8 +654,8 @@ function diagUi() {
   ['#btn-send-cm', '#btn-send-ci', '#btn-send-all', '#btn-auto'].forEach((q) => { const b = $(q); if (b) b.disabled = !!diagSite; });
   $('#diag-state').textContent = diagNote || (diagSite
     ? DIAG_NAME[diagSite] + ' 진단 중이에요. ' + DIAG_NAME[diagSite] + ' 창에서 ' + (diagSite === 'entry' ? '로그인(문자 인증)한 뒤 ' : '') +
-      '보고 싶은 화면을 열 때마다 [지금 화면 칸 기록]을 눌러 주세요. [저장]을 눌러도 저장되지 않아요.'
-    : '진단할 전산을 골라 주세요.');
+      '보고 싶은 화면을 열 때마다 [지금 화면 칸 기록]을 눌러 주세요. [저장]은 누르지 마세요.'
+    : '진단할 전산 창을 먼저 열고 로그인한 뒤 [진단 시작]을 눌러 주세요(창은 [닫기] 뒤 맨 위 [카인포 창]·[경기조합 창] 단추로 열어요). 엔트리는 [엔트리 창 열기]로 로그인(문자 인증)부터 해요.');
 }
 /** 진단 단추를 누르는 동안 전부 끄고, 끝나면(오류여도) 다시 맞춤 — 두 번 눌러 꼬이지 않게 */
 async function diagBusy(fn) {
@@ -664,7 +670,16 @@ function initDiag() {
     $('#diag').classList.remove('hidden');
   });
   $('#diag-close').addEventListener('click', () => $('#diag').classList.add('hidden'));
-  document.querySelectorAll('.diag-sites button').forEach((b) => b.addEventListener('click', () => diagBusy(async () => {
+  //  진단이 스스로 멈춘 경우(막는 장치가 붙지 않은 창 등) — 알림을 받아 결과를 보여 준다
+  window.api.diag.onAborted((r) => { diagSite = null; diagNote = ''; diagUi(); $('#diag').classList.add('hidden'); diagReport(r); });
+  $('#diag-open-entry').addEventListener('click', () => diagBusy(async () => {
+    const url = $('#diag-entry-url').value.trim();
+    if (!/^https:\/\//.test(url)) { diagNote = '엔트리 주소를 https:// 로 시작하게 넣어 주세요.'; return; }
+    try { const c = (await window.api.getConfig()) || {}; await window.api.setConfig({ ...c, entryUrl: url }); } catch { diagNote = '엔트리 주소를 저장하지 못했어요.'; return; }
+    const r = await window.api.diag.openEntry();
+    diagNote = r && r.ok ? '엔트리 창을 열었어요. 그 창에서 로그인(문자 인증)한 뒤 [엔트리 진단 시작]을 눌러 주세요.' : '엔트리 창을 열지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭');
+  }));
+  document.querySelectorAll('.diag-sites button[data-site]').forEach((b) => b.addEventListener('click', () => diagBusy(async () => {
     //  엔트리 주소는 이 칸에 넣은 것을 설정에 저장해 쓴다(파일을 직접 고치지 않아도 되게)
     if (b.dataset.site === 'entry') {
       const url = $('#diag-entry-url').value.trim();
@@ -690,17 +705,27 @@ function initDiag() {
     diagSite = null;
     diagNote = '';
     $('#diag').classList.add('hidden');
-    if (!r || !r.ok) { report('전산 진단', [{ ok: false, title: '진단 기록을 남기지 못했어요', note: (r && r.error) || '' }]); return; }
-    report('전산 진단 끝', [{
-      ok: true,
-      title: DIAG_NAME[site] + ' — 서버로 보내지 않고 기록만 했어요',
-      lists: [
-        { title: '서버로 안 보내고 막은 요청', items: r.heldPaths.length ? r.heldPaths : ['없음'], cls: 'muted' },
-        { title: '기록', items: ['막은 요청 ' + r.held + '건 · 화면 칸 기록 ' + r.snaps + '번', r.file], cls: 'muted', noCount: true },
-      ],
-      note: '이 기록 파일을 방에 보내 주세요. 값(차량번호·이름)은 들어 있지 않아요.',
-    }]);
+    diagReport(r);
   }));
+}
+
+/** 진단 결과 보고 — 정상 끝 · 스스로 멈춤 · 개인정보가 남아 파일을 안 만듦 */
+function diagReport(r) {
+  r = r || {};
+  const name = DIAG_NAME[r.site] || '전산';
+  const masked = Object.entries(r.masked || {}).map(([k, n]) => k + ' ' + n + '건');
+  const left = Object.entries(r.left || {}).map(([k, n]) => k + ' ' + n + '건');
+  report(r.aborted ? '전산 진단 중단' : '전산 진단 끝', [{
+    ok: !!r.ok && !r.aborted,
+    tone: r.ok && !r.aborted ? 'ok' : 'warn',
+    title: r.aborted ? name + ' — 진단을 멈췄어요: ' + r.aborted : r.ok ? name + ' — 서버로 보내지 않고 기록만 했어요' : name + ' — ' + (r.error || '진단 기록을 남기지 못했어요'),
+    lists: [
+      { title: '서버로 안 보내고 막은 요청', items: (r.heldPaths || []).length ? r.heldPaths : ['없음'], cls: 'muted' },
+      { title: '개인정보 검사', items: ['가린 것: ' + (masked.join(' · ') || '없음'), '남은 것: ' + (left.join(' · ') || '없음')], cls: left.length ? 'warn' : 'muted', noCount: true },
+      { title: '기록', items: ['막은 요청 ' + (r.held || 0) + '건 · 화면 칸 기록 ' + (r.snaps || 0) + '번', r.file || '기록 파일 없음'], cls: 'muted', noCount: true },
+    ],
+    note: r.file ? '이 기록 파일을 방에 보내 주세요. 개인정보는 가리고 다시 검사했어요.' : '기록 파일은 만들지 않았어요.',
+  }]);
 }
 
 /* ───────────────────────── 시작 ───────────────────────── */

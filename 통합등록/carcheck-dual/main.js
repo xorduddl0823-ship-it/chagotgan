@@ -2216,7 +2216,7 @@ function flow() {
                                           tradePersonal: String(data.tradeType || '0') === '1', clientName: data.clientName, hp: data.dealerHp }),
   });
   const siteConfirmed = { carinfo: C.carinfo.confirmed, carmodoo: C.carmodoo.confirmed, entry: C.entry.confirmed };
-  flowCtx = { admin, jobLog, flow: createRegisterFlow({ jobLog, adapters, siteConfirmed }) };
+  flowCtx = { admin, jobLog, adapters, flow: createRegisterFlow({ jobLog, adapters, siteConfirmed }) };
   return flowCtx;
 }
 
@@ -2256,38 +2256,44 @@ ipcMain.handle('flow:releaseAfterForce', flowCall((a) => {
   return { ok: true };
 }));
 
-/* ─────────── 전산 진단 (8차 · 설정 diagnose:true 일 때만) ───────────
- *  실제 전산 화면에서 «무엇을 누르면 어느 주소로 무슨 칸 이름이 가는지»와 화면 요소(단추·칸·표 머리글)를 기록한다.
- *  진단하는 동안 그 전산 창(과 팝업)의 쓰기 요청은 «하나도» 서버로 가지 않는다(src/sites/diag-recorder.js · 모의 시험으로 확인).
- *  값(차량번호·이름 등)은 기록하지 않는다. 기록은 기록 폴더의 diag 안 파일로만 남는다. */
-const { createDiagRecorder, ELEMENTS_EXPR, PAGE_EXPR } = require('./src/sites/diag-recorder');
-const { attachSaveHold } = require('./src/sites/save-hold');
-const diagState = {};                                    // site → { rec, hold, win, snaps, startedAt }
+/* ─────────── 전산 진단 (8차 · 검수 보완 · 설정 diagnose:true 일 때만) ───────────
+ *  실제 전산 화면에서 «무엇을 누르면 어느 주소로 무슨 칸 이름이 가는지»와 화면 구조를 기록한다.
+ *  진단 중에는 그 전산 세션 전체(본 창·팝업·iframe)에서 «안전한 조회»만 나간다 — 두 겹 막기(src/sites/diag-session.js).
+ *  막는 장치가 붙지 않은 창이 생기면 진단을 중단한다. 파일에 쓰기 전에 개인정보를 가리고 다시 검사해, 남아 있으면 파일을 만들지 않는다.
+ *  로그인(문자 인증)은 진단 «전»에 사람이 한다 — 진단 중에는 로그인 요청도 막히므로. */
+const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag } = require('./src/sites/diag-recorder');
+const { startDiagSession } = require('./src/sites/diag-session');
+const diagState = {};                                    // site → { rec, ds, win, snaps, startedAt }
 
-/** 엔트리 창 — 기존 프로그램에는 엔트리 창이 없어 진단 때만 연다(주소는 설정 entryUrl) */
-function diagEntryWindow() {
+/** 엔트리 창 — 기존 프로그램에는 엔트리 창이 없어 진단 때만 연다(주소는 설정 entryUrl). 로그인용으로 먼저 연다(막기 없음) */
+function diagEntryWindow(open) {
+  if (windows.entry && !windows.entry.isDestroyed()) { if (open) windows.entry.show(); return windows.entry; }
+  if (!open) return null;
   const url = String(loadConfig().entryUrl || '').trim();
-  if (!/^https:\/\//.test(url)) throw new Error('엔트리 주소가 아직 설정에 없어요. 방에 엔트리 주소를 알려 주시면 넣어 드릴게요.');
-  if (windows.entry && !windows.entry.isDestroyed()) { windows.entry.show(); return windows.entry; }
-  const win = new BrowserWindow({ width: 1300, height: 900, title: '엔트리 (진단)', webPreferences: { partition: 'persist:entry', contextIsolation: true, nodeIntegration: false } });
-  win.webContents.setWindowOpenHandler(() => ({ action: 'allow' }));      // 팝업은 진짜 창으로 — 진단 기록기가 팝업에도 붙음
+  if (!/^https:\/\//.test(url)) throw new Error('엔트리 주소가 아직 설정에 없어요. 진단 창의 «엔트리 주소» 칸에 넣어 주세요.');
+  const win = new BrowserWindow({ width: 1300, height: 900, title: '엔트리 (진단용)', webPreferences: { partition: 'persist:entry', contextIsolation: true, nodeIntegration: false } });
+  try { win.webContents.session.setPermissionRequestHandler((_wc, _perm, cb) => cb(false)); } catch {}
+  win.webContents.setWindowOpenHandler(() => ({ action: 'allow' }));      // 팝업은 같은 세션의 진짜 창으로 — 두 겹 막기가 다 걸림
   win.loadURL(url).catch(() => {});
   windows.entry = win;
   return win;
 }
+function diagHosts(site) {
+  if (site === 'entry') { try { return [new URL(String(loadConfig().entryUrl || '')).host]; } catch { return []; } }
+  return (siteConfig.REAL[site] || {}).hosts || [];
+}
 
-async function diagSnap(site) {
-  const d = diagState[site];
-  const wins = [d.win].concat(site !== 'entry' && sitePopup(site) ? [sitePopup(site)] : []);
+async function diagSnap(d) {
+  const wins = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && w !== windows.main && w.webContents.session === d.win.webContents.session);
   const frames = [];
+  const expr = pageExpr({ includeCode: loadConfig().diagScripts === true });     // 코드 파일 내용은 기본으로 받지 않음
   for (const w of wins) {
     let list = [];
     try { list = [w.webContents.mainFrame].concat((w.webContents.mainFrame.framesInSubtree || []).filter((f) => f !== w.webContents.mainFrame)); } catch {}
     for (const f of list) {
       try {
         const el = await f.executeJavaScript(ELEMENTS_EXPR, true);
-        //  화면 뼈대(값 지움)와 사이트 코드 파일 — 대표님이 로그인한 뒤 방이 화면 구성·작동 방식을 보려고(8차 보강)
-        try { el.page = await f.executeJavaScript(PAGE_EXPR, true); } catch (e) { el.page = { error: String(e && e.message || e) }; }
+        try { el.page = await f.executeJavaScript(expr, true); } catch (e) { el.page = { error: String((e && e.message) || e) }; }
         frames.push(el);
       } catch {}
     }
@@ -2296,6 +2302,38 @@ async function diagSnap(site) {
   return d.snaps.length;
 }
 
+/** 진단 끝내기(정상·중단 공통) — 막기를 풀기 «전»에 같은 세션의 팝업은 닫는다 → 가리기 → 검사 → 파일 */
+async function diagFinish(site, abortedWhy) {
+  const d = diagState[site];
+  if (!d) return { ok: false, error: '진단 중이 아니에요.' };
+  delete diagState[site];
+  if (!abortedWhy) { try { await diagSnap(d); } catch {} }
+  BrowserWindow.getAllWindows().forEach((w) => {
+    if (!w.isDestroyed() && w !== d.win && w !== windows.main && w.webContents.session === d.win.webContents.session) { try { w.close(); } catch {} }
+  });
+  await d.ds.stop();
+  const raw = { site, startedAt: d.startedAt, endedAt: new Date().toISOString(), aborted: abortedWhy || null, requests: d.rec.summary(), snaps: d.snaps };
+  const { data, masked } = maskDiag(raw);
+  const text = JSON.stringify(data, null, 1);
+  const left = checkDiag(text);
+  const sum = d.rec.summary();
+  const base = { site, aborted: abortedWhy || null, held: sum.held, passed: sum.passed, snaps: d.snaps.length, masked,
+                 heldPaths: [...new Set(data.requests.entries.filter((e) => /^막음/.test(e.verdict)).map((e) => e.method + ' ' + e.path))].slice(0, 20) };
+  if (Object.keys(left).length) return { ok: false, ...base, left, error: '개인정보로 보이는 글자가 남아 있어 기록 파일을 만들지 않았어요.' };
+  const dir = userFile('diag');
+  fs.mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
+  const file = path.join(dir, 'diag-' + site + '-' + stamp + '.json');
+  fs.writeFileSync(file, text);
+  return { ok: true, ...base, file };
+}
+
+ipcMain.handle('diag:openEntry', flowCall(async () => {
+  if (loadConfig().diagnose !== true) return { ok: false, error: '진단 기능이 꺼져 있어요.' };
+  if (diagState.entry) return { ok: false, error: '엔트리는 지금 진단 중이에요.' };
+  diagEntryWindow(true);
+  return { ok: true };
+}));
 ipcMain.handle('diag:start', flowCall(async (a) => {
   if (loadConfig().diagnose !== true) return { ok: false, error: '진단 기능이 꺼져 있어요.' };
   const site = a.site;
@@ -2303,32 +2341,32 @@ ipcMain.handle('diag:start', flowCall(async (a) => {
   if (Object.keys(diagState).length) return { ok: false, error: '이미 진단 중인 전산이 있어요. 한 번에 한 전산만 진단해요.' };
   const b = site === 'entry' ? null : legacyBlock(site);
   if (b) return { ok: false, error: b };
-  const win = site === 'entry' ? diagEntryWindow() : siteWindow(site, 'user');
-  const rec = createDiagRecorder({ siteHosts: (siteConfig.REAL[site] || {}).hosts });
-  const hold = attachSaveHold(win, rec, { name: 'diag-' + site });
-  if (!(await hold.ready)) { try { await hold.detach(); } catch {} return { ok: false, error: '요청을 붙잡는 장치를 켜지 못해서 진단을 시작하지 않았어요. 프로그램을 다시 켠 뒤 해 주세요.' }; }
-  diagState[site] = { rec, hold, win, snaps: [], startedAt: new Date().toISOString() };
+  const hosts = diagHosts(site);
+  if (!hosts.length) return { ok: false, error: '이 전산의 주소를 몰라 진단하지 않아요.' };
+  const win = site === 'entry' ? diagEntryWindow(false) : (windows[site] && !windows[site].isDestroyed() ? windows[site] : null);
+  if (!win) return { ok: false, error: (site === 'entry' ? '먼저 [엔트리 창 열기]로 엔트리에 로그인해 주세요.' : '먼저 맨 위 [' + ({ carinfo: '카인포', carmodoo: '경기조합' })[site] + ' 창] 단추로 창을 열고 로그인해 주세요.') };
+  const rec = createDiagRecorder({ siteHosts: hosts });
+  const st = { rec, win, snaps: [], startedAt: new Date().toISOString() };
+  st.ds = startDiagSession({ win, rec, onAbort: (why) => {
+    diagFinish(site, why).then((r) => {
+      if (r && r.ok === false && /진단 중이 아니에요/.test(r.error || '')) return;   // 이미 [진단 끝]으로 마무리 중이면 보내지 않음
+      try { windows.main && !windows.main.isDestroyed() && windows.main.webContents.send('diag:aborted', { ...r, reason: why }); } catch {}
+    });
+  } });
+  diagState[site] = st;
+  if (!(await st.ds.ready)) {
+    delete diagState[site];
+    return { ok: false, error: '요청을 막는 장치를 켜지 못해서 진단을 시작하지 않았어요. 프로그램을 다시 켠 뒤 해 주세요.' };
+  }
   return { ok: true };
 }));
 ipcMain.handle('diag:snap', flowCall(async (a) => {
   if (!diagState[a.site]) return { ok: false, error: '진단 중이 아니에요.' };
-  return { ok: true, snaps: await diagSnap(a.site) };
+  return { ok: true, snaps: await diagSnap(diagState[a.site]) };
 }));
-ipcMain.handle('diag:stop', flowCall(async (a) => {
-  const d = diagState[a.site];
-  if (!d) return { ok: false, error: '진단 중이 아니에요.' };
-  try { await diagSnap(a.site); } catch {}
-  try { await d.hold.detach(); } catch {}
-  delete diagState[a.site];
-  const sum = d.rec.summary();
-  const dir = userFile('diag');
-  fs.mkdirSync(dir, { recursive: true });
-  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
-  const file = path.join(dir, 'diag-' + a.site + '-' + stamp + '.json');
-  fs.writeFileSync(file, JSON.stringify({ site: a.site, startedAt: d.startedAt, endedAt: new Date().toISOString(), requests: sum, snaps: d.snaps }, null, 1));
-  return { ok: true, file, held: sum.held, passed: sum.passed, snaps: d.snaps.length,
-           heldPaths: [...new Set(sum.entries.filter((e) => /붙잡음/.test(e.verdict)).map((e) => e.method + ' ' + e.path))].slice(0, 20) };
-}));
+ipcMain.handle('diag:stop', flowCall(async (a) => diagFinish(a.site, null)));
+//  자동 등록 화면 안내용 — 엔트리 연결 모듈이 있는지(지금은 없음)
+ipcMain.handle('flow:status', flowCall(async () => { let impl = false; try { impl = !!flow().adapters.entry.implemented; } catch {} return { ok: true, entryImplemented: impl }; }));
 
 /*  시험용 실행(CARCHECK_SMOKE=1): 실제 기록 폴더를 건드리지 않게 임시 폴더를 쓰고, 입력 화면이 뜨면 끝낸다 */
 if (process.env.CARCHECK_SMOKE === '1') {
@@ -2358,7 +2396,11 @@ if (process.env.CARCHECK_SMOKE === '1') {
         //  [전산 진단] → 카인포 진단 시작 → 진단 끝 — 실제 전산 주소는 막아 둔 주소라 접속 없음
         const wc = windows.main.webContents;
         const shown = await wc.executeJavaScript('!document.getElementById("btn-diag").classList.contains("hidden")', true);
-        await wc.executeJavaScript('document.getElementById("btn-diag").click();document.querySelector(".diag-sites button[data-site=carinfo]").click();1', true);
+        //  진단은 그 전산 창을 먼저 연 뒤에만 시작된다(8차 검수 보완) — 창 열기 → 진단 시작
+        await wc.executeJavaScript('window.api.openSite("carinfo").then(function(){return 1})', true).catch(() => {});
+        await wc.executeJavaScript('document.getElementById("btn-diag").click();1', true);
+        await new Promise((r) => setTimeout(r, 300));
+        await wc.executeJavaScript('document.querySelector(".diag-sites button[data-site=carinfo]").click();1', true);
         let st = '';
         for (let i = 0; i < 40 && !/진단 중/.test(st); i++) { await new Promise((r) => setTimeout(r, 250)); st = await wc.executeJavaScript('document.getElementById("diag-state").textContent', true); }
         await wc.executeJavaScript('document.getElementById("diag-stop").click();1', true);

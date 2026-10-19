@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('api', {
     finish:       (o) => ipcRenderer.invoke('flow:finish', o),
     resume:       ()  => ipcRenderer.invoke('flow:resume'),
     runAll:       (o) => ipcRenderer.invoke('flow:runAll', o),
+    status:       ()  => ipcRenderer.invoke('flow:status'),
     onProgress:   (fn) => { ipcRenderer.removeAllListeners('flow:progress'); ipcRenderer.on('flow:progress', (_e, info) => fn(info)); },
     forceClose:   (o) => ipcRenderer.invoke('flow:forceClose', o),
     releaseAfterForce: (o) => ipcRenderer.invoke('flow:releaseAfterForce', o),
@@ -62,8 +63,10 @@ contextBridge.exposeInMainWorld('api', {
   },
   //  전산 진단(8차 · 설정 diagnose 가 켜졌을 때만) — 저장 요청을 서버로 보내지 않고 기록만
   diag: {
+    openEntry: () => ipcRenderer.invoke('diag:openEntry'),
     start: (site) => ipcRenderer.invoke('diag:start', { site }),
     snap:  (site) => ipcRenderer.invoke('diag:snap', { site }),
     stop:  (site) => ipcRenderer.invoke('diag:stop', { site }),
+    onAborted: (fn) => { ipcRenderer.removeAllListeners('diag:aborted'); ipcRenderer.on('diag:aborted', (_e, r) => fn(r)); },
   },
 });

@@ -78,6 +78,23 @@ function createMockSites() {
       const row = S.carinfo.find((r) => r[0] === entryNext()) || [];
       return send(200, 'application/json', JSON.stringify({ logged: !S.faults.entryLoggedOut, next: entryNext(), row }));
     }
+    //  (8차 검수 보완) GET 으로 바꾸는 요청 흉내 — 닿으면 S.getWrites 가 늘어남
+    if (/^\/api\/(update|delete|insert)/.test(u.pathname) || u.searchParams.get('cmd') === 'save') { S.getWrites = (S.getWrites || 0) + 1; return send(200, 'application/json', '{"ok":true}'); }
+    //  iframe 흉내 — 같은 주소 iframe(열리자마자 저장 POST) + 다른 주소 iframe(열리자마자 폼 POST)
+    if (u.pathname === '/framepage') {
+      return send(200, 'text/html', page('iframe 흉내', '<iframe id=f1 src="/frame-inner"></iframe><iframe id=f2 src="FOREIGN/upload"></iframe>', ''));
+    }
+    if (u.pathname === '/frame-inner') {
+      return send(200, 'text/html', page('안쪽', '<div id=r></div>', 'fetch("/api/save",{method:"POST",body:JSON.stringify({site:"carinfo",carNo:"F1"})}).then(function(){r.textContent="sent"}).catch(function(){r.textContent="blocked"});'));
+    }
+    //  개인정보가 잔뜩 든 화면 흉내(값은 모두 가짜) — 진단 파일에 남으면 안 됨
+    if (u.pathname === '/pii') {
+      return send(200, 'text/html', '<!doctype html><meta charset="utf-8"><title>담당 010-5555-1234</title><body>' +
+        '<h2>차량 98다7654 상세</h2><button id="b1" data-hp="010-2222-3333">98다7654 저장</button>' +
+        '<input id="vin" value="KMHXX00XXXX765432" placeholder="010-3333-4444"><label for="vin">KMHXX00XXXX765432</label>' +
+        '<a href="/detail?carNo=98%EB%8B%A47654&hp=01022223333">보기</a><table><thead><tr><th>번호 2628601111</th></tr></thead><tbody><tr><td>홍길동 010-7777-8888</td></tr></tbody></table>' +
+        '<script>var who="lty0823";var hp="010-9999-0000";</script><a href="/api/list?site=carinfo&carNo=98%EB%8B%A47654">목록</a></body>');
+    }
     if (u.pathname === '/upload' && req.method === 'POST') { S.saves.foreign = (S.saves.foreign || 0) + 1; return send(200, 'text/plain', 'ok'); }
     if (u.pathname === '/upload') {
       return send(200, 'text/html', page('upload', '<form id=f method=post action="/upload"><input name=a value=1></form>', 'document.getElementById("f").submit();'));

@@ -13,8 +13,8 @@ const { createRegisterFlow } = require('../../src/core/register-flow');
 const { createElectronAdapters } = require('../../src/sites/flow-adapters');
 const { mockConfig } = require('../../src/sites/site-config');
 const quiet = require('../../src/sites/quiet-window');
-const { createDiagRecorder, ELEMENTS_EXPR } = require('../../src/sites/diag-recorder');
-const { attachSaveHold } = require('../../src/sites/save-hold');
+const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag } = require('../../src/sites/diag-recorder');
+const { startDiagSession } = require('../../src/sites/diag-session');
 
 app.commandLine.appendSwitch('disable-gpu');
 const CAR = { carNo: '12가3456', vin: 'KMHXX00XXXX123456' };
@@ -324,27 +324,111 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
-  await scenario('(8차) 전산 진단: 기록기가 붙은 창에서 [저장]·[신규등록]·사진·팝업 저장·다른 주소 저장을 눌러도 서버에 하나도 안 닿고, 값 없이 주소·칸 이름만 기록 · 화면 요소 목록', async () => {
+  //  ── 8차 검수 보완: 진단 두 겹 막기 (모의 서버에서만 · 실제 차량 자료 없음) ──
+  const diagOn = async (t, win, extra = {}) => {
+    const rec = createDiagRecorder({ siteHosts: [t.M.host] });
+    const aborts = [];
+    const ds = startDiagSession({ win, rec, onAbort: (w) => aborts.push(w), ...extra });
+    return { rec, ds, aborts, ok: await ds.ready };
+  };
+
+  await scenario('(검수) 진단 중 [저장]·[신규등록]·사진·팝업 «첫 요청» 저장·다른 주소 저장 → 서버 도착 0건 · 값 없이 기록 · 끝나면 예전처럼 저장됨(기존 기능 복구)', async () => {
     const t = await setup({ noPrepare: true });
     const w = t.wins.carinfo;
-    const rec = createDiagRecorder({ siteHosts: [t.M.host] });
-    const hold = attachSaveHold(w, rec, { name: 'diag' });
-    assert.strictEqual(await hold.ready, true);
+    const d = await diagOn(t, w);
+    assert.strictEqual(d.ok, true);
     await t.js('carinfo', 'carNo.value="12가3456";vin.value="KMHXX00XXXX123456";newCar.value="12가3456";1');
     await t.js('carinfo', 'document.getElementById("btnSave").click();document.getElementById("btnNew").click();fetch("/api/photo?site=carinfo&k=photo1",{method:"POST",body:"x"}).catch(function(){});1');
     await t.js('carinfo', 'pfCar.value="12가3456";document.getElementById("btnPopupPost").click();document.getElementById("btnPopup").click();1');
     await sleep(1500);
     assert.deepStrictEqual({ saves: t.M.S.saves.carinfo, prepares: t.M.S.prepares, photos: t.M.S.photos || 0, foreign: t.M.S.saves.foreign || 0 }, { saves: 0, prepares: 0, photos: 0, foreign: 0 }, '서버에 닿은 쓰기');
-    const s = rec.summary();
-    const paths = [...new Set(s.entries.filter((e) => /붙잡음/.test(e.verdict)).map((e) => e.path))].sort();
-    assert.deepStrictEqual(paths, ['/api/photo', '/api/prepare', '/api/save', '/upload'], JSON.stringify(paths));
+    const s = d.rec.summary();
+    const paths = [...new Set(s.entries.filter((e) => /^막음/.test(e.verdict)).map((e) => e.path))].sort();
+    for (const p of ['/api/photo', '/api/prepare', '/api/save', '/upload']) assert.ok(paths.includes(p), p + ' 막음 기록: ' + JSON.stringify(paths));
     assert.ok(s.entries.some((e) => e.path === '/api/save' && e.bodyKeys.includes('carNo')), '칸 이름 기록');
     assert.ok(!/12가3456|KMHXX00XXXX123456/.test(JSON.stringify(s)), '값은 기록에 없음');
-    assert.ok(s.windows.some((x) => x.kind === 'popup' && x.attached), '팝업에도 붙음');
+    assert.deepStrictEqual(d.aborts, [], '중단 없음(팝업에도 붙음)');
+    await d.ds.stop();
+    for (const x of BrowserWindow.getAllWindows()) if (!Object.values(t.wins).includes(x)) x.close();
+    //  끝난 뒤: 막기가 풀려 기존 기능(사람이 누르는 [저장])이 예전처럼 서버에 닿음
+    await t.js('carinfo', 'document.getElementById("btnSave").click();1');
+    await until(() => t.M.S.saves.carinfo === 1, 3000);
+    assert.strictEqual(t.M.S.saves.carinfo, 1, '진단 뒤 복구');
+    await t.done();
+  });
+
+  await scenario('(검수) iframe 안 요청: 같은 주소 iframe 의 저장 POST · 다른 주소 iframe(열리자마자 폼 POST) 모두 서버에 안 닿음', async () => {
+    const t = await setup({ noPrepare: true });
+    const w = t.wins.carinfo;
+    const d = await diagOn(t, w);
+    assert.strictEqual(d.ok, true);
+    await w.loadURL(t.M.base + '/framepage');
+    await sleep(1500);
+    assert.strictEqual(t.M.S.saves.carinfo, 0, '같은 주소 iframe 저장');
+    assert.strictEqual(t.M.S.saves.foreign || 0, 0, '다른 주소 iframe 저장');
+    const s = d.rec.summary();
+    assert.ok(s.entries.some((e) => e.path === '/api/save' && /^막음/.test(e.verdict)));
+    assert.ok(s.entries.some((e) => e.kind === 'document' && /다른 주소/.test(e.verdict)), '다른 주소 iframe 화면부터 막음');
+    await d.ds.stop();
+    await t.done();
+  });
+
+  await scenario('(검수) GET 으로 바꾸는 요청(/api/update · /api/delete 이동 · ?cmd=save) 막음 · 보통 조회 GET 은 나감', async () => {
+    const t = await setup({ noPrepare: true });
+    const w = t.wins.carinfo;
+    const d = await diagOn(t, w);
+    const list = await t.js('carinfo', 'fetch("/api/list?site=carinfo").then(function(r){return r.status}).catch(function(){return "blocked"})');
+    await t.js('carinfo', 'fetch("/api/update?id=1").catch(function(){});fetch("/api/list?cmd=save").catch(function(){});var i=document.createElement("img");i.src="/x.png";1');
+    await t.js('carinfo', 'location.href="/api/delete?id=1";1').catch(() => {});
+    await sleep(1000);
+    assert.strictEqual(list, 200, '보통 조회는 나감');
+    assert.strictEqual(t.M.S.getWrites || 0, 0, 'GET 변경 요청이 서버에 닿음');
+    await d.ds.stop();
+    await t.done();
+  });
+
+  await scenario('(검수) 막는 장치(창별 붙잡기)를 못 켜면 진단을 시작하지 않고 세션 막기도 풀림 · 붙지 않은 창이 남으면 스스로 중단', async () => {
+    const t = await setup({ noPrepare: true });
+    const w = t.wins.carinfo;
+    const real = w.webContents.debugger.sendCommand.bind(w.webContents.debugger);
+    w.webContents.debugger.sendCommand = (m, p) => (m === 'Fetch.enable' ? Promise.reject(new Error('흉내 실패')) : real(m, p));
+    const d = await diagOn(t, w);
+    assert.strictEqual(d.ok, false, '시작 안 함');
+    w.webContents.debugger.sendCommand = real;
+    try { w.webContents.debugger.detach(); } catch {}
+    await t.js('carinfo', 'document.getElementById("btnSave").click();1');
+    await until(() => t.M.S.saves.carinfo === 1, 3000);
+    assert.strictEqual(t.M.S.saves.carinfo, 1, '못 켠 뒤 막기가 남아 기존 기능을 막지 않음');
+    //  붙지 않은 창(흉내)이 정해진 시간 넘게 남으면 중단
+    const d2 = await diagOn(t, w, { graceMs: 300 });
+    assert.strictEqual(d2.ok, true);
+    d2.rec.registerWindow('popup-흉내', 'popup');
+    await until(() => d2.aborts.length > 0, 2000);
+    assert.match(d2.aborts[0] || '', /막는 장치가 붙지 않아/);
+    await d2.ds.stop();
+    await t.done();
+  });
+
+  await scenario('(검수) 개인정보가 든 화면을 기록해도 진단 파일에는 안 남음(가리기 → 내보내기 전 검사 0건)', async () => {
+    const t = await setup({ noPrepare: true });
+    const w = t.wins.carinfo;
+    const d = await diagOn(t, w);
+    await w.loadURL(t.M.base + '/pii');
+    await sleep(300);
     const el = await w.webContents.executeJavaScript(ELEMENTS_EXPR, true);
-    assert.ok(el.buttons.some((b) => b.text === '저장' && b.id === 'btnSave'));
-    assert.ok(el.fields.some((f) => f.id === 'carNo') && !JSON.stringify(el).includes('12가3456'), '칸 목록에 값 없음');
-    await hold.detach();
+    el.page = await w.webContents.executeJavaScript(pageExpr({}), true);
+    await t.js('carinfo', 'fetch("/api/list?site=carinfo&carNo=98%EB%8B%A47654&hp=01022223333").catch(function(){});1');
+    await sleep(300);
+    const raw = { requests: d.rec.summary(), snaps: [{ at: new Date().toISOString(), frames: [el] }] };
+    const { data } = maskDiag(raw);
+    const text = JSON.stringify(data);
+    for (const bad of ['010-5555-1234', '98다7654', '010-2222-3333', 'KMHXX00XXXX765432', '010-3333-4444', '01022223333', '2628601111', '010-7777-8888', 'lty0823', '010-9999-0000', '홍길동']) {
+      assert.ok(!text.includes(bad), '진단 파일에 남음: ' + bad);
+    }
+    assert.deepStrictEqual(checkDiag(text), {});
+    assert.ok(el.page.scripts.every((x) => x.code == null), '코드 파일 내용은 기본으로 안 받음');
+    assert.ok(text.includes('저장') && text.includes('"id":"vin"'), '구조(단추 글자·칸 이름)는 남음');
+    await d.ds.stop();
     await t.done();
   });
 

@@ -1,27 +1,64 @@
 /**
- * 진단 기록기 (8차) — 실제 전산 화면을 «바꾸지 않고» 저장·조회 요청 모양과 화면 요소만 기록한다
+ * 진단 기록기 (8차 · 검수 보완) — 실제 전산 화면을 «바꾸지 않고» 요청 모양과 화면 구조만 기록한다
  * ------------------------------------------------------------------
- *  가온 내부용 전산 연결 칸. 저장 붙잡기(save-hold)에 저장 통제기 대신 끼워 쓴다(같은 모양의 함수들).
+ *  가온 내부용 전산 연결 칸. 두 겹 막기(diag-session.js: 세션 거르개 + 창별 붙잡기)가 이 판단(decide)을 쓴다.
  *
- *  지키는 것
- *   · 쓰기 요청(POST·PUT·DELETE·PATCH 등)은 «하나도» 내보내지 않는다 — 언제나 붙잡아 실패시킴(hold).
- *     신규등록 [확인] · 사진 올리기 · [저장] · [전송] · 팝업 창의 요청까지 모두(save-hold 가 팝업에도 붙음).
- *   · 조회(GET)는 화면이 그려지도록 내보내되, 주소에 «저장·등록·삭제·전송» 같은 말이 들어간 GET 은 붙잡는다(GET 으로 저장하는 사이트 대비).
- *   · 다른 주소(host)로 가는 쓰기도 붙잡는다.
- *   · 기록에는 «값»을 남기지 않는다 — 주소의 경로, 물음표 뒤 «이름»들, 보내려던 자료의 «칸 이름»들만(차량번호·이름 같은 값 없음).
- *
- *  쓰는 법: main.js 의 diag:start / diag:snap / diag:stop (설정 diagnose:true 일 때만)
+ *  «안전한 조회만 허용»
+ *   · 내보냄: 그림·글꼴·모양·코드 파일 GET · 그 전산 주소로 가는 화면·조회 GET 중 주소·물음표 뒤에 저장 같은 말이 없는 것
+ *   · 막음:   그 밖의 모든 것 — POST·PUT·PATCH·DELETE(신규등록·사진 올리기·저장·전송·로그인 포함) · 저장처럼 보이는 GET ·
+ *             다른 주소로 가는 화면·조회(iframe 포함) · 실시간 연결·신호
+ *  기록에는 값을 남기지 않는다 — 주소 경로, 물음표 뒤 «이름», 보내려던 자료의 «칸 이름»만.
+ *  파일로 쓰기 전에 maskDiag 로 개인정보 무늬를 가리고 checkDiag 로 다시 검사한다(남으면 파일을 만들지 않음 — main.js).
+ *  쿠키·토큰·비밀번호·문자 인증번호는 읽지 않는다(머리글·값을 기록하지 않음).
+ *  한계: 사람 이름처럼 무늬가 없는 글자는 무늬로 못 찾는다 → 화면 뼈대에서 표·글 칸 글자는 통째로 지우는 방식으로 막는다.
  */
 
 //  GET 이라도 붙잡을 주소 낱말(저장·등록·삭제·전송·올리기 등)
 //  (짧은 말 del·reg 는 model·region 같은 조회 주소에도 들어 있어 뺐다)
-const WRITE_WORDS = /(save|insert|update|delete|remove|regist|write|upload|submit|modify|cancel|send|proc)/i;
+const WRITE_WORDS = /(save|insert|update|delete|remove|regist|write|upload|submit|modify|cancel|send|proc|apply|confirm|approve|issue|transfer|commit|exec)/i;
+//  늘 내보내도 되는 «정적 자료»(그림·글꼴·모양·코드 파일) — 조회만 하는 GET 일 때
+const STATIC = /^(image|font|stylesheet|script|media|manifest)$/;
+//  늘 막는 종류 — 실시간 연결·신호·보고(서버로 무언가를 보냄)
+const NEVER = /^(websocket|ping|cspreport|eventsource|beacon)$/;
 
 function hostOf(url) { try { return new URL(url).host.toLowerCase(); } catch { return ''; } }
 function pathOf(url) { try { return new URL(url).pathname; } catch { return String(url || '').split('?')[0].slice(0, 200); } }
 function queryKeys(url) { try { return [...new URL(url).searchParams.keys()].slice(0, 40); } catch { return []; } }
+/** 물음표 뒤 «이름=값» 전체에 저장처럼 보이는 말이 있나 (?cmd=save 같은 GET 저장) — 값은 판단에만 쓰고 기록하지 않음 */
+function queryLooksWrite(url) {
+  try { for (const [k, v] of new URL(url).searchParams) { if (WRITE_WORDS.test(k) || WRITE_WORDS.test(v)) return true; } } catch {}
+  return false;
+}
 
-/** 보내려던 자료에서 «칸 이름»만 꺼낸다(값은 버림) — JSON 은 맨 위 이름, 폼 모양은 이름=값 의 이름 */
+/** 요청 종류 이름 맞추기 — 개발자 연결(CDP)·세션(webRequest) 이름을 한 가지로 */
+function kindName(k) {
+  const t = String(k || '').toLowerCase();
+  if (t === 'form' || t === 'document' || t === 'mainframe' || t === 'subframe') return 'document';
+  if (t === 'ajax' || t === 'xhr' || t === 'fetch') return 'xhr';
+  return t || 'other';
+}
+
+/**
+ * 진단 중 이 요청을 내보내도 되나 — «안전한 조회만 허용»(8차 검수 보완)
+ *  내보냄: ① 그림·글꼴·모양·코드 파일 GET  ② 그 전산 주소로 가는 화면·조회 GET 중 주소·물음표 뒤에 저장 같은 말이 없는 것
+ *  막음:   그 밖의 모든 것 — POST·PUT·PATCH·DELETE · 저장처럼 보이는 GET · 다른 주소로 가는 화면·조회 · 실시간 연결·신호
+ *  hosts 가 비어 있으면(아직 모름) 화면·조회 GET 도 막는다.
+ */
+function decide(req, hosts) {
+  const m = String(req.method || 'GET').toUpperCase();
+  const kind = kindName(req.kind || req.resourceType);
+  const url = String(req.url || '');
+  if (/^(data|blob|about|chrome|devtools|file):/i.test(url)) return { allow: true, why: '내부 자료' };
+  if (NEVER.test(kind)) return { allow: false, why: '실시간 연결·신호(' + kind + ')' };
+  if (m !== 'GET' && m !== 'HEAD') return { allow: false, why: '쓰기(' + m + ')' };
+  if (STATIC.test(kind)) return { allow: true, why: '정적 자료' };
+  const h = hostOf(url);
+  if (!hosts.size || !hosts.has(h)) return { allow: false, why: '다른 주소(또는 주소 모름)로 가는 화면·조회' };
+  if (WRITE_WORDS.test(pathOf(url)) || queryLooksWrite(url)) return { allow: false, why: '저장처럼 보이는 GET' };
+  return { allow: true, why: '조회' };
+}
+
+/** 보낸 자료에서 «칸 이름»만 꺼낸다(값은 버림) — JSON 은 맨 위 이름, 폼 모양은 이름=값 의 이름 */
 function bodyKeys(postData) {
   const s = String(postData || '');
   if (!s) return [];
@@ -30,60 +67,105 @@ function bodyKeys(postData) {
     if (j && typeof j === 'object' && !Array.isArray(j)) return Object.keys(j).slice(0, 80);
     return ['(JSON 목록)'];
   } catch { /* 폼 모양 */ }
-  if (/^[^=&\s]+=/.test(s)) return [...new Set(s.split('&').map((p) => decodeURIComponent(p.split('=')[0] || '').slice(0, 60)))].slice(0, 80);
-  if (/Content-Disposition/i.test(s)) {                     // 파일 올리기(멀티파트) — name="..." 만
-    //  filename="..."(파일 이름)은 남기지 않는다 — 칸 이름(name="...")만
-    return [...new Set([...s.matchAll(/[;\s]name="([^"]{1,60})"/g)].map((m) => m[1]))].slice(0, 80);
+  if (/^[^=&\s]+=/.test(s)) return [...new Set(s.split('&').map((p) => { try { return decodeURIComponent(p.split('=')[0] || '').slice(0, 60); } catch { return '(이름)'; } }))].slice(0, 80);
+  if (/Content-Disposition/i.test(s)) {                     // 파일 올리기(멀티파트) — 칸 이름(name="...")만, 파일 이름은 버림
+    return [...new Set([...s.matchAll(/[;\s]name="([^"]{1,60})"/g)].map((x) => x[1]))].slice(0, 80);
   }
   return ['(알 수 없는 모양 · ' + s.length + '자)'];
 }
 
 /**
- * @param o.siteHosts  그 전산 주소들(모르면 빈 배열 — 그래도 쓰기는 모두 붙잡음)
- * @param o.now        시각(시험용)
+ * 진단 기록기 — 판단(decide)과 기록. 두 겹에서 함께 쓴다.
+ *  · 세션 거르개(diag-session.js · 그 전산 세션 전체: 본 창·팝업·iframe·작업자) — source:'session' · 기록함
+ *  · 창별 붙잡기(save-hold · 개발자 연결) — 같은 판단으로 한 번 더 막음 · 기록은 하지 않음(두 번 적지 않게)
+ * @param o.siteHosts  그 전산 주소들 — 화면·조회 GET 은 이 주소로 가는 것만 내보냄
  */
 function createDiagRecorder(o = {}) {
-  const hosts = new Set((o.siteHosts || []).map((h) => String(h).toLowerCase()));
+  const hosts = new Set((o.siteHosts || []).map((h) => String(h).toLowerCase()).filter(Boolean));
   const now = o.now || (() => new Date());
   const entries = [];
   const windows = new Map();
   let held = 0, passed = 0;
 
-  function note(req, verdict) {
-    if (entries.length >= 500) return;
+  function note(req, d) {
+    if (entries.length >= 800) return;
     entries.push({
-      at: now().toISOString(), verdict, method: String(req.method || 'GET').toUpperCase(), kind: req.kind || '',
-      window: req.windowId || '', host: hostOf(req.url), path: pathOf(req.url), queryKeys: queryKeys(req.url),
-      bodyKeys: bodyKeys(req.postData), foreign: !!(hosts.size && hostOf(req.url) && !hosts.has(hostOf(req.url))),
+      at: now().toISOString(), verdict: (d.allow ? '내보냄 · ' : '막음 · ') + d.why, method: String(req.method || 'GET').toUpperCase(),
+      kind: kindName(req.kind || req.resourceType), host: hostOf(req.url), path: pathOf(req.url), queryKeys: queryKeys(req.url),
+      bodyKeys: bodyKeys(req.postData),
     });
   }
 
   return {
-    registerWindow(id, kind) { if (!windows.has(id)) windows.set(id, { kind: kind || 'main', attached: false }); },
+    hosts,
+    decide: (req) => decide(req, hosts),
+    registerWindow(id, kind) { if (!windows.has(id)) windows.set(id, { kind: kind || 'main', attached: false, since: Date.now() }); },
     attachWindow(id) { const w = windows.get(id) || {}; windows.set(id, { ...w, attached: true }); },
     detachWindow(id) { windows.delete(id); },
-    /** 'hold'(붙잡아 실패시킴) | 'ignore'(내보냄 — 조회만) */
-    onRequest(req) {
-      const m = String(req.method || 'GET').toUpperCase();
-      const isGet = m === 'GET' || m === 'HEAD';
-      if (!isGet || WRITE_WORDS.test(pathOf(req.url))) {
-        held++;
-        note(req, isGet ? '붙잡음(저장처럼 보이는 GET)' : '붙잡음(쓰기)');
-        return 'hold';
-      }
-      passed++;
-      if (req.kind === 'ajax' || req.kind === 'form') note(req, '내보냄(조회)');
-      return 'ignore';
+    /** 세션 거르개 — true(막음) / false(내보냄) */
+    onSessionRequest(req) {
+      const d = decide(req, hosts);
+      if (d.allow) passed++; else held++;
+      if (!d.allow || kindName(req.resourceType) === 'xhr' || kindName(req.resourceType) === 'document') note(req, d);
+      return !d.allow;
     },
+    /** 창별 붙잡기(save-hold) 모양 — 'hold' | 'ignore' (기록 안 함) */
+    onRequest(req) { return decide(req, hosts).allow ? 'ignore' : 'hold'; },
     onResponse() {}, onNetworkError() {}, onWindowClosed() {}, onTimeout() {},
     unlock() { return false; },                            // 진단 중에는 어떤 허락도 받지 않음
     seal() {},
     coverage() {
       const reg = [...windows.entries()];
-      return { windows: reg.length, unattachedWindows: reg.filter(([, w]) => !w.attached).map(([id]) => id), held, passed };
+      return { windows: reg.length, unattachedWindows: reg.filter(([, w]) => !w.attached).map(([id, w]) => ({ id, since: w.since })), held, passed };
     },
     summary() { return { held, passed, windows: [...windows.entries()].map(([id, w]) => ({ id, kind: w.kind, attached: w.attached })), entries: entries.slice() }; },
   };
+}
+
+/* ── 개인정보 가리기·검사 (8차 검수 보완) ────────────────────────────
+ *  진단 파일에 들어가는 «모든 글자»(주소·속성·단추 글자·칸 이름·화면 뼈대)를 쓰기 전에 가리고, 가린 뒤 한 번 더 검사한다.
+ *  남아 있으면 파일을 만들지 않는다. */
+const MASK_RULES = [
+  //  순서 중요 — 긴 것·섞인 것(인증값·차대번호)을 먼저 가려야 «긴 숫자» 규칙이 중간을 잘라 먹지 않는다
+  //  로그인한 사람 표시 «이름 (아이디)» — 엔트리 오른쪽 위 같은 곳(10/19 화면). 이름·아이디는 무늬가 없어 이 모양으로 잡는다
+  ['로그인 이름(아이디)', /[가-힣]{2,5}\s*\(\s*[A-Za-z0-9_.\-]{3,30}\s*\)/g],
+  ['인증값처럼 보이는 긴 글자', /(?<![A-Za-z0-9_\-])(?=[A-Za-z0-9_\-]*\d)(?=[A-Za-z0-9_\-]*[A-Za-z])[A-Za-z0-9_\-]{24,}(?![A-Za-z0-9_\-])/g],
+  ['차대번호', /(?<![A-Za-z0-9])[A-HJ-NPR-Z0-9]{17}(?![A-Za-z0-9])/g],
+  ['전자우편', /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g],
+  ['휴대폰 번호', /01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}/g],
+  ['주민·외국인 번호', /(?<!\d)\d{6}[-\s]?[1-8]\d{6}(?!\d)/g],
+  ['사업자번호', /(?<!\d)\d{3}-\d{2}-\d{5}(?!\d)/g],
+  ['전화번호', /(?<!\d)0\d{1,2}[-.\s]\d{3,4}[-.\s]\d{4}(?!\d)/g],
+  ['차량번호', /\d{2,3}\s?[가-힣]\s?\d{4}/g],
+  ['긴 숫자(번호)', /\d{6,}/g],
+];
+function maskText(s, counts) {
+  let t = String(s);
+  for (const [label, re] of MASK_RULES) {
+    t = t.replace(re, () => { counts[label] = (counts[label] || 0) + 1; return '[가림]'; });
+  }
+  return t;
+}
+/** 진단 기록 전체를 가린다 — 코드 파일(code)도 같은 규칙으로. 돌려줌 { data, masked:{종류:개수} } */
+function maskDiag(obj) {
+  const counts = {};
+  const walk = (v) => {
+    if (typeof v === 'string') return maskText(v, counts);
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[maskText(k, counts)] = walk(v[k]); return o; }
+    return v;
+  };
+  return { data: walk(obj), masked: counts };
+}
+/** 내보내기 전 마지막 검사 — 남은 개인정보 무늬 개수(0이어야 파일을 만듦). 시각(at) 글자는 빼고 본다 */
+function checkDiag(text) {
+  const t = String(text).replace(/"(at|startedAt|endedAt)":"[^"]*"/g, '""');
+  const left = {};
+  for (const [label, re] of MASK_RULES) { const m = t.match(re); if (m) left[label] = m.length; }
+  //  비밀번호·인증 «값»이 따로 들어갈 자리는 없지만, 혹시 «이름=값» 모양이 남았는지
+  const kv = t.match(/(password|passwd|pwd|token|cookie|session|auth|otp|cert)[^"]{0,3}["']?\s*[:=]\s*["']?[^"'\s,}]{4,}/gi);
+  if (kv) left['비밀번호·인증 값 모양'] = kv.length;
+  return left;
 }
 
 /**
@@ -119,7 +201,8 @@ const ELEMENTS_EXPR = `(function(){
  *  · 사이트 서버에는 아무것도 보내지 않는다(코드 파일 받기는 GET 조회 — 진단 기록기가 그대로 둠)
  */
 /* 페이지 안에서 돌릴 함수 — 글로 바꿔 executeJavaScript 로 넘긴다(바깥 변수를 쓰지 않음) */
-async function pageSnapshot() {
+async function pageSnapshot(opt) {
+  opt = opt || {};
   var KEEP = { TH: 1, LABEL: 1, BUTTON: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1, LEGEND: 1, CAPTION: 1 };
   var QUOTED = /(["'`])(?:\\.|(?!\1)[^\\])*\1/g;
   var root = document.documentElement.cloneNode(true);
@@ -153,7 +236,7 @@ async function pageSnapshot() {
     var src = ss[k].src, same = false;
     try { same = new URL(src).host === location.host; } catch (e) {}
     var item = { src: String(src).split('?')[0], sameSite: same, size: 0, code: null };
-    if (same && total < 6000000) {
+    if (opt.includeCode && same && total < 6000000) {
       try {
         var r = await fetch(src, { credentials: 'same-origin' });
         var t = await r.text();
@@ -170,8 +253,10 @@ async function pageSnapshot() {
  *  · 화면(HTML)은 «뼈대»만: 표 칸·글 칸(td·span·div 등)의 글자는 «·»로 지우고, 머리글·이름표·단추 글자(th·label·button·h1~h6)만 남김(그 안 숫자도 #).
  *    입력 칸의 값·title·data-값·선택지 글자는 지움(이름만 남김) → 차량번호·이름·전화번호 같은 값이 남지 않음
  *  · 페이지 안 코드(인라인 script·onclick)는 따옴표 안 글자를 «…»로 지움(로그인한 사람 이름·아이디가 박혀 있을 수 있어서)
- *  · 바깥 코드 파일(script src — 사이트 프로그램 자체)은 같은 사이트 것만 그대로 받아 둠(합쳐 6MB까지). 받기는 GET 조회뿐
+ *  · 바깥 코드 파일(script src)은 기본으로 «주소 목록»만. 내용은 설정 diagScripts:true 일 때만 같은 사이트 것을 받음(6MB까지 · 받은 뒤에도 가리기 규칙 적용)
  */
-const PAGE_EXPR = '(' + pageSnapshot.toString() + ')()';
+/** includeCode: 사이트 코드 파일 내용까지 받기 — 기본은 끔(주소 목록만). 설정 diagScripts:true 일 때만 켬 */
+const pageExpr = (opt) => '(' + pageSnapshot.toString() + ')(' + JSON.stringify(opt || {}) + ')';
+const PAGE_EXPR = pageExpr({});
 
-module.exports = { createDiagRecorder, ELEMENTS_EXPR, PAGE_EXPR, bodyKeys, WRITE_WORDS };
+module.exports = { createDiagRecorder, decide, ELEMENTS_EXPR, PAGE_EXPR, pageExpr, bodyKeys, WRITE_WORDS, maskDiag, checkDiag };
