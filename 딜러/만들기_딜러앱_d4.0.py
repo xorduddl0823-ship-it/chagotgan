@@ -9,7 +9,7 @@
   - 디자인/공통/ci/                      — 차곳간 CI 앱 아이콘 (icon-192 · icon-512 · apple-touch-icon)
 """
 import base64, hashlib, os, re, shutil
-ROOT = "/home/user/chagotgan"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # 저장소 맨 위 (이 파일은 딜러/ 안에 있어요)
 SRC = ROOT + "/딜러/3_딜러앱_화면_d3.9"
 OUT = ROOT + "/딜러/3_딜러앱_화면_d4.0"
 CSS_C = ROOT + "/디자인/공통/cgg-j4-1.13.2.css"
