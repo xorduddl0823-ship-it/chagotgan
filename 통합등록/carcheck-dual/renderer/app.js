@@ -656,6 +656,8 @@ function showAutoStop(res) {
 /* ─────────── 전산 진단 (8차 · 설정 diagnose 가 켜졌을 때만) ───────────
  *  고른 전산 창의 화면 구조를 기록한다. 저장·신규등록·사진·전송 요청은 막도록 되어 있지만(모의 시험 기준), 실제 전산에서는 그 단추를 누르지 않는다(10차). */
 let diagSite = null;
+let DIAG_SUB = '';         // 진단(막기) 때 설명 글 — 관찰 기록 때 바꿨다가 되돌림
+let diagObserve = false;   // (12차) 관찰 기록 중인가 — 요청을 막지 않고 직원이 평소처럼 등록(대표님 10/19 A안)
 let diagNote = '';      // 상태 줄에 잠깐 보일 말(실패·기록 결과) — 없으면 기본 안내
 const DIAG_NAME = { carinfo: '카인포', carmodoo: '경기조합', entry: '엔트리' };   // 위쪽 단추 이름과 같게
 function diagUi() {
@@ -663,11 +665,23 @@ function diagUi() {
   $('#diag-stop').disabled = !diagSite;
   document.querySelectorAll('.diag-sites button').forEach((b) => { b.disabled = !!diagSite; });   // 엔트리 창 열기 포함
   $('#diag-entry-url').disabled = !!diagSite;              // 진단 중에는 주소를 바꿔도 반영되지 않으므로 잠금
-  //  창을 닫아도 진단 중인 것이 보이게 — 아래 단추 글자·색을 바꾸고, 보내기 단추는 끈다
-  $('#btn-diag').textContent = diagSite ? '전산 진단 중 (' + DIAG_NAME[diagSite] + ') · 눌러서 열기' : '전산 진단 (저장 안 함)';
+  $('#diag-observe').disabled = !!diagSite;
+  const obs = diagSite ? diagObserve : $('#diag-observe').checked;
+  document.querySelectorAll('.diag-sites button[data-site]').forEach((b) => { b.textContent = DIAG_NAME[b.dataset.site] + (obs ? ' 관찰 기록 시작' : ' 진단 시작'); });
+  $('#diag-stop').textContent = obs ? '기록 끝' : '진단 끝';
+  if (!DIAG_SUB) DIAG_SUB = $('#diag-sub').textContent;
+  $('#diag-title').textContent = obs ? '관찰 기록 (직원이 평소처럼 등록)' : '전산 진단 (저장 안 함)';
+  $('#diag-sub').textContent = obs
+    ? '관찰 기록은 아무것도 막지 않아요. 직원이 평소처럼 실제 차를 등록하고 [저장]도 직접 누르면, 프로그램은 어느 주소로 어떤 칸 이름이 가는지만 기록해요(값은 가림). 한 번에 한 전산, 차 한 대만 해요. 로그인은 시작 전에 해 주세요.'
+    : DIAG_SUB;
+  //  창을 닫아도 진단 중인 것이 보이게 — 아래 단추 글자·색을 바꾸고, 보내기 단추는 끈다(관찰 기록 때는 평소 전송 단추를 그대로 씀)
+  $('#btn-diag').textContent = diagSite ? (diagObserve ? '관찰 기록 중 (' : '전산 진단 중 (') + DIAG_NAME[diagSite] + ') · 눌러서 열기' : '전산 진단 (저장 안 함)';
   $('#btn-diag').classList.toggle('diag-on', !!diagSite);
-  ['#btn-send-cm', '#btn-send-ci', '#btn-send-all', '#btn-auto'].forEach((q) => { const b = $(q); if (b) b.disabled = !!diagSite; });
-  $('#diag-state').textContent = diagNote || (diagSite
+  ['#btn-send-cm', '#btn-send-ci', '#btn-send-all'].forEach((q) => { const b = $(q); if (b) b.disabled = !!diagSite && !diagObserve; });
+  if ($('#btn-auto')) $('#btn-auto').disabled = !!diagSite;
+  $('#diag-state').textContent = diagNote || (diagSite && diagObserve
+    ? DIAG_NAME[diagSite] + ' 관찰 기록 중이에요. 이 창을 [닫기] 하고 평소처럼 이 차를 끝까지 등록해 주세요(전송·사진·[저장]까지). 화면 칸은 저절로 기록돼요. 다 끝나면 아래 [관찰 기록 중] 단추로 다시 열어 [기록 끝]을 눌러 주세요.'
+    : diagSite
     ? DIAG_NAME[diagSite] + ' 진단 중이에요. ' + DIAG_NAME[diagSite] + ' 창에서 ' + (diagSite === 'entry' ? '로그인(문자 인증)한 뒤 ' : '') +
       '보고 싶은 화면을 열 때마다 [지금 화면 칸 기록]을 눌러 주세요. [저장]은 누르지 마세요.'
     : '진단할 전산 창을 먼저 열고 로그인한 뒤 [진단 시작]을 눌러 주세요(창은 [닫기] 뒤 맨 위 [카인포 창]·[경기조합 창] 단추로 열어요). 엔트리는 [엔트리 창 열기]로 로그인(문자 인증)부터 해요.');
@@ -678,6 +692,7 @@ async function diagBusy(fn) {
   try { await fn(); } finally { diagUi(); }
 }
 function initDiag() {
+  $('#diag-observe').addEventListener('change', () => { diagNote = ''; diagUi(); });
   $('#btn-diag').addEventListener('click', async () => {
     if (!diagSite) diagNote = '';
     try { const c = await window.api.getConfig(); $('#diag-entry-url').value = (c && c.entryUrl) || ''; } catch {}
@@ -686,7 +701,7 @@ function initDiag() {
   });
   $('#diag-close').addEventListener('click', () => $('#diag').classList.add('hidden'));
   //  진단이 스스로 멈춘 경우(막는 장치가 붙지 않은 창 등) — 알림을 받아 결과를 보여 준다
-  window.api.diag.onAborted((r) => { diagSite = null; diagNote = ''; diagUi(); $('#diag').classList.add('hidden'); diagReport(r); });
+  window.api.diag.onAborted((r) => { diagSite = null; diagObserve = false; diagNote = ''; diagUi(); $('#diag').classList.add('hidden'); diagReport(r); });
   $('#diag-open-entry').addEventListener('click', () => diagBusy(async () => {
     const url = $('#diag-entry-url').value.trim();
     if (!/^https:\/\//.test(url)) { diagNote = '엔트리 주소를 https:// 로 시작하게 넣어 주세요.'; return; }
@@ -704,9 +719,11 @@ function initDiag() {
         await window.api.setConfig({ ...c, entryUrl: url });
       } catch { diagNote = '엔트리 주소를 저장하지 못했어요.'; return; }
     }
-    const r = await window.api.diag.start(b.dataset.site);
-    if (!r || !r.ok) { diagNote = '진단을 시작하지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭'); return; }
+    const obs = $('#diag-observe').checked;
+    const r = await window.api.diag.start(b.dataset.site, obs);
+    if (!r || !r.ok) { diagNote = (obs ? '관찰 기록을' : '진단을') + ' 시작하지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭'); return; }
     diagSite = b.dataset.site;
+    diagObserve = obs;
     diagNote = '';
   })));
   $('#diag-snap').addEventListener('click', () => diagBusy(async () => {
@@ -718,6 +735,7 @@ function initDiag() {
     if (!site) return;
     const r = await window.api.diag.stop(site);
     diagSite = null;
+    diagObserve = false;
     diagNote = '';
     $('#diag').classList.add('hidden');
     diagReport(r);
@@ -730,6 +748,19 @@ function diagReport(r) {
   const name = DIAG_NAME[r.site] || '전산';
   const masked = Object.entries(r.masked || {}).map(([k, n]) => k + ' ' + n + '건');
   const left = Object.entries(r.left || {}).map(([k, n]) => k + ' ' + n + '건');
+  if (r.observe) {
+    report('관찰 기록 끝', [{
+      ok: !!r.ok, tone: r.ok ? 'ok' : 'warn',
+      title: r.ok ? name + ' — 등록하는 동안 주소·칸 이름을 기록했어요' : name + ' — ' + (r.error || '기록 파일을 남기지 못했어요'),
+      lists: [
+        { title: '기록된 쓰기 요청(주소만)', items: (r.writes || []).length ? r.writes : ['없음 — [저장]까지 끝냈는지 확인해 주세요'], cls: 'muted' },
+        { title: '개인정보 검사', items: ['가린 것: ' + (masked.join(' · ') || '없음'), '남은 것: ' + (left.join(' · ') || '없음')], cls: left.length ? 'warn' : 'muted', noCount: true },
+        { title: '기록', items: ['요청 ' + (r.passed || 0) + '건 · 화면 칸 기록 ' + (r.snaps || 0) + '번', r.file || '기록 파일 없음'], cls: 'muted', noCount: true },
+      ],
+      note: r.file ? '9_진단파일_검사.bat 으로 검사한 뒤 [통과]한 파일을 방에 보내 주세요.' : '기록 파일은 만들지 않았어요.',
+    }]);
+    return;
+  }
   report(r.aborted ? '전산 진단 중단' : '전산 진단 끝', [{
     ok: !!r.ok && !r.aborted,
     tone: r.ok && !r.aborted ? 'ok' : 'warn',

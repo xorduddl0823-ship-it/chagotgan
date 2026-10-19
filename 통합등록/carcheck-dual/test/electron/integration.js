@@ -425,6 +425,36 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
+  await scenario('(12차 관찰 기록) 직원이 평소처럼 [저장]·[신규등록]·사진 → 막지 않고 서버에 그대로 닿음 · 주소·칸 이름·응답 번호·누른 단추 글자만 기록 · 값 없음 · 끝나면 기록 멈춤', async () => {
+    const t = await setup({ noPrepare: true });
+    const w = t.wins.carinfo;
+    const rec = createDiagRecorder({ siteHosts: [t.M.host], observe: true });
+    const ds = startDiagSession({ win: w, rec, onAbort: () => {} });
+    t.stops.push(() => ds.stop());
+    assert.strictEqual(await ds.ready, true);
+    await t.js('carinfo', 'carNo.value="12가3456";vin.value="KMHXX00XXXX123456";newCar.value="12가3456";1');
+    await t.js('carinfo', 'document.getElementById("btnNew").click();1');
+    await until(() => t.M.S.prepares === 1 || null, 3000);
+    await t.js('carinfo', 'fetch("/api/photo?site=carinfo&k=photo1",{method:"POST",body:"x"}).catch(function(){});document.getElementById("btnSave").click();1');
+    await until(() => t.M.S.saves.carinfo === 1 || null, 3000);
+    await sleep(400);
+    rec.noteClick({ text: '저장', tag: 'BUTTON', id: 'btnSave' });
+    assert.deepStrictEqual({ saves: t.M.S.saves.carinfo, prepares: t.M.S.prepares, photos: t.M.S.photos || 0 }, { saves: 1, prepares: 1, photos: 1 }, '관찰은 막지 않음 — 평소처럼 서버에 닿음');
+    const s = rec.summary();
+    const save = s.entries.find((e) => e.method === 'POST' && e.path === '/api/save');
+    assert.ok(save && save.bodyKeys.includes('carNo') && save.status === 200, JSON.stringify(save));
+    assert.ok(s.entries.some((e) => e.method === 'POST' && e.path === '/api/prepare') && s.entries.some((e) => e.method === 'POST' && e.path === '/api/photo'));
+    assert.ok(s.entries.some((e) => e.kind === 'click' && e.text === '저장'));
+    assert.strictEqual(s.held, 0);
+    assert.ok(!/12가3456|KMHXX00XXXX123456/.test(JSON.stringify(s)), '값은 기록에 없음');
+    await ds.stop();
+    const n = rec.summary().entries.length;
+    await t.js('carinfo', 'document.getElementById("btnSave").click();1');
+    await until(() => t.M.S.saves.carinfo === 2 || null, 3000);
+    assert.strictEqual(rec.summary().entries.length, n, '끝난 뒤에는 기록 안 함');
+    await t.done();
+  });
+
   await scenario('(검수) iframe 안 요청: 같은 주소 iframe 의 저장 POST · 다른 주소 iframe(열리자마자 폼 POST) 모두 서버에 안 닿음', async () => {
     const t = await setup({ noPrepare: true });
     const w = t.wins.carinfo;

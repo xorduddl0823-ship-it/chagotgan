@@ -34,7 +34,7 @@ ok(items.every((i) => i.utf8Flag), '모든 파일 이름에 UTF-8 표시(윈도�
 ok(fs.existsSync(path.join(unz, GUIDE)) && fs.existsSync(path.join(B, GUIDE)), '«0_먼저읽기» 안내서가 맨 위와 프로그램 폴더 안에 모두 있음');
 const g = fs.existsSync(path.join(unz, GUIDE)) ? fs.readFileSync(path.join(unz, GUIDE)) : Buffer.alloc(0);
 ok(g[0] === 0xef && g[1] === 0xbb && g[2] === 0xbf && /\r\n/.test(g.toString('utf8')), '안내서는 메모장에서 바로 열리는 글자판(UTF-8 BOM · CRLF)');
-ok(['A. 준비', 'B. 어떤 단계', 'C. 엔트리', 'D. 카인포', 'E. 경기조합', 'F. 보내기 전'].every((h) => g.toString('utf8').includes(h)), '안내서에 A~F 장(준비·요청 구분·엔트리·카인포·경기조합·보내기 전 검사)이 다 있음');
+ok(['A. 준비', 'B. 차 1대 관찰 기록', 'C. 보내기', '9_진단파일_검사.bat', '8_전산진단_끄기.bat'].every((h) => g.toString('utf8').includes(h)), '안내서에 준비·차 1대 관찰 기록(카인포→경기조합→엔트리)·보내기 전 검사가 다 있음');
 let marker = null;
 try { marker = JSON.parse(fs.readFileSync(path.join(B, 'test-install.json'), 'utf8')); } catch {}
 ok(marker && marker.dataFolder === FOLDER, 'test-install.json 이 정확히 들어 있음 — dataFolder = ' + FOLDER, JSON.stringify(marker));
@@ -184,6 +184,12 @@ if (electron) {
   const diagFiles = fs.existsSync(diagDir) ? fs.readdirSync(diagDir).filter((f) => /^diag-carinfo-.*\.json$/.test(f)) : [];
   ok(/진단 중/.test(dl) && /전산 진단 끝/.test(dl) && diagFiles.length === 1, '진단 시작 → 진단 끝 → 기록 파일이 시험판 기록 폴더(diag\\)에 생김', dl.slice(0, 200));
   ok(!app2.touched.length, '진단 중에도 업무용 폴더를 열어 보지 않음', app2.touched.slice(0, 3).join(' | '));
+  //  (12차) 관찰 기록 한 번 → «관찰» 기록 파일이 시험판 기록 폴더에
+  const app4 = runApp(P, { CARCHECK_SMOKE_DIAG: '1', CARCHECK_SMOKE_OBSERVE: '1' });
+  const ol = line(app4.out, 'SMOKE-DIAG');
+  const obsFiles = fs.existsSync(diagDir) ? fs.readdirSync(diagDir).filter((f) => /^diag-carinfo-관찰-.*\.json$/.test(f)) : [];
+  ok(/관찰 기록 중/.test(ol) && /관찰 기록 끝/.test(ol) && obsFiles.length === 1, '관찰 기록 시작 → 기록 끝 → «관찰» 기록 파일이 시험판 기록 폴더(diag\\)에 생김', ol.slice(0, 200));
+  ok(!app4.touched.length, '관찰 기록 중에도 업무용 폴더를 열어 보지 않음', app4.touched.slice(0, 3).join(' | '));
 } else ok(false, '프로그램 실행 확인 — Electron 이 없어 못 함(1_준비 뒤 다시)');
 
 //  9_진단파일_검사.bat — 위에서 생긴 진짜 진단 기록 파일 + 일부러 넣은 «걸려야 하는» 가짜 파일

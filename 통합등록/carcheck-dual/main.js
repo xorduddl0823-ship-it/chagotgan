@@ -2477,9 +2477,13 @@ if (process.env.CARCHECK_SMOKE === '1' || PROBE) {
         await wc.executeJavaScript('window.api.openSite("carinfo").then(function(){return 1})', true).catch(() => {});
         await wc.executeJavaScript('document.getElementById("btn-diag").click();1', true);
         await new Promise((r) => setTimeout(r, 300));
+        //  (12차) CARCHECK_SMOKE_OBSERVE=1 이면 «관찰 기록»으로 — 막지 않고 기록, 화면 칸은 저절로
+        const obs = process.env.CARCHECK_SMOKE_OBSERVE === '1';
+        if (obs) await wc.executeJavaScript('var o=document.getElementById("diag-observe");o.checked=true;o.dispatchEvent(new Event("change"));1', true);
         await wc.executeJavaScript('document.querySelector(".diag-sites button[data-site=carinfo]").click();1', true);
         let st = '';
-        for (let i = 0; i < 40 && !/진단 중/.test(st); i++) { await new Promise((r) => setTimeout(r, 250)); st = await wc.executeJavaScript('document.getElementById("diag-state").textContent', true); }
+        for (let i = 0; i < 40 && !/(진단|관찰 기록) 중/.test(st); i++) { await new Promise((r) => setTimeout(r, 250)); st = await wc.executeJavaScript('document.getElementById("diag-state").textContent', true); }
+        if (obs) await new Promise((r) => setTimeout(r, 3500));            // 저절로 화면 칸 기록이 한 번 돌 시간
         await wc.executeJavaScript('document.getElementById("diag-stop").click();1', true);
         let rep = null;
         for (let i = 0; i < 40 && !rep; i++) {

@@ -101,3 +101,23 @@ test('(10차) 진단 파일 따로 검사: 고객정보·차대번호·인증·�
   const clean = JSON.stringify(maskDiag({ requests: { entries: [{ path: '/car/12가3456', bodyKeys: ['carNo'] }] }, snaps: [{ frames: [{ buttons: [{ text: '저장', id: 'btnSave' }], fields: [{ tag: 'input', id: 'carNo', name: 'carNo', type: 'text' }, { id: 'dealerHp', name: 'dealerHp' }] }] }] }).data);
   assert.deepStrictEqual(checkFile(clean), {});
 });
+
+test('(12차 관찰 기록) 막지 않음 · 그 전산 화면·조회·쓰기만 기록 · 응답 번호 · 누른 단추 글자 · 값은 가림', () => {
+  const r = createDiagRecorder({ siteHosts: ['ai.carinfo.co.kr'], observe: true, now: () => new Date('2026-10-19T10:00:00Z') });
+  assert.strictEqual(r.observe, true);
+  const save = { id: 7, method: 'POST', url: 'https://ai.carinfo.co.kr/ct/save?carNo=12%EA%B0%803456', resourceType: 'xhr', postData: JSON.stringify({ carNo: '12가3456', vin: 'KMHXX00XXXX123456' }) };
+  assert.strictEqual(r.onSessionRequest(save), false, '쓰기도 막지 않음');
+  assert.strictEqual(r.onSessionRequest({ method: 'GET', url: 'https://ai.carinfo.co.kr/img/a.png', resourceType: 'image' }), false);
+  assert.strictEqual(r.onSessionRequest({ method: 'POST', url: 'https://other.example/log', resourceType: 'xhr', postData: 'a=1' }), false);
+  assert.strictEqual(r.onRequest(save), 'ignore');
+  r.onSessionCompleted({ id: 7, statusCode: 200 });
+  r.noteClick({ text: '저장 010-1234-5678', tag: 'BUTTON', id: 'btnSave' });
+  const s = r.summary();
+  assert.strictEqual(s.held, 0);
+  const e = s.entries.find((x) => x.path === '/ct/save');
+  assert.ok(e && e.status === 200 && e.bodyKeys.includes('vin') && e.queryKeys.includes('carNo'), JSON.stringify(e));
+  assert.ok(!s.entries.some((x) => /a\.png/.test(x.path || '')), '그림 파일은 기록 안 함');
+  assert.ok(s.entries.some((x) => x.host === 'other.example'), '다른 주소로 가는 쓰기는 기록');
+  assert.ok(s.entries.some((x) => x.kind === 'click' && /^저장/.test(x.text)));
+  assert.ok(!/12가3456|KMHXX00XXXX123456|010-1234-5678/.test(JSON.stringify(s)), JSON.stringify(s));
+});
