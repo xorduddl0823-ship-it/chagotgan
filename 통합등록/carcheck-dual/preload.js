@@ -65,7 +65,7 @@ contextBridge.exposeInMainWorld('api', {
   //  전산 진단(8차 · 설정 diagnose 가 켜졌을 때만) — 저장 요청을 서버로 보내지 않고 기록만
   diag: {
     openEntry: () => ipcRenderer.invoke('diag:openEntry'),
-    start: (site) => ipcRenderer.invoke('diag:start', { site }),
+    start: (site, observe) => ipcRenderer.invoke('diag:start', { site, observe: observe === true }),
     snap:  (site) => ipcRenderer.invoke('diag:snap', { site }),
     stop:  (site) => ipcRenderer.invoke('diag:stop', { site }),
     onAborted: (fn) => { ipcRenderer.removeAllListeners('diag:aborted'); ipcRenderer.on('diag:aborted', (_e, r) => fn(r)); },

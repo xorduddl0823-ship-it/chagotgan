@@ -91,35 +91,49 @@ function createDiagRecorder(o = {}) {
   //  읽기 전용으로 확인된 경로 무늬(설정 diagReadPaths) — 잘못된 무늬는 버림(막는 쪽)
   const readPaths = (o.readPaths || []).map((x) => { try { return new RegExp(x); } catch { return null; } }).filter(Boolean);
   const allowStatic = o.allowStatic === true;                // 정적 파일 GET — 기본 차단(9차)
+  //  (12차) 관찰 기록 — 직원이 평소처럼 등록·[저장]하는 동안 «막지 않고» 요청 모양만 기록(진짜 저장 주소·순서를 알아내는 용도)
+  const observe = o.observe === true;
   const now = o.now || (() => new Date());
   const entries = [];
+  const byId = new Map();
   const windows = new Map();
   let held = 0, passed = 0;
 
   function note(req, d) {
-    if (entries.length >= 800) return;
-    entries.push(maskEntry({
+    if (entries.length >= (observe ? 3000 : 800)) return;
+    const e = maskEntry({
       at: now().toISOString(), verdict: (d.allow ? '내보냄 · ' : '막음 · ') + d.why, method: String(req.method || 'GET').toUpperCase(),
       kind: kindName(req.kind || req.resourceType), host: hostOf(req.url), path: pathForLog(req.url), queryKeys: queryKeys(req.url),
       bodyKeys: bodyKeys(req.postData),
-    }));
+    });
+    entries.push(e);
+    if (req.id != null) byId.set(req.id, e);
   }
+  const decideNow = (req) => (observe ? { allow: true, why: '관찰(막지 않음)' } : decide(req, hosts, readPaths, allowStatic));
+  //  관찰 때 남길 요청 — 화면·조회(xhr)·쓰기(GET 아닌 것). 그림·글꼴 같은 정적 파일은 빼서 기록을 짧게
+  const worth = (req) => { const k = kindName(req.resourceType || req.kind); const m = String(req.method || 'GET').toUpperCase(); return k === 'xhr' || k === 'document' || (m !== 'GET' && m !== 'HEAD'); };
 
   return {
     hosts,
-    decide: (req) => decide(req, hosts, readPaths, allowStatic),
+    observe,
+    decide: (req) => decideNow(req),
     registerWindow(id, kind) { if (!windows.has(id)) windows.set(id, { kind: kind || 'main', attached: false, since: Date.now() }); },
     attachWindow(id) { const w = windows.get(id) || {}; windows.set(id, { ...w, attached: true }); },
     detachWindow(id) { windows.delete(id); },
     /** 세션 거르개 — true(막음) / false(내보냄) */
     onSessionRequest(req) {
-      const d = decide(req, hosts, readPaths, allowStatic);
+      const d = decideNow(req);
       if (d.allow) passed++; else held++;
-      if (!d.allow || kindName(req.resourceType) === 'xhr' || kindName(req.resourceType) === 'document') note(req, d);
+      if (observe ? worth(req) && hosts.has(hostOf(req.url)) || worth(req) && String(req.method || 'GET').toUpperCase() !== 'GET'
+                  : !d.allow || kindName(req.resourceType) === 'xhr' || kindName(req.resourceType) === 'document') note(req, d);
       return !d.allow;
     },
+    /** (12차 관찰) 응답 상태 번호만 덧붙임(본문·머리글은 안 읽음) */
+    onSessionCompleted(c) { const e = byId.get(c.id); if (e) { e.status = c.statusCode || 0; if (c.error) e.error = String(c.error).slice(0, 60); byId.delete(c.id); } },
+    /** (12차 관찰) 직원이 누른 단추 글자 — 요청과 시간 순서로 맞춰 «어느 단추가 어느 주소로 가는지» 알아냄 */
+    noteClick(c) { if (entries.length < 3000) entries.push(maskEntry({ at: c.at || now().toISOString(), kind: 'click', text: String(c.text || '').slice(0, 40), tag: String(c.tag || '').slice(0, 10), id: String(c.id || '').slice(0, 60) })); },
     /** 창별 붙잡기(save-hold) 모양 — 'hold' | 'ignore' (기록 안 함) */
-    onRequest(req) { return decide(req, hosts, readPaths, allowStatic).allow ? 'ignore' : 'hold'; },
+    onRequest(req) { return decideNow(req).allow ? 'ignore' : 'hold'; },
     onResponse() {}, onNetworkError() {}, onWindowClosed() {}, onTimeout() {},
     unlock() { return false; },                            // 진단 중에는 어떤 허락도 받지 않음
     seal() {},

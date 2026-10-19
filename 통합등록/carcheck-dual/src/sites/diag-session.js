@@ -32,10 +32,27 @@ function startDiagSession(o) {
   ses.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (d, cb) => {
     let body = '';
     try { if (d.uploadData && d.uploadData[0] && d.uploadData[0].bytes) body = d.uploadData[0].bytes.toString('utf8').slice(0, 20000); } catch {}
-    let block = true;                                     // 판단 중 오류가 나면 막는 쪽
-    try { block = rec.onSessionRequest({ method: d.method, url: d.url, resourceType: d.resourceType, postData: body }); } catch {}
-    cb({ cancel: block });
+    let block = !rec.observe;                             // 판단 중 오류가 나면 막는 쪽(관찰 때는 막지 않음)
+    try { block = rec.onSessionRequest({ id: d.id, method: d.method, url: d.url, resourceType: d.resourceType, postData: body }); } catch {}
+    cb({ cancel: rec.observe ? false : block });
   });
+  if (rec.observe) {
+    const done = (d) => { try { rec.onSessionCompleted({ id: d.id, statusCode: d.statusCode, error: d.error }); } catch {} };
+    ses.webRequest.onCompleted({ urls: ['<all_urls>'] }, done);
+    ses.webRequest.onErrorOccurred({ urls: ['<all_urls>'] }, done);
+  }
+  //  (12차) 관찰 기록은 막지 않으므로 창별 붙잡기·감시가 필요 없다 — 기록만
+  if (rec.observe) {
+    let stoppedO = false;
+    return {
+      ready: Promise.resolve(true),
+      async stop() {
+        if (stoppedO) return; stoppedO = true;
+        try { ses.webRequest.onBeforeRequest(null); ses.webRequest.onCompleted(null); ses.webRequest.onErrorOccurred(null); } catch {}
+      },
+      get aborted() { return null; },
+    };
+  }
 
   //  ② 창별 붙잡기
   const hold = attachSaveHold(win, rec, { name: 'diag' });

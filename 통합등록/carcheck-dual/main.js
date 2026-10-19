@@ -2198,7 +2198,8 @@ function noPhotos(data) {
 /** 흐름 작업이 그 전산을 쓰는 중이면 기존 단추를 막는다(통제기 우회 방지) — 흐름이 꺼져 있으면 언제나 null */
 function legacyBlock(site) {
   //  진단 중인 전산은 기존 단추(전송·신규등록·사진 등)도 막는다 — 요청이 서버로 안 가는데 된 것처럼 보이지 않게(8차 화면 검사)
-  if (typeof diagState !== 'undefined' && diagState[site]) return '이 전산은 지금 진단 중이에요. [진단 끝]을 누른 뒤 다시 해 주세요.';
+  //  (12차) «관찰 기록»은 막지 않으므로 기존 단추(전송·신규등록·사진)를 평소처럼 쓴다
+  if (typeof diagState !== 'undefined' && diagState[site] && !diagState[site].observe) return '이 전산은 지금 진단 중이에요. [진단 끝]을 누른 뒤 다시 해 주세요.';
   if (loadConfig().flow !== true) return null;
   try { return flow().flow.legacyBlocked(site); } catch { return null; }
 }
@@ -2328,6 +2329,38 @@ async function diagSnap(d) {
   return d.snaps.length;
 }
 
+/*  (12차) 관찰 기록 — 1초마다 ① 직원이 누른 단추 글자를 모으고(요청과 시간 순서 맞추기) ② 화면이 바뀐 뒤 잠잠해지면 화면 칸을 저절로 기록.
+ *  직원은 평소처럼 등록·[저장]만 하면 된다([지금 화면 칸 기록]을 안 눌러도 됨). 표 줄을 누른 것은 글자 없이 «표 줄»로만(이름이 섞일 수 있어서) */
+const CLICK_EXPR = `(function(){ if(!window.__ccObs){ window.__ccObs=[]; document.addEventListener('click',function(e){ try{
+  var b=e.target&&e.target.closest&&e.target.closest('button,a,input[type=button],input[type=submit],input[type=checkbox],input[type=radio],[role=button],tr');
+  if(!b) return; var row=b.tagName==='TR'; var t=row?'(표 줄)':((b.tagName==='INPUT'&&b.type!=='checkbox'&&b.type!=='radio'?b.value:(b.textContent||b.getAttribute('aria-label')||b.title||''))||'');
+  window.__ccObs.push({at:new Date().toISOString(),text:String(t).replace(/\s+/g,' ').trim().slice(0,40),tag:b.tagName+(b.type?':'+b.type:''),id:b.id||b.name||''});
+  if(window.__ccObs.length>200) window.__ccObs.shift(); }catch(_){} },true); } return window.__ccObs.splice(0); })()`;
+function observeLoop(d) {
+  let lastCount = 0, quietSince = 0, dirty = true;
+  let busyTick = false;
+  const t = setInterval(async () => {
+    if (diagState[d.site] !== d) { clearInterval(t); return; }
+    if (busyTick) return;
+    busyTick = true;
+    try { await tick(); } finally { busyTick = false; }
+  }, 1000);
+  async function tick() {
+    const wins = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && w !== windows.main && w.webContents.session === d.win.webContents.session);
+    for (const w of wins) {
+      let fr = [];
+      try { fr = [w.webContents.mainFrame].concat((w.webContents.mainFrame.framesInSubtree || []).filter((f) => f !== w.webContents.mainFrame)); } catch {}
+      for (const f of fr) { try { ((await f.executeJavaScript(CLICK_EXPR, true)) || []).forEach((c) => { d.rec.noteClick(c); dirty = true; }); } catch {} }
+    }
+    const n = d.rec.summary().entries.length;
+    if (n !== lastCount) { lastCount = n; quietSince = Date.now(); dirty = true; return; }
+    if (dirty && Date.now() - quietSince > 1500 && d.snaps.length < 25 && !d.snapping) {
+      dirty = false; d.snapping = true;
+      try { await diagSnap(d); } catch {} finally { d.snapping = false; }
+    }
+  }
+}
+
 /** 진단 끝내기(정상·중단 공통) — 막기를 풀기 «전»에 같은 세션의 팝업은 닫는다 → 가리기 → 검사 → 파일 */
 async function diagFinish(site, abortedWhy) {
   const d = diagState[site];
@@ -2338,18 +2371,19 @@ async function diagFinish(site, abortedWhy) {
     if (!w.isDestroyed() && w !== d.win && w !== windows.main && w.webContents.session === d.win.webContents.session) { try { w.close(); } catch {} }
   });
   await d.ds.stop();
-  const raw = { site, startedAt: d.startedAt, endedAt: new Date().toISOString(), aborted: abortedWhy || null, requests: d.rec.summary(), snaps: d.snaps };
+  const raw = { site, mode: d.observe ? 'observe' : 'block', startedAt: d.startedAt, endedAt: new Date().toISOString(), aborted: abortedWhy || null, requests: d.rec.summary(), snaps: d.snaps };
   const { data, masked } = maskDiag(raw);
   const text = JSON.stringify(data, null, 1);
   const left = checkDiag(text);
   const sum = d.rec.summary();
-  const base = { site, aborted: abortedWhy || null, held: sum.held, passed: sum.passed, snaps: d.snaps.length, masked,
+  const base = { site, observe: !!d.observe, aborted: abortedWhy || null, held: sum.held, passed: sum.passed, snaps: d.snaps.length, masked,
+                 writes: d.observe ? [...new Set(data.requests.entries.filter((e) => e.method && e.method !== 'GET' && e.method !== 'HEAD').map((e) => e.method + ' ' + e.path))].slice(0, 20) : [],
                  heldPaths: [...new Set(data.requests.entries.filter((e) => /^막음/.test(e.verdict)).map((e) => e.method + ' ' + e.path))].slice(0, 20) };
   if (Object.keys(left).length) return { ok: false, ...base, left, error: '개인정보로 보이는 글자가 남아 있어 기록 파일을 만들지 않았어요.' };
   const dir = userFile('diag');
   fs.mkdirSync(dir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
-  const file = path.join(dir, 'diag-' + site + '-' + stamp + '.json');
+  const file = path.join(dir, 'diag-' + site + (d.observe ? '-관찰' : '') + '-' + stamp + '.json');
   fs.writeFileSync(file, text);
   return { ok: true, ...base, file };
 }
@@ -2375,9 +2409,10 @@ ipcMain.handle('diag:start', flowCall(async (a) => {
   if (!hosts.length) return { ok: false, error: '이 전산의 주소를 몰라 진단하지 않아요.' };
   const win = site === 'entry' ? diagEntryWindow(false) : (windows[site] && !windows[site].isDestroyed() ? windows[site] : null);
   if (!win) return { ok: false, error: (site === 'entry' ? '먼저 [엔트리 창 열기]로 엔트리에 로그인해 주세요.' : '먼저 맨 위 [' + ({ carinfo: '카인포', carmodoo: '경기조합' })[site] + ' 창] 단추로 창을 열고 로그인해 주세요.') };
-  const rec = createDiagRecorder({ siteHosts: hosts, readPaths: (siteConfig.REAL[site] || {}).diagReadPaths || [],
+  const observe = a.observe === true;
+  const rec = createDiagRecorder({ siteHosts: hosts, readPaths: (siteConfig.REAL[site] || {}).diagReadPaths || [], observe,
                                    allowStatic: (siteConfig.REAL[site] || {}).diagAllowStatic === true });      // 정적 파일도 기본 차단
-  const st = { site, rec, win, snaps: [], startedAt: new Date().toISOString() };
+  const st = { site, rec, win, snaps: [], observe, startedAt: new Date().toISOString() };
   st.ds = startDiagSession({ win, rec, onAbort: (why) => {
     diagFinish(site, why).then((r) => {
       if (r && r.ok === false && /진단 중이 아니에요/.test(r.error || '')) return;   // 이미 [진단 끝]으로 마무리 중이면 보내지 않음
@@ -2389,6 +2424,7 @@ ipcMain.handle('diag:start', flowCall(async (a) => {
     delete diagState[site];
     return { ok: false, error: '요청을 막는 장치를 켜지 못해서 진단을 시작하지 않았어요. 프로그램을 다시 켠 뒤 해 주세요.' };
   }
+  if (observe) observeLoop(st);
   return { ok: true };
 }));
 ipcMain.handle('diag:snap', flowCall(async (a) => {
