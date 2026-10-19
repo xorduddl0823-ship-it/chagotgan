@@ -34,4 +34,10 @@ mk out "$Z/관리_${ADMIN}_$C.zip"; rm -rf out
 CHECK="체크/2_차곳간_체크_index_v55.html"
 mkdir out && cp "$CHECK" out/index.html
 mk out "$Z/체크정식_v55_index만_$C.zip"; rm -rf out
+# 실제 메인 홈페이지(cgg.co.kr)용 — 홈페이지 v2 + 가입 v6 + _headers (안내: 홈페이지정식_올리기.md)
+#   시험 주소와 달리 «로그인»은 실제 app.cgg.co.kr 그대로 (주소 바꾸기 없음)
+mkdir out && cp 홈페이지/소개/0_차곳간_홈페이지_v2.html out/index.html && cp 홈페이지/join_v6.html out/join.html
+python3 홈페이지/통합입구/도구/올림/홈페이지정식_머리.py out/index.html >/dev/null   # 실제 홈페이지만 검색에 나오게(총괄 10/19)
+printf '/*\n  X-Frame-Options: SAMEORIGIN\n  X-Content-Type-Options: nosniff\n  Content-Security-Policy: frame-ancestors '"'"'self'"'"'\n  Referrer-Policy: strict-origin-when-cross-origin\n' > out/_headers
+mk out "$Z/홈페이지정식_v2_$C.zip"; rm -rf out
 ls -la "$Z"
