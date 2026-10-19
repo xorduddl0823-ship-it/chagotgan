@@ -18,6 +18,7 @@
   /* 읽기로 쓰는 경우(빈 args) — feeRules() · smsConf() 는 읽기 */
   function isWrite(fn,args){ if(!WR[fn]) return false; if((fn==="feeRules"||fn==="smsConf") && !(args&&args.length)) return false; return true; }
   var A="abcdefghijklmnopqrstuvwxyz0123456789";
+  try{ var st=document.createElement("style"); st.textContent="@media (max-width:600px){ [data-v566-retry]{min-height:42px;padding:0 14px} }"; document.head.appendChild(st); }catch(e){}
   function newRid(){ var a=new Uint8Array(24); try{ crypto.getRandomValues(a); }catch(e){ for(var i=0;i<24;i++) a[i]=Math.floor(Math.random()*256); }
     return Array.prototype.map.call(a,function(x){ return A[x%36]; }).join(""); }
   var FLY={}, LOST={}, CUR="";
@@ -50,15 +51,18 @@
   function unlockBtn(b){ if(!b) return; b.disabled=false; b.removeAttribute("aria-busy"); }
 
   /* 다시 하기 단추 */
+  function usable(b){ return b && b.isConnected && !b.disabled && !b.closest("[hidden]") && b.getClientRects().length; }
   function retryBtn(origin){
+    if(origin.redo) return origin.redo;   /* 단추 없이 저장한 것(검사자 수수료) — 같은 값을 다시 보내요 */
     return function(){
-      var target=(origin.el&&origin.el.isConnected&&!origin.el.closest("[hidden]"))?origin.el:(origin.page&&origin.page.isConnected?origin.page:null);
-      if(target){ target.disabled=false; target.click(); }
+      var target=usable(origin.el)?origin.el:(usable(origin.page)?origin.page:null);
+      if(target) target.click();
       else if(typeof bar==="function") bar("처음 누른 단추를 다시 눌러 주세요.","info");
     };
   }
   function niceMsgSafe(m){ try{ return typeof niceMsg==="function"?niceMsg(m):String(m||"저장하지 못했어요. 다시 시도해 주세요."); }catch(e){ return "저장하지 못했어요. 다시 시도해 주세요."; } }
   function showRetry(origin, msg){
+    if(!origin.el && !origin.redo) return;   /* 누른 단추가 없으면(자동 · 이어서 하는 저장) 빨간 글만 — 엉뚱한 단추를 누르지 않게 */
     setTimeout(function(){
       var where=null, m=document.querySelector("#bar .msg.err");
       /* 누른 단추가 열린 창(배달 상세 · 시트) 안이면 맨 위 알림이 창에 가려요 — 창 안에 빨간 글 + 다시 하기 */
@@ -66,7 +70,7 @@
       if(box && box.getClientRects().length){
         var old=box.querySelector("[data-v566-err]"); if(old) old.remove();
         var d=document.createElement("div"); d.className="msg err"; d.setAttribute("data-v566-err","1"); d.setAttribute("role","alert");
-        d.style.margin="0 0 10px"; d.textContent=(m&&m.firstChild&&m.firstChild.nodeType===3?m.firstChild.nodeValue:"")||niceMsgSafe(msg);
+        d.style.margin="0 18px 10px"; d.textContent=(m&&m.firstChild&&m.firstChild.nodeType===3?m.firstChild.nodeValue:"")||niceMsgSafe(msg);
         var host=origin.el.parentNode; host.parentNode.insertBefore(d,host); where=d;
       }
       else if(m) where=m;
@@ -87,7 +91,9 @@
     var k=keyOf(fn,args);
     if(FLY[k]) return FLY[k];   /* 같은 일이 처리 중 — 새로 보내지 않음 */
     var lost=LOST[k], rid=(lost && Date.now()-lost.t<30*60000) ? lost.rid : newRid();
-    var now=Date.now(), origin={el:(now-LAST.t<4000)?LAST.el:null, page:(now-PAGEBTN.t<60000)?PAGEBTN.el:null};
+    var now=Date.now(), el=(now-LAST.t<1000)?LAST.el:null;   /* 누른 바로 그 순간에 시작한 저장만 그 단추와 이어요 */
+    var origin={el:el, page:(el && el.closest(".cgg-dlg,#ovl,.sheet,.cgg-sheet") && now-PAGEBTN.t<600000)?PAGEBTN.el:null};
+    if(fn==="feeRules"){ var fa=args; origin={redo:function(){ window.call("feeRules",fa).then(function(){ if(typeof bar==="function") bar("검사자 수수료를 저장했어요.","ok"); },function(){}); }}; }
     var locked=lockBtn(origin.el && !origin.el.closest(".cgg-dlg,#ovl") ? origin.el : null);
     var p;
     CUR=rid; try{ p=raw.apply(this,arguments); } finally{ CUR=""; }
@@ -96,7 +102,7 @@
       function(e){ delete FLY[k]; unlockBtn(locked);
         var m=e&&e.message;
         if(unknown(m)) LOST[k]={rid:rid,t:Date.now()}; else delete LOST[k];
-        if(fn==="feeRules" && typeof bar==="function") bar("검사자 수수료를 서버에 저장하지 못했어요 — "+(m||"다시 시도해 주세요."),"err");
+        if(fn==="feeRules" && typeof bar==="function") bar(unknown(m)?"검사자 수수료를 저장하지 못했어요. 인터넷 연결을 확인하고 다시 해 주세요.":"검사자 수수료를 저장하지 못했어요 — "+(m||"다시 해 주세요."),"err");
         showRetry(origin, m); });
     return p;
   };

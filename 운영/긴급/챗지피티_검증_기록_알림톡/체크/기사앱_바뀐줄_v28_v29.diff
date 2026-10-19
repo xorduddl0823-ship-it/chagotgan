@@ -1,5 +1,5 @@
 diff --git "a/\354\262\264\355\201\254/driver/index_v28.html" "b/\354\262\264\355\201\254/driver/index_v29.html"
-index 165a9eb..c2e7190 100644
+index 165a9eb..c13d275 100644
 --- "a/\354\262\264\355\201\254/driver/index_v28.html"
 +++ "b/\354\262\264\355\201\254/driver/index_v29.html"
 @@ -1,4 +1,5 @@
@@ -23,6 +23,24 @@ index 165a9eb..c2e7190 100644
    .then(function(r){ return r.text().then(function(t){
      var j=null; try{ j=JSON.parse(t); }catch(e){}
      if(!j){ try{ console.warn('check-api 답이 JSON 이 아님', r.status, String(t).slice(0,300)); }catch(e){}
+@@ -288,7 +293,7 @@ function niceMsg(m, formal){
+   return m;
+ }
+ /* 보낸 결과 — 방법 코드(ATA · MMS · LMS · SMS)는 우리말로, 이유가 영어 · 코드면 쉬운 말로 */
+-function howKo(h){ h=String(h||'').toUpperCase(); return h==='ATA'?'알림톡':h==='MMS'?'사진 문자':(h==='LMS'||h==='SMS')?'문자':(h||'-'); }
++function howKo(h){ h=String(h||'').toUpperCase(); return h==='ATA'?'알림톡':h==='MMS'?'사진 문자':h==='LMS'?'긴 문자':h==='SMS'?'짧은 문자':'—'; }
+ /* v28: 기록 상태 — 알림 기준 [보이는 말, 칩 색] (기록 저장 자체는 따로 말하지 않음) */
+ function sendTag(r){
+   if(r.상태==='취소') return ['취소','p-bad'];
+@@ -1053,7 +1058,7 @@ function alert2(t,h){ modal('<h3>'+esc(t)+'</h3><div class="bad" style="margin-b
+ 
+ /* ---------- 보내기 ---------- */
+ function check(){
+-  saveDraft();
++  saveDraft(); S.rid='';   /* v29: 내용이 바뀌면 새 일 */
+   var why=[], tel=String(S.tel||'').replace(/\D/g,'');
+   if(!S.dealer && !tel) why.push('딜러');
+   if(!S.dest) why.push('목적지');
 @@ -1074,7 +1079,9 @@ function doSend(force){
    var rec={ plate:S.plate, car:S.car?S.car[1]:'', no:S.car?S.car[5]:'', vin:S.car?S.car[6]:'', dealer:S.dealer, comp:S.comp, tel:S.tel,
      dest:S.dest, destKind:S.destKind, driver:me.name, lat:S.gps?S.gps.lat:'', lng:S.gps?S.gps.lng:'', acc:S.gps?S.gps.acc:'',
@@ -42,7 +60,7 @@ index 165a9eb..c2e7190 100644
 -    $('m-no').onclick=closeModal;
 +    modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-bottom:14px">'+esc(e.message)+'</div>'+
 +      '<button class="big b-main" id="m-again">다시 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">닫기</button>');
-+    $('m-no').onclick=closeModal; $('m-again').onclick=function(){ doSend(false); };   /* v29: 같은 일 표시로 다시 — 두 번 생기지 않아요 */
++    $('m-no').onclick=function(){ S.rid=''; closeModal(); }; $('m-again').onclick=function(){ doSend(false); };   /* v29: «다시 보내기»만 같은 일 표시 — 닫고 고쳐 보내면 새 일 */
    });
  }
  function clearForm(){

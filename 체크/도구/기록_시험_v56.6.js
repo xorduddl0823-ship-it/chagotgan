@@ -177,12 +177,14 @@ function makeServer(){
   SRV.inject.push({fn:'feeRules',mode:'err',msg:'저장하지 못했어요.'});
   await p.evaluate(()=>{ call("feeRules",[{on:true,rules:[{who:"시험",how:"한 대마다",amt:1000}]}]).catch(function(){}); }); await W(500);   /* feeSet 과 같은 모양(실패를 조용히 넘김) */
   const fb=await barTxt(); ok('검사자 수수료 저장 실패 → 빨간 글(예전엔 조용히 넘어감)', /err/.test(fb) && /수수료/.test(fb), fb.replace(/\n/g,' '));
+  SRV.log.length=0; const fr=await p.$('#bar [data-v566-retry]'); if(fr){ await fr.click(); await W(500); }
+  const fb2=await barTxt(); ok('수수료 «다시 하기» → 다른 단추를 누르지 않고 같은 값만 다시 저장', !!fr && reqs('feeRules').length===1 && SRV.log.length===1 && /저장했어요/.test(fb2), fb2.replace(/\n/g,' '));
 
   /* ── D. 알림톡 보낸 결과 ── */
   await go('bill');
   await p.evaluate(ym=>billSendGo(["inv_"+ym+"_0","inv_"+ym+"_1","inv_"+ym+"_2"],false),ym); await W(1200);
   const bres=await text(), bbar=await barTxt();
-  ok('청구서 보내기 결과 — 알림톡 · 문자(단문) · 못 보냄 + 까닭', /알림톡/.test(bres) && /문자\(단문\)/.test(bres) && /못 보냄/.test(bres) && /연락처 없음/.test(bres));
+  ok('청구서 보내기 결과 — 알림톡 · 짧은 문자 · 못 보냄 + 까닭', /알림톡/.test(bres) && /짧은 문자/.test(bres) && /못 보냄/.test(bres) && /연락처 없음/.test(bres));
   ok('하나라도 못 보내면 빨간 글', /err/.test(bbar), bbar.replace(/\n/g,' '));
   await go('deliv'); await p.evaluate(()=>{ const s=ts("drv"); s.sel={dv1:true,dv2:true}; });
   await p.evaluate(()=>delivAct('resend')); await W(400);

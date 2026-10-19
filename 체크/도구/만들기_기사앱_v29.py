@@ -30,6 +30,12 @@ rep("""    modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-
     $('m-no').onclick=closeModal;""",
     """    modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-bottom:14px">'+esc(e.message)+'</div>'+
       '<button class="big b-main" id="m-again">다시 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">닫기</button>');
-    $('m-no').onclick=closeModal; $('m-again').onclick=function(){ doSend(false); };   /* v29: 같은 일 표시로 다시 — 두 번 생기지 않아요 */""")
+    $('m-no').onclick=function(){ S.rid=''; closeModal(); }; $('m-again').onclick=function(){ doSend(false); };   /* v29: «다시 보내기»만 같은 일 표시 — 닫고 고쳐 보내면 새 일 */""")
+# 내용을 고치면 새 일(같은 표시는 «다시 보내기»에서만)
+rep("""function check(){
+  saveDraft();""", """function check(){
+  saveDraft(); S.rid='';   /* v29: 내용이 바뀌면 새 일 */""")
+# 보낸 방법 말 — 용어사전(짧은 문자 · 긴 문자)
+rep("""(h==='LMS'||h==='SMS')?'문자':(h||'-'); }""", """h==='LMS'?'긴 문자':h==='SMS'?'짧은 문자':'—'; }""")
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", os.path.relpath(OUT, os.path.dirname(CHK)), hashlib.sha256(s.encode()).hexdigest()[:12])

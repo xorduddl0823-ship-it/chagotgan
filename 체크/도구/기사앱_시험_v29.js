@@ -44,7 +44,10 @@ const HTML=path.resolve(process.argv[2]||path.join(__dirname,'..','driver','inde
   ok('«그래도 보내기»는 새 rid', Object.keys(S.rids).length===before+1);
   // 4 서버 거절 → 다시 보내기 창
   await prep(); S.err=1; await p.evaluate(()=>doSend(false)); await p.waitForTimeout(500);
-  ok('서버가 거절해도 «보냈어요»로 안 보임', /보내지 못했어요/.test(await modalTxt()) && !!(await p.$('#m-again')));
+  const r0=S.log.length; await p.click('#m-no'); await p.evaluate(()=>{ S.dest='물류센터'; check(); doSend(false); }); await p.waitForTimeout(500);
+  ok('닫고 내용을 고쳐 보내면 새 rid(예전 답이 돌아오지 않게)', S.log.length===r0+1 && S.log[S.log.length-1].rid!==S.log[r0-1].rid);
+  await prep(); S.err=1; await p.evaluate(()=>doSend(false)); await p.waitForTimeout(500);
+  ok('서버가 거절해도 «보냈어요»로 안 보임 (다시)', /보내지 못했어요/.test(await modalTxt()) && !!(await p.$('#m-again')));
   ok('스크립트 오류 없음', errs.length===0, errs.slice(0,2).join(' | '));
   await b.close(); console.log(R.join('\n')); console.log('\n실행 '+(pass+fail)+' · 통과 '+pass+' · 실패 '+fail+' · 건너뜀 0'); process.exit(fail?1:0);
 })();
