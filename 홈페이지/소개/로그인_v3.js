@@ -2,7 +2,7 @@
    화면만 여기서 만들어요. 로그인 · 넘겨주기 서버 기능은 서버 방(요청서 홈페이지/요청서/2026-10-19_서버_홈페이지_통합로그인.md).
    ① 휴대폰 번호 → ② 인증번호 6자리 → ③ 가게가 둘 이상이면 «가게 고르기» → ④ «들어가는 중» → 그 제품 주소로
    - 로그인 표(token)와 넘김 코드는 브라우저에 저장하지 않아요(메모리에만). 넘김 코드는 주소의 # 뒤로만 보내요(서버 기록 · 다른 사이트로 새지 않게).
-   - 주소에 #demo 가 있으면 «예시 모드»: 서버를 부르지 않고 예시 값으로 화면만 보여 줘요(끝 번호 1111 = 가게 1곳 · 2222 = 3곳 · 0000 = 없음). */
+   - 주소에 #demo 가 있으면 «예시 모드»: 서버를 부르지 않고 예시 값으로 화면만 보여 줘요(끝 번호 1111 = 가게 1곳 · 2222 = 3곳 · 그 밖 = 가게 없음 → 회원가입). */
 (function(){
   var API = "https://ybfpxmmjofyvfprtvmhj.supabase.co/functions/v1/cgg-api?forceFunctionRegion=ap-northeast-2";
   var DEMO = /(^|[#&])demo\b/.test(location.hash);
@@ -30,7 +30,7 @@
         var p=S.phone.slice(-4), L=[];
         if(p==="1111") L=[{id:"d1",name:"예시 광택",product:"wash",role:"owner"}];
         if(p==="2222") L=[{id:"d1",name:"예시 광택",product:"wash",role:"owner"},{id:"d2",name:"예시 성능검사소",product:"check",role:"staff"},{id:"d3",name:"예시상사",product:"dealer",role:"dealer"}];
-        return ok({token:"demo",name:"김예시",places:L}); }
+        return ok({token:"demo",name:"김예시",places:L,joinToken:L.length?"":"demo"}); }
       if(fn==="homeGo") return ok({url:"#demo-go"});
       no(KO(FAIL)); },350); });
   }
@@ -39,7 +39,7 @@
   box.id="hl"; box.hidden=true; box.setAttribute("role","dialog"); box.setAttribute("aria-modal","true"); box.setAttribute("aria-labelledby","hlT");
   box.innerHTML='<div class="hl-card"><button type="button" class="hl-x" id="hlX" aria-label="닫기">✕</button>'
    +'<h2 id="hlT">로그인</h2><p class="hl-sub" id="hlSub">휴대폰 번호로 로그인해요. 워시 · 체크 · 딜러 모두 여기서 들어가요.</p>'
-   +(DEMO?'<p class="hl-demo">예시 모드예요. 서버를 부르지 않아요. 끝 번호 1111 = 가게 1곳 · 2222 = 3곳 · 0000 = 없음</p>':'')
+   +(DEMO?'<p class="hl-demo">예시 모드예요. 서버를 부르지 않아요. 끝 번호 1111 = 가게 1곳 · 2222 = 3곳 · 그 밖 = 가게 없음(회원가입으로)</p>':'')
    +'<div id="hl1"><label for="hlPh">휴대폰 번호</label><input id="hlPh" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000" maxlength="13">'
    +'<button type="button" class="btn p full" id="hlGo1">인증번호 받기</button></div>'
    +'<div id="hl2" hidden><p class="hl-to" id="hlTo"></p><label for="hlCode">인증번호 6자리</label><input id="hlCode" type="tel" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6">'
@@ -62,7 +62,7 @@
   function sendCode(){
     var p=phone(); if(!/^01[016789]\d{7,8}$/.test(p)){ msg("휴대폰 번호를 다시 확인해 주세요.",true); return; }
     S.phone=p; busy("hlGo1",1); busy("hlRe",1); msg("");
-    post("homeOtp",[p]).then(function(r){ S.ticket=r.ticket||""; $("hlTo").textContent=(r.to||"휴대폰")+" 으로 인증번호를 보냈어요. 5분 안에 넣어 주세요."; step("hl2"); $("hlCode").value=""; setTimeout(function(){ $("hlCode").focus(); },30); })
+    post("homeOtp",[p]).then(function(r){ S.ticket=r.ticket||""; $("hlTo").textContent=(r.to||"휴대폰")+" 번호로 인증번호를 보냈어요. 5분 안에 넣어 주세요."; step("hl2"); $("hlCode").value=""; setTimeout(function(){ $("hlCode").focus(); },30); })
       .catch(function(e){ e.message==="SOON"?soon():msg(e.ko?e.message:FAIL,true); })
       .then(function(){ busy("hlGo1",0); busy("hlRe",0); });
   }
@@ -71,7 +71,14 @@
     busy("hlGo2",1); msg("");
     post("homeVerify",[S.ticket,c]).then(function(r){ S.token=r.token||""; S.places=(r.places||[]).filter(function(x){ return PROD[x.product]; });
         $("hlCode").value="";
-        if(!S.places.length){ title("가게가 없어요",""); step("hl0"); return; }
+        if(!S.places.length){
+          /* 계정이 없으면 회원가입으로 이어 가요 — 인증은 끝났으니 번호를 다시 넣지 않게 «가입 표»만 같은 주소 안에서 한 번 건네요(대표님 결정 10/19) */
+          if(r.joinToken && (/^[A-Za-z0-9_-]{16,}$/.test(r.joinToken)||(DEMO&&r.joinToken==="demo"))){
+            try{ sessionStorage.setItem("cgg_join_vt",JSON.stringify({vt:r.joinToken,to:S.phone.replace(/^(\d{3})\d+(\d{4})$/,"$1-****-$2"),at:Date.now()})); }catch(e){}
+            title("회원가입으로 이어 가요","이 번호로 가입된 가게가 없어요. 휴대폰 인증은 끝났으니 요금제부터 골라 주세요.");
+            $("hlGoTxt").textContent="회원가입 화면을 여는 중이에요."; step("hl4"); S.token="";
+            setTimeout(function(){ location.href = DEMO ? "../join_v7_시안.html#demo" : "/join.html"; }, DEMO?900:200); return; }
+          title("가게가 없어요",""); step("hl0"); return; }
         if(S.places.length===1){ go(S.places[0]); return; }
         title("어느 가게로 들어갈까요?",(r.name?r.name+" 님, ":"")+"이 번호로 쓰는 가게가 "+S.places.length+"곳이에요.");
         $("hlList").innerHTML=S.places.map(function(x,i){ return '<li><button type="button" data-i="'+i+'"><span class="hl-pn"><b>'+esc(x.name)+'</b><small>내 역할 · '+esc(ROLE[x.role]||x.role||"")+'</small></span><span class="hl-pr hl-'+esc(x.product)+'">'+PROD[x.product]+'</span></button></li>'; }).join("");
