@@ -142,11 +142,32 @@ test('(12차 검수) 주소 경로·물음표 뒤 이름·단추 이름에 섞�
   const rv = reviewText(text);
   assert.ok(/요청 \| POST ai\.carinfo\.co\.kr \/ct\/save/.test(rv) && /보낸 칸 이름 \| vin/.test(rv) && /누른 단추 \| 저장/.test(rv), rv);
   assert.ok(!/12가3456|KMHXX00XXXX123456|01012345678/.test(rv));
-  //  시각을 붙인 원본(가리기 전 시각은 그대로)으로 정리 — 저장 후보는 [저장] 뒤 요청 하나
+  //  시각을 붙인 원본(가리기 전 시각은 그대로)으로 정리 — 저장 «추정 후보»는 [저장] 뒤 요청 하나, 확정은 없음
+  const { render } = require('../tools/observe-map');
   const m = analyze(data);
-  assert.strictEqual(m.proposal.savePatterns.length, 1);
-  assert.strictEqual(m.proposal.savePatterns[0], '^/ct/save/[^/]+$', '가린 부분은 아무 글자로');
-  assert.ok(new RegExp(m.proposal.savePatterns[0]).test('/ct/save/KMHAA00AAAA111111'));
-  assert.strictEqual(m.proposal.phaseAllow.prepare.length, 1);
-  assert.ok(m.proposal.diagReadPaths.some((p) => /carcheck_list/.test(p)));
+  const saves = m.estimate.filter((c) => c.setting === 'savePatterns');
+  assert.strictEqual(saves.length, 1);
+  assert.strictEqual(saves[0].pattern, '^/ct/save/[^/]+$', '가린 부분은 아무 글자로');
+  assert.ok(new RegExp(saves[0].pattern).test('/ct/save/KMHAA00AAAA111111'));
+  assert.ok(/저장/.test(saves[0].basis) && /초 뒤/.test(saves[0].basis), '짐작 근거(앞 단추·몇 초 뒤)');
+  assert.strictEqual(m.estimate.filter((c) => c.setting === 'phaseAllow.prepare').length, 1);
+  assert.ok(m.readGuess.some((c) => /carcheck_list/.test(c.pattern)));
+  assert.ok(m.estimated && m.estimate.concat(m.readGuess).every((c) => c.estimated === true && c.confirmed === false), '모든 후보는 추정 · 확인 전');
+  assert.ok(/추정 · 자동 확정 아님/.test(render(m)) && !/확인 \| 확정/.test(render(m)));
+});
+
+test('(12차 보완2) 관찰 정리 도구는 설정을 고치지 않고, 사진·저장 순서는 «관찰된 순서(추정)»로만 보여 줌 · 카인포 사진 순서는 확인 전(비어 있음 → 사진 있으면 저장 전에 멈춤)', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'tools', 'observe-map.js'), 'utf8');
+  assert.ok(!/writeFile|appendFile|require\([^)]*site-config/.test(src), '설정 파일을 읽어 고치거나 쓰지 않음');
+  const { analyze } = require('../tools/observe-map');
+  const at = (s) => '2026-10-19T10:00:' + String(s).padStart(2, '0') + 'Z';
+  const d = { site: 'carinfo', requests: { entries: [
+    { kind: 'click', at: at(1), text: '사진만 전송 (카인포)' }, { at: at(2), method: 'POST', host: 'h', path: '/up' },
+    { kind: 'click', at: at(10), text: '저장' }, { at: at(11), method: 'POST', host: 'h', path: '/save' },
+  ] } };
+  assert.match(analyze(d).photoOrder, /관찰된 순서: 사진 → \[저장\].*추정/);
+  const { REAL } = require('../src/sites/site-config');
+  assert.strictEqual(REAL.carinfo.photoPhase, null, '카인포 사진 순서는 확인 전');
 });
