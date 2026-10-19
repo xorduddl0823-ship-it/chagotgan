@@ -55,6 +55,15 @@ class Q {
         if (ps.some((p) => tbl.some((r) => r.shop === p.shop && r.rec_id === p.rec_id)))
           return { data: null, error: { code: "23505", message: "duplicate key value violates unique constraint" } };
       }
+      /* sb28·v53 시험: cgg_idem 은 (제품·업체·사람·기능·rid) 겹치면 거절 — SQL 26 기본 열쇠와 같음 */
+      if (this.t === "cgg_idem" && this.op === "insert") {
+        for (const p of [].concat(this.payload) as Row[]) {
+          if (tbl.some((r) => r.product === p.product && r.tenant === p.tenant && r.who === p.who && r.fn === p.fn && r.rid === p.rid))
+            return { data: null, error: { code: "23505", message: "duplicate key" } };
+          tbl.push(Object.assign({ state: "run", at: new Date().toISOString() }, p));
+        }
+        return { data: null, error: null };
+      }
       /* sb28·v53 시험: 승인 요청 표 기본값(SQL 24 와 같음) — 번호 · 대기 · 종사업장 0000 · 기다리는 같은 요청은 하나만 */
       if (this.t === "biz_share_req" && this.op === "insert") {
         for (const p of [].concat(this.payload) as Row[]) {

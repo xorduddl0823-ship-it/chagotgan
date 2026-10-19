@@ -13,7 +13,8 @@
 //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
 //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
-//  v53 (2026-10-19) 긴급(중복 사업자번호): 기사 «회사 비밀번호»가 사업자번호이고 그 번호를 쓰는 검사소가 둘 이상이면 거절(보안 C5 · 코드로만) · officeSave 사업자번호는 숫자 10자리로만 저장(정규화) · 팝빌 아이디도 다른 검사소가 쓰면 거절 ·
+//  v53 (2026-10-19) 기록·알림톡 마감: 알림톡 변수에 빈 값(«-»)이 있으면 대체 문구 문자로(워시와 같음) · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 검사소+사람+기능+rid) ·
+//    긴급(중복 사업자번호): 기사 «회사 비밀번호»가 사업자번호이고 그 번호를 쓰는 검사소가 둘 이상이면 거절(보안 C5 · 코드로만) · officeSave 사업자번호는 숫자 10자리로만 저장(정규화) · 팝빌 아이디도 다른 검사소가 쓰면 거절 ·
 //    DB 같은 번호 막기(SQL 24 문지기·유일 색인)에 걸리면 같은 안내 · 안내 글 «이미 등록된 사업자번호예요. 본인 업체라면 차곳간에 문의해 주세요.»
 //    대표님 확정(04): 고유 키 = 사업자번호 + 종사업장번호(biz_sub · 없으면 0000) · 같은 번호로 두 번째 가게·제품은 «본사 승인» 때만
 //    (개인·법인 같음) — 승인 없이 넣으면 거절 + 승인 요청(biz_share_req). 승인은 관리(wash-api hqBizShareDecide)에서. SQL 24 필요.
@@ -1125,7 +1126,10 @@ async function ataSend(office: any, to: string, tplKey: string, vars0: Record<st
   const from = onlyDigits(office?.sms_from) || onlyDigits(env("SMS_FROM"));
   if (!from) return { ok: false, how: "", why: "보내는 번호 없음" };
   const ha = await hqAta();
-  if (ha.tpl[tplKey] && ha.pf) {
+  /* v53(알림톡 방 대조 3): 빈 값(«-»)이 있으면 «-님» 같은 알림톡 대신 대체 문구 문자로 — 워시 noticeAta 와 같음 */
+  const blank = Object.keys(vars).filter((k) => { const v = S(vars[k]).trim(); return !v || v === "-"; });
+  if (blank.length) console.error("ataSend vars blank", tplKey, blank.join(","));
+  if (ha.tpl[tplKey] && ha.pf && !blank.length) {
     try {
       const r = await solapi("POST", "/messages/v4/send-many/detail", { messages: [{ to, from, text: smsText,
         kakaoOptions: { pfId: ha.pf, templateId: ha.tpl[tplKey], variables: vars, disableSms: false } }] }, meta);
@@ -4166,7 +4170,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
        ① 본사 채널 템플릿(관리 설정 check_arrive) → ② 검사소가 정한 템플릿(ata_tpl) → ③ 둘 다 없으면 아래 문자 */
     const ha = await hqAta();
     const arrive = fmtTs(new Date(new Date(row.arrived_at).getTime() + KST)).slice(5, 16);
-    const plan = (ha.tpl.check_arrive && ha.pf)
+    let plan: any = (ha.tpl.check_arrive && ha.pf)
       ? { pf: ha.pf, tpl: ha.tpl.check_arrive, vars: {
           "#{딜러명}": S(row.dealer_name) || "-", "#{차량번호}": S(row.plate) || "-", "#{차명}": S(row.car_name) || "-",
           "#{목적지}": S(row.dest_name) || "-", "#{도착시각}": arrive, "#{보기코드}": viewKey,
@@ -4185,6 +4189,11 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
           "#{도착시각}": arrive, "#{기사}": S(row.driver_name), "#{연락처}": S(office.tel), "#{링크}": viewKey } }
       : null;
     if (plan) (plan as any).vars = cleanVars((plan as any).vars);   // v33(보안 L1)
+    /* v53(알림톡 방 대조 3): 빈 값(«-»)이 하나라도 있으면 알림톡 대신 아래 문자로 — 워시와 같음 */
+    if (plan && Object.values(plan.vars).some((v: any) => !S(v).trim() || S(v).trim() === "-")) {
+      console.error("arrive vars blank", Object.keys(plan.vars).filter((k) => { const v = S(plan.vars[k]).trim(); return !v || v === "-"; }).join(","));
+      plan = null;
+    }
     if (plan) {
       try {
         const r = await solapi("POST", "/messages/v4/send-many/detail", { messages: [{
@@ -4846,6 +4855,45 @@ const FN: Record<string, (ctx: Ctx, ...a: any[]) => Promise<unknown>> = {
     who: c.who, role: c.role, ver: VER }),
 };
 
+/* v53(기록·알림톡 마감 · SQL 26): «한 번 누름 = 한 번 처리» — 화면이 쓰기 요청에 rid(영문 소문자·숫자 24자)를 붙이면
+   (제품 · 검사소 · 사람 · 기능 · rid)를 한 줄로 잡고, 같은 열쇠가 다시 오면 다시 하지 않고 처음 답을 그대로 돌려줌.
+   처음 것이 처리 중이면 «처리 중이에요». 실패하면 줄을 지워 다시 하기가 되게. 표가 없으면(SQL 26 전) 예전처럼. */
+const IDEM_BUSY = "처리 중이에요. 잠시 뒤 다시 확인해 주세요.";
+const IDEM_DRIVER = new Set(["deliv_arrive"]);       // 로그인 없이 기사 열쇠(args[0])로 부르는 쓰기
+async function idemSha(t: string) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)));
+  return [...h].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function idemRun(tenant: string, who: string, fn: string, rid: string, run: () => Promise<unknown>): Promise<unknown> {
+  const key = { product: "check", tenant: S(tenant).slice(0, 80), who: S(who).slice(0, 80), fn: S(fn).slice(0, 60), rid };
+  if (!key.tenant || !key.who) return await run();
+  let { error } = await db.from("cgg_idem").insert({ ...key, state: "run" });
+  if (error && S((error as any).code) === "23505") {
+    const { data: had } = await db.from("cgg_idem").select("state,result,at").eq("product", "check").eq("tenant", key.tenant)
+      .eq("who", key.who).eq("fn", key.fn).eq("rid", rid).maybeSingle();
+    if (had && Date.now() - Date.parse(S(had.at)) > 24 * 3600e3) {          // 하루 지난 열쇠는 새로
+      await db.from("cgg_idem").delete().eq("product", "check").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
+      ({ error } = await db.from("cgg_idem").insert({ ...key, state: "run" }));
+      if (error) throw new Error(IDEM_BUSY);
+    } else {
+      if (had && had.state === "done") return had.result;                    // 같은 누름 → 처음 답 그대로(다시 처리 안 함)
+      throw new Error(IDEM_BUSY);
+    }
+  } else if (error) {
+    console.error("idem", S((error as any).code), S(error.message).slice(0, 60));   // 표가 없으면(SQL 26 전) 예전처럼
+    return await run();
+  }
+  try {
+    const out = await run();
+    await db.from("cgg_idem").update({ state: "done", result: out ?? null, done_at: new Date().toISOString() })
+      .eq("product", "check").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
+    if (Math.random() < 0.02) db.from("cgg_idem").delete().lt("at", new Date(Date.now() - 24 * 3600e3).toISOString()).then(() => {}, () => {});
+    return out;
+  } catch (e) {
+    await db.from("cgg_idem").delete().eq("product", "check").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
+    throw e;                                                                 // 실패는 저장하지 않음 → 다시 하기 가능
+  }
+}
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: { ...JSON_HEAD, "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "POST,OPTIONS" } });
@@ -4858,7 +4906,15 @@ Deno.serve(async (req) => {
     if (!f) return err("지원하지 않는 기능입니다. 화면을 새로 고쳐 주세요.");
     const ctx = OPEN.has(fn) ? ({ office: null, who: "", role: "", ip: ipOfReq(req) } as Ctx)
                              : await whoIs(S(body.shop), S(body.token));
-    const out = await f(ctx, ...(Array.isArray(body.args) ? body.args : []));
+    const args = Array.isArray(body.args) ? body.args : [];
+    const rid = S(body.rid);
+    let out: unknown;
+    if (/^[a-z0-9]{24}$/.test(rid) && (!OPEN.has(fn) || IDEM_DRIVER.has(fn))) {
+      /* 열쇠 = 검사소 + 사람 + 기능 + rid (기사는 'drv' + 열쇠 지문) — rid 만으로는 남의 답을 못 받음 */
+      const tenant = OPEN.has(fn) ? "drv" : S(ctx.office?.id);
+      const who = OPEN.has(fn) ? await idemSha(S(args[0])) : S(ctx.who);
+      out = await idemRun(tenant, who, fn, rid, () => Promise.resolve(f(ctx, ...args)));
+    } else out = await f(ctx, ...args);
     return ok(out);
   } catch (e) {
     if (e instanceof NeedCode)   // v26: 화면이 확인 번호 칸을 열 수 있게
