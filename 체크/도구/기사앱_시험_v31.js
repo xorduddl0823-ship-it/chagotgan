@@ -65,6 +65,9 @@ const HTML=path.resolve(process.argv[2]||path.join(__dirname,'..','driver','inde
   await p.evaluate(()=>closeModal()); await prep(); S.err=1; S.errMsg='처리 중이에요. 잠시 뒤 다시 확인해 주세요.'; S.log.length=0; await p.evaluate(()=>doSend(false)); await p.waitForTimeout(500);
   const ag=await p.$('#m-again'); if(ag){ await ag.click(); await p.waitForTimeout(500); }
   ok('«처리 중이에요» → 다시 보내기는 같은 rid', !!ag && S.log.length===2 && S.log[0].rid===S.log[1].rid);
+  await p.evaluate(()=>closeModal()); await prep(); S.err=1; S.errMsg='처리 중이에요. 잠시 뒤 다시 확인해 주세요.'; S.log.length=0; await p.evaluate(()=>doSend(false)); await p.waitForTimeout(500);
+  const pm=await modalTxt(); const no=await p.$('#m-no'); if(no){ await no.click(); await p.waitForTimeout(200); } await p.evaluate(()=>doSend(false)); await p.waitForTimeout(500);
+  ok('«처리 중이에요» 창(못 보냈다고 하지 않음) · 닫고 다시 보내도 같은 rid', /아직 처리 중이에요/.test(pm) && !/보내지 못했어요/.test(pm) && S.log.length===2 && S.log[0].rid===S.log[1].rid);
   S.errMsg='';
   ok('기록 칩: «확인 중»', await p.evaluate(()=>sendTag({발송결과:'확인 중', 딜러연락처:'010'})[0]==='확인 중'));
   ok('스크립트 오류 없음', errs.length===0, errs.slice(0,2).join(' | '));
