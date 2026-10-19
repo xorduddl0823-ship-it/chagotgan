@@ -7,7 +7,7 @@
 //   DB 직접 REST · RLS · 보관함 공개 여부 · 운영 비밀값은 이 검사로 못 봐요(읽기 전용 SQL · 서버 방 확인 몫).
 "use strict";
 const fs = require("fs"), path = require("path");
-let ROOT = __dirname; while (!fs.existsSync(path.join(ROOT, "서버")) && path.dirname(ROOT) !== ROOT) ROOT = path.dirname(ROOT);   // 저장소 맨 위
+let ROOT = __dirname; while (!fs.existsSync(path.join(ROOT, "CLAUDE.md")) && path.dirname(ROOT) !== ROOT) ROOT = path.dirname(ROOT);   // 저장소 맨 위
 const W = process.argv[2] || path.join(ROOT, "서버/1_차곳간워시_서버_wash-api_sb28.ts");
 const C = process.argv[3] || path.join(ROOT, "서버/2_차곳간체크_서버_check-api_v53.ts");
 const D = process.argv[4] || path.join(ROOT, "서버/3_딜러앱_서버_dealer-api_d9.ts");
