@@ -60,24 +60,24 @@ r = await call("shopBiz", [{ bizNo: "2223344444" }], B, "SHB1");
 check("체크 검사소 번호도 거절", !!r.__err && !shopRow("SHB1").biz_no, r);
 
 check("같은 제품·같은 키(A 번호 + 0000)는 요청도 안 남김 · 다른 제품(체크) 번호는 승인 요청 1건", store.biz_share_req.length === 1 &&
-  store.biz_share_req[0].biz_no === "2223344444" && !store.biz_share_req.some((x: any) => x.biz_no === NUM), store.biz_share_req);
+  store.biz_share_req[0]?.biz_no === "2223344444" && !store.biz_share_req.some((x: any) => x.biz_no === NUM), store.biz_share_req);
 store.biz_share_req.length = 0;
 
 console.log("①-2 같은 사업자의 두 번째 가게(종사업장 0002) — 본사 승인 때만");
 r = await call("shopBiz", [{ bizNo: NUM, bizSub: "2" }], B, "SHB1");
 check("승인 전: 거절 + «확인 요청을 남겼어요»", !!r.__err && MSG.test(r.__err) && /확인 요청을 남겼어요/.test(r.__err) && !shopRow("SHB1").biz_no, r);
-check("승인 요청 1건(워시 · SHB1 · 0002 · 대기)", store.biz_share_req.length === 1 && store.biz_share_req[0].code === "SHB1" && store.biz_share_req[0].biz_sub === "0002" && store.biz_share_req[0].state === "wait", store.biz_share_req);
+check("승인 요청 1건(워시 · SHB1 · 0002 · 대기)", store.biz_share_req.length === 1 && store.biz_share_req[0]?.code === "SHB1" && store.biz_share_req[0]?.biz_sub === "0002" && store.biz_share_req[0]?.state === "wait", store.biz_share_req);
 await call("shopBiz", [{ bizNo: NUM, bizSub: "0002" }], B, "SHB1");
 check("다시 눌러도 요청은 하나", store.biz_share_req.length === 1, store.biz_share_req);
 r = await call("shopBiz", [{ bizNo: "1112233333" }], B, "SHB1");
 check("본사 번호는 요청도 안 남김", store.biz_share_req.length === 1 && !/확인 요청/.test(r.__err || ""), r);
 r = await call("hqBizShareDecide", [1, true], B, "SHB1");
-check("업체 열쇠로는 승인 못 함", !!r.__err && store.biz_share_req[0].state === "wait", r);
+check("업체 열쇠로는 승인 못 함", !!r.__err && store.biz_share_req[0]?.state === "wait", r);
 r = await call("hqBizShareList", ["wait"], ADM, "ADMIN");
 check("관리 목록: 대기 1건 · 지금 그 번호를 쓰는 곳(A) 함께 보임", r.result?.list?.length === 1 && r.result.list[0].state === "대기" && r.result.list[0].usedBy.some((x: string) => /SHA1/.test(x)), r.result);
 r = await call("hqBizShareDecide", [1, true, "같은 사업자 2호점 확인"], ADM, "ADMIN");
 check("본사 승인 → 그때 B에 번호 + 종사업장 0002 · 확인됨", r.result?.ok && shopRow("SHB1").biz_no === NUM && shopRow("SHB1").biz_sub === "0002" && !!shopRow("SHB1").biz_ok_at, [r, shopRow("SHB1")]);
-check("승인 목록·요청 상태·hq_audit(시도·끝) 기록", store.biz_share_ok.length === 1 && store.biz_share_req[0].state === "ok" &&
+check("승인 목록·요청 상태·hq_audit(시도·끝) 기록", store.biz_share_ok.length === 1 && store.biz_share_req[0]?.state === "ok" &&
   store.hq_audit.filter((x: any) => x.action === "bizShareOk").map((x: any) => x.result).join() === "try,ok" && !JSON.stringify(store.hq_audit).includes(NUM), store.hq_audit);
 r = await call("hqBizShareDecide", [1, true], ADM, "ADMIN");
 check("이미 처리한 요청은 다시 못 함", !!r.__err, r);
@@ -85,7 +85,7 @@ shopRow("SHB1").biz_no = null; shopRow("SHB1").biz_sub = null; shopRow("SHB1").b
 store.biz_share_ok.length = 0;
 await call("shopBiz", [{ bizNo: NUM, bizSub: "0003" }], B, "SHB1");
 r = await call("hqBizShareDecide", [2, false, "다른 사업자"], ADM, "ADMIN");
-check("거절하면 번호 안 들어감 · 상태 거절 · 기록", r.result?.state === "거절" && !shopRow("SHB1").biz_no && store.biz_share_req[1].state === "no" && store.hq_audit.some((x: any) => x.action === "bizShareNo" && x.result === "ok"), [r, store.biz_share_req]);
+check("거절하면 번호 안 들어감 · 상태 거절 · 기록", r.result?.state === "거절" && !shopRow("SHB1").biz_no && store.biz_share_req[1]?.state === "no" && store.hq_audit.some((x: any) => x.action === "bizShareNo" && x.result === "ok"), [r, store.biz_share_req]);
 
 console.log("② 남의 번호 넣기 — 화면 설정(«우리 사업장»)");
 rpcLog.length = 0;
@@ -110,7 +110,7 @@ check("관리에서도 다른 곳이 쓰는 번호는 거절 · «승인 요청�
 r = await call("hqShopSave", ["SHB1", { bizNo: "5556677777" }], ADM, "ADMIN");
 check("관리에서 안 쓰는 번호는 저장", !r.__err && shopRow("SHB1").biz_no === "5556677777", r);
 const au = store.hq_audit.filter((x: any) => x.action === "shopBizSet");
-check("관리의 번호 바꾸기는 감사 기록(시도·끝) · 번호는 가림", au.map((x: any) => x.result).join() === "try,ok" && au[0].detail.code === "SHB1" && !JSON.stringify(au).includes("5556677777"), au);
+check("관리의 번호 바꾸기는 감사 기록(시도·끝) · 번호는 가림", au.map((x: any) => x.result).join() === "try,ok" && au[0]?.detail?.code === "SHB1" && !JSON.stringify(au).includes("5556677777"), au);
 shopRow("SHB1").biz_no = null;
 
 console.log("④ 같은 번호를 두 곳이 동시에");
@@ -149,4 +149,4 @@ check("새 업체엔 사업자번호가 없음 (번호로 권한 안 생김)", !
 check("판 sb28", JSON.stringify(await call("apiVer", [], A, "SHA1")).includes("sb28"));
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
-if (fail) Deno.exit(1);
+if (fail || pass === 0) Deno.exit(1);   // 하나도 안 돌았으면 실패

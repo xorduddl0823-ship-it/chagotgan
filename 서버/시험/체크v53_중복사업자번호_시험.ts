@@ -60,11 +60,11 @@ off("oB").biz_no = ""; off("oB").popbill_userid = "";
 store.biz_share_req.length = 0;
 r = await call("officeSave", [{ biz_no: "5556677777" }], TK("b"));
 check("워시가 쓰는 번호: 거절 + 승인 요청 1건(체크 · OFFB)", !!r.__err && /확인 요청을 남겼어요/.test(r.__err) && store.biz_share_req.length === 1 &&
-  store.biz_share_req[0].product === "check" && store.biz_share_req[0].code === "OFFB" && store.biz_share_req[0].biz_no === "5556677777", [r, store.biz_share_req]);
+  store.biz_share_req[0]?.product === "check" && store.biz_share_req[0]?.code === "OFFB" && store.biz_share_req[0]?.biz_no === "5556677777", [r, store.biz_share_req]);
 r = await call("officeSave", [{ biz_no: NUM }], TK("b"));
 check("같은 제품·같은 키(A 번호 + 0000)는 요청 없음", !/확인 요청/.test(r.__err || "") && store.biz_share_req.length === 1, [r, store.biz_share_req]);
 r = await call("officeSave", [{ biz_no: NUM, biz_sub: "0002" }], TK("b"));
-check("다른 종사업장(0002)은 거절 + 요청", !!r.__err && store.biz_share_req.length === 2 && store.biz_share_req[1].biz_sub === "0002", store.biz_share_req);
+check("다른 종사업장(0002)은 거절 + 요청", !!r.__err && store.biz_share_req.length === 2 && store.biz_share_req[1]?.biz_sub === "0002", store.biz_share_req);
 r = await call("officeSave", [{ biz_no: NUM, biz_sub: "12a" }], TK("b"));
 check("종사업장번호가 숫자가 아니면 거절", !!r.__err && /종사업장번호/.test(r.__err), r);
 store.biz_share_ok.push({ product: "check", code: "OFFB", biz_no: "5556677777", biz_sub: "0000" });
@@ -88,7 +88,7 @@ check("가입: 골라 잡지 않고 거절(«검사소 코드를 넣어 주세�
 r = await call("deliv_login", ["홍기사", "pw123456!", "4445566666"]);
 check("로그인: 같은 번호 두 곳이면 거절", /검사소 코드/.test(r.__err || ""), r);
 r = await call("deliv_signup", ["offe", "홍기사", "pw123456!"]);
-check("검사소 코드로는 그 검사소에만 가입 신청(사무실 승인 대기)", !!r.__err && /사무실/.test(r.__err) && (store as any).check_deliv_signup.length === 1 && (store as any).check_deliv_signup[0].office_id === "oE", [r, (store as any).check_deliv_signup]);
+check("검사소 코드로는 그 검사소에만 가입 신청(사무실 승인 대기)", !!r.__err && /사무실/.test(r.__err) && (store as any).check_deliv_signup.length === 1 && (store as any).check_deliv_signup[0]?.office_id === "oE", [r, (store as any).check_deliv_signup]);
 
 console.log("③ 검사소 A/B 자료가 서로 안 보임 (남의 ID 넣기)");
 r = await call("invoiceRows", ["iA"], TK("b"));
@@ -109,4 +109,4 @@ r = await call("officeSave", [{ tel: "x" }]);
 check("열쇠 없이 → 거절", !!r.__err, r);
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
-if (fail) Deno.exit(1);
+if (fail || pass === 0) Deno.exit(1);   // 하나도 안 돌았으면 실패
