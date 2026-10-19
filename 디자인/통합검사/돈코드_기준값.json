@@ -1,8 +1,8 @@
 {
  "made": "2026-10-19",
  "files": {
-  "wash": "워시/1_차곳간_워시_index_v140.html",
-  "check": "체크/2_차곳간_체크_index_v56.4.html"
+  "wash": "워시/1_차곳간_워시_index_v141.html",
+  "check": "체크/2_차곳간_체크_index_v56.5.html"
  },
  "money": {
   "wash": {
@@ -57,11 +57,11 @@
    "twinsOf": "80f2f197bad0bb9d",
    "jLedgerState": "fa01f30d5646edd4",
    "ledgerRows": "fe688c8c2c0f775b",
-   "exportHometax": "e769d4714f040997",
+   "exportHometax": "34dc6afbc79fd381",
    "exportHometax0": "d4a2a4af7ede3b8c",
    "exportTaxCsv": "30fa338042bf6a61",
    "hometaxRows": "22ff9fac98e511cf",
-   "writeHometax": "de91cb911883c233",
+   "writeHometax": "464eea98e1d9714f",
    "issuerOf": "1783b8cd3c7b5197",
    "recTaxType": "acfc94763a27bd69",
    "taxBillCode": "2e99e0126074560d",
@@ -127,7 +127,7 @@
    "insSum": "2b0c2b6d5040c2de",
    "loadIns": "388366fa841d9f1f",
    "setInsQ": "721fa770288ef6f2",
-   "hometaxGo": "b6cca8e4210dd0cc",
+   "hometaxGo": "73115ed41d63af13",
    "loadTax": "73ba678bf6b5ffef",
    "ptTax": "af4499c1742294bc",
    "taxOf": "338f7cc38f830bb5"

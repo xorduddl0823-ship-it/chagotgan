@@ -10,7 +10,7 @@
 const fs=require('fs'),path=require('path'),crypto=require('crypto'),cp=require('child_process');
 const HERE=__dirname, BASEFILE=path.join(HERE,'돈코드_기준값.json');
 /* 지금 정식 판 — 바뀌면 총괄과 정한 뒤 --save 로 기준값을 다시 떠요 */
-const OFFICIAL={wash:'워시/1_차곳간_워시_index_v140.html', check:'체크/2_차곳간_체크_index_v56.4.html'};
+const OFFICIAL={wash:'워시/1_차곳간_워시_index_v141.html', check:'체크/2_차곳간_체크_index_v56.5.html'};
 /* 돈 코드 함수 목록 — 두 파일을 검색해서 뽑았어요(10/18). 화면만 그리는 함수(render*·draw*·*Html·*Sheet 등)는 화면 통합 때 바뀌는 게 맞아서 뺐어요.
    단, 단가표 · 부가세 안내(renderPriceSets · vatHint)는 돈 숫자를 직접 만지므로 넣었어요(총괄 지정). */
 const MONEY={
