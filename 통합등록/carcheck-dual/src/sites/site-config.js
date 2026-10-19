@@ -70,9 +70,17 @@ const REAL = {
     confirmed: false,
     hosts: [],                                                           // 엔트리 주소 — 10/19
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
+    //  10/19 대표님 화면 사진(«성능점검 현황»):
+    //   · 로그인할 때마다 문자 «본인확인»(인증번호, 3분) · 한동안 안 쓰면 끊겨 다시 로그인+문자 — 사람이 함(프로그램은 우회·연장 안 함)
+    //   · 로그인되면 오른쪽 위에 이름(아이디) 표시 → loggedIn 은 그 자리(선택자는 사진으로 알 수 없어 비움)
+    //   · 목록 칸: 성능번호(«26-28-604413» 줄표 모양) · 차량번호(«****5528» 앞을 가림) · 차량명 · 성능(«완료») · 결제방식 · 성능점검료 · 보험료 ·
+    //     표시보험료 · 주행거리 · 사진(«2/2») · 이름 · 매매/상사 · 접수일 · 만료일 · [성능점검] · [성능기록부] · [보험사]
+    //   · 오른쪽 위 [간편 접수] · [성능점검 접수] — «다음 번호»·불러오기는 [성능점검 접수] 안쪽으로 보임(사진 필요)
+    numberDigitsOnly: true,                                              // 번호는 숫자만 견줌(줄표 뗌)
     loggedIn: null, nextNumber: null, numberInput: null, loadButton: null,
     loaded: { entryNo: null, carNo: null, vin: null },
-    list: { rows: null, cols: null },
+    //  표가 아닌 칸 모양일 수 있어 줄 선택자는 비움 · 칸 순서만 적어 둠(성능번호 0 · 차량번호 1 · 성능 3 · 접수일 12)
+    list: { rows: null, cols: { checkNo: 0, carNo: 1, status: 3, date: 12 } },
   },
 };
 

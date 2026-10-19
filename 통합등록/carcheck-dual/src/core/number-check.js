@@ -24,6 +24,19 @@ const normCar = (s) => String(s || '').replace(/\s+/g, '');
 //  차대번호: 영문·숫자만 남긴다(가림표 *·띄어쓰기·- 는 뺌 — «***123456» 은 뒤 6자리만 보이는 것)
 const normVin = (s) => String(s || '').replace(/[^0-9A-Za-z]+/g, '').toUpperCase();
 const normNo = (s) => String(s || '').replace(/\s+/g, '');
+/**
+ * 목록의 차량번호가 이 차인가 — 엔트리 목록은 «****5528»처럼 앞을 가려 보여 준다(10/19 화면 사진).
+ *  가림표(*)가 있으면 보이는 뒷자리(4자리 이상)가 이 차 번호 끝과 같을 때만 같다고 본다.
+ *  (뒷자리만 같은 다른 차일 수 있으므로 이 판단만으로 끝내지 않는다 — 번호(카인포 번호)가 같아야 하고, 줄이 둘이면 멈춤)
+ */
+function sameCar(rowCar, carNo) {
+  const a = normCar(rowCar), b = normCar(carNo);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.indexOf('*') < 0) return false;
+  const tail = a.replace(/^\*+/, '');
+  return tail.length >= 4 && tail.indexOf('*') < 0 && b.endsWith(tail);
+}
 
 /** 지워진·취소된 줄로 보이는가 (상태 글자로 판단) */
 function isDeleted(row) {
@@ -78,7 +91,7 @@ function vinVerdict(level, label, opts) {
 function snapshotOldNumbers(rows, car) {
   const set = new Set();
   (rows || []).forEach((r) => {
-    if (normCar(r.carNo) === normCar(car.carNo) && normNo(r.checkNo)) set.add(normNo(r.checkNo));
+    if (sameCar(r.carNo, car.carNo) && normNo(r.checkNo)) set.add(normNo(r.checkNo));
   });
   return set;
 }
@@ -119,7 +132,7 @@ function findNewNumber(rows, car, oldNos, since, opts) {
 function findNewSavedRow(rows, car, oldNos, label) {
   const name = label || '목록';
   if (!(oldNos instanceof Set)) return { ok: false, reason: name + ': 저장 전 목록을 찍어 두지 않아 이번 저장 줄을 구분할 수 없습니다.' };
-  const fresh = (rows || []).filter((r) => normCar(r.carNo) === normCar(car.carNo) && normNo(r.checkNo) &&
+  const fresh = (rows || []).filter((r) => sameCar(r.carNo, car.carNo) && normNo(r.checkNo) &&
                                          !oldNos.has(normNo(r.checkNo)) && !isDeleted(r));
   if (!fresh.length) return { ok: false, reason: name + '에서 이번에 저장된 이 차 줄을 찾지 못했습니다.' };
   if (fresh.length > 1) {
@@ -184,7 +197,7 @@ function previewNext(lastCarinfoNo, entryNextNo) {
 }
 
 module.exports = {
-  normCar, normVin, normNo, vinMatchLevel, vinMatches, isOurCar, isDeleted,
+  normCar, normVin, normNo, sameCar, vinMatchLevel, vinMatches, isOurCar, isDeleted,
   snapshotOldNumbers, findNewNumber, findNewSavedRow,
   checkCarmodooBeforeSave, checkCarmodooAfterSave, checkEntryBeforeSave,
   previewNext,

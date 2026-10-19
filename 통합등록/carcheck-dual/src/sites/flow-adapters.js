@@ -10,6 +10,7 @@
  */
 const { createSaveGuard } = require('../core/save-guard');
 const { attachSaveHold } = require('./save-hold');
+const { sameCar } = require('../core/number-check');
 
 /** 창의 모든 화면 조각(frame)에서 돌려 처음으로 null 이 아닌 답을 돌려준다 */
 async function inAnyFrame(win, expr) {
@@ -81,7 +82,7 @@ function createElectronAdapters(o) {
   }
   async function rowsOf(site, car) {
     const rows = (await inAnyFrame(o.getWindow(site), listExpr(needCols(site)))) || [];
-    return car ? rows.filter((r) => String(r.carNo).replace(/\s+/g, '') === String(car.carNo).replace(/\s+/g, '')) : rows;
+    return car ? rows.filter((r) => sameCar(r.carNo, car.carNo)) : rows;      // 엔트리 목록처럼 앞을 가린 번호도 받음
   }
 
   function common(site) {
@@ -200,7 +201,10 @@ function createElectronAdapters(o) {
     },
   });
 
+  //  엔트리 번호는 «26-28-604413»처럼 줄표를 넣어 보여 준다(10/19 화면 사진) — 카인포 번호(2628604413)와 견주려면 숫자만
+  const enNo = (v) => (C.entry && C.entry.numberDigitsOnly && v != null ? String(v).replace(/[^0-9]+/g, '') : v);
   const entry = Object.assign(common('entry'), {
+    async readList(car) { return (await rowsOf('entry', car)).map((r) => ({ ...r, checkNo: enNo(r.checkNo) })); },
     async loginState() {
       const cfg = C.entry;
       if (!cfg.loggedIn) return { loggedIn: false, canRead: false, reason: '엔트리 화면 설정 없음' };
@@ -208,7 +212,7 @@ function createElectronAdapters(o) {
       const next = cfg.nextNumber ? await inAnyFrame(o.getWindow('entry'), textExpr(cfg.nextNumber)) : null;
       return { loggedIn: !!who, canRead: !!who && !!next };
     },
-    async readNext() { return inAnyFrame(o.getWindow('entry'), textExpr(C.entry.nextNumber)); },
+    async readNext() { return enNo(await inAnyFrame(o.getWindow('entry'), textExpr(C.entry.nextNumber))); },
     /** 엔트리 화면 새로 고치기 — 다시 그려져 로그인 표시나 로그인 칸이 보일 때까지(최대 6초) */
     async refresh() {
       const w = o.getWindow('entry');
@@ -235,7 +239,7 @@ function createElectronAdapters(o) {
     async readLoaded() {
       const L = C.entry.loaded;
       const w = o.getWindow('entry');
-      return { entryNo: await inAnyFrame(w, textExpr(L.entryNo)), carNo: await inAnyFrame(w, textExpr(L.carNo)), vin: await inAnyFrame(w, textExpr(L.vin)) };
+      return { entryNo: enNo(await inAnyFrame(w, textExpr(L.entryNo))), carNo: await inAnyFrame(w, textExpr(L.carNo)), vin: await inAnyFrame(w, textExpr(L.vin)) };
     },
   });
   //  실제 엔트리 화면 설정이 없으면 «미구현» — 흐름이 끝난 것처럼 보이지 않게(검수 4차)

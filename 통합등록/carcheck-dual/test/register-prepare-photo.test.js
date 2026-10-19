@@ -247,3 +247,19 @@ test('카모두 번호 칸(10/19 실제 화면): «수동입력» 체크를 켜�
     assert.strictEqual(dom.window.document.getElementById('manual').checked, true);
   }
 });
+
+test('엔트리 목록 모양(10/19 실제 화면): 앞을 가린 차량번호 «****5528»은 뒷자리로만 맞춰 보고, 번호 «26-28-604413»은 숫자만 견줌', () => {
+  const nc = require('../src/core/number-check');
+  assert.strictEqual(nc.sameCar('****5528', '111두5528'), true);
+  assert.strictEqual(nc.sameCar('***8900', '65도8900'), true);
+  assert.strictEqual(nc.sameCar('****5529', '111두5528'), false);
+  assert.strictEqual(nc.sameCar('**28', '111두5528'), false, '보이는 자리가 너무 짧으면 같다고 보지 않음');
+  assert.strictEqual(nc.sameCar('12가3456', '12가3456'), true);
+  //  저장 뒤: 가린 번호 줄 둘 중 이번에 새로 생긴 줄 하나 → 번호 같음
+  const car = { carNo: '111두5528', vin: 'KMHXX00XXXX123456' };
+  const rows = [{ checkNo: '2628604413', carNo: '****5528' }, { checkNo: '2628600001', carNo: '****5528' }];
+  const r = nc.findNewSavedRow(rows, car, new Set(['2628600001']), '엔트리 목록');
+  assert.deepStrictEqual(r, { ok: true, checkNo: '2628604413' });
+  //  엔트리 번호 숫자만 → 카인포 번호와 같음
+  assert.strictEqual(nc.checkCarmodooAfterSave({ carinfoNo: '2628604413', savedNo: '26-28-604413'.replace(/[^0-9]+/g, '') }).ok, true);
+});
