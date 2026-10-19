@@ -15,9 +15,18 @@ function filePath(file) {
  *  화면은 늘 결과 창으로 끝나고, 다시 하기 전에 까닭을 볼 수 있다. */
 function friendly(e) {
   let m = String((e && e.message) || e || '알 수 없는 오류').replace(/^Error invoking remote method '[^']*':\s*(Error:\s*)?/, '');
+  //  이미 쉬운 말로 정리된 글(사이트 알림창 등)은 그대로 — 꼬리말을 덧붙이지 않음
+  if (/^사이트 알림창이 떠서 멈췄어요/.test(m)) return m;
   const net = m.match(/(ERR_[A-Z_]+)\s*\(-?\d+\)\s*loading\s*'([^']*)'/);
-  if (net) m = '사이트 화면을 열지 못했어요(' + net[1] + '). 인터넷 연결과 사이트 상태를 확인해 주세요. 주소: ' + net[2];
-  return m + ' — 프로그램은 저장하지 않고 멈췄어요. 그 전산 창에서 상태를 확인한 뒤 다시 해 주세요.';
+  if (net) {
+    let host = net[2];
+    try { host = new URL(net[2]).host; } catch {}
+    m = '사이트 화면을 열지 못했어요(' + host + ' · ' + net[1] + '). 인터넷 연결과 사이트 상태를 확인해 주세요.';
+  } else if (!/[가-힣]/.test(m)) {
+    m = '프로그램 안쪽에서 오류가 났어요(기술 내용: ' + m.slice(0, 120) + ').';
+  }
+  //  저장 여부는 프로그램이 알 수 없다 — «저장 안 함»을 보장하지 않고, 다시 하라고도 하지 않는다(같은 차가 두 번 들어갈 수 있음)
+  return m + ' 프로그램은 여기서 멈췄어요. 저장됐는지는 그 전산 창에서 먼저 확인해 주세요.';
 }
 const invoke = (ch, a) => ipcRenderer.invoke(ch, a).catch((e) => ({ ok: false, error: friendly(e) }));
 

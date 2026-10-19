@@ -9,7 +9,8 @@
 
 class SiteDialogError extends Error {
   constructor(d) {
-    super('사이트 알림창이 떠서 멈췄어요: «' + (d.message || '') + '» — 알림창을 읽고 직접 눌러 주세요. 프로그램은 다시 시도하지 않아요.');
+    const msg = String(d.message || '');
+    super('사이트 알림창이 떠서 멈췄어요: «' + (msg.length > 80 ? msg.slice(0, 80) + '…' : msg) + '» — 알림창을 읽고 직접 눌러 주세요. 저장됐는지는 그 전산 창에서 먼저 확인해 주세요.');
     this.siteDialog = d;
   }
 }

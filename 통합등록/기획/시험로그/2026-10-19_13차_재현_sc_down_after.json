@@ -12,7 +12,7 @@
    "dialogs": [],
    "pageErrors": [],
    "busyShown": null,
-   "report": "경기조합 (carmodoo) — 실패 사이트 화면을 열지 못했어요(ERR_CONNECTION_REFUSED). 인터넷 연결과 사이트 상태를 확인해 주세요. 주소: https://ck.carmodoo.com/carCheck/carCheckList.do — 프로그램은 저장하지 않고 멈췄어요. 그 전산 창에서 상태를 확인한 뒤 다시 해 주세요."
+   "report": "경기조합 (carmodoo) — 실패 사이트 화면을 열지 못했어요(ck.carmodoo.com · ERR_CONNECTION_REFUSED). 인터넷 연결과 사이트 상태를 확인해 주세요. 프로그램은 여기서 멈췄어요. 저장됐는지는 그 전산 창에서 먼저 확인해 주세요."
   }
  ],
  "sameCarRecords": [],

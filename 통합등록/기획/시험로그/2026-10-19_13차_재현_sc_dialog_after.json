@@ -4,7 +4,7 @@
   {
    "press": 1,
    "seconds": 0.5,
-   "firstDialogSeconds": 0.4,
+   "firstDialogSeconds": 0.5,
    "registerCalls": 0,
    "saveCalls": 0,
    "uploads": 0,
@@ -14,7 +14,7 @@
    ],
    "pageErrors": [],
    "busyShown": null,
-   "report": "경기조합 (carmodoo) — 실패 사이트 알림창이 떠서 멈췄어요: «차량번호를 다시 확인하세요.» — 알림창을 읽고 직접 눌러 주세요. 프로그램은 다시 시도하지 않아요."
+   "report": "경기조합 (carmodoo) — 실패 사이트 알림창이 떠서 멈췄어요: «차량번호를 다시 확인하세요.» — 알림창을 읽고 직접 눌러 주세요. 저장됐는지는 그 전산 창에서 먼저 확인해 주세요."
   }
  ],
  "sameCarRecords": [],
