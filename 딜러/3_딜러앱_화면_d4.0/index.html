@@ -1851,7 +1851,7 @@ V.cars=function(m){
 function finishAsk(t){
   var L=latest().filter(function(c){return S.sel[c.key]&&!isDone(c);});if(!L.length)return;
   var fs=L.reduce(function(a,c){return a+sumOf(c.plate);},0);
-  CGG.dialog({size:"confirm",title:"상품화 완료로 표시할까요?",rows:[["차",L[0].plate+(L.length>1?" 외 "+(L.length-1)+"대":"")],["대수",L.length+"대"],["들어간 금액 합계",fs?won(fs):"—"]],
+  CGG.dialog({size:"confirm",title:"상품화 완료로 표시할까요?",rows:[["차",L[0].plate+(L.length>1?" 외 "+(L.length-1)+"대":"")],["대수",L.length+"대"],["들어간 금액 합계",won(fs)]],
     ok:"상품화 완료로 표시",cancel:"취소",onOk:function(){
       L.reduce(function(p,c){return p.then(function(){return api("finish",[c.shop,c.id]).then(function(){S.done[c.key]=1;});});},Promise.resolve())
         .then(function(){S.sel={};if(S.carT)S.carT.sel={};render();CGG.toast(L.length+"대를 «상품화 완료»로 표시했어요");},function(e){render();CGG.toast(errMsg(e));});}});
