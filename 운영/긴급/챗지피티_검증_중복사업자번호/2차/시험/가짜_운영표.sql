@@ -5,6 +5,7 @@ grant usage on schema public to service_role;
 alter default privileges in schema public grant all on tables to service_role;
 alter default privileges in schema public grant all on sequences to service_role;
 -- (Supabase 는 새 표에 서버 계정 권한을 자동으로 줘요 — 같은 흉내)
+alter role service_role bypassrls;   -- Supabase 의 service_role 도 행 보안(RLS)을 건너뛰어요 — 같은 흉내
 create table wash_hq (id int primary key, biz_no text);
 create table wash_shops (shop text primary key, name text, owner_phone text, ceo text, biz_no text, pb_id text, biz_ok_at timestamptz, biz_set_at timestamptz, created_at timestamptz default now(), active boolean default true, plan text);
 create table wash_docs (shop text, demo boolean, col text, id text, data jsonb, primary key (shop, demo, col, id));
