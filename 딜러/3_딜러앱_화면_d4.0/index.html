@@ -1643,24 +1643,24 @@ function forget(){try{CGG.closeDialog();CGG.closeSheet();CGG.closeMenu();}catch(
   S.carT=null;S.notiT=null;S.homeT=null;S.key="";S.agreed=false;S.cars=null;S.bills=null;S.billsReady=false;S.billsAt=0;S.billsSig="";S.name="";S.phone="";S.detail=null;S.seen=null;S.sel={};S.dlgTok=(S.dlgTok||0)+1;
   ls("cgd_key",null);ls("cgd_phone",null);ls("cgd_seen",null);ls("cgd_pref",null);S.view="login";S.step=1;render();}
 
-/* ---------- 시연 자료 (지어낸 예시 · d3.9 그대로, «성능점검»으로 말만 맞춤) ---------- */
+/* ---------- 시연 자료 (지어낸 예시만 — 업체 · 상사 이름도 «예시» · d3.9 차례 그대로) ---------- */
 function ago(d,h,m){return new Date(Date.now()-d*864e5-h*36e5-(m||0)*6e4).toISOString();}
 var DEMO_CARS=[
- {key:"GA:1",shop:"GA",shopName:"가온진단평가",id:"1",plate:"123가4567",model:"현대 그랜저 IG 2019",company:"수원오토갤러리",inAt:ago(3,6),outAt:ago(3,5),stage:"출고",where:"리페어",dest:"리페어",works:["성능점검"],total:30000,at:ago(3,5)},
- {key:"RP:2",shop:"RP",shopName:"리페어",id:"2",plate:"123가4567",model:"현대 그랜저 IG 2019",company:"수원오토갤러리",inAt:ago(3,3),outAt:ago(1,2),stage:"출고",where:"브라더광택",dest:"브라더광택",works:["앞범퍼 판금도색"],total:250000,at:ago(1,2)},
- {key:"BT:3",shop:"BT",shopName:"브라더광택",id:"3",plate:"123가4567",model:"현대 그랜저 IG 2019",company:"수원오토갤러리",inAt:ago(0,1,20),outAt:"",stage:"작업 중",where:"브라더광택",dest:"",spot:"B-3",works:["광택","실내크리닝"],total:0,at:ago(0,1,20)},
- {key:"GA:4",shop:"GA",shopName:"가온진단평가",id:"4",plate:"45나6789",model:"기아 쏘렌토 MQ4 2021",company:"수원오토갤러리",inAt:ago(5,4),outAt:ago(5,3),stage:"출고",where:"대경광택",dest:"대경광택",works:["성능점검"],total:30000,at:ago(5,3)},
- {key:"DK:5",shop:"DK",shopName:"대경광택",id:"5",plate:"45나6789",model:"기아 쏘렌토 MQ4 2021",company:"수원오토갤러리",inAt:ago(4,5),outAt:ago(1,0,40),stage:"도착",where:"수원오토갤러리 주차장",dest:"수원오토갤러리 주차장",works:["외부세차","유리막코팅"],total:180000,at:ago(1,0,40)},
- {key:"GA:6",shop:"GA",shopName:"가온진단평가",id:"6",plate:"201머3344",model:"BMW 520i 2020",company:"수원오토갤러리",inAt:ago(2,5),outAt:ago(2,4),stage:"출고",where:"리페어",dest:"리페어",works:["성능점검 (수입차)"],total:40000,at:ago(2,4)},
- {key:"RP:7",shop:"RP",shopName:"리페어",id:"7",plate:"201머3344",model:"BMW 520i 2020",company:"수원오토갤러리",inAt:ago(2,3),outAt:ago(0,0,25),stage:"출고",where:"리페어 → 브라더광택 이동 중",dest:"브라더광택",works:["휠 복원"],total:120000,at:ago(0,0,25)},
- {key:"GA:8",shop:"GA",shopName:"가온진단평가",id:"8",plate:"78두9012",model:"제네시스 G80 2018",company:"수원오토갤러리",inAt:ago(0,2,45),outAt:"",stage:"입고",where:"가온진단평가",dest:"",works:[],total:0,at:ago(0,2,45)}
+ {key:"GA:1",shop:"GA",shopName:"예시 검사소",id:"1",plate:"123가4567",model:"현대 그랜저 IG 2019",company:"예시상사",inAt:ago(3,6),outAt:ago(3,5),stage:"출고",where:"예시 리페어",dest:"예시 리페어",works:["성능점검"],total:30000,at:ago(3,5)},
+ {key:"RP:2",shop:"RP",shopName:"예시 리페어",id:"2",plate:"123가4567",model:"현대 그랜저 IG 2019",company:"예시상사",inAt:ago(3,3),outAt:ago(1,2),stage:"출고",where:"예시 광택",dest:"예시 광택",works:["앞범퍼 판금도색"],total:250000,at:ago(1,2)},
+ {key:"BT:3",shop:"BT",shopName:"예시 광택",id:"3",plate:"123가4567",model:"현대 그랜저 IG 2019",company:"예시상사",inAt:ago(0,1,20),outAt:"",stage:"작업 중",where:"예시 광택",dest:"",spot:"B-3",works:["광택","실내크리닝"],total:0,at:ago(0,1,20)},
+ {key:"GA:4",shop:"GA",shopName:"예시 검사소",id:"4",plate:"45나6789",model:"기아 쏘렌토 MQ4 2021",company:"예시상사",inAt:ago(5,4),outAt:ago(5,3),stage:"출고",where:"가람 광택",dest:"가람 광택",works:["성능점검"],total:30000,at:ago(5,3)},
+ {key:"DK:5",shop:"DK",shopName:"가람 광택",id:"5",plate:"45나6789",model:"기아 쏘렌토 MQ4 2021",company:"예시상사",inAt:ago(4,5),outAt:ago(1,0,40),stage:"도착",where:"예시상사 주차장",dest:"예시상사 주차장",works:["외부세차","유리막코팅"],total:180000,at:ago(1,0,40)},
+ {key:"GA:6",shop:"GA",shopName:"예시 검사소",id:"6",plate:"201머3344",model:"BMW 520i 2020",company:"예시상사",inAt:ago(2,5),outAt:ago(2,4),stage:"출고",where:"예시 리페어",dest:"예시 리페어",works:["성능점검 (수입차)"],total:40000,at:ago(2,4)},
+ {key:"RP:7",shop:"RP",shopName:"예시 리페어",id:"7",plate:"201머3344",model:"BMW 520i 2020",company:"예시상사",inAt:ago(2,3),outAt:ago(0,0,25),stage:"출고",where:"예시 리페어 → 예시 광택 이동 중",dest:"예시 광택",works:["휠 복원"],total:120000,at:ago(0,0,25)},
+ {key:"GA:8",shop:"GA",shopName:"예시 검사소",id:"8",plate:"78두9012",model:"제네시스 G80 2018",company:"예시상사",inAt:ago(0,2,45),outAt:"",stage:"입고",where:"예시 검사소",dest:"",works:[],total:0,at:ago(0,2,45)}
 ];
 function dday(n){var d=new Date(Date.now()+n*864e5);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 var DEMO_BILLS=[
- {shop:"한결광택 (예시)",month:"9월",name:"수원오토갤러리",cars:6,amount:780000,due:780000,dueDate:dday(-3),bank:"예시은행 000-1111-2222-01 한결광택",state:"입금 전",url:""},
- {shop:"바른리페어 (예시)",month:"9월",name:"수원오토갤러리",cars:3,amount:1250000,due:1250000,dueDate:dday(5),bank:"예시은행 000-3333-4444-02 바른리페어",state:"입금 전",url:""},
- {shop:"맑은세차 (예시)",month:"8월",name:"수원오토갤러리",cars:1,amount:40000,due:40000,dueDate:"",bank:"예시은행 000-7777-8888-04 맑은세차",state:"입금 전",url:""},
- {shop:"새빛휠 (예시)",month:"9월",name:"수원오토갤러리",cars:2,amount:180000,due:0,dueDate:dday(-1),bank:"예시은행 000-5555-6666-03 새빛휠",state:"입금 확인됨",url:""}];
+ {shop:"한결광택 (예시)",month:"9월",name:"예시상사",cars:6,amount:780000,due:780000,dueDate:dday(-3),bank:"예시은행 000-1111-2222-01 한결광택",state:"입금 전",url:""},
+ {shop:"바른리페어 (예시)",month:"9월",name:"예시상사",cars:3,amount:1250000,due:1250000,dueDate:dday(5),bank:"예시은행 000-3333-4444-02 바른리페어",state:"입금 전",url:""},
+ {shop:"맑은세차 (예시)",month:"8월",name:"예시상사",cars:1,amount:40000,due:40000,dueDate:"",bank:"예시은행 000-7777-8888-04 맑은세차",state:"입금 전",url:""},
+ {shop:"새빛휠 (예시)",month:"9월",name:"예시상사",cars:2,amount:180000,due:0,dueDate:dday(-1),bank:"예시은행 000-5555-6666-03 새빛휠",state:"입금 확인됨",url:""}];
 function demoApi(fn,a){
   return new Promise(function(ok,no){setTimeout(function(){
     try{
@@ -1723,9 +1723,9 @@ function G(){
     slow:act.filter(function(c){return c.stage==="작업 중"&&daysAgo(c.inAt)>=3;})};
 }
 /* 표 한 줄 — 미리보기 11판 열 차례: 차량번호 · 단계 · 차종 · 작업 · 지금 위치 · 마지막 기록 · 들어간 금액
-   마지막 기록은 ISO 그대로(정렬이 맞게), 보일 때만 «09:20 · 10/17». 들어간 금액 0 = 업체가 아직 금액을 넣지 않음 → «—» */
-function carRow(c){var sm=sumOf(c.plate);return [c.plate,stageOf(c),c.model||"차종 없음",worksOf(c),c.where||"",c.at||"",sm?sm:null];}
-function carRender(x,k){if(k===5)return lastAt(x[5]);}
+   마지막 기록은 ISO 그대로(정렬이 맞게), 보일 때만 «오늘 09:20 · 10/17 18:40». 들어간 금액 0 은 «0원»(1.13.2 F06) */
+function carRow(c){var sm=sumOf(c.plate);return [c.plate,stageOf(c),c.model||"차종 없음",worksOf(c),c.where||"",c.at||"",sm];}
+function carRender(x,k){if(k===5)return day(x[5]);}
 
 /* ---------- 청구서 셈 (d3.9 그대로) ---------- */
 function isPaid(b){return b.state==="입금 확인됨";}
@@ -1832,7 +1832,7 @@ V.cars=function(m){
   var g=G(),L=g.all;
   m.innerHTML=head('작업 중인 차 <em>'+g.work.length+'대</em>, 도착한 차 <em>'+g.arr.length+'대</em>가 있어요','업체에 맡긴 내 차가 지금 어디 있는지, 어디까지 됐는지 확인해요.')
     +(L.length?'<div class="cgg-tools">'+btn("선택한 차 상품화 완료",true,"finSel",true)+'</div><div id="carTbl"></div>'
-      +CGG.help("업체가 입고 · 출고를 기록하면 여기에 바로 보여요. 차량번호를 누르면 사진과 지나온 기록(최근이 위)이 나와요. 내 상사에 도착한 차는 골라서 «선택한 차 상품화 완료»를 눌러 주세요. 금액이 «—»이면 업체가 아직 금액을 넣지 않은 거예요.")
+      +CGG.help("업체가 입고 · 출고를 기록하면 여기에 바로 보여요. 차량번호를 누르면 사진과 지나온 기록(최근이 위)이 나와요. 내 상사에 도착한 차는 골라서 «선택한 차 상품화 완료»를 눌러 주세요. 금액이 «0원»이면 업체가 아직 금액을 넣지 않은 거예요.")
       :bx("아직 내 번호로 맡겨진 차가 없어요","업체에 차를 맡길 때 "+telFmt(S.phone)+" 번호를 알려 주세요.",""));
   if(!L.length)return;
   if(!S.carT)S.carT={};
@@ -1900,7 +1900,7 @@ V.noti=function(m){
   m.innerHTML=head("알림","카카오 알림톡으로 먼저 가고, 알림톡이 안 되면 문자로 가요.")+'<div id="nTbl"></div>'
     +CGG.help("입고 · 출고 · 도착 소식이 여기에 모여요. 청구서 · 재검사 알림은 곧 열려요. 휴대폰 앱 알림도 곧 열려요.");
   if(!S.notiT)S.notiT={};
-  CGG.table($("nTbl"),{state:S.notiT,cols:["내용","단계","언제"],kinds:["text","state","time"],rows:E.map(function(e){return [e.d,e.st,e.at];}),
+  CGG.table($("nTbl"),{state:S.notiT,cols:["내용","단계","언제"],kinds:["name","state","time"],rows:E.map(function(e){return [e.d,e.st,e.at];}),
     stateMap:{"입고":"run","작업 중":"run","출고":"run","도착":"chk","상품화 완료":"done","청구서":"done","재검사":"chk"},
     tabs:[["","전체"],["출고","출고"],["도착","도착"],["상품화 완료","상품화 완료"],["청구서","청구서"],["재검사","재검사"]],
     find:"차량번호 · 내용",mobileFields:[[1,"단계"],[2,"언제"]],select:false,sort:[2,-1],render:function(x,k){if(k===2)return when(x[2]);}});
@@ -1919,7 +1919,7 @@ V.bill=function(m){
       +'<p class="d">'+esc([b.month,b.cars?b.cars+"대":"",b.name].filter(Boolean).join(" · "))+'</p>'
       +'<div class="dbm"><strong>'+esc((pd?Math.round(Number(b.amount)||0):Math.round(Number(b.due)||0)).toLocaleString("ko-KR"))+'<small>원</small></strong>'+(dueTxt(b)?'<span'+(!pd&&n<0?' class="late"':'')+'>'+esc(dueTxt(b))+'</span>':'')+'</div>'
       +(!pd&&b.bank?'<div class="dacct">'+esc(b.bank)+'</div>':'')
-      +'<div class="row">'+(pd?'':(b.bank?btn("계좌 복사",false,"ac"+i):'')+btn("금액 복사",false,"am"+i))+btn("내역 보기",false,"bv"+i)+'</div></section>';}).join("")+'</div>'
+      +'<div class="row">'+(pd?'':(b.bank?btn("계좌 복사",false,"ac"+i):'')+btn("금액 복사",false,"am"+i))+btn("내역 보기",!pd,"bv"+i)+'</div></section>';}).join("")+'</div>'
     +(open.length?bx("한 번에 결제는 곧 열려요","지금은 업체마다 계좌로 보내 주세요. 차곳간은 금액을 받지 않고, 업체 계좌로 바로 보내요.",""):"")
     +CGG.help("업체가 내 번호로 보낸 청구서가 업체 · 달마다 한 장씩 모여요. 기한이 지난 것이 맨 위에 와요. 휴대폰이면 «계좌 복사»를 누른 뒤 은행 앱을 열어 붙여 넣어 주세요. 입금하면 업체가 확인한 뒤 «입금 확인»으로 바뀌어요. «내역 보기»를 누르면 업체가 보낸 청구서(차별 작업과 금액)가 열려요.");
   L.forEach(function(b,i){
@@ -1944,8 +1944,8 @@ V.me=function(m){
   var pref={};try{pref=JSON.parse(ls("cgd_pref")||"{}");}catch(e){}
   var P=[["n1","입고 · 출고 알림","업체에 들어가고 나올 때"],["n2","목적지 도착 알림","사진과 함께"],["n3","청구서 알림","알림톡으로 받기 (안 되면 문자)"],["n4","재검사 안내","검사소에서 정한 유효기간이 끝나기 전에 알려 드려요"]];
   m.innerHTML=head("내 정보",[S.name?S.name+" 딜러":"딜러",company()].filter(Boolean).join(" · "))
-    +bx("알림 받기","",P.map(function(a){return '<label class="ck"><input type="checkbox" data-pref="'+a[0]+'"'+(pref[a[0]]!==false?" checked":"")+'> <span><b>'+esc(a[1])+'</b> <small style="color:var(--muted)">'+esc(a[2])+'</small></span></label>';}).join(""))
-    +bx("번호",telFmt(S.phone)+" · 로그인 번호 · 업체에 알려 준 번호",'<div class="row">'+btn(S.name?"이름 고치기":"이름 넣기",false,"mName")+btn("약관 동의 보기",false,"mDocs")+'</div>')
+    +bx("알림 받기","",P.map(function(a){return '<label class="ck"><input type="checkbox" data-pref="'+a[0]+'"'+((a[0]==="n4"?pref.n4===true:pref[a[0]]!==false)?" checked":"")+'> <span><b>'+esc(a[1])+'</b> <small style="color:var(--muted)">'+esc(a[2])+'</small></span></label>';}).join(""))
+    +bx("번호",telMask(S.phone)+" · 로그인 번호 · 업체에 알려 준 번호",'<div class="row">'+btn(S.name?"이름 고치기":"이름 넣기",false,"mName")+btn("약관 동의 보기",false,"mDocs")+'</div>')
     +bx("로그아웃","",'<div class="row">'+btn("로그아웃",false,"lo")+btn("동의 철회 (이용 그만두기)",false,"wd")+'</div><p class="dver">차곳간 딜러 '+esc(VER)+' · 문의 010-9559-3663</p>');
   Array.prototype.forEach.call(m.querySelectorAll("[data-pref]"),function(el){el.onchange=function(){var p={};try{p=JSON.parse(ls("cgd_pref")||"{}");}catch(e){}
     p[el.getAttribute("data-pref")]=el.checked;ls("cgd_pref",JSON.stringify(p));CGG.toast("저장했어요 · 앱 알림이 열리면 이대로 보내요");};});
