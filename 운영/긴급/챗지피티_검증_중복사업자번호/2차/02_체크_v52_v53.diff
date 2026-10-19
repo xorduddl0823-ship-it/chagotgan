@@ -1,0 +1,145 @@
+--- "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v52.ts"	2026-10-18 15:02:31.754561136 +0000
++++ "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v53.ts"	2026-10-19 07:38:51.274737612 +0000
+@@ -13,6 +13,10 @@
+ //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
+ //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
+ //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
++//  v53 (2026-10-19) 긴급(중복 사업자번호): 기사 «회사 비밀번호»가 사업자번호이고 그 번호를 쓰는 검사소가 둘 이상이면 거절(보안 C5 · 코드로만) · officeSave 사업자번호는 숫자 10자리로만 저장(정규화) · 팝빌 아이디도 다른 검사소가 쓰면 거절 ·
++//    DB 같은 번호 막기(SQL 24 문지기·유일 색인)에 걸리면 같은 안내 · 안내 글 «이미 등록된 사업자번호예요. 본인 업체라면 차곳간에 문의해 주세요.»
++//    대표님 확정(04): 고유 키 = 사업자번호 + 종사업장번호(biz_sub · 없으면 0000) · 같은 번호로 두 번째 가게·제품은 «본사 승인» 때만
++//    (개인·법인 같음) — 승인 없이 넣으면 거절 + 승인 요청(biz_share_req). 승인은 관리(wash-api hqBizShareDecide)에서. SQL 24 필요.
+ //  v52 (2026-10-18): 체크 방 요청(대조표 E) — 설정 › 알림 «보낸 기록» 카드용 sendLogList({from, to, tpl, result}):
+ //    대표만 · 발송 기록(cgg_sendlog)에서 이 검사소(product check · shop = 검사소 코드) 것만 · 92일까지 · 1000줄.
+ //    받는 번호는 가린 모양만 · 본문 없음(템플릿 이름 · 방식 · 결과 · 쉬운 말 오류). 워시 보낸 기록 화면과 같은 칸 이름. SQL 없음.
+@@ -128,7 +132,7 @@
+   { auth: { persistSession: false } },
+ );
+ 
+-const VER = "check-api v52 · 2026-10-18 (보낸 기록)";
++const VER = "check-api v53 · 2026-10-19 (중복 사업자번호 막기)";
+ const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
+ 
+ /* ───────── 작은 도구들 ───────── */
+@@ -2436,8 +2440,10 @@
+     const up: Record<string, unknown> = {};
+     if (S(o.상호)) up.name = S(o.상호);
+     if (S(o.사업자등록번호) && !S(ctx.office?.biz_no)) {                    // v32(H1): 비어 있을 때만 · 본사 확인 기다림
+-      if (await bizTaken(S(o.사업자등록번호), S(ctx.office?.id))) throw new Error(BIZ_TAKEN_MSG);
+-      up.biz_no = S(o.사업자등록번호);
++      const nb = onlyDigits(o.사업자등록번호);                              // v53: 숫자 10자리로만(정규화)
++      if (nb.length !== 10) throw new Error("사업자번호 10자리를 넣어 주세요.");
++      if (await bizTaken(nb, S(ctx.office?.id))) throw new Error(BIZ_TAKEN_MSG + ((await bizShareAsk(S(ctx.office?.code), nb, "0000", S(ctx.who))) ? BIZ_ASKED : ""));
++      up.biz_no = nb;
+       try { await db.from("check_office").update({ biz_ok_at: null }).eq("id", ctx.office.id); await db.from("check_office").update({ biz_set_at: new Date().toISOString() }).eq("id", ctx.office.id); } catch (_) { /* SQL 11 전 */ }
+     }
+     if (S(o.대표자)) up.owner_name = S(o.대표자);
+@@ -3007,25 +3013,54 @@
+    바꾸려면 차곳간 본사가 고칩니다. */
+ const OFFICE_LOCKED = ["biz_no", "popbill_corp", "popbill_userid"];
+ const BIZ_WAIT_MSG = "사업자번호를 차곳간에서 확인하는 중입니다. 확인이 끝나면 쓸 수 있습니다. 급하시면 차곳간(010-9559-3663)으로 알려 주세요.";
+-const BIZ_TAKEN_MSG = "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다. 우리 사업자번호가 맞다면 차곳간(010-9559-3663)으로 알려 주세요.";
++const BIZ_TAKEN_MSG = "이미 등록된 사업자번호예요. 본인 업체라면 차곳간(010-9559-3663)에 문의해 주세요.";   // v53: 대표님 확정 글
+ const onlyDigits = (v: unknown) => S(v).replace(/[^0-9]/g, "");
+ /** 이 번호를 다른 곳이 쓰고 있으면 true (확인을 못 하면 막는 쪽으로) */
+-async function bizTaken(corp: string, selfOfficeId: string) {
++async function bizTaken(corp: string, selfOfficeId: string, sub0 = "") {
+   const n = onlyDigits(corp);
+   if (!n) return false;
+   try {
+-    const { data: co, error: e1 } = await db.from("check_office").select("id,biz_no,popbill_corp");
++    let { data: co, error: e1 } = await db.from("check_office").select("id,code,biz_no,popbill_corp,biz_sub");
++    if (e1 && /biz_sub/.test(S((e1 as any).message))) ({ data: co, error: e1 } = await db.from("check_office").select("id,code,biz_no,popbill_corp"));   // SQL 24 전
+     if (e1) return true;
+-    if ((co ?? []).some((r: any) => S(r.id) !== S(selfOfficeId) && (onlyDigits(r.biz_no) === n || onlyDigits(r.popbill_corp) === n))) return true;
++    const me: any = (co ?? []).find((r: any) => S(r.id) === S(selfOfficeId)) ?? {};
++    const sub = sub0 ? bizSub(sub0) : bizSub(me.biz_sub);
++    const others = (co ?? []).filter((r: any) => S(r.id) !== S(selfOfficeId) && (onlyDigits(r.biz_no) === n || onlyDigits(r.popbill_corp) === n));
++    if (others.some((r: any) => bizSub(r.biz_sub) === sub)) return true;          // v53: 같은 제품 · 같은 키는 승인이 있어도 금지
+     const { data: hq, error: e2 } = await db.from("wash_hq").select("biz_no").eq("id", 1).maybeSingle();
+     if (e2) return true;                                     // 읽기 오류면 막는 쪽
+     if (onlyDigits(hq?.biz_no) === n) return true;
+     const { data: ws, error: e3 } = await db.from("wash_shops").select("biz_no").ilike("biz_no", "%" + n.slice(-5) + "%").limit(200);
+     if (e3) return true;
+-    if ((ws ?? []).some((r: any) => onlyDigits(r.biz_no) === n)) return true;
++    const inWash = (ws ?? []).some((r: any) => onlyDigits(r.biz_no) === n);
++    if (!others.length && !inWash) return false;
++    /* v53(대표님 04): 다른 종사업장 · 다른 제품이 쓰는 번호 → 본사가 이 검사소에 승인했을 때만 */
++    return !(await bizShareOk(S(me.code), n));
+   } catch (_) { return true; }
+-  return false;
+ }
++/** v53: 종사업장번호 4자리 (비우면 0000) */
++function bizSub(v: unknown) { const d = onlyDigits(v).slice(-4); return d ? d.padStart(4, "0") : "0000"; }
++async function bizShareOk(code: string, n: string) {
++  if (!code) return false;
++  try {
++    const { data, error } = await db.from("biz_share_ok").select("code").eq("product", "check").eq("code", code).eq("biz_no", n).maybeSingle();
++    return !error && !!data;
++  } catch (_) { return false; }
++}
++/** v53: 승인 요청 남기기 (같은 요청이 기다리는 중이면 하나만 · 본사 번호·같은 키면 안 남김 · 표가 없으면 조용히) */
++async function bizShareAsk(code: string, n: string, sub: string, who: string) {
++  try {
++    const { data: hq } = await db.from("wash_hq").select("biz_no").eq("id", 1).maybeSingle();
++    if (onlyDigits(hq?.biz_no) === n) return false;
++    const { data: co } = await db.from("check_office").select("code,biz_no,popbill_corp,biz_sub");
++    if ((co ?? []).some((r: any) => S(r.code) !== code && (onlyDigits(r.biz_no) === n || onlyDigits(r.popbill_corp) === n) && bizSub(r.biz_sub) === sub)) return false;
++    const { data: had } = await db.from("biz_share_req").select("id").eq("product", "check").eq("code", code).eq("biz_no", n).eq("biz_sub", sub).eq("state", "wait").limit(1);
++    if (had && had.length) return true;
++    const { error } = await db.from("biz_share_req").insert({ product: "check", code, biz_no: n, biz_sub: sub, who: onlyDigits(who).slice(0, 20) });
++    return !error;
++  } catch (_) { return false; }
++}
++const BIZ_ASKED = " (차곳간에 확인 요청을 남겼어요. 확인되면 연결돼요)";
+ 
+ /** 검사소 설정 고치기 — 대표만 */
+ async function officeSave(ctx: Ctx, body: any) {
+@@ -3039,19 +3074,32 @@
+     if (nb && nb !== ob) {
+       if (ob) throw new Error("사업자번호는 한 번 넣으면 바꿀 수 없습니다. 바꾸시려면 차곳간(010-9559-3663)으로 알려 주세요.");
+       if (nb.length !== 10) throw new Error("사업자번호 10자리를 넣어 주세요.");
+-      if (await bizTaken(nb, S(cur.id))) throw new Error(BIZ_TAKEN_MSG);
+-      up.biz_no = S(body.biz_no);
++      if (body?.biz_sub !== undefined && S(body.biz_sub).trim() && !/^\d{1,4}$/.test(S(body.biz_sub).trim())) throw new Error("종사업장번호는 숫자 4자리로 넣어 주세요.");
++      const sub = bizSub(body?.biz_sub);
++      if (await bizTaken(nb, S(cur.id), sub)) {
++        const asked = await bizShareAsk(S(cur.code), nb, sub, S(ctx.who));    // v53(대표님 04): 거절 + 본사 승인 요청
++        throw new Error(BIZ_TAKEN_MSG + (asked ? BIZ_ASKED : ""));
++      }
++      up.biz_no = nb;   // v53: 숫자 10자리로만(정규화)
++      if (sub !== "0000") up.biz_sub = sub;
+       newBiz = true;
+     }
+   }
+-  if (body?.popbill_userid !== undefined && S(body.popbill_userid) && !S(cur.popbill_userid))
+-    up.popbill_userid = S(body.popbill_userid);
++  if (body?.popbill_userid !== undefined && S(body.popbill_userid) && !S(cur.popbill_userid)) {
++    const uid = S(body.popbill_userid).trim();
++    /* v53: 다른 검사소가 쓰는 팝빌 아이디는 거절 (읽기 오류면 막는 쪽) */
++    const { data: pu, error: pe } = await db.from("check_office").select("id,popbill_userid").ilike("popbill_userid", uid.replace(/[%_\\]/g, "\\$&")).limit(20);
++    if (pe || (pu ?? []).some((r: any) => S(r.id) !== S(cur.id) && S(r.popbill_userid).trim().toLowerCase() === uid.toLowerCase()))
++      throw new Error("이미 등록된 팝빌 아이디예요. 본인 검사소라면 차곳간(010-9559-3663)에 문의해 주세요.");
++    up.popbill_userid = uid;
++  }
+   if (body?.ins_vat !== undefined) {                             // v46
+     if (!INS_VAT.includes(S(body.ins_vat))) throw new Error("보험료 부가세는 «미포함» 또는 «포함»으로 골라 주세요.");
+     up.ins_vat = S(body.ins_vat);
+   }
+   if (!Object.keys(up).length) return { ok: true };
+   const { error } = await db.from("check_office").update(up).eq("id", ctx.office.id);
++  if (error && S((error as any).code) === "23505") throw new Error(BIZ_TAKEN_MSG);   // v53: 동시에 넣어도 DB 가 막음(SQL 24)
+   if (error) throw new Error(/ins_vat/.test(S(error.message)) ? "서버를 준비하는 중입니다(SQL 20). 차곳간(010-9559-3663)으로 알려 주세요." : error.message);
+   /* v32: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
+   if (newBiz) { try { await db.from("check_office").update({ biz_ok_at: null }).eq("id", ctx.office.id); await db.from("check_office").update({ biz_set_at: new Date().toISOString() }).eq("id", ctx.office.id); } catch (_) { /* */ } }
+@@ -3520,7 +3568,10 @@
+   }
+   if (!off && digits.length >= 10) {
+     const { data: all } = await db.from("check_office").select("id,code,biz_no");
+-    off = (all ?? []).find((o: any) => S(o.biz_no).replace(/[^0-9]/g, "") === digits) ?? null;
++    const hits = (all ?? []).filter((o: any) => S(o.biz_no).replace(/[^0-9]/g, "") === digits);
++    /* v53(보안 C5): 같은 사업자번호를 쓰는 검사소가 둘 이상이면 골라 잡지 않음 — 검사소 코드로만 */
++    if (hits.length > 1) throw new Error("이 사업자번호로는 검사소를 하나로 정할 수 없어요. 회사 비밀번호 칸에 검사소 코드를 넣어 주세요.");
++    off = hits[0] ?? null;
+   }
+   return off;
+ }
