@@ -1,5 +1,10 @@
 let SCHEMA = null;
 const state = {};
+//  윈도우에서 alert·confirm 창을 닫은 뒤 입력 칸에 글자가 안 들어가는 Electron 문제 — 닫은 직후 창 초점을 다시 잡는다(10/19)
+['alert', 'confirm'].forEach((k) => {
+  const orig = window[k].bind(window);
+  window[k] = (...a) => { const r = orig(...a); try { window.api && window.api.refocus && window.api.refocus(); } catch {} return r; };
+});
 let prepared = null; // { checkNo, carNo }
 let kmTouched = false; // 현재주행거리를 사람이 직접 고쳤는가
 

@@ -12,6 +12,7 @@ function filePath(file) {
 
 contextBridge.exposeInMainWorld('api', {
   schema:      ()      => ipcRenderer.invoke('schema'),
+  refocus:     ()      => ipcRenderer.invoke('win:refocus'),
   getConfig:   ()      => ipcRenderer.invoke('config:get'),
   setConfig:   (c)     => ipcRenderer.invoke('config:set', c),
   openSite:    (id)    => ipcRenderer.invoke('site:open', id),

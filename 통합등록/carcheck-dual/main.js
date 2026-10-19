@@ -263,6 +263,15 @@ ipcMain.handle('history:calc', (_e, data) => historyFromParts(data || {}));
 ipcMain.handle('config:get', () => loadConfig());
 ipcMain.handle('config:set', (_e, cfg) => { saveConfig(cfg); return cfg; });
 
+/*  윈도우에서 alert·confirm 창을 닫은 뒤 입력 칸에 글자가 안 들어가는 Electron 문제(대표님 10/19 «차량번호 입력이 아예 안돼») —
+ *  창 초점을 한 번 뺐다가 다시 주면 풀린다. 화면이 경고창을 닫을 때마다 부른다(app.js 맨 위) */
+ipcMain.handle('win:refocus', (e) => {
+  const w = BrowserWindow.fromWebContents(e.sender);
+  if (!w || w.isDestroyed()) return false;
+  try { w.blur(); w.focus(); w.webContents.focus(); } catch {}
+  return true;
+});
+
 ipcMain.handle('site:open', async (_e, id) => {
   const cfg = SITES[id];
   if (!cfg) return { ok: false, error: '알 수 없는 사이트입니다: ' + id };
@@ -2455,6 +2464,17 @@ if (process.env.CARCHECK_SMOKE === '1' || PROBE) {
         const diagBtn = await windows.main.webContents.executeJavaScript('!document.getElementById("btn-diag").classList.contains("hidden")', true).catch(() => null);
         console.log('SMOKE-PROBE userDataFull=' + app.getPath('userData') + ' diagButton=' + diagBtn);
         if (process.env.CARCHECK_SMOKE_DIAG !== '1') { app.exit(0); return; }    // 진단까지 해 보면 기록 파일이 시험판 기록 폴더에 생김(설정은 7_전산진단_켜기 로 켬)
+      }
+      //  입력 칸에 실제 키로 글자가 들어가는지(대표님 10/19 «차량번호 입력이 아예 안돼») — 칸 가운데를 덮는 것이 있는지도 확인
+      if (process.env.CARCHECK_SMOKE_TYPE === '1') {
+        const wc = windows.main.webContents;
+        const cover = await wc.executeJavaScript('(function(){var e=document.getElementById("f_carNo");if(!e)return "칸 없음";var r=e.getBoundingClientRect();var t=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return t===e?"덮는 것 없음":(t?(t.id||t.className||t.tagName):"없음");})()', true);
+        windows.main.show(); windows.main.focus();
+        await wc.executeJavaScript('document.getElementById("f_carNo").focus();1', true);
+        for (const ch of '12가3456') wc.sendInputEvent({ type: 'char', keyCode: ch });
+        await new Promise((r) => setTimeout(r, 300));
+        const typed = await wc.executeJavaScript('JSON.stringify({value:document.getElementById("f_carNo").value,state:state.carNo||"",active:document.activeElement&&document.activeElement.id,ro:document.getElementById("f_carNo").readOnly,dis:document.getElementById("f_carNo").disabled})', true);
+        console.log('SMOKE-TYPE cover=' + cover + ' ' + typed);
       }
       console.log('SMOKE main-title=' + title + ' handlers=' + ['flow:start', 'site:send', 'admin:setPin'].filter((h) => ipcMain._invokeHandlers ? ipcMain._invokeHandlers.has(h) : true).length);
       if (process.env.CARCHECK_SMOKE_FLOW === '1') {
