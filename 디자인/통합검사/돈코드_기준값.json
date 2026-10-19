@@ -2,7 +2,7 @@
  "made": "2026-10-19",
  "files": {
   "wash": "워시/1_차곳간_워시_index_v140.html",
-  "check": "체크/2_차곳간_체크_index_v55.1.html"
+  "check": "체크/2_차곳간_체크_index_v56.4.html"
  },
  "money": {
   "wash": {
@@ -118,7 +118,7 @@
    "depXlsRead": "2b44d38b84d5a91a",
    "depXlsWhen": "78f13572b71feee1",
    "smsParse": "42ae7ea7b65006ab",
-   "txPicked": "5f4d6f55a39b58e1",
+   "txPicked": "5897cf97e92d26f9",
    "feeGet": "ef1b0b893c4fca37",
    "feeKey": "53c95568df9627d1",
    "feeSet": "3c62c97a3d4f304b",
@@ -127,7 +127,7 @@
    "insSum": "2b0c2b6d5040c2de",
    "loadIns": "388366fa841d9f1f",
    "setInsQ": "721fa770288ef6f2",
-   "hometaxGo": "85fb16b1d5ad8313",
+   "hometaxGo": "b6cca8e4210dd0cc",
    "loadTax": "73ba678bf6b5ffef",
    "ptTax": "af4499c1742294bc",
    "taxOf": "338f7cc38f830bb5"
