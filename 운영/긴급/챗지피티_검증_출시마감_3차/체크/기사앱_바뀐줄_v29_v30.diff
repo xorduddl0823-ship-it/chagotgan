@@ -1,5 +1,5 @@
 diff --git "a/\354\262\264\355\201\254/driver/index_v29.html" "b/\354\262\264\355\201\254/driver/index_v30.html"
-index c13d275..d2fe1f4 100644
+index c13d275..2ee083b 100644
 --- "a/\354\262\264\355\201\254/driver/index_v29.html"
 +++ "b/\354\262\264\355\201\254/driver/index_v30.html"
 @@ -1,5 +1,5 @@
@@ -25,7 +25,7 @@ index c13d275..d2fe1f4 100644
      clearDraft();                                  /* 보냈으니 저장본은 지웁니다 (다시 열어도 같은 건이 안 나오게) */
      var rec2=(ls(RECENT)||[]).filter(function(x){ return x!==S.dest; }); rec2.unshift(S.dest); ls(RECENT, rec2.slice(0,30));
      freqAdd(S.dest);
-@@ -1099,11 +1101,20 @@ function doSend(force){
+@@ -1099,11 +1101,21 @@ function doSend(force){
        '<button class="big b-main" id="m-next">다음 차량</button>');
      $('m-next').onclick=function(){ closeModal(); clearForm(); start(); };
    }).catch(function(e){
@@ -37,6 +37,7 @@ index c13d275..d2fe1f4 100644
  }
 +/* v30: 기록은 저장됐고 알림만 결과를 아직 모름 — 다시 보내지 않게, 사무실 «보낸 기록»에서 확인 */
 +function unsureDone(row){
++  if(row && S.dest){ var rc=(ls(RECENT)||[]).filter(function(x){ return x!==S.dest; }); rc.unshift(S.dest); ls(RECENT, rc.slice(0,30)); freqAdd(S.dest); }   /* 기록은 됐으니 최근 목적지에 올림 */
 +  clearDraft(); S.rid='';
 +  modal('<h3>기록은 됐어요 — 알림은 확인 중이에요</h3><div class="warn" style="margin-bottom:14px">'+(row?esc(row.차량번호)+' → '+esc(row.목적지)+'<br>':'')+
 +    '알림이 나갔는지 아직 확인 중이에요. 다시 보내지 말고, 사무실 «보낸 기록»에서 확인해 주세요.</div>'+

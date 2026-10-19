@@ -10,6 +10,7 @@
   var SEND={billSend:1, remindSend:1, billBundleSend:1, deliv_resend:1};
   function unsure(x){ return !!x && (x.unsure===true || x.state==="확인 중" || /^확인 중/.test(String(x.why||""))); }
   function isUnsureErr(e){ return !!e && (e.unsure===true || /^확인 중/.test(String(e.message||""))); }
+  try{ var st=document.createElement("style"); st.textContent="@media (max-width:600px){ [data-v567-log]{min-height:42px;padding:0 14px} }"; document.head.appendChild(st); }catch(e){}
   function goLog(){ try{ go("sendlog"); }catch(e){} }
   function barInfo(text){
     if(typeof bar!=="function") return; bar(text,"info");
@@ -24,7 +25,7 @@
         if(String(t.textContent).trim()!=="못 보냄") return;
         var row=t.closest("tr,.cgg-mrow,li,.cgg-mf"); if(!row || String(row.textContent).indexOf(MSG)<0) return;
         t.textContent="확인 중";
-        if(t.classList.contains("cgg-st")){ t.classList.remove("stop"); t.classList.add("run"); } else { t.style.background="var(--warn-soft)"; t.style.color="var(--warn)"; }
+        if(t.classList.contains("cgg-st")){ t.classList.remove("stop"); t.classList.add("chk"); }   /* 확인 필요 = 주황 */ else { t.style.background="var(--warn-soft)"; t.style.color="var(--warn)"; }
       });
       Array.prototype.forEach.call(document.querySelectorAll("#main .card, #main .cgg-card"),function(c){
         var u=0; Array.prototype.forEach.call(c.querySelectorAll("tbody tr"),function(r){   /* 표 줄만 셈(폰 목록은 같은 줄을 한 번 더 그려요) */ if(String(r.textContent).indexOf(MSG)>=0) u++; });
@@ -63,10 +64,10 @@
       if(isUnsureErr(e)){ e.unsure=true;
         setTimeout(function(){   /* 같은 일을 다시 보냈는데 앞 것이 확인 중 — 다시 하기 대신 보낸 기록으로 */
           Array.prototype.forEach.call(document.querySelectorAll("[data-v566-retry],[data-v566-err]"),function(x){ x.remove(); });
-          barInfo("알림이 "+MSG+". 다시 보내지 마세요."); },0); }
+          barInfo("알림이 나갔는지 확인 중이에요. 보낸 기록에서 확인해 주세요. 다시 보내지 마세요."); },0); }
       throw e;
     });
   };
-  window.chkV567={unsure:unsure, patch:patch};
+  window.chkV567={unsure:unsure, patch:patch, barInfo:barInfo};
 })();
 </script>

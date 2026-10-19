@@ -25,6 +25,7 @@ rep("""  }).catch(function(e){
     modal('<h3>보내지 못했어요</h3>""")
 rep("""function clearForm(){""", """/* v30: 기록은 저장됐고 알림만 결과를 아직 모름 — 다시 보내지 않게, 사무실 «보낸 기록»에서 확인 */
 function unsureDone(row){
+  if(row && S.dest){ var rc=(ls(RECENT)||[]).filter(function(x){ return x!==S.dest; }); rc.unshift(S.dest); ls(RECENT, rc.slice(0,30)); freqAdd(S.dest); }   /* 기록은 됐으니 최근 목적지에 올림 */
   clearDraft(); S.rid='';
   modal('<h3>기록은 됐어요 — 알림은 확인 중이에요</h3><div class="warn" style="margin-bottom:14px">'+(row?esc(row.차량번호)+' → '+esc(row.목적지)+'<br>':'')+
     '알림이 나갔는지 아직 확인 중이에요. 다시 보내지 말고, 사무실 «보낸 기록»에서 확인해 주세요.</div>'+

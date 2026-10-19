@@ -22,14 +22,18 @@ rep('var alarm = r.발송결과==="성공" ? "보냄" : r.발송결과==="실패
     'var alarm = r.발송결과==="성공" ? "보냄" : r.발송결과==="실패" ? "못 보냄" : r.발송결과==="확인 중" ? "확인 중" : "안 보냄";   /* v56.7 */')
 rep('(d.alarm==="보냄"?" · 보냄":d.alarm==="못 보냄"?" · 실패":" · 시험")',
     '(d.alarm==="보냄"?" · 보냄":d.alarm==="못 보냄"?" · 실패":d.alarm==="확인 중"?" · 확인 중 — 보낸 기록에서 확인해 주세요":" · 시험")')
-# 보낸 기록 상태 «확인 중» — 노란(진행) 색
+# 보낸 기록 상태 «확인 중» — 주황(확인 필요) 색
 rep('function slSt(v,r){ var k=/실패/.test(v)?"stop":/대기/.test(v)?"run":',
-    'function slSt(v,r){ var k=/실패/.test(v)?"stop":/대기|확인 중/.test(v)?"run":')
+    'function slSt(v,r){ var k=/실패/.test(v)?"stop":/확인 중/.test(v)?"chk":/대기/.test(v)?"run":')   # v56.7: 확인 중 = 확인 필요(주황)
 # 밀린 달 한꺼번에 — 확인 중은 «못 보냄»과 따로
 rep('''    else tell(won(out.length-ok)+"명에게 못 보냈어요", CGG.list(out.filter(function(x){ return !x.ok; }).map(function(x){ return x.item.name+" — "+whyKo(x.why); }))+(ok?won(ok)+"명에게는 보냈어요.":""));''',
     '''    else { var un=out.filter(function(x){ return !x.ok && /^확인 중/.test(String(x.why||"")); }), bad=out.filter(function(x){ return !x.ok && un.indexOf(x)<0; });   /* v56.7 */
-      if(!bad.length) bar(won(ok)+"명에게 보냈어요. 확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요.","info");
+      if(!bad.length){ var ut=(ok?won(ok)+"명에게 보냈어요. ":"")+"확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요."; if(window.chkV567) chkV567.barInfo(ut); else bar(ut,"info"); }
       else tell(won(bad.length)+"명에게 못 보냈어요", CGG.list(bad.map(function(x){ return x.item.name+" — "+whyKo(x.why); }))+(un.length?"확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. ":"")+(ok?won(ok)+"명에게는 보냈어요.":"")); }''')
+# 배달 상세 창 — 확인 중이면 «알림 다시 보내기» 단추 감춤 · 고른 줄 다시 보내기 확인 창에 확인 중 수
+rep("""      '<button class="btn go" id="dvResend">알림 다시 보내기</button>'+""", """      (d.alarm==="확인 중"?'':'<button class="btn go" id="dvResend">알림 다시 보내기</button>')+   /* v56.7: 확인 중이면 다시 보내지 않게 */""")
+rep('}, "딜러에게 알림톡이 다시 나가요. (안 되면 문자로 자동)");',
+    '}, (function(){ var n=DRIVES.filter(function(d){ return ids.indexOf(String(d.id))>=0 && d.alarm==="확인 중"; }).length; return (n?"확인 중 "+won(n)+"건은 이미 나갔을 수 있어요 — 보낸 기록에서 먼저 확인해 주세요. ":"")+"딜러에게 알림톡이 다시 나가요. (안 되면 문자로 자동)"; })());   /* v56.7 */')
 # ① 감싸기 — v56.6 감싸기 바깥(맨 끝)
 rep("</body>", open(os.path.join(HERE, "v56.7_확인중.js"), encoding="utf-8").read() + "</body>")
 open(OUT, "w", encoding="utf-8").write(s)

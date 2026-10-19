@@ -6253,7 +6253,7 @@ function delivAct(what){
       bar("다시 보냄 — 성공 "+won((r&&r.ok)||0)+"건 · 실패 "+won((r&&r.bad)||0)+"건"+((r&&r.bad)?". 실패한 줄은 «알림» 칸을 보고 다시 보내 주세요.":""),(r&&r.bad)?"err":"ok");   /* v56.6 */
       refresh(["deliv"]);
     }).catch(fail);
-    }, "딜러에게 알림톡이 다시 나가요. (안 되면 문자로 자동)");
+    }, (function(){ var n=DRIVES.filter(function(d){ return ids.indexOf(String(d.id))>=0 && d.alarm==="확인 중"; }).length; return (n?"확인 중 "+won(n)+"건은 이미 나갔을 수 있어요 — 보낸 기록에서 먼저 확인해 주세요. ":"")+"딜러에게 알림톡이 다시 나가요. (안 되면 문자로 자동)"; })());   /* v56.7 */
   } else if(what==="cancel"){
     askPicked(won(ids.length)+"건을 취소로 표시할까요?", drvRows(ids), "취소 표시", function(){
     busy(true);
@@ -6394,7 +6394,7 @@ function delivDetail(){
     '</div></div>'+
     '<div class="mf">'+
       '<button class="btn primary" id="dvSave">고친 내용 저장</button>'+
-      '<button class="btn go" id="dvResend">알림 다시 보내기</button>'+
+      (d.alarm==="확인 중"?'':'<button class="btn go" id="dvResend">알림 다시 보내기</button>')+   /* v56.7: 확인 중이면 다시 보내지 않게 */
       '<button class="btn" id="dvCancel">'+(d.alarm==="취소"?"취소 풀기":"취소 표시")+'</button>'+
       '<span style="flex:1"></span>'+
       '<button class="btn danger" id="dvTrash">이 기록 지우기</button>'+
@@ -12285,7 +12285,7 @@ function bundleGo(L, due, test){   /* v56.1: 공통 1.13 차례 보내기 + 진�
     if(test) bar(ok?"내 번호로 시험 알림을 보냈어요. 휴대폰을 확인해 주세요.":"시험 알림을 보내지 못했어요 — "+whyKo(out[0]&&out[0].why), ok?"ok":"err");
     else if(ok===out.length) bar(won(ok)+"명에게 밀린 달 청구서를 보냈어요.","ok");
     else { var un=out.filter(function(x){ return !x.ok && /^확인 중/.test(String(x.why||"")); }), bad=out.filter(function(x){ return !x.ok && un.indexOf(x)<0; });   /* v56.7 */
-      if(!bad.length) bar(won(ok)+"명에게 보냈어요. 확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요.","info");
+      if(!bad.length){ var ut=(ok?won(ok)+"명에게 보냈어요. ":"")+"확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요."; if(window.chkV567) chkV567.barInfo(ut); else bar(ut,"info"); }
       else tell(won(bad.length)+"명에게 못 보냈어요", CGG.list(bad.map(function(x){ return x.item.name+" — "+whyKo(x.why); }))+(un.length?"확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. ":"")+(ok?won(ok)+"명에게는 보냈어요.":"")); }
     if(!test){ clearPick("bill"); refresh(["bill"]); }
   });
@@ -12404,7 +12404,7 @@ function slLoad(){
       SL.sums=r.sums||{}; SL.need=r.need?String(r.need):""; if(SL.days===7) SL7=SL.sums; })
     .catch(function(e){ SL.rows=[]; SL.sums=null; SL.err=slOld(e)?"old":String((e&&e.message)||""); });
 }
-function slSt(v,r){ var k=/실패/.test(v)?"stop":/대기|확인 중/.test(v)?"run":/안 보냄/.test(v)?"chk":"done";
+function slSt(v,r){ var k=/실패/.test(v)?"stop":/확인 중/.test(v)?"chk":/대기/.test(v)?"run":/안 보냄/.test(v)?"chk":"done";
   return '<span class="cgg-st '+k+'">'+esc(v||"—")+'</span>'+(r&&r.err?'<span class="b" style="color:var(--stop)">'+esc(CGG.sendWhy?CGG.sendWhy(r.err):r.err)+'</span>':'')   /* v56.3: 쉬운 까닭(공통) · esc */; }
 function slLeft(){ try{ var pp=window.ccwPlanGet&&window.ccwPlanGet(); if(pp&&pp.smsLeft!=null) return won(pp.smsLeft)+"건"; }catch(e){} return "-"; }
 PAGE.sendlog=function(){
@@ -12664,6 +12664,7 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
   var SEND={billSend:1, remindSend:1, billBundleSend:1, deliv_resend:1};
   function unsure(x){ return !!x && (x.unsure===true || x.state==="확인 중" || /^확인 중/.test(String(x.why||""))); }
   function isUnsureErr(e){ return !!e && (e.unsure===true || /^확인 중/.test(String(e.message||""))); }
+  try{ var st=document.createElement("style"); st.textContent="@media (max-width:600px){ [data-v567-log]{min-height:42px;padding:0 14px} }"; document.head.appendChild(st); }catch(e){}
   function goLog(){ try{ go("sendlog"); }catch(e){} }
   function barInfo(text){
     if(typeof bar!=="function") return; bar(text,"info");
@@ -12678,7 +12679,7 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
         if(String(t.textContent).trim()!=="못 보냄") return;
         var row=t.closest("tr,.cgg-mrow,li,.cgg-mf"); if(!row || String(row.textContent).indexOf(MSG)<0) return;
         t.textContent="확인 중";
-        if(t.classList.contains("cgg-st")){ t.classList.remove("stop"); t.classList.add("run"); } else { t.style.background="var(--warn-soft)"; t.style.color="var(--warn)"; }
+        if(t.classList.contains("cgg-st")){ t.classList.remove("stop"); t.classList.add("chk"); }   /* 확인 필요 = 주황 */ else { t.style.background="var(--warn-soft)"; t.style.color="var(--warn)"; }
       });
       Array.prototype.forEach.call(document.querySelectorAll("#main .card, #main .cgg-card"),function(c){
         var u=0; Array.prototype.forEach.call(c.querySelectorAll("tbody tr"),function(r){   /* 표 줄만 셈(폰 목록은 같은 줄을 한 번 더 그려요) */ if(String(r.textContent).indexOf(MSG)>=0) u++; });
@@ -12717,11 +12718,11 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
       if(isUnsureErr(e)){ e.unsure=true;
         setTimeout(function(){   /* 같은 일을 다시 보냈는데 앞 것이 확인 중 — 다시 하기 대신 보낸 기록으로 */
           Array.prototype.forEach.call(document.querySelectorAll("[data-v566-retry],[data-v566-err]"),function(x){ x.remove(); });
-          barInfo("알림이 "+MSG+". 다시 보내지 마세요."); },0); }
+          barInfo("알림이 나갔는지 확인 중이에요. 보낸 기록에서 확인해 주세요. 다시 보내지 마세요."); },0); }
       throw e;
     });
   };
-  window.chkV567={unsure:unsure, patch:patch};
+  window.chkV567={unsure:unsure, patch:patch, barInfo:barInfo};
 })();
 </script>
 

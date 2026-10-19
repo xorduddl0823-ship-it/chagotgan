@@ -117,11 +117,12 @@ function makeServer(){
   const cars=await p.evaluate(()=>(window.REMIND||[]).slice(0,1).map(r=>r.id));
   await p.evaluate(ids=>remindGo(ids,false),cars); await W(1200);
   const b2=await barTxt(); const lg=await p.$('#bar [data-v567-log]'), rt=await p.$('#bar [data-v566-retry]');
+  ok('재검사 알림: 보낸 수가 0이면 «0명에게 보냈어요»를 쓰지 않음', !/0명에게/.test(b2));
   ok('재검사 알림: 확인 중이면 파란 정보 글 + «보낸 기록 보기» · 다시 하기 없음', /info/.test(b2) && /확인 중 1명/.test(b2) && !!lg && !rt, b2.replace(/\n/g,' '));
   if(lg){ await lg.click(); await W(900); ok('«보낸 기록 보기» → 보낸 기록 화면', await p.evaluate(()=>/보낸 기록/.test(document.querySelector('.cgg-head h1')?.innerText||''))); }
   // E3 보낸 기록 상태 «확인 중»
   const st=await p.evaluate(()=>Array.prototype.filter.call(document.querySelectorAll('#main .cgg-st'),e=>e.textContent.trim()==='확인 중').map(e=>e.className).join(','));
-  ok('보낸 기록: «확인 중» 상태는 노란(진행) 칩', /\brun\b/.test(st), st||'(없음)');
+  ok('보낸 기록: «확인 중» 상태는 주황(확인 필요) 칩', /\bchk\b/.test(st), st||'(없음)');
   // E4 같은 일을 다시 보냈는데 앞 것이 확인 중(__err)
   SRV.inject.push({fn:'billSend',mode:'err',msg:'확인 중이에요. 보낸 기록에서 확인해 주세요.'});
   await go('bill'); SRV.log.length=0;
@@ -139,6 +140,13 @@ function makeServer(){
   SRV.db.deliv[0].발송결과="확인 중"; await p.reload(); await W(1500); await go('deliv');
   const tg=await p.evaluate(()=>Array.prototype.some.call(document.querySelectorAll('#main .tag, #main .cgg-st'),t=>t.textContent.trim()==='확인 중'));
   ok('배달 기록: 서버 발송결과 «확인 중» → 알림 칸 «확인 중»', tg);
+  await p.evaluate(()=>{ OPEN_DRV="12가3456"; draw(); }); await p.waitForTimeout(600);
+  ok('배달 상세 창: 확인 중이면 «알림 다시 보내기» 단추 없음', !(await p.$('#dvResend')) && !!(await p.$('#dvSave')));
+  await p.evaluate(()=>{ OPEN_DRV=null; draw(); }); await p.waitForTimeout(400);
+  await p.evaluate(()=>{ const s=ts("drv"); s.sel={dv1:true}; }); await p.evaluate(()=>delivAct('resend')); await W(400);
+  const wtx=await p.evaluate(()=>{ const d=document.querySelector('.cgg-dlg'); return d?d.innerText:''; });
+  ok('고른 줄 다시 보내기 확인 창: «확인 중 1건은 이미 나갔을 수 있어요»', /확인 중 1건은 이미 나갔을 수 있어요/.test(wtx));
+  await p.evaluate(()=>CGG.closeDialog());
   SRV.db.mode=""; SRV.db.deliv[0].발송결과="성공";
 
   /* ── 5. 기록 저장 실패 ↔ 발송 실패 따로 · 저장된 기록은 발송 실패로 없어지지 않음 ── */
