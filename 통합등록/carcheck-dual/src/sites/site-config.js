@@ -74,8 +74,9 @@ const REAL = {
     //   줄 선택자는 사진으로 알 수 없어 아직 비움
     list: { rows: null, cols: { checkNo: 1, date: 3, carNo: 4, vin: 5 } },
     phaseAllow: { photo: [] },
-    //  같은 접수 화면 «④ 자동차사진» 탭에서 올림(기존 기능) → 저장 전. 사진이 그때 서버로 가는지는 진단 때 확인
-    photoPhase: 'beforeSave',
+    //  (10/19 사고) ④ 탭 사진 자리를 누르면 경기조합이 «등록중입니다»와 함께 접수를 바로 등록 → 같은 차가 여러 번 등록됨.
+    //   «저장 전에 올림»이 틀렸다. 사진 순서는 실제 등록 관찰로 확인 전 → 비움(사진이 있으면 저장 전에 멈춤 · main.js CARMODOO_PHOTO_AUTO 도 꺼짐)
+    photoPhase: null,
   },
   entry: {
     confirmed: false,

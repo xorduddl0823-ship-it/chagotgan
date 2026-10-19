@@ -10,7 +10,7 @@ const { REAL } = require('../src/sites/site-config');
 //  화면 사진(10/19)으로 글자·모양을 본 것 — 내부 이름(id)은 아직 진단 전
 const FROM_PHOTO = new Set([
   'carinfo.saveButtonText', 'carinfo.list.cols', 'carinfo.list.savedStatus', 'carinfo.prepare.createsRow',
-  'carmodoo.saveButtonText', 'carmodoo.list.cols', 'carmodoo.photoPhase',
+  'carmodoo.saveButtonText', 'carmodoo.list.cols',
   'entry.saveButtonText', 'entry.quick.openText', 'entry.quick.loadText', 'entry.quick.failCloseText', 'entry.loadRetry.failText',
   'entry.detail.openText', 'entry.list.cols', 'entry.numberDigitsOnly',
 ]);
@@ -25,7 +25,7 @@ const EVIDENCE = {
   'carinfo.saveButtonText': '10/19 사진 — 점검 화면 오른쪽 위 [저장]', 'carinfo.list.cols': '10/19 사진 — 목록 머리글 순서',
   'carinfo.list.savedStatus': '10/19 사진 — 저장된 차 «점검완료»', 'carinfo.prepare.createsRow': '10/19 사진 — [확인] 뒤 목록에 «점검중» 줄',
   'carinfo.photoPhase': '확인 전 — 저장 전/뒤 순서는 실제 등록 관찰 기록의 시간 순서로 확인(12차 보완)', 'carmodoo.saveButtonText': '10/19 대표님 답 — [저장]만(접수저장 아님)',
-  'carmodoo.list.cols': '10/19 사진 — 접수차량 리스트 머리글', 'carmodoo.photoPhase': '기존 프로그램 — ④ 탭에서 저장 전에 올림',
+  'carmodoo.list.cols': '10/19 사진 — 접수차량 리스트 머리글', 'carmodoo.photoPhase': '확인 전 — 10/19 시험판: 사진 자리를 누르면 접수가 바로 등록돼 같은 차 6건(자동 사진 꺼짐)',
   'entry.saveButtonText': '10/19 사진 — 맨 아래 [저장]', 'entry.quick.openText': '10/19 사진 — 오른쪽 위 [간편 접수]',
   'entry.quick.loadText': '10/19 사진 — [불러오기]', 'entry.quick.failCloseText': '10/19 사진 — 실패 안내 [확인]',
   'entry.loadRetry.failText': '10/19 사진 — «성능 불러오기가 실패하였습니다»', 'entry.detail.openText': '10/19 사진 — 목록 [성능점검]',

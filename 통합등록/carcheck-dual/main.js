@@ -767,6 +767,9 @@ async function until(fn, ms, step = 40) {
   return null;
 }
 
+//  경기조합 사진 자동 올리기 — 꺼짐(10/19 같은 차 중복 등록 사고). 켜려면 관찰 기록으로 순서를 확인하고 검수를 거친 뒤에만
+const CARMODOO_PHOTO_AUTO = false;
+
 /**
  * 경기조합 「4 자동차사진」 에 앞면·뒷면을 올린다.
  *   앱 1.전면사진 -> 조합 앞면
@@ -780,6 +783,13 @@ async function sendCarmodooPhotos(win, data) {
   ].filter((j) => String(data[j.key] || '').trim());
 
   if (!jobs.length) return { filled: [], missing: [] };
+
+  /*  (10/19 긴급) 경기조합은 사진 자리를 누르면 «등록중입니다»를 띄우며 접수를 바로 등록한다 —
+   *  시험판에서 같은 차가 성능번호 6개로 따로 등록됐다(사진 없이). 사진 자리 누르기를 멈춘다.
+   *  실제 등록 관찰로 경기조합 사진 순서를 확인하기 전까지는 프로그램이 경기조합 사진 자리를 절대 누르지 않는다. */
+  if (!CARMODOO_PHOTO_AUTO) {
+    return { filled: [], missing: jobs.map((j) => j.label + ' — 경기조합 사진은 자동으로 올리지 않아요(사진 자리를 누르면 경기조합이 접수를 바로 등록해 같은 차가 여러 번 등록될 수 있어요). 접수를 [저장]한 뒤 ④ 자동차사진 탭에서 직접 올려 주세요.') };
+  }
 
   const filled = [];
   const missing = [];
