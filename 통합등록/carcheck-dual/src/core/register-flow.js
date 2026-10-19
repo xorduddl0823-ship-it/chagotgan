@@ -467,7 +467,11 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
           if (!ls.loggedIn || !ls.canRead) return fail(site, 'entryNext', { needLogin: true, reason: '엔트리 로그인이 끊겼습니다.' });
           const next = nc.normNo(await A.entry.readNext());
           const want = carinfoNo(j);
-          if (!next || next !== want) return fail(site, 'entryNext', { stopped: false, reason: '엔트리 다음 번호(' + (next || '읽지 못함') + ')가 이 차 카인포 번호(' + want + ')와 다릅니다 — 다른 차 기록이 끌려올 수 있어 멈췄어요.', mismatch: true });
+          //  (7차 · 10/19 엔트리 화면) [간편 접수]의 번호 칸은 고쳐 쓸 수 있다. 연결 모듈이 «이 차 번호를 직접 넣어 불러오기»(typesNumber)를
+          //  하면 다음 번호가 달라도 다른 차가 끌려오지 않는다 — 대신 불러온 차량번호·차대번호가 이 차와 같아야 저장(allowSave)
+          if ((!next || next !== want) && A.entry.typesNumber) {
+            say(site, 'entryNext', '다음 번호 ' + (next || '읽지 못함') + ' · 이 차 번호 ' + want + '를 직접 넣어 불러와요');
+          } else if (!next || next !== want) return fail(site, 'entryNext', { stopped: false, reason: '엔트리 다음 번호(' + (next || '읽지 못함') + ')가 이 차 카인포 번호(' + want + ')와 다릅니다 — 다른 차 기록이 끌려올 수 있어 멈췄어요.', mismatch: true });
         }
         if (st === 'uncertain') {
           //  다시 저장하지 않는다 — 목록으로만 확인

@@ -61,6 +61,15 @@ function carmodooNumberExpr(cfg, checkNo) {
 const carmodooReadExpr = (cfg) => carmodooNumberExpr(cfg, '').replace('if(m){if(!m.checked){m.click();if(!m.checked){m.checked=true;ev(m,"change");}}}' +
   'else if(a.checked){a.click();if(a.checked){a.checked=false;ev(a,"change");}}', '');
 
+/** 번호를 엔트리 모양으로 — '2628604413' + 'NN-NN-NNNNNN' → '26-28-604413' (모양이 없으면 그대로) */
+function fmtNo(no, pattern) {
+  const d = String(no || '').replace(/[^0-9]+/g, '');
+  if (!pattern) return d;
+  let i = 0;
+  const out = pattern.replace(/N/g, () => d[i++] || '');
+  return i === d.length ? out : d;                       // 자릿수가 모양과 다르면 숫자 그대로(엉뚱하게 자르지 않음)
+}
+
 const textExpr = (sel) => '(function(){var e=document.querySelector(' + JSON.stringify(sel) + ');' +
   'return e?String(e.value!=null&&e.tagName!=="SPAN"&&e.tagName!=="DIV"&&e.tagName!=="TD"?e.value:e.textContent).trim():null;})()';
 
@@ -229,11 +238,28 @@ function createElectronAdapters(o) {
     async fill(data, extra) {
       const r = o.fillFns.entry ? await o.fillFns.entry(data, extra || {}) : { filled: [], missing: [] };
       const cfg = C.entry;
-      //  엔트리는 «다음 번호»로 카인포 기록을 끌어온다 — 번호 칸을 비우지 않고 불러오기만 누른다(번호는 사이트가 정함)
-      const ok = await inAnyFrame(o.getWindow('entry'), '(function(){var b=document.querySelector(' + JSON.stringify(cfg.loadButton) + ');if(!b)return null;b.click();return true;})()');
-      if (!ok) return { ...r, missing: (r.missing || []).concat(['엔트리 불러오기 단추를 찾지 못함']) };
-      await new Promise((res) => setTimeout(res, 300));
-      return { ...r, filled: (r.filled || []).concat(['엔트리 불러오기']) };
+      const w = o.getWindow('entry');
+      //  번호 칸: typeNumber 면 이 차 카인포 번호를 엔트리 모양(«26-28-604413»)으로 직접 넣는다(대표님 선택 사항 — 10/19 화면)
+      //   아니면 사이트가 채워 둔 «다음 번호»를 그대로 둔다(앞 단계에서 이 차 번호와 같은지 이미 확인)
+      if (cfg.typeNumber && cfg.numberInput) {
+        const v = fmtNo(extra && extra.checkNo, cfg.numberFormat);
+        const put = await inAnyFrame(w, '(function(){var n=document.querySelector(' + JSON.stringify(cfg.numberInput) + ');if(!n)return null;' +
+          'n.focus();n.value=' + JSON.stringify(v) + ';["input","change","blur"].forEach(function(t){n.dispatchEvent(new Event(t,{bubbles:true}));});return n.value;})()');
+        if (put == null || enNo(put) !== enNo(v)) return { ...r, missing: (r.missing || []).concat(['엔트리 번호 칸에 이 차 번호를 넣지 못함']) };
+      }
+      //  불러오기 — 카인포 기록이 엔트리로 아직 안 넘어왔으면 «성능 불러오기가 실패하였습니다»가 뜬다(10/19 화면).
+      //   불러오기는 읽기라 몇 번 다시 해도 된다(저장 아님). 정한 횟수만 하고 안 되면 멈춘다.
+      const R = cfg.loadRetry || { times: 1, waitMs: 0 };
+      for (let i = 0; i < Math.max(1, R.times); i++) {
+        if (i) await new Promise((res) => setTimeout(res, R.waitMs || 3000));
+        const ok = await inAnyFrame(w, '(function(){var b=document.querySelector(' + JSON.stringify(cfg.loadButton) + ');if(!b)return null;b.click();return true;})()');
+        if (!ok) return { ...r, missing: (r.missing || []).concat(['엔트리 불러오기 단추를 찾지 못함']) };
+        await new Promise((res) => setTimeout(res, 300));
+        const failed = R.failText ? await inAnyFrame(w, '(function(){var t=' + JSON.stringify(R.failText) + ';var b=document.body&&document.body.innerText||"";' +
+          'if(b.indexOf(t)<0)return null;var c=' + JSON.stringify(R.failClose || '') + ';var e=c&&document.querySelector(c);if(e)e.click();return true;})()') : null;
+        if (!failed) return { ...r, filled: (r.filled || []).concat(['엔트리 불러오기']) };
+      }
+      return { ...r, missing: (r.missing || []).concat(['엔트리에서 이 차 기록을 불러오지 못함(카인포 기록이 아직 안 넘어왔을 수 있어요)']) };
     },
     async load() {},
     async readLoaded() {
@@ -246,9 +272,10 @@ function createElectronAdapters(o) {
   //  사진을 언제 올리나(설정) — 엔트리는 사진 칸이 없다고 보고 undefined(사진 단계 없음)
   carinfo.photoPhase = C.carinfo.photoPhase || null;
   carmodoo.photoPhase = C.carmodoo.photoPhase || null;
+  entry.typesNumber = !!(C.entry && C.entry.typeNumber && C.entry.numberInput);
   entry.implemented = !!(C.entry && C.entry.loggedIn && C.entry.nextNumber && C.entry.loadButton && C.entry.list && C.entry.list.cols);
 
   return { carinfo, carmodoo, entry };
 }
 
-module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr };
+module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr, fmtNo };

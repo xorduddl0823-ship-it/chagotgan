@@ -77,6 +77,12 @@ const REAL = {
     //     표시보험료 · 주행거리 · 사진(«2/2») · 이름 · 매매/상사 · 접수일 · 만료일 · [성능점검] · [성능기록부] · [보험사]
     //   · 오른쪽 위 [간편 접수] · [성능점검 접수] — «다음 번호»·불러오기는 [성능점검 접수] 안쪽으로 보임(사진 필요)
     numberDigitsOnly: true,                                              // 번호는 숫자만 견줌(줄표 뗌)
+    //  10/19 화면 사진([간편 접수]): «불러올 성능번호를 입력해 주세요» 창에 다음 번호(카인포 마지막 번호 + 1, 예 26-28-604414)가 미리 들어가 있고
+    //   [불러오기] → «자동차성능·상태점검» 화면에 카인포 기록이 채워짐. 없는 번호면 «성능 불러오기가 실패하였습니다»
+    //   번호 칸은 고쳐 쓸 수 있음 → typeNumber(이 차 번호를 직접 넣기)는 대표님이 고를 사항이라 꺼 둠(false = 다음 번호가 이 차 번호와 같을 때만 진행)
+    typeNumber: false,
+    numberFormat: 'NN-NN-NNNNNN',
+    loadRetry: { times: 3, waitMs: 3000, failText: '성능 불러오기가 실패하였습니다', failClose: null },
     loggedIn: null, nextNumber: null, numberInput: null, loadButton: null,
     loaded: { entryNo: null, carNo: null, vin: null },
     //  표가 아닌 칸 모양일 수 있어 줄 선택자는 비움 · 칸 순서만 적어 둠(성능번호 0 · 차량번호 1 · 성능 3 · 접수일 12)
