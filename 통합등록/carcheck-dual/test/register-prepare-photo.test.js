@@ -198,3 +198,36 @@ test('작업 기록: 신규등록 표시(지우기 포함)·사진 칸 기록이
   m = createJobLog(file).get(id).meta;
   assert.strictEqual(m.prepared, null);
 });
+
+test('실제 카인포 목록 모양: 번호 칸의 «재성능» 표시를 떼고 숫자만, 날짜는 앞 날짜만 읽음', () => {
+  const { JSDOM } = require('./node_modules/jsdom');
+  const { listExpr } = require('../src/sites/flow-adapters');
+  const { REAL } = require('../src/sites/site-config');
+  const td = (a) => '<tr>' + a.map((x) => '<td>' + x + '</td>').join('') + '</tr>';
+  const blank = Array(16).fill('');
+  const row = blank.slice(); row[0] = '1'; row[1] = '2026-10-19<br>(2027-02-15)'; row[2] = '12가3456'; row[3] = '2628600001<span>재성능</span>'; row[14] = '● 점검완료';
+  const dom = new JSDOM('<table id="carcheckTable"><tbody>' + td(row) + '</tbody></table>', { runScripts: 'outside-only' });
+  const out = dom.window.eval(listExpr(REAL.carinfo.list));
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(out)), [{ date: '2026-10-19', carNo: '12가3456', checkNo: '2628600001', status: '● 점검완료' }]);
+  //  상태 칸 앞에 초록 점(●)이 글자로 붙어 나와도 «저장 끝»으로 알아봄
+  assert.ok(new RegExp(REAL.carinfo.list.savedStatus).test(out[0].status));
+  assert.ok(!new RegExp(REAL.carinfo.list.savedStatus).test('점검중'));
+});
+
+test('목록에 차대번호 칸이 없을 때(실제 카인포): 이번에 생긴 이 차 줄만 눌러 차대번호를 읽어 확인 — 못 읽으면 멈춤', async () => {
+  const t = setup();
+  const orig = t.W.adapters.carinfo.readList;
+  const opened = [];
+  t.W.adapters.carinfo.readList = async (c) => (await orig(c)).map((r) => ({ ...r, vin: '' }));
+  t.W.adapters.carinfo.readRowVin = async (no) => { opened.push(no); const r = t.W.world.carinfo.rows.find((x) => x.checkNo === no); return r ? r.vin : ''; };
+  const r = await t.flow.runAll({ ...CAR, data: CAR }, RUN);
+  assert.strictEqual(r.ok, true, JSON.stringify(r));
+  assert.deepStrictEqual(opened, ['T-0101'], '이번에 생긴 줄 하나만 열어 봄');
+  const u = setup();
+  const o2 = u.W.adapters.carinfo.readList;
+  u.W.adapters.carinfo.readList = async (c) => (await o2(c)).map((x) => ({ ...x, vin: '' }));
+  u.W.adapters.carinfo.readRowVin = async () => '';
+  const r2 = await u.flow.runAll({ ...CAR, data: CAR }, RUN);
+  assert.strictEqual(r2.ok, false);
+  assert.match(r2.reason, /차대번호를 읽지 못해/);
+});

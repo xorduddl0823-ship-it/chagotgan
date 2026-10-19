@@ -36,7 +36,8 @@ if (!smokeOk) process.exit(1);
 //  실제 전산 설정이 비어 있으므로 저장 전에 «자동 등록 멈춤»과 쉬운 까닭이 나와야 정상
 const sf = spawnSync(cmd, smokeArgs, { encoding: 'utf8', timeout: 90000, env: { ...process.env, CARCHECK_SMOKE: '1', CARCHECK_SMOKE_FLOW: '1' } });
 const fl = String(sf.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-FLOW')) || '';
-const flowOk = /button=true/.test(fl) && /자동 등록 멈춤/.test(fl) && /카인포 목록 칸 설정이 아직 없습니다/.test(fl);
+//  7차: 카인포 목록 칸은 대표님 화면 사진으로 채움 → 이제는 «신규등록 요청 주소 설정 없음»(실제 화면 확인 필요)에서 멈춰야 정상
+const flowOk = /button=true/.test(fl) && /자동 등록 멈춤/.test(fl) && /설정이 (아직 )?없습니다/.test(fl) && /실제 화면 확인 필요/.test(fl);
 console.log((flowOk ? 'ok' : 'not ok') + ' - 실제 프로그램: [세 전산 자동 등록] → 엔진 → 설정 미확정이라 저장 전에 멈추고 쉬운 까닭 표시' + (flowOk ? '' : '\n  error: ' + (fl || String(sf.stderr || '').slice(-300))));
 if (!flowOk) process.exit(1);
 if (r.status !== 0) {

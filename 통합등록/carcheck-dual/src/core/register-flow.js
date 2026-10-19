@@ -325,6 +325,15 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
       if (site === 'carinfo') {
         if (!j.meta || !j.meta.oldNos) return { ok: false, reason: '저장 전 목록을 찍어 둔 기록이 없어 새 번호를 구분할 수 없습니다.' };
         const rows = await A.carinfo.readList(car(j));
+        //  목록에 차대번호 칸이 없는 전산(실제 카인포) — 이번에 새로 생긴 이 차 줄만 눌러 차대번호를 읽어 채운다(7차)
+        if (A.carinfo.readRowVin) {
+          const old = new Set(j.meta.oldNos);
+          for (const x of rows) {
+            if (nc.normCar(x.carNo) === nc.normCar(j.carNo) && !nc.normVin(x.vin) && nc.normNo(x.checkNo) && !old.has(nc.normNo(x.checkNo))) {
+              x.vin = (await A.carinfo.readRowVin(nc.normNo(x.checkNo))) || '';
+            }
+          }
+        }
         const r = nc.findNewNumber(rows, car(j), new Set(j.meta.oldNos), j.meta.startDate, opts);
         if (!r.ok && r.needsConfirm) {
           if (st === 'uncertain') jobLog.mark(jobId, site, 'saveConfirmed', { checkNo: r.checkNo, note: '목록에 새 줄 있음(차대번호 일부 일치)' });

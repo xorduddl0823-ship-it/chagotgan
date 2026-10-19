@@ -27,12 +27,16 @@ async function inAnyFrame(win, expr) {
   return null;
 }
 
-/** 목록 읽기 스크립트 — 칸 순서(cols)로 줄마다 값을 꺼낸다 */
+/**
+ * 목록 읽기 스크립트 — 칸 순서(cols)로 줄마다 값을 꺼낸다
+ *  pick: 칸 글자에서 쓸 부분만 고르는 무늬(7차) — 예: 카인포 번호 칸은 «2628604413재성능»처럼 표시가 붙어 나와 숫자만 고름
+ */
 function listExpr(list) {
-  return '(function(){var L=' + JSON.stringify(list) + ';' +
+  return '(function(){var L=' + JSON.stringify({ rows: list.rows, cols: list.cols, pick: list.pick || {} }) + ';' +
     'var trs=document.querySelectorAll(L.rows);if(!trs.length)return null;var out=[];' +
     'for(var i=0;i<trs.length;i++){var td=trs[i].querySelectorAll("td");if(!td.length)continue;var r={};' +
-    'for(var k in L.cols){var c=td[L.cols[k]];r[k]=c?String(c.textContent||"").trim():"";}out.push(r);}' +
+    'for(var k in L.cols){var c=td[L.cols[k]];var t=c?String(c.textContent||"").replace(/\\s+/g," ").trim():"";' +
+    'if(L.pick[k]){var m=t.match(new RegExp(L.pick[k]));t=m?m[0]:"";}r[k]=t;}out.push(r);}' +
     'return out;})()';
 }
 
@@ -109,6 +113,31 @@ function createElectronAdapters(o) {
 
   const carinfo = Object.assign(common('carinfo'), {
     async readList(car) { return rowsOf('carinfo', car); },
+    /**
+     * 목록에 차대번호 칸이 없을 때(실제 카인포) — 그 번호 줄을 눌러 위쪽 차량정보에 불러온 뒤 차대번호를 읽는다(7차).
+     *  누르는 것은 «보기»이고 저장이 아니다. 위 정보 칸의 번호가 그 번호로 바뀐 것을 확인한 뒤에만 읽는다. 못 읽으면 ''.
+     */
+    async readRowVin(checkNo) {
+      const V = C.carinfo.list && C.carinfo.list.vinFromForm;
+      if (!V) return '';
+      const L = C.carinfo.list;
+      const w = o.getWindow('carinfo');
+      const clicked = await inAnyFrame(w, '(function(){var L=' + JSON.stringify({ rows: L.rows, col: L.cols.checkNo }) + ',no=' + JSON.stringify(String(checkNo)) + ';' +
+        'var trs=document.querySelectorAll(L.rows);for(var i=0;i<trs.length;i++){var td=trs[i].querySelectorAll("td")[L.col];' +
+        'if(td&&String(td.textContent||"").indexOf(no)>=0){(trs[i].querySelector("td")||trs[i]).click();return true;}}return null;})()');
+      if (!clicked) return '';
+      const until = Date.now() + 5000;
+      while (Date.now() < until) {
+        const no = await inAnyFrame(w, textExpr(V.formNo));
+        if (no && String(no).replace(/\s+/g, '') === String(checkNo)) {
+          const parts = [];
+          for (const sel of [].concat(V.vin)) parts.push((await inAnyFrame(w, textExpr(sel))) || '');
+          return parts.join('');
+        }
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      return '';
+    },
     /** 지금 카인포에 신규등록(점검 등록) 화면이 열려 있나 — { open, carNo, checkNo } · 설정이 없으면 unknown */
     async prepareState() {
       const P = C.carinfo.prepare;
@@ -127,7 +156,8 @@ function createElectronAdapters(o) {
       try { return await o.prepareFn(data); } finally { g.closePhase(); }
     },
   });
-  if (!o.prepareFn) delete carinfo.prepare;                // 신규등록 기능을 안 넘기면 흐름이 신규등록 단계를 건너뜀(예전 시험·사람이 미리 함)
+  if (!o.prepareFn) delete carinfo.prepare;
+  if (!(C.carinfo.list && C.carinfo.list.vinFromForm)) delete carinfo.readRowVin;                // 신규등록 기능을 안 넘기면 흐름이 신규등록 단계를 건너뜀(예전 시험·사람이 미리 함)
   //  신규등록 [확인] 때 목록 줄이 먼저 생기나 — true/false/null(모름 → 생긴다고 보고 «상태» 칸으로만 저장 확인)
   carinfo.prepareCreatesRow = C.carinfo.prepare && C.carinfo.prepare.createsRow != null ? C.carinfo.prepare.createsRow : null;
   carinfo.savedStatus = (C.carinfo.list && C.carinfo.list.savedStatus) || null;

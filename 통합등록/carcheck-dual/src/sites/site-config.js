@@ -30,12 +30,23 @@ const REAL = {
     confirmed: false,
     hosts: ['ai.carinfo.co.kr'],
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
-    list: { rows: '#carcheckTable tbody tr', cols: null, savedStatus: null }, // 칸 순서 모름 — 10/19
+    //  10/19 대표님 화면 사진: 목록 칸 = # · 점검일자(성능만료일자) · 차량번호 · 성능점검번호(«재성능» 표시가 붙기도 함) · 카히스토리 · 차량명 ·
+    //   주행거리 · 점검원 · 매매상사 · 고객명 · 보증구분 · 점검비 · 보험료 · 합계금액 · 점검상태(저장된 차 «점검완료») · 특약
+    //   목록에 차대번호 칸이 없음 → 이번에 생긴 줄을 눌러 위쪽 차량정보의 차대번호를 읽음(vinFromForm)
+    //   ⚠ «#» 칸이 td 인지(칸 번호가 하나씩 밀리는지)와 상태 글자는 저장 직전 확인 때 한 번 더 봄
+    list: { rows: '#carcheckTable tbody tr', cols: { date: 1, carNo: 2, checkNo: 3, status: 14 },
+            pick: { checkNo: '\\d{6,}', date: '\\d{4}-\\d{2}-\\d{2}' }, savedStatus: '점검완료$',     // 앞에 초록 점(●)이 글자로 붙어 나올 수 있어 앞은 묶지 않음
+            vinFromForm: { formNo: '#checkNo', vin: ['#vin1', '#vin2'] } },
     //  신규등록 화면 칸 — 기존 신규등록 기능(carinfo-prepare.js)이 쓰는 칸과 같음(실제 화면에서 다시 확인 필요)
-    //  createsRow: 신규등록 [확인] 때 목록 줄이 먼저 생기나(기존 코드 주석상 생길 수 있음 «성능이 등록되었습니다») — 모름(null)
-    prepare: { formNo: '#checkNo', formCarNo: '#carNo', createsRow: null },
+    //  10/19 대표님 화면 사진(신규등록 [확인] 바로 뒤): «성능이 등록되었습니다» 안내 + 목록에 그 차 줄이 바로 생김
+    //   그 줄은 성능점검번호 «빈칸» · 점검상태 «점검중», 위 «성능번호» 칸은 «차량번호 조회후 자동발급됩니다»(아직 번호 없음)
+    //   → 번호는 [저장]해야 생김(대표님 10/18 말씀과 같음) · 줄은 먼저 생김(createsRow true) → 저장 확인은 «점검완료» 상태로만
+    //   같은 차의 예전 «점검중(반환)» 줄(번호 없음)이 여럿 남아 있을 수 있음 — 번호 없는 줄은 새 번호 후보가 아님
+    prepare: { formNo: '#checkNo', formCarNo: '#carNo', createsRow: true },
     phaseAllow: { prepare: [], photo: [] },                              // 신규등록 [확인]·사진 올리기 요청 주소 — 실제 화면 확인 필요
-    photoPhase: null,                                                    // 사진을 저장 전에 올리나 뒤에 올리나 — 실제 화면 확인 필요
+    //  10/19 화면 사진: «점검완료»된 차에서 [차량사진] → 사진 창(사진 보기 창)에 올라가 있음 → 저장 뒤에 올림
+    //   사진 창의 [전체삭제]·칸별 ✕ 는 프로그램이 누르지 않음(사진 올리기 코드에 지우기 없음)
+    photoPhase: 'afterSave',
   },
   carmodoo: {
     confirmed: false,
