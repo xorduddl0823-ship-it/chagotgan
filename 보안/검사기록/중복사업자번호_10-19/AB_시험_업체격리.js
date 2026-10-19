@@ -13,7 +13,7 @@
 //   AB_OK=시험업체만 API=https://<프로젝트>.supabase.co/functions/v1 \
 //   WA_SHOP= WA_TOKEN= WA_REC=<A 차 기록 id> WA_PHOTO=<A 사진 id sb/…> WA_BIZ=<A 사업자번호> \
 //   WB_SHOP= WB_TOKEN=   (B 는 사업자번호가 비어 있는 시험 업체여야 W6 이 뜻이 있음) \
-//   CA_OFFICE= CA_TOKEN= CA_INVOICE=<A 청구서 id> CA_YM=<그 달 2026-10> CA_DELIV_PHOTO=<A 배달 사진 id> \
+//   CA_OFFICE= CA_TOKEN= CA_INVOICE=<A 청구서 id> CA_YM=<그 달 2026-10> CA_DELIV_PHOTO=<A 배달 사진 id> CA_CAR=<A 검사 기록(차) id> \
 //   CB_OFFICE= CB_TOKEN= \
 //   DA_TOKEN=<딜러 A 열쇠> DB_TOKEN=<딜러 B 열쇠>   (딜러 A 의 차는 WA_SHOP 의 WA_REC — 딜러 B 번호로는 안 들어온 차) \
 //   node 보안/검사기록/중복사업자번호_10-19/AB_시험_업체격리.js
@@ -26,13 +26,14 @@ const MSG = {
   wOther: "다른 업체의 자료는 볼 수 없습니다",                         // wash 6849
   wNoCar: "그 차를 찾지 못했습니다",                                   // wash 2859
   wNoFile: "다른 업체의 파일은 볼 수 없습니다",                        // wash 656
-  wBizTaken: "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다. 우리 사업자번호가 맞다면 차곳간(010-9559-3663)으로 알려 주세요.", // wash 2541
+  wBizTaken: "이미 등록된 사업자번호예요. 본인 업체라면 차곳간(010-9559-3663)에 문의해 주세요.", // wash sb28 2609 (뒤에 «확인 요청을 남겼어요» 가 붙을 수 있음 → 앞부분 비교)
   wHq: "차곳간 본사 계정으로 들어와야 합니다",                          // wash 4366
   cNoOffice: "이 검사소에 들어갈 권한이 없습니다.",                    // check whoIs (뒤에 괄호 번호가 붙음 → 앞부분만 비교)
   cNotMine: "이 검사소 청구서가 아닙니다.",                            // check 934
   cNoPhoto: "사진을 찾지 못했습니다.",                                  // check 3659
   dNoCar: "이 차를 찾지 못했습니다 (내 번호로 들어온 차만 볼 수 있어요)", // dealer 577
   dNoCar2: "이 차를 찾지 못했습니다",                                   // dealer 603
+  cNotMyCar: "이 검사소 차가 아닙니다.",                               // check 998 (기록 고치기)
 };
 
 /* ── 응답 읽기: {status, ok:해석됨, j} → 판정 함수가 씀 ── */
@@ -42,7 +43,9 @@ function shape(r) {                       // 공통: 5xx · 해석 실패 · 모
   if (r.status >= 500) return "HTTP " + r.status;
   if (!r.parsed) return "응답 해석 실패";
   if (!isObj(r.j)) return "응답이 객체가 아님";
-  const k = Object.keys(r.j).filter((x) => x !== "__raw");
+  /* 딜러 서버 확정 모양(d7~): 거절은 {__err, __agree:false} — __agree 는 false 일 때만 허락(true 는 «동의 필요»라 다른 뜻 → 실패) */
+  if (r.api === "dealer-api" && "__agree" in r.j && "__err" in r.j) { if (r.j.__agree !== false) return "딜러 __agree 가 false 가 아님"; }
+  const k = Object.keys(r.j).filter((x) => x !== "__raw" && !(r.api === "dealer-api" && x === "__agree"));
   if (k.length !== 1 || (k[0] !== "result" && k[0] !== "__err")) return "모르는 응답 모양(칸 " + k.length + "개)";
   return "";
 }
@@ -68,6 +71,7 @@ const W_SHOT_HAS = (id) => J.result((x) => !isObj(x) || !isObj(x.links) ? "links
 const W_SHOT_NONE = J.result((x) => !isObj(x) || !isObj(x.links) ? "links 칸 없음" : Object.keys(x.links).length !== 0 ? "다른 업체 사진 주소가 나옴(" + Object.keys(x.links).length + "개)" : "");
 const C_ROWS = J.result((x) => Array.isArray(x) ? "" : "줄 목록(배열)이 아님");
 const C_DEL0 = J.result((x) => !isObj(x) ? "모양 다름" : typeof x.n !== "number" || typeof x.missing !== "number" ? "n · missing 칸 없음" : x.n !== 0 ? "지운 수 " + x.n : x.missing !== 1 ? "missing " + x.missing + "(1 이어야 함)" : "");
+const W_DEL_ANY = (r) => { const s = shape(r); if (s) return s; if ("__err" in r.j) return ""; return isObj(r.j.result) && r.j.result.ok === true ? "" : "모양 다름"; };   // B 자기 칸 지우기 — 결과보다 «A 기록이 그대로인지»(W9b)가 판정
 const D_CAR_OK = J.result((x) => !isObj(x) || !isObj(x.car) || typeof x.car.plate !== "string" || !x.car.plate ? "차 정보 없음" : "");
 
 /* ── 시험 목록 (모두 필수) ── */
@@ -90,9 +94,11 @@ function plan(E) {
     { id: "W3", what: "B 가 A 차 기록 id 로 보기 코드 → 못 찾음", req: w(E.WB_SHOP, E.WB_TOKEN, "viewLink", [E.WA_REC]), judge: J.reject(MSG.wNoCar) },
     { id: "W4", what: "B 가 A 사진 id 로 서명 주소 → links 가 빈 객체", req: w(E.WB_SHOP, E.WB_TOKEN, "shotLinks", [[E.WA_PHOTO]]), judge: W_SHOT_NONE },
     { id: "W5", what: "B 가 A 사진 파일 내려받기 → 거절", req: w(E.WB_SHOP, E.WB_TOKEN, "driveB64", [E.WA_PHOTO]), judge: J.reject(MSG.wNoFile) },
-    { id: "W6", what: "B 가 A 사업자번호를 자기 업체에 넣기 → 겹침 거절", req: w(E.WB_SHOP, E.WB_TOKEN, "shopBiz", [{ bizNo: E.WA_BIZ }]), judge: J.reject(MSG.wBizTaken) },
+    { id: "W6", what: "B 가 A 사업자번호를 자기 업체에 넣기 → 겹침 거절", req: w(E.WB_SHOP, E.WB_TOKEN, "shopBiz", [{ bizNo: E.WA_BIZ }]), judge: J.reject(MSG.wBizTaken, true) },
     { id: "W7", what: "B 열쇠로 본사 기능 → 거절", req: w(E.WB_SHOP, E.WB_TOKEN, "hqShops", []), judge: J.reject(MSG.wHq) },
     { id: "W8", what: "B 열쇠 + ADMIN 코드 → 거절", req: w("ADMIN", E.WB_TOKEN, "hqShops", []), judge: J.reject(MSG.wOther) },
+    { id: "W2b", what: "B 가 A 기록 id 로 지우기(B 자기 칸) — 뒤 W9b 로 A 기록 확인", req: w(E.WB_SHOP, E.WB_TOKEN, "apiDel", ["intakes", E.WA_REC]), judge: W_DEL_ANY },
+    { id: "W9b", what: "다시 대조: A 기록이 그대로 있음(보기 코드 받힘)", req: w(E.WA_SHOP, E.WA_TOKEN, "viewLink", [E.WA_REC]), judge: W_LINK_OK },
     { id: "W9", what: "다시 대조: A 사진 주소 그대로 나옴", req: w(E.WA_SHOP, E.WA_TOKEN, "shotLinks", [[E.WA_PHOTO]]), judge: W_SHOT_HAS(E.WA_PHOTO) },
     /* 체크 */
     { id: "C0", what: "대조: A 가 A 청구서 줄 읽음(전 지문 저장)", req: c(E.CA_OFFICE, E.CA_TOKEN, "invoiceRows", [E.CA_INVOICE]), judge: C_ROWS, snap: "before" },
@@ -101,6 +107,7 @@ function plan(E) {
     { id: "C3", what: "B 가 A 청구서 id 로 줄 보기 → 거절", req: c(E.CB_OFFICE, E.CB_TOKEN, "invoiceRows", [E.CA_INVOICE]), judge: J.reject(MSG.cNotMine) },
     { id: "C4", what: "B 가 A 청구서 지우기 → n 0 · missing 1", req: c(E.CB_OFFICE, E.CB_TOKEN, "invoiceDel", [{ ym: E.CA_YM, ids: [E.CA_INVOICE] }]), judge: C_DEL0 },
     { id: "C5", what: "B 가 A 배달 사진 → 못 찾음", req: c(E.CB_OFFICE, E.CB_TOKEN, "deliv_photo", [E.CB_TOKEN, E.CA_DELIV_PHOTO]), judge: J.reject(MSG.cNoPhoto) },
+    { id: "C7", what: "B 가 A 검사 기록(차) 검사비 고치기 → 거절", req: c(E.CB_OFFICE, E.CB_TOKEN, "carFeeSet", [{ carId: E.CA_CAR, fee: 1 }]), judge: J.reject(MSG.cNotMyCar) },
     { id: "C6", what: "다시 대조: A 청구서 줄이 C0 과 똑같음", req: c(E.CA_OFFICE, E.CA_TOKEN, "invoiceRows", [E.CA_INVOICE]), judge: C_ROWS, snap: "after" },
     /* 딜러 */
     { id: "D0", what: "대조: 딜러 A 가 자기 차 상세 봄", req: d(E.DA_TOKEN, "car", [E.WA_SHOP, E.WA_REC]), judge: D_CAR_OK },
@@ -109,7 +116,7 @@ function plan(E) {
   ];
 }
 const NEED = ["API", "WA_SHOP", "WA_TOKEN", "WA_REC", "WA_PHOTO", "WA_BIZ", "WB_SHOP", "WB_TOKEN",
-  "CA_OFFICE", "CA_TOKEN", "CA_INVOICE", "CA_YM", "CA_DELIV_PHOTO", "CB_OFFICE", "CB_TOKEN", "DA_TOKEN", "DB_TOKEN"];
+  "CA_OFFICE", "CA_TOKEN", "CA_INVOICE", "CA_YM", "CA_DELIV_PHOTO", "CA_CAR", "CB_OFFICE", "CB_TOKEN", "DA_TOKEN", "DB_TOKEN"];
 
 /* ── 실행 ── */
 async function send(fetchFn, API, q) {
@@ -117,7 +124,7 @@ async function send(fetchFn, API, q) {
   try { res = await fetchFn(API + "/" + q.api, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q.body) }); }
   catch (_) { return { status: 0, parsed: false }; }
   try { txt = await res.text(); } catch (_) { return { status: res.status, parsed: false }; }
-  try { return { status: res.status, parsed: true, j: JSON.parse(txt) }; } catch (_) { return { status: res.status, parsed: false }; }
+  try { return { api: q.api, status: res.status, parsed: true, j: JSON.parse(txt) }; } catch (_) { return { api: q.api, status: res.status, parsed: false }; }
 }
 const fp = (rows) => crypto.createHash("sha256").update(JSON.stringify(rows)).digest("hex");   // 지문만 비교(기록에 안 씀)
 
@@ -156,8 +163,8 @@ async function selfTest() {
     W5: { __err: MSG.wNoFile }, W6: { __err: MSG.wBizTaken }, W7: { __err: MSG.wHq }, W8: { __err: MSG.wOther },
     W9: { result: { links: { "sb/TA/202610/x.jpg": "https://x/s2" } } },
     C0: { result: [{ id: 1, total: 5 }] }, C1: { __err: MSG.cNoOffice + " (01000000000)" }, C2: { __err: MSG.cNoOffice + " (01000000000)" },
-    C3: { __err: MSG.cNotMine }, C4: { result: { n: 0, kept: [], missing: 1, cleared: 0 } }, C5: { __err: MSG.cNoPhoto },
-    C6: { result: [{ id: 1, total: 5 }] }, D0: { result: { car: { plate: "12가3456" } } }, D1: { __err: MSG.dNoCar }, D2: { __err: MSG.dNoCar2 },
+    C3: { __err: MSG.cNotMine }, C7: { __err: MSG.cNotMyCar }, W2b: { result: { ok: true, rev: 1 } }, W9b: { result: { code: "B".repeat(24) } }, C4: { result: { n: 0, kept: [], missing: 1, cleared: 0 } }, C5: { __err: MSG.cNoPhoto },
+    C6: { result: [{ id: 1, total: 5 }] }, D0: { result: { car: { plate: "12가3456" } } }, D1: { __err: MSG.dNoCar, __agree: false }, D2: { __err: MSG.dNoCar2, __agree: false },
   };
   const P = plan(E);
   function mockFor(over) {   // over: {시험id: {status, body(문자열)}}
@@ -175,6 +182,9 @@ async function selfTest() {
     ["C3 결과로 줄이 나옴", { C3: { body: JSON.stringify({ result: [{ id: "FAKE_INV" }] }) } }, 1],
     ["C4 {result:{deleted:1}}", { C4: { body: JSON.stringify({ result: { deleted: 1 } }) } }, 1],
     ["C4 n 1", { C4: { body: JSON.stringify({ result: { n: 1, missing: 0 } }) } }, 1],
+    ["W9b A 기록이 사라짐", { W9b: { body: JSON.stringify({ __err: MSG.wNoCar }) } }, 1],
+    ["C7 남의 검사 기록 고치기 성공", { C7: { body: JSON.stringify({ result: { ok: true, carId: "x", fee: 1 } }) } }, 1],
+    ["W2b 모르는 모양", { W2b: { body: JSON.stringify({ result: { deleted: 1 } }) } }, 1],
     ["C6 A 줄이 바뀜", { C6: { body: JSON.stringify({ result: [{ id: 1, total: 0 }] }) } }, 1],
     ["W0 대조군 {}", { W0: { body: JSON.stringify({}) } }, 1],
     ["W0 대조군 {result:{}}", { W0: { body: JSON.stringify({ result: {} }) } }, 1],
@@ -183,6 +193,9 @@ async function selfTest() {
     ["W1 HTTP 500", { W1: { status: 500, body: JSON.stringify({ __err: MSG.wOther }) } }, 1],
     ["W1 다른 거절 글", { W1: { body: JSON.stringify({ __err: "잠시 뒤 다시" }) } }, 1],
     ["W2 성공해 버림", { W2: { body: JSON.stringify({ result: { ok: true } }) } }, 1],
+    ["D1 딜러 __agree true", { D1: { body: JSON.stringify({ __err: MSG.dNoCar, __agree: true }) } }, 1],
+    ["W1 워시에 __agree 칸", { W1: { body: JSON.stringify({ __err: MSG.wOther, __agree: false }) } }, 1],
+    ["W6 옛 거절 글", { W6: { body: JSON.stringify({ __err: "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다." }) } }, 1],
     ["W1 칸이 둘", { W1: { body: JSON.stringify({ __err: MSG.wOther, result: 1 }) } }, 1],
     ["시험 환경: 이름에 시험 없음", { E1: { body: JSON.stringify({ result: { shop: "TA", name: "브라더" } }) } }, 2],
     ["시험 환경: 다른 업체", { E3: { body: JSON.stringify({ result: { office: { code: "GAON", name: "가온" } } }) } }, 2],

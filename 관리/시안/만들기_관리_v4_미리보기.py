@@ -36,10 +36,10 @@ FAKE = r'''
 function dd(n){ var t=new Date(); t.setDate(t.getDate()+n); return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0"); }
 var YM0=dd(0).slice(0,7);
 var F_SHOPS=[{shop:"ADMIN",name:"차곳간 본사",active:true},
- {shop:"HANBIT",name:"한빛광택",biz_no:"2118130415",ceo:"김하늘",biz_kind:"wash",plan:"basic",active:true,paid_until:dd(9),endAt:dd(9),staff:4,owner_phone:"01000001111"},
- {shop:"SAEBIT",name:"새빛 성능장",biz_no:"3120577810",ceo:"박바다",biz_kind:"repair",plan:"trial",active:true,trial_until:dd(3),endAt:dd(3),staff:2,owner_phone:"01000002222"},
+ {shop:"HANBIT",name:"한빛광택",biz_no:"0000000102",ceo:"김하늘",biz_kind:"wash",plan:"basic",active:true,paid_until:dd(9),endAt:dd(9),staff:4,owner_phone:"01000001111"},
+ {shop:"SAEBIT",name:"새빛 성능장",biz_no:"0000000103",ceo:"박바다",biz_kind:"repair",plan:"trial",active:true,trial_until:dd(3),endAt:dd(3),staff:2,owner_phone:"01000002222"},
  {shop:"DURI",name:"두리휠",biz_kind:"wheel",plan:"standard",active:false,paid_until:dd(-5),endAt:dd(-5),staff:3,owner_phone:"01000003333"},
- {shop:"BAREUN",name:"바른 카모터스",biz_no:"1188129312",ceo:"정들판",biz_kind:"wash",plan:"pro",active:true,paid_until:dd(21),endAt:dd(21),staff:6,owner_phone:"01000004444"}];
+ {shop:"BAREUN",name:"바른 카모터스",biz_no:"0000000101",ceo:"정들판",biz_kind:"wash",plan:"pro",active:true,paid_until:dd(21),endAt:dd(21),staff:6,owner_phone:"01000004444"}];
 var F_USERS=[{phone:"admin",name:"한본사",shop:"ADMIN",shopName:"차곳간 본사",role:"admin",active:true,last_login:dd(0)+"T09:10:00",created_at:"2026-05-01"},
  {phone:"01000001111",name:"김하늘",shop:"HANBIT",shopName:"한빛광택",role:"owner",active:true,last_login:dd(0)+"T08:00:00",created_at:"2026-06-11"},
  {phone:"01000002222",name:"박바다",shop:"SAEBIT",shopName:"새빛 성능장",role:"owner",active:true,last_login:dd(-1)+"T18:00:00",created_at:"2026-09-30"},
@@ -71,7 +71,7 @@ function FAKE(fn,a){
     case "hqSessions": return {sessions:[]};
     case "hqServices": return {services:F_SVCS};
     case "hqExpenses": return {expenses:[{id:1,day:dd(-4),name:"수파베이스",amount:35000}]};
-    case "hqInfo": return {hq:{biz_name:"차곳간 본사",biz_no:"1234567890",ceo:"한본사",pb_test:true,billing_on:F_BILL},hasPopbill:true};
+    case "hqInfo": return {hq:{biz_name:"차곳간 본사",biz_no:"0000000091",ceo:"한본사",pb_test:true,billing_on:F_BILL},hasPopbill:true};
     case "hqTodo": return {todo:F_TODO};
     case "hqTodoAdd": F_NEXT++; F_TODO.push({id:F_NEXT,title:a[0],done:false,due_at:a[1]||null}); return {ok:true};
     case "hqTodoDone": F_TODO.forEach(function(t){ if(t.id===a[0]) t.done=!!a[1]; }); return {ok:true};
@@ -85,8 +85,8 @@ function FAKE(fn,a){
                                                    : {ok:true,kind:"cash",amount:33000,max:22000,suggest:22000,unusedCash:20000};
     case "hqPgCancel": F_RF[a[0]]=1; return {ok:true,amount:a[2],note:a[0]==="CGG-PLAN-0001"?"이용기간 -"+Math.round(30*a[2]/55000)+"일":"캐시 -"+Math.round(a[2]/1.1).toLocaleString("ko-KR")+"원"};
     case "hqBillingOn": F_BILL=!!a[0]; return {ok:true,on:F_BILL};
-    case "hqCheckWallets": return {ok:true,offices:[{code:"SAEBIT",name:"새빛 성능검사소",wallet:F_CW.SAEBIT||"",bizNo:"3120577810",ceo:"박바다"},
-      {code:"HANBIT2",name:"한빛 성능검사소",wallet:F_CW.HANBIT2||"",bizNo:"2118130415",ceo:"김하늘"},
+    case "hqCheckWallets": return {ok:true,offices:[{code:"SAEBIT",name:"새빛 성능검사소",wallet:F_CW.SAEBIT||"",bizNo:"0000000103",ceo:"박바다"},
+      {code:"HANBIT2",name:"한빛 성능검사소",wallet:F_CW.HANBIT2||"",bizNo:"0000000102",ceo:"김하늘"},
       {code:"DURI",name:"두리 검사소",wallet:F_CW.DURI||"",bizNo:"",ceo:""}]};
     case "hqCheckWallet": F_CW[a[0]]=a[1]; return {ok:true,office:a[0],wallet:a[1]};
     case "hqPerson": F_LOG.unshift({at:new Date().toISOString(),who:"hq:한본사",action:"view",target_phone:a[0],product:"",result:"ok"});
@@ -122,15 +122,15 @@ function FAKE(fn,a){
     case "hqExpSave": if(a[0]&&a[0].balMin!==undefined) F_BAL=a[0].balMin; return {ok:true};
     case "hqSendCheck": return {ok:true,n:3};
     case "hqBizList": return {ok:true,list:[
-      {product:"워시",code:"NEWCAR1",name:"새차모터스",bizNo:"1188129312",ceo:"정새차",owner:"010-****-6666",ok:!!F_BIZ.NEWCAR1,okAt:F_BIZ.NEWCAR1?dd(0):""},
-      {product:"체크",code:"SAEBIT",name:"새빛 성능검사소",bizNo:"3120577810",ceo:"박바다",owner:"010-****-2222",ok:F_BIZ.SAEBIT!==false,okAt:dd(-3)},
-      {product:"워시",code:"HANBIT",name:"한빛광택",bizNo:"2118130415",ceo:"김하늘",owner:"010-****-1234",ok:F_BIZ.HANBIT!==false,okAt:dd(-30)}]};
+      {product:"워시",code:"NEWCAR1",name:"새차모터스",bizNo:"0000000101",ceo:"정새차",owner:"010-****-6666",ok:!!F_BIZ.NEWCAR1,okAt:F_BIZ.NEWCAR1?dd(0):""},
+      {product:"체크",code:"SAEBIT",name:"새빛 성능검사소",bizNo:"0000000103",ceo:"박바다",owner:"010-****-2222",ok:F_BIZ.SAEBIT!==false,okAt:dd(-3)},
+      {product:"워시",code:"HANBIT",name:"한빛광택",bizNo:"0000000102",ceo:"김하늘",owner:"010-****-1234",ok:F_BIZ.HANBIT!==false,okAt:dd(-30)}]};
     case "hqBizOk": F_BIZ[a[1]]=a[2]; return {ok:true};
     case "hqPayWait": return {ok:true,list:[
-      {shop:"NEWCAR1",name:"새차모터스",ownerPhone:"01055556666",joinPlan:"pro",createdAt:dd(-2)+"T10:00:00",days:2,old:false,paidOrder:!F_PWDEL.NEWCAR1&&true},
-      {shop:"GOLDWASH",name:"골드세차",ownerPhone:"01077778888",joinPlan:"basic",createdAt:dd(-9)+"T10:00:00",days:9,old:false,paidOrder:false},
-      {shop:"OLDSHOP",name:"옛날광택",ownerPhone:"01099990000",joinPlan:"basic",createdAt:dd(-34)+"T10:00:00",days:34,old:true,paidOrder:false},
-      {shop:"FRESH",name:"프레시카",ownerPhone:"01012121212",joinPlan:"standard",createdAt:dd(-1)+"T10:00:00",days:1,old:false,paidOrder:false}].filter(function(x){ return !F_PWDEL[x.shop]; })};
+      {shop:"NEWCAR1",name:"새차모터스",ownerPhone:"01000006666",joinPlan:"pro",createdAt:dd(-2)+"T10:00:00",days:2,old:false,paidOrder:!F_PWDEL.NEWCAR1&&true},
+      {shop:"GOLDWASH",name:"골드세차",ownerPhone:"01000007788",joinPlan:"basic",createdAt:dd(-9)+"T10:00:00",days:9,old:false,paidOrder:false},
+      {shop:"OLDSHOP",name:"옛날광택",ownerPhone:"01000009900",joinPlan:"basic",createdAt:dd(-34)+"T10:00:00",days:34,old:true,paidOrder:false},
+      {shop:"FRESH",name:"프레시카",ownerPhone:"01000001212",joinPlan:"standard",createdAt:dd(-1)+"T10:00:00",days:1,old:false,paidOrder:false}].filter(function(x){ return !F_PWDEL[x.shop]; })};
     case "hqPayWaitDel": if(a[0]==="NEWCAR1") throw new Error("결제가 진행 중이거나 끝난 주문이 있어 지울 수 없습니다"); F_PWDEL[a[0]]=1; return {ok:true};
     case "hqSignup": if(a[0]!==undefined){ F_SG={on:!!a[0].on,cfg:{perIp:a[0].perIp,allDay:a[0].allDay,waitPerIp:a[0].waitPerIp}}; } return {ok:true,on:F_SG.on,cfg:F_SG.cfg};
     case "hqPayResults": return {ok:true,from:a[0],to:a[1],sum:55000+33000+77000,refunds:27500,billingShops:F_BILL?3:2,list:[

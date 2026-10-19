@@ -1,15 +1,15 @@
 // 보안 방 · 2026-10-19 · 업체 소속·권한 «서버 확인» 정적 검사 (읽기만 · 서버를 부르지 않음)
 // 쓰는 법: node 보안/검사기록/중복사업자번호_10-19/정적검사_업체소속.js [워시 서버 파일] [체크 서버 파일] [딜러 서버 파일]
-//   (안 주면 지금 최신판: wash-api sb27 · check-api v52 · dealer-api d9)
+//   (안 주면 지금 최신판: wash-api sb28 · check-api v53 · dealer-api d9)
 // 결과: 항목마다 통과/실패 + 근거 줄. 실패가 하나라도 있으면 끝 코드 1.
 // ⚠ 한계(1차 검수 B06): 이 검사는 «글자 · 정규식» 검사예요. 실행 경로를 증명하지 않아요(예: hqOnly 글자가 있어도 맨 먼저 실행되는지는 사람이 봄).
 //   함수가 기대보다 적게 잡히면(형식이 바뀌면) 통과가 아니라 실패로 쳐요. 실제 막힘은 A/B 시험(실행)으로 따로 확인해요.
 //   DB 직접 REST · RLS · 보관함 공개 여부 · 운영 비밀값은 이 검사로 못 봐요(읽기 전용 SQL · 서버 방 확인 몫).
 "use strict";
 const fs = require("fs"), path = require("path");
-let ROOT = __dirname; while (!fs.existsSync(path.join(ROOT, "서버")) && path.dirname(ROOT) !== ROOT) ROOT = path.dirname(ROOT);   // 저장소 맨 위
-const W = process.argv[2] || path.join(ROOT, "서버/1_차곳간워시_서버_wash-api_sb27.ts");
-const C = process.argv[3] || path.join(ROOT, "서버/2_차곳간체크_서버_check-api_v52.ts");
+let ROOT = __dirname; while (!fs.existsSync(path.join(ROOT, "CLAUDE.md")) && path.dirname(ROOT) !== ROOT) ROOT = path.dirname(ROOT);   // 저장소 맨 위
+const W = process.argv[2] || path.join(ROOT, "서버/1_차곳간워시_서버_wash-api_sb28.ts");
+const C = process.argv[3] || path.join(ROOT, "서버/2_차곳간체크_서버_check-api_v53.ts");
 const D = process.argv[4] || path.join(ROOT, "서버/3_딜러앱_서버_dealer-api_d9.ts");
 const rd = (f) => fs.readFileSync(f, "utf8");
 const w = rd(W), c = rd(C), d = rd(D);
@@ -52,7 +52,7 @@ check("W8", "워시: 가입(signup)은 늘 새 업체를 만들고 사업자번�
 check("W9", "워시: 직원 추가는 대표만 · 다른 업체에 있는 번호는 거절 · 본인 문자 확인",
   /"다른 업체에 이미 쓰고 있는 번호입니다"/.test(w) && /await needVerified\(phone\);\s+\/\/ ← 본인 번호 확인/.test(w), "wash " + find(w, /userAdd: async/));
 check("W10", "워시: 업체가 사업자번호를 넣을 때 «처음 한 번 · 10자리 · 다른 곳이 쓰면 거절»",
-  /if \(await bizTaken\(nb, s\)\) throw new Error\(BIZ_TAKEN_MSG\)/.test(w), "wash " + find(w, /if \(await bizTaken\(nb, s\)\)/));
+  /const why = await bizTaken\(nb, s, sub\);\s*\n\s*if \(why\) \{[\s\S]{0,400}throw new Error\(BIZ_TAKEN_MSG/.test(w) && /if \(nb\.length !== 10\)/.test(w), "wash " + find(w, /const why = await bizTaken\(nb, s, sub\);/));
 const hqSave = we.find((e) => e.name === "hqShopSave");
 check("W11", "워시: 본사가 업체 사업자번호를 고칠 때(hqShopSave)도 «다른 곳이 쓰면 거절»",
   hqSave && /bizTaken\(/.test(hqSave.body), hqSave ? "wash " + hqSave.line + (/bizTaken\(/.test(hqSave.body) ? "" : " — bizTaken 없음 · 10자리 확인 없음") : "함수 없음");
@@ -82,9 +82,9 @@ check("C2", "체크: 업체 자료 표(차·딜러·거래처·청구서·입금
 check("C3", "체크: 배달 사진은 그 검사소 배달 건일 때만 서명 주소",
   /\.eq\("office_id", w\.office\.id\)\.eq\("id", S\(p\.deliv_id\)\)/.test(c), "check " + find(c, /\.eq\("office_id", w\.office\.id\)\.eq\("id", S\(p\.deliv_id\)\)/));
 check("C4", "체크: 검사소 사업자번호는 «처음 한 번 · 10자리 · 다른 곳이 쓰면 거절»",
-  /if \(await bizTaken\(nb, S\(cur\.id\)\)\) throw new Error\(BIZ_TAKEN_MSG\)/.test(c), "check " + find(c, /if \(await bizTaken\(nb, S\(cur\.id\)\)\)/));
+  /if \(await bizTaken\(nb, S\(cur\.id\), sub\)\) \{[\s\S]{0,300}throw new Error\(BIZ_TAKEN_MSG/.test(c), "check " + find(c, /if \(await bizTaken\(nb, S\(cur\.id\), sub\)\)/));
 check("C5", "체크: 기사 «회사 비밀번호»가 사업자번호와 겹칠 때 여러 검사소면 거절(골라 잡지 않음)",
-  !/off = \(all \?\? \[\]\)\.find\(/.test(c), "check " + find(c, /off = \(all \?\? \[\]\)\.find\(/) + " — 같은 번호가 둘이면 첫 곳으로 감(가입은 사무실 승인 뒤라 자료 열람은 없음)");
+  /if \(hits\.length > 1\) throw/.test(c), "check " + (find(c, /if \(hits\.length > 1\) throw/) || find(c, /off = \(all \?\? \[\]\)\.find\(/)));
 
 /* ── 딜러 ── */
 check("D1", "딜러: 차 상세·완료는 «내 번호로 들어온 차»에서만 찾음",
@@ -106,11 +106,19 @@ check("V2", "보기 링크 d(배달): 보기 열쇠로만 · 그 배달 사진�
 check("U1", "워시 사진 올리기: 경로가 «로그인한 업체 코드/…» 로만", /const path = `\$\{shop\}\/\$\{ym\}\/wash_/.test(w) && /upsert: false/.test(w), "wash " + find(w, /async function upload\(/));
 check("U2", "체크 배달 사진 올리기: 그 검사소 배달 건에만", /async function deliv_photo|\.insert\(\{ deliv_id: delivId/.test(c), "check " + find(c, /\.insert\(\{ deliv_id: delivId/) + " (넣는 쪽 배달 건은 office_id 로 만든 것 — 사람이 확인)");
 /* 중복 등록 길: 넣는 곳마다 bizTaken */
-const cOfficeImport = /if \(S\(o\.사업자등록번호\) && !S\(ctx\.office\?\.biz_no\)\) \{[\s\S]{0,200}bizTaken\(/.test(c);
+const cOfficeImport = /if \(S\(o\.사업자등록번호\) && !S\(ctx\.office\?\.biz_no\)\) \{[\s\S]{0,500}bizTaken\(/.test(c);
 check("R1", "중복 등록: 체크 엑셀 «검사소 정보» 넣기도 겹침 거절", cOfficeImport, "check " + find(c, /if \(S\(o\.사업자등록번호\) && !S\(ctx\.office\?\.biz_no\)\)/));
 check("R2", "중복 등록: 본사 «사업자번호 확인»(hqBizOk)은 겹치면 거절", /hqBizOk: async[\s\S]{0,900}BIZ_TAKEN_MSG/.test(w), "wash " + find(w, /hqBizOk: async/));
 check("R3", "중복 등록: 같은 번호 금지를 DB 가 막음(유일 색인 SQL 이 저장소에 있음 · 운영 적용은 SQL ⑧로 확인)",
   /create unique index if not exists wash_shops_biz_uq/.test(rd(path.join(ROOT, "서버/sql/급한고침_사업자번호_잠금.sql"))), "서버/sql/급한고침_사업자번호_잠금.sql — 워시 · 체크 «따로» 색인뿐(두 제품 사이 경쟁은 못 막음)");
+/* 2차(sb28 · v53): 한 번 누름 열쇠 · 관리 기록 · DB 문지기 */
+check("I1", "워시: rid 열쇠 = 업체 + 사람 + 기능 + rid (로그인한 사람만)", /if \(ss && \/\^\[a-z0-9\]\{24\}\$\/\.test\(rid\)\) return out\(\{ result: await idemRun\(shop, String\(ss\.phone/.test(w), "wash " + find(w, /return out\(\{ result: await idemRun\(/));
+check("I2", "체크: rid 열쇠 = 검사소 id + 사람 + 기능 + rid (기사는 drv + 열쇠 지문)", /const tenant = OPEN\.has\(fn\) \? "drv" : S\(ctx\.office\?\.id\);/.test(c) && /const who = OPEN\.has\(fn\) \? await idemSha\(S\(args\[0\]\)\) : S\(ctx\.who\);/.test(c), "check " + find(c, /const tenant = OPEN\.has\(fn\)/));
+check("A1", "워시: 관리에서 사업자번호를 바꾸면 기록 먼저(못 남기면 안 바꿈)", /if \(bizAudit && !await hqAuditLog\(ss, "shopBizSet"/.test(w), "wash " + find(w, /if \(bizAudit && !await hqAuditLog/));
+const s24 = (() => { try { return rd(path.join(ROOT, "서버/sql/24_사업자번호_겹침_막기.sql")); } catch (_) { return ""; } })();
+check("R4", "DB: 워시 · 체크 · 본사를 함께 보는 문지기 + 번호마다 줄 세우기(advisory lock) + (번호+종사업장) 유일 색인 SQL 이 있음 — 운영 적용은 SQL 27 로 확인",
+  /pg_advisory_xact_lock\(hashtext\('cgg_biz:'/.test(s24) && /create trigger wash_shops_zz_biz_cross/.test(s24) && /create trigger check_office_zz_biz_cross/.test(s24) && /create unique index %I on public\.%I \(cgg_biz_digits\(biz_no\), cgg_biz_sub\(biz_sub\)\)/.test(s24),
+  "서버/sql/24_사업자번호_겹침_막기.sql");
 /* A/B 시험기의 거절 글이 서버에 그대로 있는지 */
 try { const ab = require(path.join(__dirname, "AB_시험_업체격리.js")); const src = { w, c, d };
   const lost = Object.entries(ab.MSG).filter(([k, v]) => src[k[0]].indexOf(v) < 0).map(([k]) => k);

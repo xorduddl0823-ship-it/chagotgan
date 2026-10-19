@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /join.html
+
+Sitemap: https://cgg.co.kr/sitemap.xml
