@@ -83,6 +83,9 @@ function createMockSites() {
     //  (8차 검수 보완) GET 으로 바꾸는 요청 흉내 — 닿으면 S.getWrites 가 늘어남
     if (/^\/api\/(update|delete|insert)/.test(u.pathname) || u.searchParams.get('cmd') === 'save') { S.getWrites = (S.getWrites || 0) + 1; return send(200, 'application/json', '{"ok":true}'); }
     //  iframe 흉내 — 같은 주소 iframe(열리자마자 저장 POST) + 다른 주소 iframe(열리자마자 폼 POST)
+    //  (9차) 바깥 코드 파일 흉내 — 진단 중 «메모리에 있는 코드 읽기»가 서버 요청 없이 되는지
+    if (u.pathname === '/app.js') return send(200, 'application/javascript', 'function saveRecord(){ return fetch("/api/save", { method: "POST" }); } var TEL = "010-4444-5555";');
+    if (u.pathname === '/scriptpage') return send(200, 'text/html', '<!doctype html><meta charset="utf-8"><script src="/app.js"></script><body>코드</body>');
     if (u.pathname === '/framepage') {
       return send(200, 'text/html', page('iframe 흉내', '<iframe id=f1 src="/frame-inner"></iframe><iframe id=f2 src="FOREIGN/upload"></iframe>', ''));
     }

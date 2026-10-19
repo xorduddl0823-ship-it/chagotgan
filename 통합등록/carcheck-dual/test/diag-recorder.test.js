@@ -6,12 +6,15 @@ const { createDiagRecorder, decide, bodyKeys, maskDiag, checkDiag } = require('.
 const H = new Set(['ai.carinfo.co.kr']);
 const R = [/^\/ct\/carcheck_list$/, /^\/car\/model_list$/];             // 읽기 전용으로 «확인된» 경로(시험용)
 const allow = (method, url, kind) => decide({ method, url, kind }, H, R).allow;
+const allowS = (method, url, kind) => decide({ method, url, kind }, H, R, true).allow;   // 정적 파일 허용 설정
 
 test('확인된 읽기 경로만 허용: 그 전산 주소의 정적 파일 · 확인된 경로의 조회 GET 만 — 확인 안 된 GET 은 기본 차단', () => {
   //  내보냄
   assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/carcheck_list?carNo=12', 'xhr'), true);
   assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/car/model_list', 'xhr'), true, 'model 의 del 같은 짧은 말로 막지 않음');
-  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/js/app.js', 'script'), true, '같은 주소 코드 파일');
+  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/js/app.js', 'script'), false, '정적 파일도 기본 차단(9차)');
+  assert.strictEqual(allowS('GET', 'https://ai.carinfo.co.kr/js/app.js', 'script'), true, '허용 설정일 때만 같은 주소 코드 파일');
+  assert.strictEqual(allowS('GET', 'https://cdn.example/app.js', 'script'), false, '허용 설정이어도 다른 주소는 막음');
   //  기본 차단 — 확인 안 된 GET
   assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/other_list', 'xhr'), false, '목록에 없는 조회');
   assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/carcheck_list_x', 'document'), false, '무늬는 끝까지 맞아야');
@@ -20,7 +23,7 @@ test('확인된 읽기 경로만 허용: 그 전산 주소의 정적 파일 · �
   //  막음 — 쓰기 · 저장처럼 보이는 GET(확인된 경로라도) · 실시간 연결·신호
   for (const m of ['POST', 'PUT', 'PATCH', 'DELETE']) assert.strictEqual(allow(m, 'https://ai.carinfo.co.kr/ct/carcheck_list', 'xhr'), false, m);
   assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/carcheck_list?cmd=save', 'xhr'), false, '확인된 경로라도 cmd=save');
-  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/upload/photo.jpg', 'image'), false, '주소에 upload');
+  assert.strictEqual(allowS('GET', 'https://ai.carinfo.co.kr/upload/photo.jpg', 'image'), false, '허용 설정이어도 주소에 upload 면 막음');
   assert.strictEqual(allow('GET', 'https://other.example/', 'subFrame'), false, '다른 주소 iframe 화면');
   assert.strictEqual(allow('GET', 'wss://ai.carinfo.co.kr/ws', 'webSocket'), false);
   assert.strictEqual(allow('POST', 'https://ai.carinfo.co.kr/log', 'ping'), false);
@@ -67,4 +70,22 @@ test('개인정보 가리기 → 내보내기 전 검사: 주소·속성·단추
   //  가리지 않은 글이면 검사가 잡아냄(파일을 만들지 않게)
   assert.ok(Object.keys(checkDiag(JSON.stringify(raw))).length >= 3);
   assert.ok(checkDiag('{"x":"password=abcd1234"}')['비밀번호·인증 값 모양'] === 1);
+});
+
+test('화면 뼈대 저장: 표 칸 글자·입력 값·선택지·페이지 코드 안 따옴표 글자는 지우고, 머리글·단추 글자·칸 이름은 남김 · 코드 파일 내용은 기본으로 안 받음', async () => {
+  const { JSDOM } = require('./helpers/need-jsdom')();
+  const { pageExpr } = require('../src/sites/diag-recorder');
+  const dom = new JSDOM('<html><head><script>var USER="lty0823";var me=\'이택영\';</script></head><body>' +
+    '<h2>성능점검 현황</h2><div class="who">이택영 (lty0823)</div>' +
+    '<table id="list"><thead><tr><th>성능번호</th><th>차량번호</th></tr></thead><tbody><tr><td>26-28-604413</td><td>****5528</td></tr></tbody></table>' +
+    '<input id="carNo" name="carNo" value="12가3456"><textarea id="memo">특기사항 내용</textarea>' +
+    '<select id="ck"><option>선택</option><option>이택영</option></select>' +
+    '<button id="btnSave" onclick="save(\'2628604413\')">저장</button><a href="/detail?no=2628604413">보기</a></body></html>',
+    { runScripts: 'outside-only', url: 'https://entry.example/main' });
+  const r = await dom.window.eval(pageExpr({}));
+  const h = r.html;
+  for (const bad of ['lty0823', '이택영', '604413', '5528', '12가3456', '특기사항 내용', '2628604413']) assert.ok(!h.includes(bad), '남으면 안 됨: ' + bad);
+  for (const good of ['성능점검 현황', '<th>성능번호</th>', '<th>차량번호</th>', 'id="carNo"', 'name="carNo"', '>저장</button>', 'id="list"', 'href="/detail?…"']) assert.ok(h.includes(good), '남아야 함: ' + good);
+  assert.strictEqual(r.path, '/main');
+  assert.strictEqual(r.scripts.length, 0);
 });

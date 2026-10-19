@@ -2200,10 +2200,13 @@ function flow() {
   const os = require('os');
   const admin = createAdminAuth(userFile('admin.json'));
   const jobLog = createJobLog(userFile('jobs-' + pcTag(os.hostname()) + '.jsonl'), { admin, office: loadConfig().office || 'gaon' });
-  const C = siteConfig.REAL;
+  const C = JSON.parse(JSON.stringify(siteConfig.REAL));                 // 설정 복사(아래에서 엔트리 주소만 채움)
+  //  엔트리 주소는 대표님이 진단 창에 넣은 주소(entryUrl)에서 가져온다(설정 파일에 고정하지 않음)
+  if (!(C.entry.hosts || []).length) { try { C.entry.hosts = [new URL(String(loadConfig().entryUrl || '')).host].filter(Boolean); } catch {} }
   const adapters = createElectronAdapters({
     config: C,
-    getWindow: (s) => (s === 'entry' ? null : siteWindow(s, 'auto')),
+    //  엔트리 창은 지금 진단 창의 [엔트리 창 열기]로만 열린다 — 열려 있으면 그 창을 씀(연결 모듈 설정이 비어 있으면 어차피 «미구현»)
+    getWindow: (s) => (s === 'entry' ? (windows.entry && !windows.entry.isDestroyed() ? windows.entry : null) : siteWindow(s, 'auto')),
     fillFns: {
       //  사진: 그 전산의 사진 올리기 주소(site-config fillAllow)가 정해졌을 때만 같이 보낸다 — 아니면 통제기가 막으므로 빼고 알림
       carinfo: async (data) => flowSend('carinfo', data),
@@ -2262,7 +2265,7 @@ ipcMain.handle('flow:releaseAfterForce', flowCall((a) => {
  *  막는 장치가 붙지 않은 창이 생기면 진단을 중단한다. 파일에 쓰기 전에 개인정보를 가리고 다시 검사해, 남아 있으면 파일을 만들지 않는다.
  *  로그인(문자 인증)은 진단 «전»에 사람이 한다 — 진단 중에는 로그인 요청도 막히므로. */
 const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag } = require('./src/sites/diag-recorder');
-const { startDiagSession } = require('./src/sites/diag-session');
+const { startDiagSession, loadedScripts } = require('./src/sites/diag-session');
 const diagState = {};                                    // site → { rec, ds, win, snaps, startedAt }
 
 /** 엔트리 창 — 기존 프로그램에는 엔트리 창이 없어 진단 때만 연다(주소는 설정 entryUrl). 로그인용으로 먼저 연다(막기 없음) */
@@ -2298,7 +2301,10 @@ async function diagSnap(d) {
       } catch {}
     }
   }
-  d.snaps.push({ at: new Date().toISOString(), frames: maskDiag(frames).data });   // 기록하는 순간 가림(메모리에도 가린 것만)
+  //  (9차) 사이트 코드 — 설정 diagScripts:true 일 때만. 네트워크로 받지 않고 «이미 불러와 메모리에 있는 코드»를 개발자 연결로 읽음(요청 0건)
+  let code = [];
+  if (loadConfig().diagScripts === true) { try { code = await loadedScripts(d.win, diagHosts(d.site)); } catch {} }
+  d.snaps.push({ at: new Date().toISOString(), frames: maskDiag(frames).data, code: maskDiag(code).data });   // 기록하는 순간 가림(메모리에도 가린 것만)
   return d.snaps.length;
 }
 
@@ -2345,8 +2351,9 @@ ipcMain.handle('diag:start', flowCall(async (a) => {
   if (!hosts.length) return { ok: false, error: '이 전산의 주소를 몰라 진단하지 않아요.' };
   const win = site === 'entry' ? diagEntryWindow(false) : (windows[site] && !windows[site].isDestroyed() ? windows[site] : null);
   if (!win) return { ok: false, error: (site === 'entry' ? '먼저 [엔트리 창 열기]로 엔트리에 로그인해 주세요.' : '먼저 맨 위 [' + ({ carinfo: '카인포', carmodoo: '경기조합' })[site] + ' 창] 단추로 창을 열고 로그인해 주세요.') };
-  const rec = createDiagRecorder({ siteHosts: hosts, readPaths: (siteConfig.REAL[site] || {}).diagReadPaths || [] });
-  const st = { rec, win, snaps: [], startedAt: new Date().toISOString() };
+  const rec = createDiagRecorder({ siteHosts: hosts, readPaths: (siteConfig.REAL[site] || {}).diagReadPaths || [],
+                                   allowStatic: (siteConfig.REAL[site] || {}).diagAllowStatic === true });      // 정적 파일도 기본 차단
+  const st = { site, rec, win, snaps: [], startedAt: new Date().toISOString() };
   st.ds = startDiagSession({ win, rec, onAbort: (why) => {
     diagFinish(site, why).then((r) => {
       if (r && r.ok === false && /진단 중이 아니에요/.test(r.error || '')) return;   // 이미 [진단 끝]으로 마무리 중이면 보내지 않음

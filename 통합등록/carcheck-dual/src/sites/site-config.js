@@ -33,6 +33,7 @@ const REAL = {
     hosts: ['ai.carinfo.co.kr'],
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
     diagReadPaths: [],                                                   // 진단 중 내보내도 되는 «읽기 전용 확인» GET 경로 — 확인 전이라 비움
+    diagAllowStatic: false,                                              // 진단 중 그림·코드 파일 GET — 기본 차단(9차)
     //  10/19 대표님 화면 사진: 목록 칸 = # · 점검일자(성능만료일자) · 차량번호 · 성능점검번호(«재성능» 표시가 붙기도 함) · 카히스토리 · 차량명 ·
     //   주행거리 · 점검원 · 매매상사 · 고객명 · 보증구분 · 점검비 · 보험료 · 합계금액 · 점검상태(저장된 차 «점검완료») · 특약
     //   목록에 차대번호 칸이 없음 → 이번에 생긴 줄을 눌러 위쪽 차량정보의 차대번호를 읽음(vinFromForm)
@@ -58,6 +59,7 @@ const REAL = {
     hosts: ['ck.carmodoo.com'],
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
     diagReadPaths: [],                                                   // 진단 중 내보내도 되는 «읽기 전용 확인» GET 경로 — 확인 전이라 비움
+    diagAllowStatic: false,                                              // 진단 중 그림·코드 파일 GET — 기본 차단(9차)
     //  10/19 대표님 화면 사진(접수등록 «① 신청인 및 접수정보» 탭): «점검번호» 칸 = 기본 «자동입력»(잠김) + 옆 «수동입력» 체크.
     //   «수동입력»을 «켜야» 칸이 열려(«숫자만 입력») 카인포 번호를 넣을 수 있음 — «자동 부여»를 «끄는» 모양이 아님(대표님 지적)
     //   → manualInput(켜야 하는 체크) 을 씀. 두 칸의 선택자(id)는 사진으로 알 수 없어 아직 비움
@@ -78,6 +80,7 @@ const REAL = {
     hosts: [],                                                           // 엔트리 주소 — 10/19
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
     diagReadPaths: [],                                                   // 진단 중 내보내도 되는 «읽기 전용 확인» GET 경로 — 확인 전이라 비움
+    diagAllowStatic: false,                                              // 진단 중 그림·코드 파일 GET — 기본 차단(9차)
     //  10/19 대표님 화면 사진(«성능점검 현황»):
     //   · 로그인할 때마다 문자 «본인확인»(인증번호, 3분) · 한동안 안 쓰면 끊겨 다시 로그인+문자 — 사람이 함(프로그램은 우회·연장 안 함)
     //   · 로그인되면 오른쪽 위에 이름(아이디) 표시 → loggedIn 은 그 자리(선택자는 사진으로 알 수 없어 비움)

@@ -42,13 +42,14 @@ function kindName(k) {
 
 /**
  * 진단 중 이 요청을 내보내도 되나 — «확인된 읽기 전용 경로만 허용»(8차 보완 2차 검수)
- *  내보냄: ① 그 전산 주소(같은 host)의 그림·글꼴·모양·코드 파일 GET (주소·물음표 뒤에 저장 같은 말이 없을 때)
- *          ② 그 전산 주소로 가는 화면·조회 GET 중 «읽기 전용으로 확인된 경로»(설정 diagReadPaths)에 맞고, 저장 같은 말이 없는 것
+ *  내보냄: ① 그 전산 주소로 가는 GET 중 «읽기 전용으로 확인된 경로»(설정 diagReadPaths)에 맞고, 저장 같은 말이 없는 것
+ *          ② (설정 diagAllowStatic:true 일 때만) 그 전산 주소의 그림·글꼴·모양·코드 파일 GET
+ *  (9차) 정적 파일도 안전을 보장할 수 없으면 막는다는 검수에 따라 «기본 차단». 화면은 진단 전에 이미 그려져 있으므로 대부분 영향 없음
  *  막음:   그 밖의 모든 것 — 확인 안 된 GET(기본 차단) · POST·PUT·PATCH·DELETE · 다른 주소 · 실시간 연결·신호
  *  금지 단어 검사는 «덧붙인 막기»일 뿐, 허용의 근거는 확인된 경로 목록이다. 목록이 비어 있으면 화면·조회 GET 은 전부 막힌다.
  *  (막힌 GET 의 경로는 기록에 남으므로, 그 기록을 보고 읽기 전용임을 확인한 경로만 목록에 더한다)
  */
-function decide(req, hosts, readPaths) {
+function decide(req, hosts, readPaths, allowStatic) {
   const m = String(req.method || 'GET').toUpperCase();
   const kind = kindName(req.kind || req.resourceType);
   const url = String(req.url || '');
@@ -58,7 +59,7 @@ function decide(req, hosts, readPaths) {
   const h = hostOf(url);
   if (!hosts.size || !hosts.has(h)) return { allow: false, why: '다른 주소(또는 주소 모름)' };
   if (WRITE_WORDS.test(pathOf(url)) || queryLooksWrite(url)) return { allow: false, why: '저장처럼 보이는 GET' };
-  if (STATIC.test(kind)) return { allow: true, why: '정적 자료' };
+  if (STATIC.test(kind) && allowStatic === true) return { allow: true, why: '정적 자료(허용 설정)' };
   if ((readPaths || []).some((re) => re.test(pathOf(url)))) return { allow: true, why: '확인된 읽기 경로' };
   return { allow: false, why: '확인 안 된 GET(기본 차단)' };
 }
@@ -89,6 +90,7 @@ function createDiagRecorder(o = {}) {
   const hosts = new Set((o.siteHosts || []).map((h) => String(h).toLowerCase()).filter(Boolean));
   //  읽기 전용으로 확인된 경로 무늬(설정 diagReadPaths) — 잘못된 무늬는 버림(막는 쪽)
   const readPaths = (o.readPaths || []).map((x) => { try { return new RegExp(x); } catch { return null; } }).filter(Boolean);
+  const allowStatic = o.allowStatic === true;                // 정적 파일 GET — 기본 차단(9차)
   const now = o.now || (() => new Date());
   const entries = [];
   const windows = new Map();
@@ -105,19 +107,19 @@ function createDiagRecorder(o = {}) {
 
   return {
     hosts,
-    decide: (req) => decide(req, hosts, readPaths),
+    decide: (req) => decide(req, hosts, readPaths, allowStatic),
     registerWindow(id, kind) { if (!windows.has(id)) windows.set(id, { kind: kind || 'main', attached: false, since: Date.now() }); },
     attachWindow(id) { const w = windows.get(id) || {}; windows.set(id, { ...w, attached: true }); },
     detachWindow(id) { windows.delete(id); },
     /** 세션 거르개 — true(막음) / false(내보냄) */
     onSessionRequest(req) {
-      const d = decide(req, hosts, readPaths);
+      const d = decide(req, hosts, readPaths, allowStatic);
       if (d.allow) passed++; else held++;
       if (!d.allow || kindName(req.resourceType) === 'xhr' || kindName(req.resourceType) === 'document') note(req, d);
       return !d.allow;
     },
     /** 창별 붙잡기(save-hold) 모양 — 'hold' | 'ignore' (기록 안 함) */
-    onRequest(req) { return decide(req, hosts, readPaths).allow ? 'ignore' : 'hold'; },
+    onRequest(req) { return decide(req, hosts, readPaths, allowStatic).allow ? 'ignore' : 'hold'; },
     onResponse() {}, onNetworkError() {}, onWindowClosed() {}, onTimeout() {},
     unlock() { return false; },                            // 진단 중에는 어떤 허락도 받지 않음
     seal() {},

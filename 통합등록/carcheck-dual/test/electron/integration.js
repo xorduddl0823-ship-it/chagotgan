@@ -14,7 +14,7 @@ const { createElectronAdapters } = require('../../src/sites/flow-adapters');
 const { mockConfig } = require('../../src/sites/site-config');
 const quiet = require('../../src/sites/quiet-window');
 const { createDiagRecorder, ELEMENTS_EXPR, pageExpr, maskDiag, checkDiag } = require('../../src/sites/diag-recorder');
-const { startDiagSession } = require('../../src/sites/diag-session');
+const { startDiagSession, loadedScripts } = require('../../src/sites/diag-session');
 
 app.commandLine.appendSwitch('disable-gpu');
 const CAR = { carNo: '12가3456', vin: 'KMHXX00XXXX123456' };
@@ -417,7 +417,7 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
-  await scenario('(검수) GET 으로 바꾸는 요청(/api/update · /api/delete 이동 · ?cmd=save) 막음 · 확인 안 된 GET 기본 차단 · 확인된 읽기 경로·같은 주소 그림만 나감', async () => {
+  await scenario('(검수) GET 으로 바꾸는 요청(/api/update · /api/delete 이동 · ?cmd=save) 막음 · 확인 안 된 GET·정적 파일 기본 차단 · 확인된 읽기 경로만 나감', async () => {
     const t = await setup({ noPrepare: true });
     const w = t.wins.carinfo;
     const d = await diagOn(t, w);
@@ -430,7 +430,7 @@ app.whenReady().then(async () => {
     assert.strictEqual(list, 200, '확인된 읽기 경로는 나감');
     assert.strictEqual(other, 'blocked', '확인 안 된 GET 은 기본 차단');
     assert.strictEqual(t.M.S.hits['/api/other'] || 0, 0, '확인 안 된 GET 이 서버에 닿음');
-    assert.ok(img && (t.M.S.hits['/logo.png'] || 0) >= 1, '같은 주소 그림 파일은 나감');
+    assert.strictEqual(t.M.S.hits['/logo.png'] || 0, 0, '정적 파일(그림)도 기본 차단(9차)');
     //  화면 이동으로 GET 변경(맨 마지막 — 막히면 화면이 오류 화면으로 바뀌므로)
     await t.js('carinfo', 'location.href="/api/delete?id=1";1').catch(() => {});
     await sleep(800);
@@ -458,6 +458,22 @@ app.whenReady().then(async () => {
     await until(() => d2.aborts.length > 0, 2000);
     assert.match(d2.aborts[0] || '', /막는 장치가 붙지 않아/);
     await d2.ds.stop();
+    await t.done();
+  });
+
+  await scenario('(9차) 사이트 코드 읽기: 이미 불러온 코드를 메모리에서 읽음 — 서버 요청 0건 · 저장 주소(/api/save)를 [저장]을 안 눌러도 알 수 있음 · 가리기 적용', async () => {
+    const t = await setup({ noPrepare: true });
+    const w = t.wins.carinfo;
+    await w.loadURL(t.M.base + '/scriptpage');
+    const before = t.M.S.hits['/app.js'] || 0;
+    const d = await diagOn(t, w);
+    const code = await loadedScripts(w, [t.M.host]);
+    assert.strictEqual(t.M.S.hits['/app.js'] || 0, before, '코드를 다시 받으러 서버에 가지 않음');
+    const app = code.find((c) => /\/app\.js$/.test(c.src));
+    assert.ok(app && /\/api\/save/.test(app.code), '저장 주소가 코드에 보임');
+    const masked = JSON.stringify(maskDiag(code).data);
+    assert.ok(!masked.includes('010-4444-5555'), '코드 속 전화번호도 가림');
+    await d.ds.stop();
     await t.done();
   });
 

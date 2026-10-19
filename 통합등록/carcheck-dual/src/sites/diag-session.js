@@ -74,4 +74,35 @@ function startDiagSession(o) {
   return { ready, stop, get aborted() { return st.aborted; } };
 }
 
-module.exports = { startDiagSession };
+/** 그 창이 이미 불러온 코드(같은 사이트 것) — 개발자 연결 Debugger 로 읽기만, 합쳐 6MB까지. 네트워크 요청 없음 */
+async function loadedScripts(win, hosts) {
+  const dbg = win.webContents.debugger;
+  if (!dbg.isAttached()) return [];
+  const seen = [];
+  const onMsg = (_e, method, p) => { if (method === 'Debugger.scriptParsed' && p.url) seen.push({ id: p.scriptId, url: p.url }); };
+  dbg.on('message', onMsg);
+  try {
+    await dbg.sendCommand('Debugger.enable');
+    await new Promise((r) => setTimeout(r, 300));
+    const out = [];
+    let total = 0;
+    for (const sc of seen) {
+      let host = '';
+      try { host = new URL(sc.url).host; } catch {}
+      if (!hosts.includes(host) || total > 6000000) continue;
+      try {
+        const r = await dbg.sendCommand('Debugger.getScriptSource', { scriptId: sc.id });
+        const src = String(r.scriptSource || '');
+        if (total + src.length > 6000000) continue;
+        total += src.length;
+        out.push({ src: sc.url.split('?')[0], size: src.length, code: src });
+      } catch {}
+    }
+    return out;
+  } finally {
+    dbg.removeListener('message', onMsg);
+    try { await dbg.sendCommand('Debugger.disable'); } catch {}
+  }
+}
+
+module.exports = { startDiagSession, loadedScripts };
