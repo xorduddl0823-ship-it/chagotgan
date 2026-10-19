@@ -2479,16 +2479,22 @@ if (process.env.CARCHECK_SMOKE === '1' || PROBE) {
         await new Promise((r) => setTimeout(r, 300));
         //  (12차) CARCHECK_SMOKE_OBSERVE=1 이면 «관찰 기록»으로 — 막지 않고 기록, 화면 칸은 저절로
         const obs = process.env.CARCHECK_SMOKE_OBSERVE === '1';
-        if (obs) await wc.executeJavaScript('var o=document.getElementById("diag-observe");o.checked=true;o.dispatchEvent(new Event("change"));1', true);
+        if (obs) await wc.executeJavaScript('state.carNo="00가0000";var o=document.getElementById("diag-observe");o.checked=true;o.dispatchEvent(new Event("change"));1', true);
         await wc.executeJavaScript('document.querySelector(".diag-sites button[data-site=carinfo]").click();1', true);
+        //  실제 등록 관찰은 «전산·대상 차량» 확인 칸을 거친다(12차 검수)
+        if (obs) {
+          const conf = await wc.executeJavaScript('(function(){var c=document.getElementById("diag-confirm");return c.classList.contains("hidden")?null:document.getElementById("diag-confirm-text").textContent;})()', true);
+          console.log('SMOKE-OBSERVE-CONFIRM ' + JSON.stringify(conf));
+          await wc.executeJavaScript('document.getElementById("diag-confirm-yes").click();1', true);
+        }
         let st = '';
-        for (let i = 0; i < 40 && !/(진단|관찰 기록) 중/.test(st); i++) { await new Promise((r) => setTimeout(r, 250)); st = await wc.executeJavaScript('document.getElementById("diag-state").textContent', true); }
+        for (let i = 0; i < 40 && !/(진단|관찰) 중/.test(st); i++) { await new Promise((r) => setTimeout(r, 250)); st = await wc.executeJavaScript('document.getElementById("diag-state").textContent', true); }
         if (obs) await new Promise((r) => setTimeout(r, 3500));            // 저절로 화면 칸 기록이 한 번 돌 시간
         await wc.executeJavaScript('document.getElementById("diag-stop").click();1', true);
         let rep = null;
         for (let i = 0; i < 40 && !rep; i++) {
           await new Promise((r) => setTimeout(r, 250));
-          rep = await wc.executeJavaScript('(function(){var r=document.getElementById("report");if(!r||r.classList.contains("hidden"))return null;return r.querySelector("h2").textContent+" | "+document.getElementById("report-body").textContent.slice(0,200);})()', true);
+          rep = await wc.executeJavaScript('(function(){var r=document.getElementById("report");if(!r||r.classList.contains("hidden"))return null;return r.querySelector("h2").textContent+" | "+document.getElementById("report-body").textContent.slice(0,600);})()', true);
         }
         console.log('SMOKE-DIAG button=' + shown + ' state=' + JSON.stringify(st) + ' report=' + JSON.stringify(rep));
       }

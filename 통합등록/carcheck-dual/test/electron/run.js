@@ -48,11 +48,13 @@ const diagOk = /button=true/.test(dl) && /진단 중/.test(dl) && /전산 진단
 console.log((diagOk ? 'ok' : 'not ok') + ' - 실제 프로그램: [전산 진단] → 카인포 진단 시작 → 진단 끝 → 기록 파일 안내' + (diagOk ? '' : '\n  error: ' + (dl || String(sd.stderr || '').slice(-300))));
 if (!diagOk) process.exit(1);
 
-//  (12차) 실제 프로그램의 «관찰 기록»: 체크 → 카인포 관찰 기록 시작 → 화면 칸 저절로 기록 → 기록 끝 → «관찰» 기록 파일
+//  (12차) 실제 프로그램의 «실제 등록 관찰»: 고르기 → 카인포 관찰 시작 → «전산·대상 차량» 확인 → 화면 칸 저절로 기록 → 관찰 끝 → «관찰» 기록 파일
 const so = spawnSync(cmd, smokeArgs, { encoding: 'utf8', timeout: 90000, env: { ...process.env, CARCHECK_SMOKE: '1', CARCHECK_SMOKE_DIAG: '1', CARCHECK_SMOKE_OBSERVE: '1' } });
 const ol = String(so.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-DIAG')) || '';
-const obsOk = /관찰 기록 중/.test(ol) && /관찰 기록 끝/.test(ol) && /diag-carinfo-관찰-/.test(ol) && !/화면 칸 기록 0번/.test(ol);
-console.log((obsOk ? 'ok' : 'not ok') + ' - 실제 프로그램: [관찰 기록] → 막지 않고 기록 · 화면 칸 저절로 기록 → «관찰» 기록 파일' + (obsOk ? '' : '\n  error: ' + (ol || String(so.stderr || '').slice(-300))));
+const oc = String(so.stdout || '').split('\n').find((l) => l.startsWith('SMOKE-OBSERVE-CONFIRM')) || '';
+const obsOk = /카인포/.test(oc) && /00가0000/.test(oc) && /실제로 등록/.test(oc) &&
+  /실제 등록 관찰 중/.test(ol) && /실제 등록 관찰 끝/.test(ol) && /diag-carinfo-관찰-/.test(ol) && !/화면 칸 기록 0번/.test(ol);
+console.log((obsOk ? 'ok' : 'not ok') + ' - 실제 프로그램: [실제 등록 관찰] → 전산·대상 차량 확인 → 막지 않고 기록 · 화면 칸 저절로 기록 → «관찰» 기록 파일' + (obsOk ? '' : '\n  error: ' + oc + ' / ' + (ol || String(so.stderr || '').slice(-300))));
 if (!obsOk) process.exit(1);
 
 //  (10차) 시험판 표시(test-install.json)가 있으면 기록 폴더를 업무용과 따로 쓰고 창 제목에 «시험판» — 확인 뒤 표시 파일은 지움

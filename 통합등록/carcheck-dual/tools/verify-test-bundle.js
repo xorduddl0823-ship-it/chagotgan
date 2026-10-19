@@ -34,7 +34,7 @@ ok(items.every((i) => i.utf8Flag), '모든 파일 이름에 UTF-8 표시(윈도�
 ok(fs.existsSync(path.join(unz, GUIDE)) && fs.existsSync(path.join(B, GUIDE)), '«0_먼저읽기» 안내서가 맨 위와 프로그램 폴더 안에 모두 있음');
 const g = fs.existsSync(path.join(unz, GUIDE)) ? fs.readFileSync(path.join(unz, GUIDE)) : Buffer.alloc(0);
 ok(g[0] === 0xef && g[1] === 0xbb && g[2] === 0xbf && /\r\n/.test(g.toString('utf8')), '안내서는 메모장에서 바로 열리는 글자판(UTF-8 BOM · CRLF)');
-ok(['A. 준비', 'B. 차 1대 관찰 기록', 'C. 보내기', '9_진단파일_검사.bat', '8_전산진단_끄기.bat'].every((h) => g.toString('utf8').includes(h)), '안내서에 준비·차 1대 관찰 기록(카인포→경기조합→엔트리)·보내기 전 검사가 다 있음');
+ok(['A. 준비', 'B. 차 1대 실제 등록 관찰', 'C. 보내기 전 검사', '검토용', '9_진단파일_검사.bat', '8_전산진단_끄기.bat'].every((h) => g.toString('utf8').includes(h)), '안내서에 준비·차 1대 실제 등록 관찰(카인포→경기조합→엔트리)·자동+눈 검사가 다 있음');
 let marker = null;
 try { marker = JSON.parse(fs.readFileSync(path.join(B, 'test-install.json'), 'utf8')); } catch {}
 ok(marker && marker.dataFolder === FOLDER, 'test-install.json 이 정확히 들어 있음 — dataFolder = ' + FOLDER, JSON.stringify(marker));
@@ -188,13 +188,15 @@ if (electron) {
   const app4 = runApp(P, { CARCHECK_SMOKE_DIAG: '1', CARCHECK_SMOKE_OBSERVE: '1' });
   const ol = line(app4.out, 'SMOKE-DIAG');
   const obsFiles = fs.existsSync(diagDir) ? fs.readdirSync(diagDir).filter((f) => /^diag-carinfo-관찰-.*\.json$/.test(f)) : [];
-  ok(/관찰 기록 중/.test(ol) && /관찰 기록 끝/.test(ol) && obsFiles.length === 1, '관찰 기록 시작 → 기록 끝 → «관찰» 기록 파일이 시험판 기록 폴더(diag\\)에 생김', ol.slice(0, 200));
+  ok(/실제 등록 관찰 중/.test(ol) && /실제 등록 관찰 끝/.test(ol) && obsFiles.length === 1, '실제 등록 관찰 시작(대상 차량 확인) → 관찰 끝 → «관찰» 기록 파일이 시험판 기록 폴더(diag\\)에 생김', ol.slice(0, 200));
   ok(!app4.touched.length, '관찰 기록 중에도 업무용 폴더를 열어 보지 않음', app4.touched.slice(0, 3).join(' | '));
 } else ok(false, '프로그램 실행 확인 — Electron 이 없어 못 함(1_준비 뒤 다시)');
 
 //  9_진단파일_검사.bat — 위에서 생긴 진짜 진단 기록 파일 + 일부러 넣은 «걸려야 하는» 가짜 파일
 const r9a = run(P, 'node', batCmd('9_진단파일_검사.bat'));
 ok(r9a.status === 0 && /\[통과\] diag-carinfo-/.test(r9a.out) && /모두 통과/.test(r9a.out), '9_진단파일_검사.bat — 프로그램이 만든 진단 기록 파일은 [통과]', r9a.out.trim().split('\n').slice(0, 3).join(' / '));
+const reviews = fs.existsSync(path.join(P.test, 'diag')) ? fs.readdirSync(path.join(P.test, 'diag')).filter((f) => /\.검토용\.txt$/.test(f)) : [];
+ok(reviews.length >= 2 && reviews.every((f) => /검토용/.test(fs.readFileSync(path.join(P.test, 'diag', f), 'utf8').slice(0, 40))), '9_진단파일_검사.bat — 통과한 파일마다 «검토용» 글 파일(사람 눈 확인용)을 만듦', reviews.join(', '));
 fs.mkdirSync(path.join(P.test, 'diag'), { recursive: true });
 fs.writeFileSync(path.join(P.test, 'diag', 'diag-entry-가짜검사용.json'), JSON.stringify({ site: 'entry', note: '담당 010-1234-5678 · JSESSIONID=ABCDEF0123456789 · KMHXX00XXXX123456' }));
 const r9b = run(P, 'node', batCmd('9_진단파일_검사.bat'));

@@ -121,3 +121,32 @@ test('(12차 관찰 기록) 막지 않음 · 그 전산 화면·조회·쓰기�
   assert.ok(s.entries.some((x) => x.kind === 'click' && /^저장/.test(x.text)));
   assert.ok(!/12가3456|KMHXX00XXXX123456|010-1234-5678/.test(JSON.stringify(s)), JSON.stringify(s));
 });
+
+test('(12차 검수) 주소 경로·물음표 뒤 이름·단추 이름에 섞인 개인정보도 가리고, 검토용 글에는 가린 것만 · 관찰 기록 정리 도구는 [저장] 뒤 요청을 저장 후보로', () => {
+  const { reviewText, checkFile } = require('../tools/diag-check');
+  const { analyze } = require('../tools/observe-map');
+  let t = Date.parse('2026-10-19T10:00:00Z');
+  const at = () => new Date(t += 1000).toISOString();
+  const r = createDiagRecorder({ siteHosts: ['ai.carinfo.co.kr'], observe: true, now: () => new Date(t += 1000) });
+  r.noteClick({ at: at(), text: '신규등록', tag: 'BUTTON', id: 'btnNew' });
+  r.onSessionRequest({ id: 1, method: 'POST', url: 'https://ai.carinfo.co.kr/ct/new/12가3456', resourceType: 'xhr', postData: 'carNo=12%EA%B0%803456' });
+  r.noteClick({ at: at(), text: '저장', tag: 'BUTTON', id: 'save_01012345678' });
+  r.onSessionRequest({ id: 2, method: 'POST', url: 'https://ai.carinfo.co.kr/ct/save/KMHXX00XXXX123456?hp01098765432=1', resourceType: 'xhr', postData: '{"vin":"KMHXX00XXXX123456"}' });
+  r.onSessionCompleted({ id: 2, statusCode: 200 });
+  r.onSessionRequest({ id: 3, method: 'GET', url: 'https://ai.carinfo.co.kr/ct/carcheck_list', resourceType: 'xhr' });
+  const { data } = maskDiag({ site: 'carinfo', mode: 'observe', requests: r.summary(), snaps: [] });
+  const text = JSON.stringify(data);
+  assert.deepStrictEqual(checkDiag(text), {});
+  assert.deepStrictEqual(checkFile(text), {});
+  assert.ok(!/12가3456|KMHXX00XXXX123456|01012345678|01098765432/.test(text), text);
+  const rv = reviewText(text);
+  assert.ok(/요청 \| POST ai\.carinfo\.co\.kr \/ct\/save/.test(rv) && /보낸 칸 이름 \| vin/.test(rv) && /누른 단추 \| 저장/.test(rv), rv);
+  assert.ok(!/12가3456|KMHXX00XXXX123456|01012345678/.test(rv));
+  //  시각을 붙인 원본(가리기 전 시각은 그대로)으로 정리 — 저장 후보는 [저장] 뒤 요청 하나
+  const m = analyze(data);
+  assert.strictEqual(m.proposal.savePatterns.length, 1);
+  assert.strictEqual(m.proposal.savePatterns[0], '^/ct/save/[^/]+$', '가린 부분은 아무 글자로');
+  assert.ok(new RegExp(m.proposal.savePatterns[0]).test('/ct/save/KMHAA00AAAA111111'));
+  assert.strictEqual(m.proposal.phaseAllow.prepare.length, 1);
+  assert.ok(m.proposal.diagReadPaths.some((p) => /carcheck_list/.test(p)));
+});
