@@ -247,6 +247,12 @@ function createElectronAdapters(o) {
       return { ...r, missing: (r.missing || []).concat(['엔트리에서 이 차 기록을 불러오지 못함(카인포 기록이 아직 안 넘어왔을 수 있어요)']) };
     },
     async load() {},
+    /** 엔트리 [저장] 단추가 켜져 있나 — true/false · 설정이 없으면 null(모름) */
+    async saveEnabled() {
+      if (!C.entry.saveButton) return null;
+      return inAnyFrame(o.getWindow('entry'), '(function(){var b=document.querySelector(' + JSON.stringify(C.entry.saveButton) + ');if(!b)return null;' +
+        'return !(b.disabled||b.getAttribute("aria-disabled")==="true"||/disabled/.test(b.className));})()');
+    },
     async readLoaded() {
       const L = C.entry.loaded;
       const w = o.getWindow('entry');

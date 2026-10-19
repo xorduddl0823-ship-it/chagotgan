@@ -273,3 +273,16 @@ test('엔트리 [간편 접수] 번호 칸(대표님 10/19 결정): 프로그램
   const src = require('fs').readFileSync(require('path').join(__dirname, '../src/sites/flow-adapters.js'), 'utf8');
   assert.ok(!/numberInput\)/.test(src), '엔트리 번호 칸에 값을 넣는 코드가 없어야 함');
 });
+
+test('엔트리 [저장] 단추가 꺼져 있으면(이미 등록된 번호) 누르지 않고 «이미 등록됨 의심»으로 멈춤', async () => {
+  const t = setup();
+  t.W.adapters.entry.saveEnabled = async () => false;
+  const r = await t.flow.runAll({ ...CAR, data: CAR }, RUN);
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.detail.alreadyThere, JSON.stringify(r));
+  assert.match(r.action, /이미 등록됐는지/);
+  assert.ok(!t.W.world.calls.includes('entry.clickSave'));
+  const u = setup();
+  u.W.adapters.entry.saveEnabled = async () => true;
+  assert.strictEqual((await u.flow.runAll({ ...CAR, data: CAR }, RUN)).ok, true);
+});

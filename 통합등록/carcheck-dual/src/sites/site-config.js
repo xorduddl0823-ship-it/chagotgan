@@ -84,6 +84,9 @@ const REAL = {
     loadRetry: { times: 3, waitMs: 3000, failText: '성능 불러오기가 실패하였습니다', failClose: null },
     loggedIn: null, nextNumber: null, numberInput: null, loadButton: null,
     loaded: { entryNo: null, carNo: null, vin: null },
+    //  10/19 화면 사진(불러오기 성공 뒤 «자동차성능·상태점검»): 차량번호·차대번호 17자리가 가리지 않고 보임 · 점검 내용·사진(«2/2»)도 카인포에서 채워짐
+    //   맨 아래 [성능점검기록부 전송] · [성능점검기록부 출력] · [저장] — [저장]은 새 기록일 때 빨갛게 켜지고, 이미 등록된 것은 꺼져 있음
+    //   → [저장]이 꺼져 있으면 «이미 등록됨 의심»으로 멈춤(saveEnabled). [성능점검기록부 전송]을 눌러야 하는지는 대표님 확인 필요
     //  표가 아닌 칸 모양일 수 있어 줄 선택자는 비움 · 칸 순서만 적어 둠(성능번호 0 · 차량번호 1 · 성능 3 · 접수일 12)
     list: { rows: null, cols: { checkNo: 0, carNo: 1, status: 3, date: 12 } },
   },

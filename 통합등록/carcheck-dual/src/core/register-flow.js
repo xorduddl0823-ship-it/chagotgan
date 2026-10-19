@@ -52,6 +52,7 @@ function actionFor(r, site) {
   if (r.otherCar) return '카인포에 다른 차 등록 화면이 열려 있어요. 그 차 일을 먼저 마치거나 카인포를 목록 화면으로 돌린 뒤 다시 눌러 주세요.';
   if (r.prepareLost) return '카인포 목록에서 이 차 줄이 새로 생겼는지 먼저 확인해 주세요. 생겼으면 그 줄을 열어 두고 [이어 하기], 없으면 대표님(관리자)께 알려 주세요. 신규등록은 다시 하지 않았어요.';
   if (r.photoFail) return (NAME[site] || site) + ' 사진 창에서 어느 사진이 올라갔는지 확인해 주세요. [이어 하기]를 누르면 못 올린 칸만 다시 올려요. 점검 기록은 이미 저장됐어요.';
+  if (r.alreadyThere) return '엔트리 «성능점검 현황»에서 이 번호가 이미 등록됐는지 확인한 뒤 대표님(관리자)께 알려 주세요. 엔트리에는 다시 저장하지 않았어요.';
   if (r.mismatch) return '엔트리에서 다음 번호가 왜 다른지(다른 차가 먼저 들어갔는지) 확인해 주세요. 엔트리에는 저장하지 않았어요. 바로잡힌 뒤 [이어 하기]를 누르면 번호부터 다시 확인해요.';
   if (r.needLogin) return '엔트리에 로그인(업무폰 문자 인증)한 뒤 [이어 하기]를 눌러 주세요.';
   if (r.needDealerPick) return '같은 이름 딜러가 여럿이에요. 목록에서 고른 뒤 [이어 하기]를 눌러 주세요.';
@@ -271,6 +272,10 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
         const c = nc.checkEntryBeforeSave({ carinfoNo: carinfoNo(j), entryNo: ld.entryNo, entryCarNo: ld.carNo, entryVin: ld.vin,
                                             car: car(j), partialConfirmedBy: opts.partialConfirmedBy });
         if (!c.ok) return { ok: false, needsConfirm: !!c.needsConfirm, reason: c.reason };
+        //  10/19 엔트리 화면: 이미 등록된 번호를 불러오면 [저장] 단추가 꺼져 있다 → 두 번 등록 의심으로 멈춤(누르지 않음)
+        if (A.entry.saveEnabled && (await A.entry.saveEnabled()) === false) {
+          return { ok: false, alreadyThere: true, reason: '엔트리 [저장] 단추가 꺼져 있어요 — 이 번호(' + carinfoNo(j) + ')가 이미 엔트리에 등록돼 있을 수 있어요.' };
+        }
       }
       const b = jobLog.beginSubmit(jobId, site);
       if (!b.ok) return b;
