@@ -1,0 +1,32 @@
+diff --git "a/\354\262\264\355\201\254/driver/index_v30.html" "b/\354\262\264\355\201\254/driver/index_v31.html"
+index 2ee083b..d24dfdb 100644
+--- "a/\354\262\264\355\201\254/driver/index_v30.html"
++++ "b/\354\262\264\355\201\254/driver/index_v31.html"
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<!-- 기사 앱 v30 (v29 + 알림 «확인 중» · 10/19) · 기사 앱 v29 (v28 + 도착 보내기 같은 일 표시 rid · 다시 보내기 · 10/19) -->
++<!-- 기사 앱 v31 (v30 + 서버 v54 확인 중 이름 · 10/19) · 기사 앱 v30 (v29 + 알림 «확인 중» · 10/19) · 기사 앱 v29 (v28 + 도착 보내기 같은 일 표시 rid · 다시 보내기 · 10/19) -->
+ <html lang="ko">
+ <head>
+ <base target="_top">
+@@ -1088,8 +1088,8 @@ function doSend(force){
+         '<button class="big b-main" id="m-ok">그래도 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">그만두기</button>');
+       $('m-no').onclick=closeModal; $('m-ok').onclick=function(){ doSend(true); }; return;
+     }
++    if(r.checking===true || (r.row&&r.row.발송결과==='확인 중')){ unsureDone(r.row||null); return; }   /* v30 · v31: 서버 v54 checking (row 없어도) */
+     var row=r.row, ok=row.발송결과!=='실패';
+-    if(row.발송결과==='확인 중'){ unsureDone(row); return; }   /* v30 */
+     clearDraft();                                  /* 보냈으니 저장본은 지웁니다 (다시 열어도 같은 건이 안 나오게) */
+     var rec2=(ls(RECENT)||[]).filter(function(x){ return x!==S.dest; }); rec2.unshift(S.dest); ls(RECENT, rec2.slice(0,30));
+     freqAdd(S.dest);
+@@ -1102,6 +1102,10 @@ function doSend(force){
+     $('m-next').onclick=function(){ closeModal(); clearForm(); start(); };
+   }).catch(function(e){
+     if(/^확인 중/.test(String(e&&e.message||''))){ unsureDone(null); return; }   /* v30: 앞 것이 확인 중 — 다시 보내지 않아요 */
++    if(/^처리 중이에요/.test(String(e&&e.message||''))){   /* v31: 앞 것이 아직 처리 중 — 같은 rid 로만 다시 */
++      modal('<h3>아직 처리 중이에요</h3><div class="warn" style="margin-bottom:14px">방금 보낸 것을 서버가 처리하고 있어요. 잠시 뒤 «다시 보내기»를 눌러 주세요.</div>'+
++        '<button class="big b-main" id="m-again">다시 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">닫기</button>');
++      $('m-no').onclick=closeModal; $('m-again').onclick=function(){ doSend(false); }; return; }
+     modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-bottom:14px">'+esc(e.message)+'</div>'+
+       '<button class="big b-main" id="m-again">다시 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">닫기</button>');
+     $('m-no').onclick=function(){ S.rid=''; closeModal(); }; $('m-again').onclick=function(){ doSend(false); };   /* v29: «다시 보내기»만 같은 일 표시 — 닫고 고쳐 보내면 새 일 */
