@@ -34,6 +34,15 @@
  *     올린 칸은 작업 기록에 남겨 이어 하기 때 남은 칸만 올린다. 설정을 모르면(null) 사진이 있을 때 저장 전에 멈춘다.
  *   → 번호가 어긋나 멈추면 «지우고 다시 등록»을 기본 안내로 내지 않는다 — 실제 등록 상태 확인 → 관리자 정정 절차 확인 순서.
  *
+ *  2026-10-19 엔트리 로그인·문자 인증(필수 조건 — 약 30분이면 인증 만료)
+ *   → 시작 전 · 엔트리 일 직전 · 엔트리 저장 직전 · 엔트리 목록 확인 전에 «실제 로그인 상태»를 본다(entryLogin — 화면 글자만 읽음, 서버 요청 없음).
+ *   → 끊겼으면 자동 등록을 잠시 멈추고 직원에게 문자 재인증을 부탁한다(opts.onNeedLogin). 기다리는 동안 엔트리 저장 통제기를 풀어
+ *     직원 로그인 요청이 막히지 않게 한다(저장은 허락 안 함 — 다시 이어 갈 때 값 넣기부터 통제기를 다시 건다).
+ *   → 직원이 인증을 마치면 로그인 상태를 다시 확인하고, 작업 기록으로 끝난 단계는 건너뛰고 남은 단계부터 이어 간다.
+ *     저장 여부가 불확실한 단계는 다시 저장하지 않고 목록으로 실제 등록 여부부터 확인한다(기존 규칙 그대로).
+ *   → «약 30분»은 미리 알려 주는 데만 쓴다(loginWarnMs) — 멈출지는 실제 로그인 상태로만 정한다.
+ *   → 인증 우회 · 문자 자동 읽기 · 세션 억지 연장(주기적 새로 고침·요청 보내기)은 하지 않는다.
+ *
  *  사람이 하는 일(대신하지 않음): 문자 인증 · 딜러 동명이인 고르기 · 차대번호 일부 일치 확인 · 멈춘 작업 정리
  *  설정이 확정되지 않았으면(siteConfirmed[site] false) 저장 허락을 하지 않는다 — 모의 환경(mock:true)만 예외.
  */
@@ -41,7 +50,7 @@ const nc = require('./number-check');
 
 const ORDER = ['carinfo', 'carmodoo', 'entry'];
 const NAME = { carinfo: '카인포', carmodoo: '카모두', entry: '엔트리' };
-const STEP = { precheck: '엔트리 로그인 확인', prepare: '카인포 신규등록', photo: '사진 올리기', fill: '값 넣기', allow: '저장 전 확인', save: '저장', verify: '저장 뒤 번호 확인', entryNext: '엔트리 번호 규칙 확인', finish: '마무리' };
+const STEP = { relogin: '엔트리 문자 재인증 기다림', precheck: '엔트리 로그인 확인', prepare: '카인포 신규등록', photo: '사진 올리기', fill: '값 넣기', allow: '저장 전 확인', save: '저장', verify: '저장 뒤 번호 확인', entryNext: '엔트리 번호 규칙 확인', finish: '마무리' };
 
 /**
  * 멈춘 까닭 → 담당자가 할 일 (쉬운 말 한 줄)
@@ -54,7 +63,7 @@ function actionFor(r, site) {
   if (r.photoFail) return (NAME[site] || site) + ' 사진 창에서 어느 사진이 올라갔는지 확인해 주세요. [이어 하기]를 누르면 못 올린 칸만 다시 올려요. 점검 기록은 이미 저장됐어요.';
   if (r.saveBlocked) return '엔트리에서 ① 이 번호가 이미 등록돼 있는지(성능점검 현황) ② 비어 있는 필수 칸이 있는지 ③ 로그인·권한 문제인지 확인한 뒤 대표님(관리자)께 알려 주세요. 엔트리에는 저장하지 않았어요.';
   if (r.mismatch) return '엔트리에서 다음 번호가 왜 다른지(다른 차가 먼저 들어갔는지) 확인해 주세요. 엔트리에는 저장하지 않았어요. 바로잡힌 뒤 [이어 하기]를 누르면 번호부터 다시 확인해요.';
-  if (r.needLogin) return '엔트리에 로그인(업무폰 문자 인증)한 뒤 [이어 하기]를 눌러 주세요.';
+  if (r.needLogin) return '엔트리 창에서 직접 로그인하고 업무폰 문자 인증을 한 뒤 [이어 하기]를 눌러 주세요. 끝난 단계는 건너뛰고 남은 단계부터 이어 가요' + (r.uncertain ? '(저장 여부가 불확실한 곳은 다시 저장하지 않고 목록부터 확인해요).' : '.');
   if (r.needDealerPick) return '같은 이름 딜러가 여럿이에요. 목록에서 고른 뒤 [이어 하기]를 눌러 주세요.';
   if (r.notImplemented) return '엔트리 자동 등록은 아직 준비 중이에요. 엔트리는 직접 등록해 주세요.';
   if (r.needsConfirm) return '전산 화면에서 차대번호 17자리를 직접 비교한 뒤 대표님(관리자)께 알려 주세요. 관리자 확인 전에는 이어 하지 않아요.';
@@ -76,10 +85,25 @@ function today(now) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {}) {
+function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now, loginWarnMs } = {}) {
   const clock = now || (() => new Date());
   const A = adapters || {};
   const confirmed = siteConfirmed || {};
+  const LOGIN_WARN_MS = loginWarnMs || 25 * 60 * 1000;           // 약 30분 만료 → 25분 지나면 미리 알림(멈추지는 않음)
+
+  /** 엔트리 실제 로그인 상태 + 로그인된 것을 처음 본 뒤 지난 시간(프로그램이 본 때부터 — 실제 로그인 시각보다 늦을 수 있음) */
+  let loginSeen = null;                                           // { at: ms, fromLoggedOut: 로그아웃 → 로그인으로 바뀌는 것을 직접 봤나 }
+  let lastLogged = null;
+  async function entryLogin() {
+    const ls = (await A.entry.loginState()) || {};
+    const ok = !!(ls.loggedIn && ls.canRead);
+    const t = +clock();
+    if (ok && (lastLogged !== true || !loginSeen)) loginSeen = { at: t, fromLoggedOut: lastLogged === false };
+    if (!ok) loginSeen = null;
+    lastLogged = ok;
+    return { ...ls, ok, ageMs: ok && loginSeen ? t - loginSeen.at : null, fromLoggedOut: !!(loginSeen && loginSeen.fromLoggedOut) };
+  }
+  const NEED_LOGIN = (reason) => ({ ok: false, needLogin: true, reason });
 
   function job(jobId) {
     const j = jobLog.get(jobId);
@@ -112,8 +136,10 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
     if (!cov || cov.windows < 1 || (cov.unattachedWindows && cov.unattachedWindows.length)) {
       return { ok: false, reason: site + ' 저장 통제기가 창에 붙지 않았습니다 — 값 넣기와 저장을 하지 않습니다.' };
     }
+    if (site === 'entry') entryReleased = false;
     return { ok: true };
   }
+  let entryReleased = false;                                      // 재인증 기다리느라 엔트리 통제기를 풀었나 — 이어 갈 때 다시 건다
 
   return {
     ORDER,
@@ -141,14 +167,17 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
     async entryPrecheck(jobId) {
       job(jobId);
       if (notImplemented('entry')) return NOT_IMPL('entry');
-      const ls = await A.entry.loginState();
-      if (!ls.loggedIn) return { ok: false, needLogin: true, reason: '엔트리 로그인이 필요합니다(문자 인증). 로그인한 뒤 다시 확인해 주세요.' };
-      if (!ls.canRead) return { ok: false, needLogin: true, reason: '엔트리에 로그인은 됐지만 번호를 읽을 수 없는 상태입니다.' };
+      const ls = await entryLogin();
+      if (!ls.loggedIn) return NEED_LOGIN('엔트리 로그인이 필요합니다(문자 인증). 로그인한 뒤 다시 확인해 주세요.');
+      if (!ls.canRead) return NEED_LOGIN('엔트리에 로그인은 됐지만 번호를 읽을 수 없는 상태입니다.');
       const next = await A.entry.readNext();
       const rows = await A.carinfo.readList(null);
       const last = rows.map((r) => nc.normNo(r.checkNo)).filter(Boolean).sort().pop() || '';
       jobLog.setMeta(jobId, { entryNext: next || '', carinfoLast: last });
-      return { ok: true, entryNext: next, preview: nc.previewNext(last, next) };
+      //  약 30분 만료 사전 알림 — 멈추지 않음(실제 로그인 상태로만 멈춤)
+      const warn = ls.ageMs != null && ls.ageMs >= LOGIN_WARN_MS
+        ? '엔트리 로그인을 확인한 지 ' + Math.floor(ls.ageMs / 60000) + '분 넘었어요(약 30분이면 인증이 끊겨요). 등록 중에 끊기면 멈추고 문자 재인증을 부탁드려요.' : '';
+      return { ok: true, entryNext: next, preview: nc.previewNext(last, next), ...(warn ? { loginWarn: warn } : {}) };
     },
 
     /**
@@ -160,8 +189,8 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
       needPrev(j, site);
       if (notImplemented(site)) return NOT_IMPL(site);
       if (site === 'entry') {
-        const ls = await A.entry.loginState();
-        if (!ls.loggedIn || !ls.canRead) return { ok: false, needLogin: true, reason: '엔트리 로그인이 끊겼습니다. 다시 로그인(문자 인증)해 주세요.' };
+        const ls = await entryLogin();
+        if (!ls.ok) return NEED_LOGIN('엔트리 로그인이 끊겼습니다. 다시 로그인(문자 인증)해 주세요.');
       }
       const armed = await armAndCheck(site);
       if (!armed.ok) return armed;
@@ -266,8 +295,8 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
         if (!c.ok) return { ok: false, reason: c.reason };
       }
       if (site === 'entry') {
-        const ls = await A.entry.loginState();
-        if (!ls.loggedIn || !ls.canRead) return { ok: false, needLogin: true, reason: '엔트리 로그인이 끊겼습니다. 다시 로그인한 뒤 번호부터 다시 확인합니다.' };
+        const ls = await entryLogin();
+        if (!ls.ok) return NEED_LOGIN('엔트리 로그인이 끊겼습니다. 다시 로그인한 뒤 번호부터 다시 확인합니다.');
         const ld = await A.entry.readLoaded();
         const c = nc.checkEntryBeforeSave({ carinfoNo: carinfoNo(j), entryNo: ld.entryNo, entryCarNo: ld.carNo, entryVin: ld.vin,
                                             car: car(j), partialConfirmedBy: opts.partialConfirmedBy });
@@ -368,6 +397,11 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
         await A[site].seal();
         return { ok: true, checkNo: r.checkNo };
       }
+      //  엔트리: 로그인이 끊긴 화면의 빈 목록을 «저장 안 됨»으로 읽지 않는다 — 상태는 그대로 두고 재인증 뒤 다시 확인(다시 저장 안 함)
+      if (site === 'entry' && A.entry.loginState) {
+        const ls = await entryLogin();
+        if (!ls.ok) return { ...NEED_LOGIN('엔트리 로그인이 끊겨 목록으로 저장 여부를 확인하지 못했어요. 재인증 뒤 목록부터 다시 확인해요(다시 저장 안 함).'), uncertain: st === 'uncertain' };
+      }
       //  카모두·엔트리: 저장 전 목록과 비교해 이번에 새로 생긴 우리 차 줄 하나 → 번호 = 카인포 번호
       const old = j.meta && j.meta.oldBySite && j.meta.oldBySite[site];
       if (!old) return { ok: false, reason: site + ' 저장 전 목록을 찍어 둔 기록이 없어 이번 저장 줄을 구분할 수 없습니다.' };
@@ -435,6 +469,39 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
      *  돌려주는 것: { ok:true, jobId, numbers, ms } 또는 explain 모양 { ok:false, jobId, carNo, site, siteName, step, reason, action, … }
      */
     async runAll({ jobId, carNo, vin, data } = {}, opts = {}) {
+      //  엔트리 인증이 끊기면 잠시 멈추고 직원 재인증을 기다린 뒤, 끝난 단계는 건너뛰고 이어 간다(opts.loginWaitMs 동안 · 0 이면 기다리지 않고 멈춤)
+      //  기다리는 한도는 «재인증을 부탁할 때마다» 새로 셈(안내의 «최대 15분»과 같게) — 0 이면 기다리지 않음
+      const waitMs = opts.loginWaitMs || 0, pollMs = opts.loginPollMs || 3000;
+      const mins = (ms) => Math.max(1, Math.round(ms / 60000));
+      const notes = [];
+      for (;;) {
+        const r = await this.runOnce({ jobId, carNo, vin, data }, { ...opts, notes });
+        if (r.ok || !(r.detail && r.detail.needLogin) || !r.jobId) return r.ok && notes.length ? { ...r, notes } : r;
+        jobId = r.jobId;
+        if (!waitMs) return r;
+        //  직원 재인증 동안 엔트리 저장 통제기를 푼다 — 로그인·문자 인증 요청이 막히지 않게(저장 허락은 없음 · 이어 갈 때 다시 검)
+        try { if (A.entry.release) { await A.entry.release(); entryReleased = true; } } catch {}
+        const info = { jobId, carNo: r.carNo, site: 'entry', siteName: NAME.entry, step: STEP.relogin, reason: r.reason,
+                       action: '엔트리 창에서 직접 로그인하고 업무폰 문자 인증을 해 주세요. 인증이 확인되면 끝난 단계는 건너뛰고 남은 단계부터 저절로 이어 가요.' };
+        try { opts.onStep && opts.onStep({ site: 'entry', siteName: NAME.entry, step: STEP.relogin, note: '문자 재인증을 기다려요', needLogin: true }); } catch {}
+        try { opts.onNeedLogin && opts.onNeedLogin(info); } catch {}
+        let back = false;
+        const waitStart = Date.now(), deadline = waitStart + waitMs;
+        while (Date.now() < deadline) {
+          if (opts.shouldStop && opts.shouldStop()) return { ...r, reason: r.reason + ' (기다리기를 멈췄어요)' };
+          await new Promise((res) => setTimeout(res, pollMs));
+          let ls = null;
+          try { ls = await entryLogin(); } catch {}
+          if (ls && ls.ok) { back = true; break; }
+        }
+        if (!back) return { ...r, reason: r.reason + ' (재인증을 ' + mins(Date.now() - waitStart) + '분 기다렸어요)' };
+        try { opts.onStep && opts.onStep({ site: 'entry', siteName: NAME.entry, step: STEP.relogin, note: '재인증 확인 — 남은 단계부터 이어 가요', loginBack: true }); } catch {}
+        notes.push('엔트리 문자 재인증 뒤 이어서 했어요.');
+      }
+    },
+
+    /** runAll 한 번 돌기(엔트리 재인증 기다리기 없이) — 멈추면 explain 모양으로 돌려줌 */
+    async runOnce({ jobId, carNo, vin, data } = {}, opts = {}) {
       const t0 = Date.now();
       const pollMs = opts.pollMs || 200, waitMs = opts.waitMs || 30000;
       const say = (site, step, note) => { try { opts.onStep && opts.onStep({ site, siteName: NAME[site] || '', step: STEP[step] || step, note: note || '' }); } catch {} };
@@ -469,6 +536,7 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
         say('entry', 'precheck');
         const pre = await this.entryPrecheck(jobId);
         if (!pre.ok && !pre.notImplemented) return fail('entry', 'precheck', pre);
+        if (pre.loginWarn) { say('entry', 'precheck', pre.loginWarn); if (opts.notes) opts.notes.push(pre.loginWarn); }
       }
       for (const site of ORDER) {
         const ts = Date.now();
@@ -487,13 +555,18 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
           say(site, 'entryNext');
           //  엔트리 화면이 예전 «다음 번호»를 보여 줄 수 있다 — 새로 고친 뒤 한 번만 읽는다(어긋남을 다시 읽어 넘기지 않음)
           if (A.entry.refresh) await A.entry.refresh();
-          const ls = await A.entry.loginState();
-          if (!ls.loggedIn || !ls.canRead) return fail(site, 'entryNext', { needLogin: true, reason: '엔트리 로그인이 끊겼습니다.' });
+          const ls = await entryLogin();
+          if (!ls.ok) return fail(site, 'entryNext', NEED_LOGIN('엔트리 로그인이 끊겼습니다.'));
           const next = nc.normNo(await A.entry.readNext());
           const want = carinfoNo(j);
           //  대표님 10/19 결정: 엔트리 [간편 접수] 번호 칸은 고쳐 쓸 수 있어도 프로그램은 «절대 고치지 않는다».
           //  엔트리가 스스로 매긴 번호를 그대로 불러오고, 그 번호가 이 차 카인포 번호와 같을 때만 진행(잘못 넣으면 엔트리 번호가 꼬임)
           if (!next || next !== want) return fail(site, 'entryNext', { stopped: false, reason: '엔트리 다음 번호(' + (next || '읽지 못함') + ')가 이 차 카인포 번호(' + want + ')와 다릅니다 — 다른 차 기록이 끌려올 수 있어 멈췄어요.', mismatch: true });
+        }
+        //  재인증 기다리느라 엔트리 통제기를 풀었으면 목록 확인 전에 다시 건다(끝나면 봉인할 수 있게 · 확인 중 저장이 새지 않게)
+        if (site === 'entry' && entryReleased && (st === 'uncertain' || st === 'saveConfirmed')) {
+          const armed = await armAndCheck('entry');
+          if (!armed.ok) return fail(site, 'verify', armed);
         }
         if (st === 'uncertain') {
           //  다시 저장하지 않는다 — 목록으로만 확인

@@ -343,6 +343,28 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
+  await scenario('(엔트리 인증 만료) 카모두까지 끝난 뒤 인증이 끊김 → 자동 등록 잠시 멈춤 → 통제기를 풀어 직원 로그인 요청이 막히지 않음 → 인증 확인 뒤 엔트리만 이어서 끝 · 저장은 전산마다 한 번', async () => {
+    const t = await setup(Q);
+    //  엔트리 저장 통제기가 걸린 상태에서는 로그인 요청(POST)도 막힘 — 그래서 기다리는 동안 풀어야 함
+    await t.adapters.entry.armGuard();
+    const pre = await t.js('entry', 'fetch("/api/entryLogin",{method:"POST"}).then(function(r){return r.status;}).catch(function(){return "blocked";})');
+    assert.strictEqual(pre, 'blocked', '통제기가 걸린 동안은 로그인 요청도 막힘');
+    assert.strictEqual(t.M.S.loginPosts || 0, 0);
+    let cut = false, asked = 0, staff = null;
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000, loginWaitMs: 20000, loginPollMs: 200,
+      onStep: (s) => { if (!cut && s.site === 'carmodoo' && s.step === '저장 뒤 번호 확인') { cut = true; t.M.S.faults.entryLoggedOut = true; } },
+      //  직원이 엔트리 창에서 직접 로그인 — 프로그램이 아니라 «사람»이 하는 일의 흉내
+      onNeedLogin: () => { asked++; staff = sleep(300).then(() => t.js('entry', 'fetch("/api/entryLogin",{method:"POST"}).then(function(r){return r.status;}).catch(function(){return "blocked";})')); } });
+    assert.strictEqual(r.ok, true, JSON.stringify(r));
+    assert.strictEqual(asked, 1);
+    assert.strictEqual(await staff, 200, '기다리는 동안 직원 로그인 요청은 서버에 닿음');
+    assert.strictEqual(t.M.S.loginPosts, 1);
+    assert.deepStrictEqual(t.M.S.saves, { carinfo: 1, carmodoo: 1, entry: 1 }, '끝난 전산은 다시 저장 안 함');
+    assert.strictEqual(r.numbers.entry, r.numbers.carinfo);
+    assert.strictEqual(await t.js('entry', '!!window.__printed || !!window.__sent'), false);
+    await t.done();
+  });
+
   await scenario('(엔트리) 미리 들어간 번호가 이 차 카인포 번호와 다르면 [불러오기]를 누르지 않고 멈춤 · 번호 칸은 그대로 · 엔트리 저장 0번', async () => {
     const t = await setup(Q);
     t.M.S.faults.entryNext = 'T-0150';

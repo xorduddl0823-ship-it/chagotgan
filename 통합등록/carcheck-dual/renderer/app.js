@@ -179,7 +179,7 @@ function applyDeps() {
 /* ───────────────────────── 공통 UI ───────────────────────── */
 
 const busy = (txt) => { $('#busy-text').textContent = txt; $('#busy').classList.remove('hidden'); };
-const unbusy = () => { $('#busy').classList.add('hidden'); $('#busy-steps').classList.add('hidden'); };
+const unbusy = () => { $('#busy').classList.add('hidden'); $('#busy-steps').classList.add('hidden'); $('#busy-login').classList.add('hidden'); };
 
 /** 자동 등록 진행 칸 — 몇 번째 전산까지 왔는지(0 카인포 · 1 카모두 · 2 엔트리 · 3 모두 끝) */
 function autoSteps(i) {
@@ -188,13 +188,28 @@ function autoSteps(i) {
   box.querySelectorAll('span').forEach((s, k) => { s.className = k < i ? 'done' : k === i ? 'now' : ''; });
 }
 const AUTO_ORDER = ['carinfo', 'carmodoo', 'entry'];
+let autoLast = 0;                                   // 마지막으로 보인 진행 칸(재인증 기다릴 때 그대로 둠)
 /** 진행 알림 → 한 줄 글 + 진행 칸 (엔트리 로그인 확인은 맨 처음이라 카인포 칸에 둔다) */
 function autoProgress(info) {
   const pre = info.step === '엔트리 로그인 확인';
   const i = info.step === '마무리' ? 3 : pre ? 0 : Math.max(0, AUTO_ORDER.indexOf(info.site));
-  busy(pre ? '시작 전 확인 · 엔트리 로그인…' : (info.siteName ? info.siteName + ' · ' : '') + info.step + (info.note ? ' — ' + info.note : '') + '…');
+  if (!info.needLogin) autoLast = i;
+  //  엔트리 인증 만료 — 자동 등록을 잠시 멈추고 직원 문자 재인증을 기다림(확인되면 저절로 이어 감)
+  //  진행 칸은 끊기기 전 칸 그대로(맨 처음 확인에서 끊기면 카인포 칸 — 하지 않은 곳에 «끝남»을 붙이지 않음)
+  if (info.needLogin) {
+    busy('엔트리 문자 재인증이 필요해요 — 자동 등록을 잠시 멈췄어요');
+    $('#busy-login').classList.remove('hidden');
+    $('#busy-stop').disabled = false; $('#busy-stop').textContent = '기다리기 그만 (나중에 이어 하기)';
+    autoSteps(autoLast); return;
+  }
+  if (info.loginBack) $('#busy-login').classList.add('hidden');
+  busy(pre ? '시작 전 확인 · 엔트리 로그인…' + (info.note ? ' — ' + info.note : '') : (info.siteName ? info.siteName + ' · ' : '') + info.step + (info.note ? ' — ' + info.note : '') + '…');
   autoSteps(i);
 }
+document.addEventListener('DOMContentLoaded', () => {
+  const b = document.getElementById('busy-stop');
+  if (b) b.addEventListener('click', () => { b.disabled = true; b.textContent = '멈추는 중…'; window.api.flow.stopWait && window.api.flow.stopWait(); });
+});
 
 function report(title, blocks) {
   $('#report').querySelector('h2').textContent = title;

@@ -2248,9 +2248,16 @@ ipcMain.handle('flow:finish', flowCall((a) => flow().flow.finish(a.jobId)));
 ipcMain.handle('flow:resume', flowCall(() => ({ ok: true, ...flow().flow.resume() })));
 /*  한 번에 끝까지(대표님 10/19 최종 지시) — 정상이면 사람 조작 없이 세 전산 등록·검증. 진행은 'flow:progress' 로 알림.
  *  arg: { carNo, vin, data } 새 작업 · { jobId, data } 이어 하기 */
-ipcMain.handle('flow:runAll', flowCall((a) => flow().flow.runAll(
+/*  엔트리 인증 만료(약 30분) — 끊기면 자동 등록을 잠시 멈추고 직원 문자 재인증을 기다린다(최대 15분, 3초마다 화면 글자만 확인 · 서버 요청 없음).
+ *  확인되면 끝난 단계는 건너뛰고 이어 간다. [기다리기 그만]이면 멈춤 → 나중에 [이어 하기] */
+let flowWaitStop = false;
+ipcMain.handle('flow:stopWait', () => { flowWaitStop = true; return { ok: true }; });
+ipcMain.handle('flow:runAll', flowCall((a) => { flowWaitStop = false; return flow().flow.runAll(
   { jobId: a.jobId, carNo: a.carNo, vin: a.vin, data: a.data || {} },
-  { onStep: (info) => { try { windows.main && !windows.main.isDestroyed() && windows.main.webContents.send('flow:progress', info); } catch {} } })));
+  { onStep: (info) => { try { if (info.loginBack && windows.main && !windows.main.isDestroyed()) windows.main.flashFrame(false); windows.main && !windows.main.isDestroyed() && windows.main.webContents.send('flow:progress', info); } catch {} },
+    loginWaitMs: 15 * 60 * 1000, loginPollMs: 3000, shouldStop: () => flowWaitStop,
+    //  직원이 바로 인증할 수 있게 엔트리 창을 앞으로(로그인·인증은 직원이 직접 — 프로그램은 넣지 않음)
+    onNeedLogin: () => { flowWaitStop = false; try { const w = windows.entry; if (w && !w.isDestroyed()) { w.show(); w.focus(); } if (windows.main && !windows.main.isDestroyed()) windows.main.flashFrame(true); } catch {} } }); }));
 //  관리자 — PIN 은 화면에서 받아 여기(메인)에서만 확인하고, 확인 표는 화면으로 내보내지 않는다
 ipcMain.handle('admin:isSet', flowCall(() => ({ ok: true, set: flow().admin.isSet() })));
 ipcMain.handle('admin:setPin', flowCall((a) => { flow().admin.setPin(a.pin, a.currentPin); return { ok: true }; }));
@@ -2392,19 +2399,27 @@ ipcMain.handle('diag:stop', flowCall(async (a) => diagFinish(a.site, null)));
 //  자동 등록 화면 안내용 — 엔트리 연결 모듈이 있는지(지금은 없음)
 ipcMain.handle('flow:status', flowCall(async () => { let impl = false; try { impl = !!flow().adapters.entry.implemented; } catch {} return { ok: true, entryImplemented: impl }; }));
 
-/*  시험용 실행(CARCHECK_SMOKE=1): 실제 기록 폴더를 건드리지 않게 임시 폴더를 쓰고, 입력 화면이 뜨면 끝낸다 */
-if (process.env.CARCHECK_SMOKE === '1') {
+/*  시험용 실행(CARCHECK_SMOKE=1): 실제 기록 폴더를 건드리지 않게 임시 폴더를 쓰고, 입력 화면이 뜨면 끝낸다
+ *  (10차) 묶음 검사(CARCHECK_PROBE=1, 시험판 묶음에서만): 임시 폴더로 바꾸지 않고 «정해진 기록 폴더»를 그대로 써서 어디에 쓰는지 확인 —
+ *  검사 도구가 가짜 APPDATA 를 주고 부른다. 전산 주소는 똑같이 막아 둔 주소 */
+const PROBE = process.env.CARCHECK_PROBE === '1' && !!TEST_INSTALL;
+if (process.env.CARCHECK_SMOKE === '1' || PROBE) {
   const decidedUserData = app.getPath('userData');                     // 시험판 표시로 정해진 기록 폴더(시험 확인용 — 아래에서 임시 폴더로 바꿈)
-  app.setPath('userData', fs.mkdtempSync(path.join(require('os').tmpdir(), 'cc-smoke-')));
+  if (!PROBE) app.setPath('userData', fs.mkdtempSync(path.join(require('os').tmpdir(), 'cc-smoke-')));
   //  시험 중에는 실제 전산 주소로 나가지 않게 막아 둔 주소로 바꾼다(접속 거부되는 내 PC 주소)
   Object.keys(SITES).forEach((k) => { SITES[k].home = SITES[k].list = SITES[k].form = 'http://127.0.0.1:9/' + k; });
   if (process.env.CARCHECK_SMOKE_FLOW === '1') fs.writeFileSync(path.join(app.getPath('userData'), 'config.json'), JSON.stringify({ flow: true }));
-  if (process.env.CARCHECK_SMOKE_DIAG === '1') fs.writeFileSync(path.join(app.getPath('userData'), 'config.json'), JSON.stringify({ diagnose: true }));
+  if (process.env.CARCHECK_SMOKE_DIAG === '1' && !PROBE) fs.writeFileSync(path.join(app.getPath('userData'), 'config.json'), JSON.stringify({ diagnose: true }));
   app.whenReady().then(() => {
     setTimeout(async () => {
       let title = '';
       try { title = await windows.main.webContents.executeJavaScript('document.title', true); } catch {}
       console.log('SMOKE-INSTALL wtitle=' + windows.main.getTitle() + ' userData=' + path.basename(decidedUserData));
+      if (PROBE) {
+        const diagBtn = await windows.main.webContents.executeJavaScript('!document.getElementById("btn-diag").classList.contains("hidden")', true).catch(() => null);
+        console.log('SMOKE-PROBE userDataFull=' + app.getPath('userData') + ' diagButton=' + diagBtn);
+        if (process.env.CARCHECK_SMOKE_DIAG !== '1') { app.exit(0); return; }    // 진단까지 해 보면 기록 파일이 시험판 기록 폴더에 생김(설정은 7_전산진단_켜기 로 켬)
+      }
       console.log('SMOKE main-title=' + title + ' handlers=' + ['flow:start', 'site:send', 'admin:setPin'].filter((h) => ipcMain._invokeHandlers ? ipcMain._invokeHandlers.has(h) : true).length);
       if (process.env.CARCHECK_SMOKE_FLOW === '1') {
         //  입력 화면의 [세 전산 자동 등록]을 눌러 본다 — 실제 전산 설정이 비어 있으니 저장 전에 멈춰야 정상

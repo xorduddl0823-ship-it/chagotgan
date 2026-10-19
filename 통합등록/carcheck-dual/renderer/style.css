@@ -243,7 +243,7 @@ button.ghost.diag-on { color: var(--warn); border-color: var(--warn); font-weigh
 .pick-row .p-hp { color: var(--muted); font-size: 12px; }
 
 /* ── 진행 중 표시 ───────────────────────────── */
-.busy-box { background: #fff; border-radius: 10px; padding: 20px 26px; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.busy-box { background: #fff; border-radius: 10px; padding: 20px 26px; display: flex; align-items: center; gap: 12px; font-size: 14px; max-width: 92vw; box-sizing: border-box; }
 .spinner {
   width: 18px; height: 18px; border: 2px solid #d6dde6; border-top-color: var(--accent);
   border-radius: 50%; animation: spin .7s linear infinite;
@@ -256,6 +256,9 @@ button.ghost.diag-on { color: var(--warn); border-color: var(--warn); font-weigh
 
 /* 세 전산 자동 등록 진행 칸 — 지금 하는 곳(now) · 끝난 곳(done) */
 .busy-steps { display: flex; gap: 6px; margin-top: 8px; }
+.busy-login { max-width: 360px; }
+.busy-login.hidden { display: none; }
+.busy-login button { margin-top: 8px; }
 .busy-steps.hidden { display: none; }
 .busy-steps span { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: #eef1f5; color: var(--muted); }
 .busy-steps span.now { background: #e6efff; color: var(--accent); font-weight: 600; }

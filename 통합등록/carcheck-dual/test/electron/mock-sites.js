@@ -76,6 +76,8 @@ function createMockSites() {
       });
       return;
     }
+    //  직원이 엔트리에 다시 로그인(문자 인증)하는 흉내 — 닿으면 로그인 상태가 됨(S.loginPosts 로 셈)
+    if (u.pathname === '/api/entryLogin' && req.method === 'POST') { S.loginPosts = (S.loginPosts || 0) + 1; S.faults.entryLoggedOut = false; return send(200, 'application/json', '{"ok":true}'); }
     if (u.pathname === '/api/entryState') {
       const row = S.carinfo.find((r) => r[0] === entryNext()) || [];
       return send(200, 'application/json', JSON.stringify({ logged: !S.faults.entryLoggedOut, next: entryNext(), row }));

@@ -121,6 +121,11 @@
       <div><span id="busy-text">처리 중…</span>
         <!-- 세 전산 자동 등록 때만 보이는 진행 칸 -->
         <div id="busy-steps" class="busy-steps hidden"><span>카인포</span><span>카모두</span><span>엔트리</span></div>
+        <!-- 엔트리 인증이 끊겼을 때만 — 직원이 엔트리 창에서 직접 로그인·문자 인증 -->
+        <div id="busy-login" class="busy-login hidden">
+          <p class="note">엔트리 창에서 로그인하고 업무폰 문자 인증을 해 주세요. 확인되면 남은 단계부터 저절로 이어 가요(최대 15분).</p>
+          <button id="busy-stop" class="ghost">기다리기 그만 (나중에 이어 하기)</button>
+        </div>
       </div>
     </div>
   </div>

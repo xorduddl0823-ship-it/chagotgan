@@ -143,6 +143,7 @@ function createWorld(opts = {}) {
       async loginState() { return { loggedIn: w.entry.loggedIn, canRead: w.entry.loggedIn }; },
       async readNext() { return w.entry.next; },
       async refresh() { w.calls.push('entry.refresh'); },
+      async release() { w.calls.push('entry.release'); guards.entry = null; },
       async fill(data, extra) {
         //  엔트리는 «다음 번호»로 카인포 기록을 끌어온다 — 다음 번호가 어긋나 있으면 다른 차가 끌려온다
         ctx.carNo = data.carNo; ctx.vin = data.vin;
@@ -158,7 +159,7 @@ function createWorld(opts = {}) {
       async unlockSave() { return guards.entry.unlock(); },
       async saveOutcome() { return guards.entry.outcome(); },
       async coverage() { return guards.entry ? guards.entry.coverage() : { windows: 0, unattachedWindows: [] }; },
-      async seal() { guards.entry.seal(); },
+      async seal() { if (guards.entry) guards.entry.seal(); },
       async clickSave() { w.calls.push('entry.clickSave'); return clickSave('entry'); },
       async timeout() { guards.entry.onTimeout(); },
       async readList(car) { return w.entry.rows.filter((x) => !car || x.carNo === car.carNo).map((x) => ({ checkNo: x.checkNo, carNo: x.carNo })); },
