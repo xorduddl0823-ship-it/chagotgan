@@ -13,6 +13,7 @@
 //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
 //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
+//  v54 (2026-10-19) 재검사 «매일 자동»은 check_remind 템플릿 코드가 있어야 켜고 돎(없으면 저장 거절 · 매일 자동 0건 · 손으로 보내기는 그대로) · «확인 중» 이름 unsure(체크 v56.7·기사 v30) · 보낸 기록 «확인 중» ·
 //  v54 (2026-10-19) 출시마감 3차: 보내기(청구서·밀린 달·재검사·도착 알림)는 «한 번만 표»를 못 잡으면 보내지 않음(«잠시 뒤 다시») · 문자 업체가 받았는지 모름(시간 초과·응답 끊김·완료 저장 실패)은 «확인 중»으로 두고 자동으로 다시 보내지 않음 · 알림톡 응답을 모를 때는 문자로 바로 대신 보내지 않음 · 실패 확정만 같은 rid 로 다시 · 줄은 지우지 않고 조건을 건 한 번의 바꾸기로 다시 잡음
 //  v53 (2026-10-19) 보안 방: 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시 · 기록·알림톡 마감: 알림톡 변수에 빈 값(«-»)이 있으면 대체 문구 문자로(워시와 같음) · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 검사소+사람+기능+rid) ·
 //    긴급(중복 사업자번호): 기사 «회사 비밀번호»가 사업자번호이고 그 번호를 쓰는 검사소가 둘 이상이면 거절(보안 C5 · 코드로만) · officeSave 사업자번호는 숫자 10자리로만 저장(정규화) · 팝빌 아이디도 다른 검사소가 쓰면 거절 ·
@@ -747,7 +748,7 @@ function unitOf(pr: { price: number } | null, goods: string, manual: unknown): {
   if (pr) return { unit: pr.price };
   if (EXPORT_RE.test(g)) return { unit: 0, need: true };
   if (/재검|가성능/.test(g)) return { unit: 0 };
-  return { unit: 0, unknown: true };
+  return { unit: 0, unknown: true, unsure: true };
 }
 function unknownList(m: Map<string, number>) {
   return [...m.entries()].map(([goods, n]) => ({ goods, n })).sort((a, b) => b.n - a.n);
@@ -1138,7 +1139,7 @@ async function ataSend(office: any, to: string, tplKey: string, vars0: Record<st
       if (!(r.failedMessageList || []).length) return { ok: true, how: "ata", why: "" };
     } catch (e) {
       /* v54(3차): 알림톡을 받았는지 모르면 문자로 바로 대신 보내지 않음(두 통이 될 수 있음) */
-      if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true };
+      if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true, unsure: true };
       /* 거절 확정이면 아래 문자로 */
     }
   }
@@ -1148,7 +1149,7 @@ async function ataSend(office: any, to: string, tplKey: string, vars0: Record<st
       Object.assign({}, meta, { tpl: meta.tpl + "_sms" }));
     return { ok: true, how: type.toLowerCase(), why: "" };
   } catch (e) {
-    if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true };
+    if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true, unsure: true };
     return { ok: false, how: "", why: sendErrEasy("", "", e) };
   }
 }
@@ -1342,13 +1343,19 @@ async function remindRuleOf(officeId: string) {
 async function remindRule(ctx: Ctx) {
   const r = await remindRuleOf(S(ctx.office.id));
   const ha = await hqAta();
-  return { days: N(ctx.office.ins_valid_days) || 120, steps: r.steps, auto: r.auto, past: r.past, ataReady: !!(ha.tpl.check_remind && ha.pf) };
+  const ready = !!(ha.tpl.check_remind && ha.pf);
+  /* v54: 코드가 없으면 저장된 auto 가 켜져 있어도 실제로는 돌지 않음 → autoBlocked 로 알려 줌 */
+  return { days: N(ctx.office.ins_valid_days) || 120, steps: r.steps, auto: r.auto && ready, autoBlocked: r.auto && !ready, past: r.past, ataReady: ready };
 }
+const REMIND_AUTO_BLOCK = "재검사 알림톡 템플릿이 승인·등록되기 전에는 «매일 자동»을 켤 수 없어요. 손으로 보내기는 할 수 있어요.";
+async function remindAtaReady() { _ata.at = 0; const ha = await hqAta(); return !!(ha.tpl.check_remind && ha.pf); }
 async function remindRuleSave(ctx: Ctx, opt: any) {
   bossOnly(ctx);
   const steps = (Array.isArray(opt?.steps) ? opt.steps : []).map(N).filter((x: number) => REMIND_STEPS.includes(x));
   if (!steps.length) throw new Error("알림 날을 하나 이상 골라 주세요 (30·15·7·3일 전).");
-  const auto = opt?.auto === true;   // v50: 알림톡 승인 전에도 켬 — 그동안은 ataSend 가 대체 문구 문자로 보냄
+  const auto = opt?.auto === true;
+  /* v54(알림톡 방·총괄): check_remind 템플릿 코드가 없으면 «매일 자동»을 켤 수 없음(그동안 매일 장문 문자가 나가던 것 막음) · 손으로 보내기는 그대로 */
+  if (auto && !(await remindAtaReady())) throw new Error(REMIND_AUTO_BLOCK);
   const { error } = await db.from("check_remind_rule").upsert({ office_id: S(ctx.office.id), steps: [...new Set(steps)],
     auto, past: opt?.past !== false, updated_at: new Date().toISOString() }, { onConflict: "office_id" });
   if (error) throw new Error("서버를 준비하는 중입니다(SQL 12). 차곳간(010-9559-3663)으로 알려 주세요.");
@@ -1525,7 +1532,7 @@ async function remindView(c: Ctx, key: string) {
    ============================================================ */
 const SENDLOG_TPL: Record<string, string> = { check_bill: "청구서", check_remind: "재검사 안내", check_arrive: "차량 도착 안내",
   check_deposit_ok: "입금 확인", release: "차량 도착 안내", auth: "인증번호", bill: "청구서", deposit_ok: "입금 확인" };
-const SENDLOG_RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기", skip: "안 보냄" };
+const SENDLOG_RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기", skip: "안 보냄", unknown: "확인 중" };
 async function sendLogList(ctx: Ctx, opt: any) {
   bossOnly(ctx);
   const ymdOk = (v: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(S(v)) && isFinite(Date.parse(S(v) + "T00:00:00+09:00"));
@@ -1558,9 +1565,9 @@ async function sendLogList(ctx: Ctx, opt: any) {
       status: SENDLOG_RES[S(r.result)] || S(r.result), err: S(r.err).slice(0, 80), ref: S(r.ref).slice(0, 60),
     };
   });
-  const sums = { sent: 0, sub: 0, fail: 0, wait: 0, skip: 0 };
+  const sums = { sent: 0, sub: 0, fail: 0, wait: 0, skip: 0, unsure: 0 };
   (data ?? []).forEach((r: any) => { const x = S(r.result);
-    if (x === "ata" || x === "sent") sums.sent++; else if (x === "sms") sums.sub++; else if (x === "fail") sums.fail++;
+    if (x === "ata" || x === "sent") sums.sent++; else if (x === "sms") sums.sub++; else if (x === "fail") sums.fail++; else if (x === "unknown") sums.unsure++;   // v54: 확인 중
     else if (x === "wait") sums.wait++; else if (x === "skip") sums.skip++; });
   return { from, to, list, sums };
 }
@@ -1569,7 +1576,8 @@ async function remindCron(_c: Ctx, key: string) {
   const { data: hq } = await db.from("wash_hq").select("cron_key").eq("id", 1).maybeSingle();
   const ck = S(hq?.cron_key);
   if (ck.length < 16 || !sameText(S(key), ck)) throw new Error("허용되지 않은 요청입니다.");
-  /* v50: 템플릿 승인 전에도 돎 — 알림톡이 안 되면 대체 문구 문자(ataSend) */
+  /* v54: check_remind 템플릿 코드가 없으면 매일 자동은 한 통도 보내지 않음(이미 켜진 규칙도 건너뜀) */
+  if (!(await remindAtaReady())) return { ok: true, n: 0, list: [], skip: "check_remind 코드 없음", skipped: "check_remind 코드 없음" };
   const { data: rules } = await db.from("check_remind_rule").select("office_id").eq("auto", true);
   const out: string[] = [];
   for (const rr of rules ?? []) {
@@ -4068,13 +4076,14 @@ async function sendRecord(payload: any, resp: any, err: unknown, meta?: SendMeta
       const f = failed.find((x: any) => dg(x && x.to) === to);
       const hit = okList.find((x: any) => dg(x && x.to) === to) || okList[i] || null;
       const bad = !!err || !!f;
+      const unsure = !f && sendUnknown(err);   // v54: 받았는지 모름 → «확인 중»(실패로 세지 않음)
       const code = String((f && f.statusCode) || "");
       return {
         product: SEND_PRODUCT, shop: String((meta && meta.shop) || "").slice(0, 40),
         tpl: String((meta && meta.tpl) || (ko ? "ata" : "sms")).slice(0, 40),
         to_mask: sendMask(to), via: ko ? "ata" : (String((m && m.type) || "").toLowerCase() || "auto"),
         msg_id: bad ? "" : String((hit && hit.messageId) || "").slice(0, 60), group_id: gid.slice(0, 60),
-        result: bad ? "fail" : "wait", status_code: code.slice(0, 20),
+        result: unsure ? "unknown" : (bad ? "fail" : "wait"), status_code: code.slice(0, 20),
         err: bad ? sendErrEasy(code, String((f && (f.statusMessage || f.reason)) || ""), err) : "",
         vars: ko && ko.variables ? Object.keys(ko.variables).map((k) => k.replace(/^#\{|\}$/g, "").slice(0, 20)).slice(0, 20) : [],
         ref: String((meta && meta.ref) || "").slice(0, 60), scheduled: !!(payload && payload.scheduledDate),
@@ -4230,7 +4239,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
         console.error("arrive ata failed", JSON.stringify((r.failedMessageList || [])[0]).slice(0, 200));
       } catch (e3) {
         console.error("arrive ata", e3);
-        if (sendUnknown(e3)) return { ok: false, why: IDEM_CHECK, how: "ata", unknown: true };   // v54: 받았는지 모르면 문자로 바로 대신 안 보냄
+        if (sendUnknown(e3)) return { ok: false, why: IDEM_CHECK, how: "ata", unknown: true, unsure: true };   // v54: 받았는지 모르면 문자로 바로 대신 안 보냄
       }
       /* 알림톡 요청이 거절되면 아래 문자로 이어서 보냅니다 */
     }
@@ -4245,7 +4254,7 @@ async function notifyOne(office: any, conf: any, row: any, viewKey: string, phot
       { shop: S(office.code), tpl: "check_arrive_sms", ref: S(row.id) });
     return { ok: true, why: "", how: fileId ? "mms" : smsType(text).toLowerCase() };
   } catch (e) {
-    if (sendUnknown(e)) return { ok: false, why: IDEM_CHECK, how: way, unknown: true };
+    if (sendUnknown(e)) return { ok: false, why: IDEM_CHECK, how: way, unknown: true, unsure: true };
     return { ok: false, why: e instanceof Error ? e.message : String(e), how: way };
   }
 }
@@ -4441,9 +4450,11 @@ async function deliv_resend(_c: Ctx, pin: string, ids: string[]) {
       state: s.ok ? "보냄" : ((s as any).unknown ? "확인 중" : "못 보냄"), how: s.how || r.how, err: s.why, view_key: vkey,
       sent_at: s.ok ? new Date().toISOString() : r.sent_at,
     }).eq("id", id);
-    out.push({ id, ok: s.ok, why: s.why });
+    out.push({ id, ok: s.ok, why: s.why, unsure: !!(s as any).unknown });
   }
-  return { ok: true, results: out };
+  /* v54: 확인 중(결과 모름)은 «못 보냄»과 따로 셈 — 체크 v56.7 · 기사 앱 v30 이름(unsure) */
+  const sentN = out.filter((x) => x.ok).length, unsureN = out.filter((x) => x.unsure).length;
+  return { ok: true, results: out, sent: sentN, bad: out.length - sentN - unsureN, unsure: unsureN };
 }
 
 /* ───────── v34: 딜러 등록 대기 (체크/기획/2026-10-17_딜러등록대기_설계.md · 보안 의견 ①~⑨) ─────────
@@ -4539,7 +4550,7 @@ async function delivApproveDealer(ctx: Ctx, opt: any) {
     const ids = mine.map((r: any) => S(r.id));
     await db.from("check_deliv").update({ dealer_id: dealerId }).eq("office_id", office.id).in("id", ids);
     /* 다시 보내기 — 서버가 저장된 기록으로 글을 다시 만듦(⑦ · notifyOne 안에서 cleanVars). 이미 «보냄» 은 건너뜀(③) */
-    let sent = 0, failed = 0;
+    let sent = 0, failed = 0, unsure = 0;
     if (it?.resend !== false) {
       const since = Date.now() - RESEND_HOURS * 3600e3;
       for (const r0 of mine.filter((r: any) => new Date(S(r.arrived_at)).getTime() >= since)) {
@@ -4557,11 +4568,11 @@ async function delivApproveDealer(ctx: Ctx, opt: any) {
           state: s.ok ? "보냄" : ((s as any).unknown ? "확인 중" : "못 보냄"), how: s.how || r.how, err: s.why, view_key: vkey,
           sent_at: s.ok ? new Date().toISOString() : r.sent_at,
         }).eq("id", r.id);
-        if (s.ok) sent++; else failed++;
+        if (s.ok) sent++; else if ((s as any).unknown) unsure++; else failed++;   // v54: 확인 중은 따로
       }
     }
     await log(ctx, "딜러 등록 승인", { tel: phoneMask(tel), name, dealerId, records: ids.length, sent, failed });   // ④ 감사 기록
-    results.push({ tel: phoneMask(tel), ok: true, dealerId, sent, failed });
+    results.push({ tel: phoneMask(tel), ok: true, dealerId, sent, failed, unsure });
   }
   return { ok: true, results };
 }
@@ -4961,7 +4972,7 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
     throw e;
   }
   if (send && mark.unk) {                            // 일부라도 결과를 모름 → 답에 «확인 중» 표시 · 줄은 unknown
-    const res = out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, checkMsg: IDEM_CHECK } : out;
+    const res = out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, unsure: true, checkMsg: IDEM_CHECK } : out;
     await fin("unknown", idemScrub(res ?? null));
     return res;
   }
@@ -4972,7 +4983,7 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
   if (!(await fin("done", idemScrub(out ?? null)))) {
     if (send) {                                      // 보냈는데 «끝남»을 못 남김 → «확인 중»(줄은 run 으로 남아 5분 뒤에도 «확인 중»)
       await fin("unknown", { checking: true });
-      return out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, checkMsg: IDEM_CHECK } : out;
+      return out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, unsure: true, checkMsg: IDEM_CHECK } : out;
     }
   }
   if (Math.random() < 0.02) db.from("cgg_idem").delete().in("state", ["done", "retry"]).lt("at", new Date(Date.now() - IDEM_DAY_MS).toISOString()).then(() => {}, () => {});
@@ -5006,7 +5017,7 @@ Deno.serve(async (req) => {
     if (e instanceof Error && (e as any).need === "pwchange")   // v30: 기사 임시 비밀번호 → 비밀번호 바꾸기 화면
       return new Response(JSON.stringify({ __err: e.message, __need: "pwchange" }), { headers: JSON_HEAD });
     if (e instanceof Error && e.message === IDEM_CHECK)   // v54: 화면이 «확인 중»을 «못 보냄»과 따로 보여 주게
-      return new Response(JSON.stringify({ __err: IDEM_CHECK, __checking: true }), { headers: JSON_HEAD });
+      return new Response(JSON.stringify({ __err: IDEM_CHECK, __checking: true, __unsure: true }), { headers: JSON_HEAD });
     return err(userMsg(e instanceof Error ? e.message : String(e)));   // v31: 영어·코드·원문 숨김
   }
 });

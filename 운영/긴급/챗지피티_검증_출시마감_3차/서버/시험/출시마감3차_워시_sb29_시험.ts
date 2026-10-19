@@ -79,6 +79,8 @@ check("받은 뒤 답이 끊김 → «확인 중»(못 보냄 확정 아님)", l
 const l2 = await send(R), l3 = await send(R);
 check("같은 rid 로 두 번 더 → «확인 중 — 보낸 기록에서 확인» · 받음 +0", l2.__checking === true && l3.__checking === true && /보낸 기록에서 확인/.test(l2.__err) && accepted === a0 + 1, [l2, l3]);
 check("«확인 중» 줄은 지우지 않음(state unknown)", row(R)?.state === "unknown", row(R));
+check("화면과 맞춘 이름: 처음 답 unsure:true · 다시 오면 __unsure:true · «확인 중…»으로 시작", l1.result?.unsure === true && l2.__unsure === true && /^확인 중/.test(l2.__err || ""), [l1, l2]);
+check("발송 기록(cgg_sendlog)은 «unknown»(확인 중) — 실패로 세지 않음", store.cgg_sendlog.some((x: any) => x.result === "unknown"), store.cgg_sendlog.map((x: any) => x.result));
 a0 = accepted; R = rid(); plan.push("e502");
 const e1 = await send(R), e2 = await send(R);
 check("업체 쪽 5xx(받았는지 모름) → «확인 중» · 다시 해도 보내기 시도 없음", e1.result?.checking === true && e2.__checking === true && row(R)?.state === "unknown", [e1, e2]);
