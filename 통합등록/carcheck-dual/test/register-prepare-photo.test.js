@@ -286,3 +286,19 @@ test('엔트리 [저장] 단추가 꺼져 있으면(이미 등록된 번호) 누
   u.W.adapters.entry.saveEnabled = async () => true;
   assert.strictEqual((await u.flow.runAll({ ...CAR, data: CAR }, RUN)).ok, true);
 });
+
+test('[저장] 단추는 글자가 정확히 «저장»인 것만 — [접수저장]·[성능점검기록부 전송]은 누르지 않음 · 꺼져 있으면 안 누름 · 둘 이상이면 안 누름', () => {
+  const { JSDOM } = require('./node_modules/jsdom');
+  const { saveButtonExpr } = require('../src/sites/flow-adapters');
+  const cfg = { saveButtonText: '저장' };
+  const run = (html, press) => {
+    const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true });
+    dom.window.eval('window.__hit=[];document.querySelectorAll("button").forEach(function(b){b.getClientRects=function(){return [1];};b.addEventListener("click",function(){window.__hit.push(b.textContent.trim());});})');
+    const r = dom.window.eval(saveButtonExpr(cfg, press));
+    return { r, hit: Array.from(dom.window.__hit) };
+  };
+  assert.deepStrictEqual(run('<button>접수저장</button><button> 저장 </button>', true), { r: true, hit: ['저장'] });
+  assert.deepStrictEqual(run('<button>성능점검기록부 전송</button><button>성능점검기록부 출력</button><button disabled>저장</button>', true), { r: null, hit: [] });
+  assert.deepStrictEqual(run('<button disabled>저장</button>', false), { r: false, hit: [] });
+  assert.deepStrictEqual(run('<button>저장</button><button>저장</button>', true), { r: null, hit: [] });
+});

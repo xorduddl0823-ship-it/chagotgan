@@ -61,6 +61,22 @@ function carmodooNumberExpr(cfg, checkNo) {
 const carmodooReadExpr = (cfg) => carmodooNumberExpr(cfg, '').replace('if(m){if(!m.checked){m.click();if(!m.checked){m.checked=true;ev(m,"change");}}}' +
   'else if(a.checked){a.click();if(a.checked){a.checked=false;ev(a,"change");}}', '');
 
+/**
+ * [저장] 단추 찾기 — 선택자(saveButton) 또는 단추 글자(saveButtonText, 글자가 «정확히» 같은 것만).
+ *  «정확히»: 카모두 [접수저장]·엔트리 [성능점검기록부 전송]처럼 «저장»이 들어간 다른 단추를 누르지 않게(대표님 10/19: [저장]만 누름)
+ *  press=true 면 켜진 단추 하나를 누르고 true · false 면 켜져 있는지만(true/false), 없으면 null
+ *  같은 글자의 단추가 둘 이상 보이면 누르지 않는다(null).
+ */
+function saveButtonExpr(cfg, press) {
+  return '(function(){var C=' + JSON.stringify({ sel: cfg.saveButton || null, text: cfg.saveButtonText || null }) + ';var b=null;' +
+    'if(C.sel){b=document.querySelector(C.sel);}' +
+    'else if(C.text){var all=document.querySelectorAll("button,a,input[type=button],input[type=submit]");var hit=[];' +
+    'for(var i=0;i<all.length;i++){var e=all[i];var t=String(e.value!=null&&e.tagName==="INPUT"?e.value:(e.textContent||"")).replace(/\\s+/g,"");' +
+    'if(t===C.text&&(e.offsetWidth||e.offsetHeight||e.getClientRects().length))hit.push(e);}if(hit.length!==1)return null;b=hit[0];}' +
+    'if(!b)return null;var off=b.disabled||b.getAttribute("aria-disabled")==="true"||/(^|\\s)disabled(\\s|$)/.test(b.className);' +
+    (press ? 'if(off)return null;b.click();return true;' : 'return !off;') + '})()';
+}
+
 const textExpr = (sel) => '(function(){var e=document.querySelector(' + JSON.stringify(sel) + ');' +
   'return e?String(e.value!=null&&e.tagName!=="SPAN"&&e.tagName!=="DIV"&&e.tagName!=="TD"?e.value:e.textContent).trim():null;})()';
 
@@ -108,10 +124,7 @@ function createElectronAdapters(o) {
        *  저장 통제기가 한 번 허락한 상태에서만 요청이 나간다. 단추를 못 찾으면 false(요청이 안 나가 notSent 로 처리됨).
        */
       async clickSave() {
-        const sel = C[site] && C[site].saveButton;
-        if (!sel) return false;
-        const ok = await inAnyFrame(o.getWindow(site), '(function(){var b=document.querySelector(' + JSON.stringify(sel) + ');' +
-          'if(!b||b.disabled)return null;b.click();return true;})()');
+        const ok = await inAnyFrame(o.getWindow(site), saveButtonExpr(C[site] || {}, true));
         return ok === true;
       },
       async readList(car) { return rowsOf(site, car); },
@@ -249,9 +262,8 @@ function createElectronAdapters(o) {
     async load() {},
     /** 엔트리 [저장] 단추가 켜져 있나 — true/false · 설정이 없으면 null(모름) */
     async saveEnabled() {
-      if (!C.entry.saveButton) return null;
-      return inAnyFrame(o.getWindow('entry'), '(function(){var b=document.querySelector(' + JSON.stringify(C.entry.saveButton) + ');if(!b)return null;' +
-        'return !(b.disabled||b.getAttribute("aria-disabled")==="true"||/disabled/.test(b.className));})()');
+      if (!C.entry.saveButton && !C.entry.saveButtonText) return null;
+      return inAnyFrame(o.getWindow('entry'), saveButtonExpr(C.entry, false));
     },
     async readLoaded() {
       const L = C.entry.loaded;
@@ -268,4 +280,4 @@ function createElectronAdapters(o) {
   return { carinfo, carmodoo, entry };
 }
 
-module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr };
+module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr, saveButtonExpr };
