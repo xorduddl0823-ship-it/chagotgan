@@ -20,6 +20,11 @@ HEAD = ("<title>" + TITLE + "</title>\n"
         '<meta property="og:url" content="https://cgg.co.kr/">\n'
         '<meta property="og:title" content="' + TITLE + '">\n'
         '<meta property="og:description" content="' + DESC + '">\n'
+        '<meta property="og:image" content="https://cgg.co.kr/og.png">\n'
+        '<meta property="og:image:width" content="1200">\n'
+        '<meta property="og:image:height" content="630">\n'
+        '<meta property="og:image:alt" content="차곳간 — 차를 맡는 순간부터, 정산을 마치는 순간까지">\n'
+        '<meta name="twitter:card" content="summary_large_image">\n'
         '<meta name="theme-color" content="#0B2545">')
 t = t.replace(OLD_T, HEAD, 1).replace(OLD_R, "", 1)
 assert "noindex" not in t[:4000]

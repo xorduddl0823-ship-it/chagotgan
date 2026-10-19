@@ -113,5 +113,6 @@ select c.relname 표, c.relrowsecurity RLS켜짐,
  where n.nspname = 'public' and c.relkind = 'r'
    and c.relname in ('wash_shops','wash_users','wash_docs','wash_sessions','wash_viewcode',
                      'check_office','check_user','check_session','check_car','check_dealer','check_company',
-                     'check_invoice','check_invoice_row','check_deliv','check_deliv_photo','dealer_sessions','dealer_users')
+                     'check_invoice','check_invoice_row','check_deliv','check_deliv_photo','dealer_sessions','dealer_users',
+                     'wash_sendlog','cgg_sendlog','wash_otp','check_session')
  order by 1;

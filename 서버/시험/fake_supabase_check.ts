@@ -69,6 +69,25 @@ class Q {
       for (const p of ps) tbl.push({ id: crypto.randomUUID(), ...p });
       return { data: null, error: null };
     }
+      /* sb28·v53 시험: cgg_idem 은 (제품·업체·사람·기능·rid) 겹치면 거절 — SQL 26 기본 열쇠와 같음 */
+      if (this.t === "cgg_idem" && this.op === "insert") {
+        for (const p of [].concat(this.payload) as Row[]) {
+          if (tbl.some((r) => r.product === p.product && r.tenant === p.tenant && r.who === p.who && r.fn === p.fn && r.rid === p.rid))
+            return { data: null, error: { code: "23505", message: "duplicate key" } };
+          tbl.push(Object.assign({ state: "run", at: new Date().toISOString() }, p));
+        }
+        return { data: null, error: null };
+      }
+      /* sb28·v53 시험: 승인 요청 표 기본값(SQL 24 와 같음) — 번호 · 대기 · 종사업장 0000 · 기다리는 같은 요청은 하나만 */
+      if (this.t === "biz_share_req" && this.op === "insert") {
+        for (const p of [].concat(this.payload) as Row[]) {
+          const q = Object.assign({ id: tbl.length + 1, state: "wait", biz_sub: "0000", at: new Date().toISOString() }, p);
+          if (tbl.some((r) => r.state === "wait" && r.product === q.product && r.code === q.code && r.biz_no === q.biz_no && r.biz_sub === q.biz_sub))
+            return { data: null, error: { code: "23505", message: "duplicate key" } };
+          tbl.push(q);
+        }
+        return { data: null, error: null };
+      }
     if (this.op === "insert") {
       /* insert().select() 이면 번호(id)를 붙여 돌려줌 (알림톡 체크 시험 · 도착 등록) */
       const got: Row[] = [];
@@ -85,6 +104,13 @@ class Q {
     }
     if (this.op === "update" && this.t === "check_deposit" && store.__noKindAuto && ("kind_auto" in (this.payload ?? {}) || (this as any).__kindAutoFilter))
       return { data: null, error: { code: "42703", message: 'column "kind_auto" does not exist' } };   // v43 시험: SQL 16 전
+    /* v53 시험: SQL 24 문지기 흉내(store.__bizUniq) — 다른 검사소가 쓰는 번호(숫자만)로 바꾸면 23505 */
+    if (this.op === "update" && this.t === "check_office" && (store as any).__bizUniq && this.payload && this.payload.biz_no) {
+      const dg = (x: any) => String(x ?? "").replace(/[^0-9]/g, "");
+      const n = dg(this.payload.biz_no);
+      if (n && tbl.some((r) => !hit.includes(r) && (dg(r.biz_no) === n || dg(r.popbill_corp) === n)))
+        return { data: null, error: { code: "23505", message: "이미 등록된 사업자번호예요." } };
+    }
     if (this.op === "update") { hit.forEach((r) => Object.assign(r, this.payload)); return { data: this.ret ? hit.map((r) => ({ ...r })) : null, error: null }; }
     if (this.op === "delete") { store[this.t] = tbl.filter((r) => !hit.includes(r)); return { data: null, error: null }; }
     let out = hit.map((r) => {
