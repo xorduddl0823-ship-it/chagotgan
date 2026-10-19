@@ -1,0 +1,265 @@
+--- "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb27.ts"	2026-10-18 14:42:25.380602049 +0000
++++ "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb28.ts"	2026-10-19 07:39:04.702469749 +0000
+@@ -10,6 +10,14 @@
+ //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
+ //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
+ // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
++// sb28 (2026-10-19) 긴급(중복 사업자번호 · 운영/긴급/2026-10-19_중복사업자번호_검증요청.md) — 다른 곳이 쓰는 사업자번호는 어디로도 못 들어가게:
++//   ① 설정 저장(write · settings/config)의 supplier.bizNo: 이 업체에 등록된 번호가 있으면 그 번호로 덮고, 없으면 다른 곳(워시·체크·본사)이
++//      쓰는 번호는 지워서 저장(화면 «우리 사업장»에 남의 번호가 남지 않게 — 예전엔 화면 설정에 먼저 저장된 뒤 shopBiz 가 거절했음)
++//   ② 관리 hqShopSave 의 사업자번호도 같은 검사(예전엔 검사 없이 넣었음) ③ DB 같은 번호 막기(SQL 24 문지기·유일 색인)에 걸리면 같은 안내
++//   ④ 안내 글 «이미 등록된 사업자번호예요. 본인 업체라면 차곳간에 문의해 주세요.» 돈 셈·보내기는 그대로.
++//   ⑤ 대표님 확정(04): 고유 키 = 사업자번호 + 종사업장번호(biz_sub · 없으면 0000). 같은 번호로 두 번째 가게·두 번째 제품은
++//      «본사 승인» 때만(개인·법인 같음 · 기존 대표 허락 길 없음). 승인 없이 넣으면 거절 + 승인 요청(biz_share_req)으로 남김.
++//      관리 hqBizShareList([상태]) · hqBizShareDecide([요청번호, 승인?, 메모]) — 승인하면 그때 그 업체(검사소)에 번호를 넣고 hq_audit 에 남김. SQL 24 필요.
+ // sb27 (2026-10-18) 워시 방 찾음(총괄): «밀린 달 한꺼번에»는 최근 달 코드로만 보내서, 묶인 예전 달 코드엔 받은 번호가 안 남아
+ //   보기 화면 «밀린 달 목록»(보낸 것만)에서 빠질 수 있었음 → sendMsg(ataKey bill)가 codes:[…](묶인 달 보기코드)를 받으면,
+ //   이 업체 · 기한 안 · 같은 받는 곳(열쇠의 달 뒤가 같음)인 코드에만 받은 번호를 함께 남김(24개까지). 기록만 — 돈 셈 · 보내기는 그대로. SQL 없음.
+@@ -147,7 +155,7 @@
+ import { crypto as stdCrypto } from "jsr:@std/crypto@1";
+ import { encodeBase64, decodeBase64 } from "jsr:@std/encoding@1/base64";
+ 
+-const VER = "sb27";
++const VER = "sb28";
+ const sb = createClient(
+   Deno.env.get("SUPABASE_URL")!,
+   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+@@ -592,14 +600,29 @@
+   const { data } = await sb.from("wash_rev").select("rev").eq("shop", shop).eq("demo", demo).maybeSingle();
+   return String(data?.rev ?? 1);
+ }
++/** sb28: 설정(config)에 담긴 «우리 사업장» 사업자번호를 서버 기준으로 — 등록된 번호가 있으면 그 번호, 없으면 다른 곳이 쓰는 번호는 지움 */
++async function bizGuardCfg(shop: string, data: any) {
++  const sp = data && typeof data === "object" && data.supplier && typeof data.supplier === "object" ? data.supplier : null;
++  if (!sp) return data;
++  const nb = digits(String(sp.bizNo || ""));
++  const own = await bizNoOf(shop);
++  if (own) { if (nb !== own) return Object.assign({}, data, { supplier: Object.assign({}, sp, { bizNo: own }) }); return data; }
++  if (nb && await bizTaken(nb, shop)) return Object.assign({}, data, { supplier: Object.assign({}, sp, { bizNo: "" }) });
++  return data;
++}
+ async function write(shop: string, demo: boolean, rows: any[]) {
+-  const clean = rows
++  const clean0 = rows
+     .filter((r) => r && COLS.includes(r.col) && r.id !== undefined && r.id !== null && r.id !== "")
+     .map((r) => ({
+       col: r.col, id: String(r.id),
+       data: r.data === null || r.data === undefined ? null
+         : typeof r.data === "string" ? JSON.parse(r.data) : r.data,
+     }));
++  const clean: any[] = [];
++  for (const r of clean0) {   // sb28: 실제 칸의 설정(config)은 사업자번호를 서버 기준으로
++    if (!demo && shop !== "ADMIN" && r.col === "settings" && r.id === "config" && r.data) clean.push(Object.assign({}, r, { data: await bizGuardCfg(shop, r.data) }));
++    else clean.push(r);
++  }
+   const { data, error } = await sb.rpc("wash_write", { p_shop: shop, p_demo: demo, p_rows: clean });
+   if (error) throw new Error("저장 실패: " + error.message);
+   return String(data);
+@@ -2508,21 +2531,65 @@
+ /* sb15(보안 W-H1): 이 번호를 «다른 곳»이 쓰고 있으면 이유를 돌려줍니다 (없으면 "").
+    다른 워시 업체 · 체크 검사소(사업자번호·팝빌 번호) · 차곳간 본사 — 모두 같은 팝빌 연동 아래라 남의 이름 발행을 막습니다.
+    확인을 못 하면(표 읽기 실패) 막는 쪽으로 봅니다. */
+-async function bizTaken(corp: string, selfShop: string): Promise<string> {
++async function bizTaken(corp: string, selfShop: string, sub0 = ""): Promise<string> {
+   const n = digits(corp);
+   if (!n) return "";
+   try {
++    /* 종사업장번호를 안 주면 이 업체에 등록된 것으로(팝빌 가입·인증서·발행처럼 «내 번호» 확인일 때) */
++    let sub = bizSub(sub0);
++    if (!sub0) { const { data: me } = await sb.from("wash_shops").select("biz_sub").eq("shop", selfShop).maybeSingle(); sub = bizSub(me && me.biz_sub); }
+     const { data: hq, error: e1 } = await sb.from("wash_hq").select("biz_no").eq("id", 1).maybeSingle();
+     if (e1) return "check";
+     if (digits(String((hq && hq.biz_no) || "")) === n) return "hq";
+-    const { data: ws, error: e2 } = await sb.from("wash_shops").select("shop,biz_no").neq("shop", selfShop).ilike("biz_no", "%" + n.slice(-5) + "%").limit(200);
++    let { data: ws, error: e2 } = await sb.from("wash_shops").select("shop,biz_no,biz_sub").neq("shop", selfShop).ilike("biz_no", "%" + n.slice(-5) + "%").limit(200);
++    if (e2 && /biz_sub/.test(String((e2 as any).message || ""))) {   // SQL 24 전(칸 없음)이면 예전처럼 번호만
++      ({ data: ws, error: e2 } = await sb.from("wash_shops").select("shop,biz_no").neq("shop", selfShop).ilike("biz_no", "%" + n.slice(-5) + "%").limit(200));
++    }
+     if (e2) return "check";
+-    if ((ws || []).some((r: any) => digits(r.biz_no) === n)) return "wash";
++    const sameNo = (ws || []).filter((r: any) => digits(r.biz_no) === n);
++    /* sb28(대표님 04): 같은 제품 · 같은 키(번호 + 종사업장)는 승인이 있어도 금지 */
++    if (sameNo.some((r: any) => bizSub(r.biz_sub) === sub)) return "wash";
+     const { data: co, error: e3 } = await sb.from("check_office").select("biz_no,popbill_corp").limit(1000);
+     if (e3) return "check";
+-    if ((co || []).some((r: any) => digits(r.biz_no) === n || digits(r.popbill_corp) === n)) return "check";
++    const inCheck = (co || []).some((r: any) => digits(r.biz_no) === n || digits(r.popbill_corp) === n);
++    if (!sameNo.length && !inCheck) return "";
++    /* 다른 종사업장 · 다른 제품이 쓰는 번호 → 본사가 이 업체에 승인했을 때만 (표가 없거나 읽기 오류면 승인 없음으로) */
++    if (await bizShareOk("wash", selfShop, n)) return "";
++    return sameNo.length ? "wash" : "check";
+   } catch (_) { return "check"; }
+-  return "";
++}
++/** sb28: 종사업장번호 4자리 (비우면 0000) */
++function bizSub(v: unknown) { const d = digits(String(v ?? "")).slice(-4); return d ? d.padStart(4, "0") : "0000"; }
++async function bizShareOk(product: string, code: string, n: string) {
++  try {
++    const { data, error } = await sb.from("biz_share_ok").select("code").eq("product", product).eq("code", code).eq("biz_no", n).maybeSingle();
++    return !error && !!data;
++  } catch (_) { return false; }
++}
++/** sb28: 승인 요청 남기기 (같은 요청이 기다리는 중이면 하나만 · 표가 없으면(SQL 24 전) 조용히 넘어감) */
++async function bizShareAsk(product: string, code: string, n: string, sub: string, who: string) {
++  try {
++    const { data: had } = await sb.from("biz_share_req").select("id").eq("product", product).eq("code", code).eq("biz_no", n).eq("biz_sub", sub).eq("state", "wait").limit(1);
++    if (had && had.length) return true;
++    const { error } = await sb.from("biz_share_req").insert({ product, code, biz_no: n, biz_sub: sub, who: digits(who).slice(0, 20) });
++    return !error;
++  } catch (_) { return false; }
++}
++const BIZ_ASKED = " (차곳간에 확인 요청을 남겼어요. 확인되면 연결돼요)";
++/** sb28: 같은 제품에 같은 키(번호 + 종사업장)가 이미 있는지 — 있으면 승인으로도 안 됨 */
++async function bizSameKey(product: string, self: string, n: string, sub: string) {
++  try {
++    if (product === "wash") {
++      let { data, error } = await sb.from("wash_shops").select("shop,biz_no,biz_sub").neq("shop", self).ilike("biz_no", "%" + n.slice(-5) + "%").limit(200);
++      if (error) ({ data, error } = await sb.from("wash_shops").select("shop,biz_no").neq("shop", self).ilike("biz_no", "%" + n.slice(-5) + "%").limit(200));
++      if (error) return true;
++      return (data || []).some((r: any) => digits(r.biz_no) === n && bizSub(r.biz_sub) === sub);
++    }
++    let { data, error } = await sb.from("check_office").select("code,biz_no,popbill_corp,biz_sub").limit(1000);
++    if (error) ({ data, error } = await sb.from("check_office").select("code,biz_no,popbill_corp").limit(1000));
++    if (error) return true;
++    return (data || []).some((r: any) => String(r.code) !== self && (digits(r.biz_no) === n || digits(r.popbill_corp) === n) && bizSub(r.biz_sub) === sub);
++  } catch (_) { return true; }
+ }
+ /* sb15(보안 W-H1 남은 위험): 처음 넣은 사업자번호는 본사가 확인(biz_ok_at)한 뒤에만 실제 발행·인증서·팝빌 가입.
+    지금 있는 업체는 SQL 11 이 «확인됨»으로 시작. 칸이 없으면(SQL 11 전) 그대로 둠. */
+@@ -2536,7 +2603,7 @@
+     return data.biz_ok_at !== null;
+   } catch (_) { return false; }
+ }
+-const BIZ_TAKEN_MSG = "이 사업자번호는 다른 곳에서 쓰고 있어 쓸 수 없습니다. 우리 사업자번호가 맞다면 차곳간(010-9559-3663)으로 알려 주세요.";
++const BIZ_TAKEN_MSG = "이미 등록된 사업자번호예요. 본인 업체라면 차곳간(010-9559-3663)에 문의해 주세요.";   // sb28: 대표님 확정 글
+ async function pbIssue(shop: string, json: string) {
+   let req: any = {};
+   try { req = JSON.parse(json); } catch { return { ok: false, error: "요청을 읽지 못했습니다" }; }
+@@ -2807,8 +2874,16 @@
+       if (nb && nb !== ob) {
+         if (ob) throw new Error("사업자번호는 한 번 넣으면 바꿀 수 없습니다. 바꾸시려면 차곳간(010-9559-3663)으로 알려 주세요.");
+         if (nb.length !== 10) throw new Error("사업자번호 10자리를 넣어 주세요.");
+-        if (await bizTaken(nb, s)) throw new Error(BIZ_TAKEN_MSG);
++        if (v.bizSub !== undefined && String(v.bizSub || "").trim() && !/^\d{1,4}$/.test(String(v.bizSub).trim())) throw new Error("종사업장번호는 숫자 4자리로 넣어 주세요.");
++        const sub = bizSub(v.bizSub);
++        const why = await bizTaken(nb, s, sub);
++        if (why) {
++          /* sb28(대표님 04): 다른 곳이 쓰는 번호 → 거절 + 본사 승인 요청 (본사 번호 · 같은 키는 요청도 안 남김) */
++          const asked = why !== "hq" && !(await bizSameKey("wash", s, nb, sub)) && await bizShareAsk("wash", s, nb, sub, String((ss && ss.phone) || ""));
++          throw new Error(BIZ_TAKEN_MSG + (asked ? BIZ_ASKED : ""));
++        }
+         patch.biz_no = nb;
++        patch.biz_sub = sub === "0000" ? null : sub;
+       }
+     }
+     if (v.ceo     !== undefined) patch.ceo     = String(v.ceo || "").trim();
+@@ -2817,7 +2892,11 @@
+     if (v.jongmok !== undefined) patch.jongmok = String(v.jongmok || "").trim();
+     if (v.email   !== undefined) patch.tax_email = String(v.email || "").trim();
+     if (!Object.keys(patch).length) return { ok: true };
+-    const { error } = await sb.from("wash_shops").update(patch).eq("shop", s);
++    let { error } = await sb.from("wash_shops").update(patch).eq("shop", s);
++    if (error && "biz_sub" in patch && /biz_sub/.test(String((error as any).message || ""))) {   // SQL 24 전(칸 없음)
++      delete patch.biz_sub; ({ error } = await sb.from("wash_shops").update(patch).eq("shop", s));
++    }
++    if (error && String((error as any).code || "") === "23505") throw new Error(BIZ_TAKEN_MSG);   // sb28: 동시에 넣어도 DB 가 막음(SQL 24)
+     dbCheck(error, "업체");
+     /* sb15: 처음 넣은 사업자번호는 본사 확인 전까지 «확인 중» (SQL 11 전이면 칸이 없어 넘어감) */
+     if (patch.biz_no) {
+@@ -4642,7 +4721,11 @@
+     if (v.lockDays  !== undefined) patch.lock_days  =
+       (v.lockDays === "" || v.lockDays === null) ? null : Math.min(180, Math.max(0, Number(v.lockDays) || 0));
+     /* 세금계산서용 사업자 정보 */
+-    if (v.bizNo    !== undefined) patch.biz_no    = digits(v.bizNo);
++    if (v.bizNo    !== undefined) {
++      patch.biz_no = digits(v.bizNo) || null;
++      if (patch.biz_no && await bizTaken(String(patch.biz_no), code))   // sb28: 관리에서도 같은 검사 — 같은 번호는 «사업자 확인 › 승인»으로만
++        throw new Error("이 사업자번호는 다른 곳이 쓰고 있어요. 같은 사업자의 두 번째 가게·제품은 «사업자 확인 › 승인 요청»에서 승인해 주세요.");
++    }
+     if (v.ceo      !== undefined) patch.ceo       = String(v.ceo).trim();
+     if (v.addr     !== undefined) patch.addr      = String(v.addr).trim();
+     if (v.upte     !== undefined) patch.upte      = String(v.upte).trim();
+@@ -4677,7 +4760,12 @@
+     if (v.smsFrom !== undefined) patch.sms_from = digits(v.smsFrom) || null;
+     if (v.spareReset) { patch.spare_used = 0; patch.warn_at = null; patch.stop_warn_at = null; }
+     if (!Object.keys(patch).length) return { ok: true };
++    /* sb28(검수 2번): 관리가 사업자번호를 바꾸면 기록을 먼저 남기고, 못 남기면 바꾸지 않음 (번호는 가려서) */
++    const bizAudit = "biz_no" in patch ? { code, biz_no: patch.biz_no ? String(patch.biz_no).slice(0, 3) + "-**-***" + String(patch.biz_no).slice(-2) : "(비움)" } : null;
++    if (bizAudit && !await hqAuditLog(ss, "shopBizSet", "", "wash", "try", bizAudit)) throw new Error("기록을 남기지 못해 멈췄습니다 (SQL 08 확인)");
+     const { error } = await sb.from("wash_shops").update(patch).eq("shop", code);
++    if (bizAudit) await hqAuditLog(ss, "shopBizSet", "", "wash", error ? "fail" : "ok", bizAudit);
++    if (error && String((error as any).code || "") === "23505") throw new Error(BIZ_TAKEN_MSG);   // sb28
+     dbCheck(error, "업체");
+     /* 이용을 멈추면 그 업체의 로그인 열쇠를 전부 지웁니다 */
+     if (v.active === false) await sb.from("wash_sessions").delete().eq("shop", code);
+@@ -5472,6 +5560,70 @@
+     return { ok: true, list: data || [] };
+   },
+   /* sb15: 사업자번호 확인 목록 — 워시 업체 + 체크 검사소 (확인 안 된 것 먼저) — [] */
++  /* sb28(대표님 04): 같은 사업자번호 «두 번째 가게·제품» 승인 요청 목록 — [상태 "wait"|"ok"|"no"|"" (전부)] */
++  hqBizShareList: async (shop, a, ss) => {
++    hqOnly(shop, ss);
++    const st = ["wait", "ok", "no"].includes(String(a[0] || "")) ? String(a[0]) : "";
++    let q = sb.from("biz_share_req").select("id,at,product,code,biz_no,biz_sub,who,state,decided_at,decided_by,memo").order("id", { ascending: false }).limit(300);
++    if (st) q = q.eq("state", st);
++    const { data, error } = await q;
++    if (error) return { ok: true, list: [], need: "SQL 24 를 먼저 실행해 주세요" };
++    const rows: any[] = data || [];
++    /* 같은 번호를 지금 쓰는 곳(워시 업체 · 체크 검사소) — 대표님이 «같은 사업자인지» 확인하게 */
++    const nums = [...new Set(rows.map((r) => String(r.biz_no)))];
++    const users: Record<string, string[]> = {};
++    const names: Record<string, string> = {};
++    try {
++      const { data: ws } = await sb.from("wash_shops").select("shop,name,biz_no,biz_sub").limit(5000);
++      (ws || []).forEach((w: any) => { const n = digits(w.biz_no); if (w.shop) names["wash:" + w.shop] = String(w.name || ""); if (nums.includes(n)) (users[n] = users[n] || []).push("워시 " + w.shop + " " + String(w.name || "") + (bizSub(w.biz_sub) !== "0000" ? " (종 " + bizSub(w.biz_sub) + ")" : "")); });
++      const { data: co } = await sb.from("check_office").select("code,name,biz_no,popbill_corp,biz_sub").limit(1000);
++      (co || []).forEach((c: any) => { const n = digits(c.biz_no) || digits(c.popbill_corp); if (c.code) names["check:" + c.code] = String(c.name || ""); if (nums.includes(n)) (users[n] = users[n] || []).push("체크 " + c.code + " " + String(c.name || "") + (bizSub(c.biz_sub) !== "0000" ? " (종 " + bizSub(c.biz_sub) + ")" : "")); });
++    } catch (_) { /* 이름은 없어도 됨 */ }
++    return { ok: true, list: rows.map((r) => ({ id: Number(r.id), at: String(r.at || ""), product: r.product === "check" ? "체크" : "워시",
++      code: String(r.code), name: names[r.product + ":" + r.code] || "", bizNo: String(r.biz_no), bizSub: String(r.biz_sub || "0000"),
++      who: String(r.who || ""), state: r.state === "ok" ? "승인" : r.state === "no" ? "거절" : "대기",
++      decidedAt: String(r.decided_at || ""), memo: String(r.memo || ""), usedBy: users[String(r.biz_no)] || [] })) };
++  },
++  /* sb28: 승인 요청 처리 — [요청번호, 승인(true)/거절(false), 메모] · 승인하면 그때 그 업체(검사소)에 번호를 넣음 · hq_audit 에 남김 */
++  hqBizShareDecide: async (shop, a, ss) => {
++    hqOnly(shop, ss);
++    const id = Number(a[0]);
++    const yes = a[1] === true;
++    const memo = String(a[2] || "").slice(0, 200);
++    if (!Number.isInteger(id) || id <= 0) throw new Error("요청을 골라 주세요");
++    const { data: rq, error: re } = await sb.from("biz_share_req").select("*").eq("id", id).maybeSingle();
++    if (re) throw new Error("서버를 준비하는 중입니다(SQL 24)");
++    if (!rq) throw new Error("요청을 찾지 못했습니다");
++    if (rq.state !== "wait") throw new Error("이미 처리한 요청입니다");
++    const prod = String(rq.product) === "check" ? "check" : "wash";
++    const n = digits(rq.biz_no), sub = bizSub(rq.biz_sub), code = String(rq.code);
++    const det = { id, product: prod, code, biz_no: n.slice(0, 3) + "-**-***" + n.slice(-2), biz_sub: sub, memo };
++    if (!await hqAuditLog(ss, yes ? "bizShareOk" : "bizShareNo", "", prod, "try", det)) throw new Error("기록을 남기지 못해 멈췄습니다 (SQL 08 확인)");
++    const done = { state: yes ? "ok" : "no", decided_at: new Date().toISOString(), decided_by: digits(ss && ss.phone), memo };
++    if (!yes) {
++      await sb.from("biz_share_req").update(done).eq("id", id).eq("state", "wait");
++      await hqAuditLog(ss, "bizShareNo", "", prod, "ok", det);
++      return { ok: true, state: "거절" };
++    }
++    if (await bizSameKey(prod, code, n, sub)) throw new Error("같은 제품에 같은 사업자번호·종사업장번호를 쓰는 곳이 이미 있어 승인할 수 없습니다");
++    const tbl = prod === "check" ? "check_office" : "wash_shops", key = prod === "check" ? "code" : "shop";
++    const { data: tgt } = await sb.from(tbl).select("biz_no").eq(key, code).maybeSingle();
++    if (!tgt) throw new Error("요청한 업체를 찾지 못했습니다");
++    if (digits(tgt.biz_no) && digits(tgt.biz_no) !== n) throw new Error("그 업체에는 이미 다른 사업자번호가 들어 있습니다");
++    const { error: ke } = await sb.from("biz_share_ok").upsert({ product: prod, code, biz_no: n, biz_sub: sub, by_who: digits(ss && ss.phone) }, { onConflict: "product,code,biz_no" });
++    if (ke) throw new Error("승인을 저장하지 못했습니다 (SQL 24 확인)");
++    /* 승인 = 대표님이 확인함 → 번호를 넣고 «확인됨»으로 */
++    const { error: ue } = await sb.from(tbl).update({ biz_no: n, biz_sub: sub === "0000" ? null : sub, biz_ok_at: new Date().toISOString() }).eq(key, code);
++    if (ue) {
++      await sb.from("biz_share_ok").delete().eq("product", prod).eq("code", code).eq("biz_no", n);
++      await hqAuditLog(ss, "bizShareOk", "", prod, "fail", det);
++      throw new Error(String((ue as any).code || "") === "23505" ? "같은 사업자번호·종사업장번호를 쓰는 곳이 있어 연결하지 못했습니다" : "번호를 넣지 못했습니다");
++    }
++    await sb.from("biz_share_req").update(done).eq("id", id).eq("state", "wait");
++    await hqAuditLog(ss, "bizShareOk", "", prod, "ok", det);
++    if (prod === "wash") lockClear(code);
++    return { ok: true, state: "승인" };
++  },
+   hqBizList: async (shop, _a, ss) => {
+     hqOnly(shop, ss);
+     const { data: ws, error } = await sb.from("wash_shops").select("shop,name,biz_no,biz_ok_at,biz_set_at,owner_phone,ceo").neq("biz_no", "").limit(2000);

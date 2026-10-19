@@ -1323,7 +1323,10 @@ window.addEventListener("message",function(e){ var d=e.data; if(!d||!d.cggSeen||
   var PROD = { wash:"워시", check:"체크", dealer:"딜러" };
   var ROLE = { owner:"대표", staff:"직원", manager:"관리자", dealer:"딜러" };
   var HOME = { wash:"https://app.cgg.co.kr/", check:"https://check.cgg.co.kr/", dealer:"https://dealer.cgg.co.kr/" };
-  var S = { ticket:"", token:"", phone:"", places:[] };
+  var S = { ticket:"", token:"", phone:"", places:[], att:"" };
+  /* 챗지피티 Q3 · 보안 ⑤ — 로그인 한 번(시도)마다 맞히기 어려운 «시도 번호»를 만들어 세 단계에 같이 보내요. 서버는 ticket · token · 넘김 코드를 이 시도에 묶어요.
+     (메모리에만 · 창을 닫으면 사라짐. PKCE · state 방식은 서버 방이 정하면 여기에 붙여요) */
+  function attempt(){ try{ var a=new Uint8Array(32); crypto.getRandomValues(a); return btoa(String.fromCharCode.apply(null,a)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }catch(e){ return ""; } }
   function $(id){ return document.getElementById(id); }
   function esc(v){ return String(v==null?"":v).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   var FAIL = "잠시 문제가 생겼어요. 잠시 뒤 다시 해 주세요.";
@@ -1369,21 +1372,21 @@ window.addEventListener("message",function(e){ var d=e.data; if(!d||!d.cggSeen||
   function busy(id,on){ var b=$(id); if(b) b.disabled=!!on; }
   function title(t,s){ $("hlT").textContent=t; $("hlSub").textContent=s; }
   var last=null;
-  function open(){ last=document.activeElement; S={ticket:"",token:"",phone:"",places:[]}; title("로그인","휴대폰 번호로 로그인해요. 워시 · 체크 · 딜러 모두 여기서 들어가요."); msg(""); step("hl1"); box.hidden=false; document.documentElement.style.overflow="hidden"; setTimeout(function(){ $("hlPh").focus(); },30); }
+  function open(){ last=document.activeElement; S={ticket:"",token:"",phone:"",places:[],att:attempt()}; title("로그인","휴대폰 번호로 로그인해요. 워시 · 체크 · 딜러 모두 여기서 들어가요."); msg(""); step("hl1"); box.hidden=false; document.documentElement.style.overflow="hidden"; setTimeout(function(){ $("hlPh").focus(); },30); }
   function close(){ box.hidden=true; document.documentElement.style.overflow=""; S.token=""; if(last&&last.focus) last.focus(); }
   function soon(){ msg("새 로그인을 준비하고 있어요. 지금은 아래 «예전처럼 들어가기»로 들어가 주세요.",true); }
   function phone(){ return $("hlPh").value.replace(/[^0-9]/g,""); }
   function sendCode(){
     var p=phone(); if(!/^01[016789]\d{7,8}$/.test(p)){ msg("휴대폰 번호를 다시 확인해 주세요.",true); return; }
     S.phone=p; busy("hlGo1",1); busy("hlRe",1); msg("");
-    post("homeOtp",[p]).then(function(r){ S.ticket=r.ticket||""; $("hlTo").textContent=(r.to||"휴대폰")+" 번호로 인증번호를 보냈어요. 5분 안에 넣어 주세요."; step("hl2"); $("hlCode").value=""; setTimeout(function(){ $("hlCode").focus(); },30); })
+    post("homeOtp",[p,S.att]).then(function(r){ S.ticket=r.ticket||""; $("hlTo").textContent=(r.to||"휴대폰")+" 번호로 인증번호를 보냈어요. 5분 안에 넣어 주세요."; step("hl2"); $("hlCode").value=""; setTimeout(function(){ $("hlCode").focus(); },30); })
       .catch(function(e){ e.message==="SOON"?soon():msg(e.ko?e.message:FAIL,true); })
       .then(function(){ busy("hlGo1",0); busy("hlRe",0); });
   }
   function verify(){
     var c=$("hlCode").value.replace(/[^0-9]/g,""); if(c.length!==6){ msg("인증번호 6자리를 넣어 주세요.",true); return; }
     busy("hlGo2",1); msg("");
-    post("homeVerify",[S.ticket,c]).then(function(r){ S.token=r.token||""; S.places=(r.places||[]).filter(function(x){ return PROD[x.product]; });
+    post("homeVerify",[S.ticket,c,S.att]).then(function(r){ S.token=r.token||""; S.places=(r.places||[]).filter(function(x){ return PROD[x.product]; });
         $("hlCode").value="";
         if(!S.places.length){
           /* 계정이 없으면 회원가입으로 이어 가요 — 인증은 끝났으니 번호를 다시 넣지 않게 «가입 표»만 같은 주소 안에서 한 번 건네요(대표님 결정 10/19) */
@@ -1402,7 +1405,7 @@ window.addEventListener("message",function(e){ var d=e.data; if(!d||!d.cggSeen||
   }
   function go(x){
     title("들어가는 중",""); $("hlGoTxt").textContent=x.name+" · 차곳간 "+PROD[x.product]+"로 들어가고 있어요."; step("hl4"); msg("");
-    post("homeGo",[x.id],S.token).then(function(r){
+    post("homeGo",[x.id,S.att],S.token).then(function(r){
         var u=String(r.url||""), ok=/^https:\/\/(app|check|dealer)\.cgg\.co\.kr\/[^\s]*#go=[A-Za-z0-9_-]{24,}$/.test(u);
         if(DEMO){ $("hlGoTxt").textContent="(예시) 실제로는 여기서 "+HOME[x.product]+" 로 넘어가요. 다시 로그인하지 않아요."; return; }
         if(!ok){ throw KO(FAIL); }
