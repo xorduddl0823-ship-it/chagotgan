@@ -1,4 +1,4 @@
-// 격리 시험 환경 — 체크 서버(v53)를 가짜 수파베이스로 127.0.0.1:54412 에 띄움.
+// 격리 시험 환경 — 체크 서버(v54)를 가짜 수파베이스로 127.0.0.1:54412 에 띄움.
 import { store } from "../fake_supabase_check.ts";
 import { V, far, 포트 } from "./공통값.ts";
 Deno.env.set("SUPABASE_URL", "http://fake.local"); Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake");
@@ -15,4 +15,4 @@ Object.assign(store, {
 });
 globalThis.fetch = (async () => Response.json({})) as typeof fetch;
 포트(54412);
-await import(Deno.env.get("CHECK_SRC") ?? new URL("../../2_차곳간체크_서버_check-api_v53.ts", import.meta.url).href);
+await import(Deno.env.get("CHECK_SRC") ?? new URL("../../2_차곳간체크_서버_check-api_v54.ts", import.meta.url).href);

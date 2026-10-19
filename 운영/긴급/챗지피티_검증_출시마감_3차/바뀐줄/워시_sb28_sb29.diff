@@ -1,0 +1,212 @@
+--- "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb28.ts"	2026-10-19 08:46:05.857579275 +0000
++++ "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb29.ts"	2026-10-19 09:29:10.090650922 +0000
+@@ -10,6 +10,7 @@
+ //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
+ //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
+ // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
++// sb29 (2026-10-19) 출시마감 3차: 문자 보내기(sendMsg)는 «한 번만 표»를 못 잡으면 보내지 않음(«잠시 뒤 다시») · 문자 업체가 받았는지 모름(시간 초과·응답 끊김·완료 저장 실패)은 «확인 중»으로 두고 자동으로 다시 보내지 않음 · 알림톡 응답을 모를 때는 문자로 바로 대신 보내지 않음 · 실패 확정만 같은 rid 로 다시 · 줄은 지우지 않고 조건을 건 한 번의 바꾸기로 다시 잡음 · 화면은 몸통 맨 위 rid 하나(sendKey 따로 안 받음)
+ // sb28 (2026-10-19) 보안 방(중간): rid 는 쓰기 목록 기능만 · 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시.
+ // sb28 (2026-10-19) 기록·알림톡 마감: 발송 기록(wash_sendlog) 새 줄은 받는 번호 가림 · 글 대신 길이만 · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 업체+사람+기능+rid · 체크 v53 과 같음).
+ // sb28 (2026-10-19) 긴급(중복 사업자번호 · 운영/긴급/2026-10-19_중복사업자번호_검증요청.md) — 다른 곳이 쓰는 사업자번호는 어디로도 못 들어가게:
+@@ -154,10 +155,11 @@
+ //   ※ 먼저 1_수파베이스_SQL_안전장치.sql 을 돌려 주세요 (없으면 일부 장치가 꺼진 채 돕니다)
+ // =========================================================
+ import { createClient } from "npm:@supabase/supabase-js@2";
++import { AsyncLocalStorage } from "node:async_hooks";
+ import { crypto as stdCrypto } from "jsr:@std/crypto@1";
+ import { encodeBase64, decodeBase64 } from "jsr:@std/encoding@1/base64";
+ 
+-const VER = "sb28";
++const VER = "sb29";
+ const sb = createClient(
+   Deno.env.get("SUPABASE_URL")!,
+   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+@@ -822,26 +824,42 @@
+       err: why, ref: String((meta && meta.ref) || "").slice(0, 60) });
+   } catch (_) { /* 기록 실패는 무시 */ }
+ }
++/* sb29(3차): 이 요청(rid) 안에서 문자 업체에 보낸 결과를 «받음(ok) · 거절 확정(no) · 모름(unk)» 으로 셉니다(체크 v54 와 같음).
++   모름 = 시간 초과 · 연결 끊김 · 업체 쪽 5xx · 답을 못 읽음 — 받았을 수도 있어서 «못 보냄 확정»이 아니에요. */
++type SendMark = { ok: number; no: number; unk: number };
++const SEND_MARK = new AsyncLocalStorage<SendMark>();
++const SEND_TIMEOUT_MS = 20000;
++function sendUnknown(e: unknown) { return !!(e && (e as any).sendUnknown); }
+ async function solapi(method: string, path: string, payload?: unknown, meta?: SendMeta) {
+   const isSend = method === "POST" && /^\/messages\/v4\/send/.test(path);
++  const mark = isSend ? SEND_MARK.getStore() : undefined;
++  const unk = (e: any) => { if (isSend) { e.sendUnknown = true; if (mark) mark.unk++; } return e; };
+   let res: Response, body = "";
+   try {
+     res = await fetch("https://api.solapi.com" + path, {
+       method,
+       headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
+       body: payload ? JSON.stringify(payload) : undefined,
++      signal: isSend ? AbortSignal.timeout(SEND_TIMEOUT_MS) : undefined,
+     });
+     body = await res.text();
+   } catch (e) {
+-    if (isSend) await sendRecord(payload, null, e, meta);
+-    throw e;
++    const e2 = unk(e instanceof Error ? e : new Error(String(e)));   // 요청이 닿았는지 모름
++    if (isSend) await sendRecord(payload, null, e2, meta);
++    throw e2;
+   }
+   if (res.status >= 300) {
+     const e = new Error("솔라피 " + res.status + ": " + body);
++    if (res.status >= 500) unk(e); else if (mark) mark.no++;      // 4xx = 받지 않음 확정 · 5xx = 모름
+     if (isSend) await sendRecord(payload, null, e, meta);
+     throw e;
+   }
+-  const j = body ? JSON.parse(body) : {};
++  let j: any;
++  try { j = body ? JSON.parse(body) : {}; } catch (_) { throw unk(new Error("솔라피 답을 읽지 못함")); }
++  if (mark) {
++    const all = Array.isArray((payload as any)?.messages) ? (payload as any).messages.length : 1;
++    if ((j.failedMessageList || []).length >= all) mark.no++; else mark.ok++;
++  }
+   if (isSend) await sendRecord(payload, j, null, meta);
+   return j;
+ }
+@@ -1480,6 +1498,10 @@
+              cash: gate.cash ? { price: gate.price, balance: gate.balance } : undefined };
+   } catch (e) {
+     const m = e instanceof Error ? e.message : String(e);
++    if (sendUnknown(e)) {         // sb29(3차): 문자 업체가 받았는지 모름 → «확인 중» · 깎은 것은 그대로(나갔을 수 있음) · 자동으로 다시 안 보냄
++      await sendLog(shop, { type: o.type, to: o.to, kind: o.kind, ok: false, error: "확인 중", text: o.text, ref: o.ref });
++      return { ok: false, checking: true, error: IDEM_CHECK };
++    }
+     await msgUndo(gate);          // 안 나갔으니 미리 깎은 것을 돌려줍니다
+     await sendLog(shop, { type: o.type, to: o.to, kind: o.kind, ok: false, error: m, text: o.text, ref: o.ref });
+     return { ok: false, error: m };
+@@ -1990,7 +2012,10 @@
+       const failed = r.failedMessageList || [];
+       if (!failed.length) return "ata";
+       console.error("noticeAta failed", key, JSON.stringify(failed[0]).slice(0, 200));
+-    } catch (e) { console.error("noticeAta", key, e); }
++    } catch (e) {
++      console.error("noticeAta", key, e);
++      if (sendUnknown(e)) return "checking";   // sb29(3차): 알림톡을 받았는지 모르면 문자로 바로 대신 보내지 않음(두 통이 될 수 있음) · 멈추지 않게 던지지 않음
++    }
+     await noticeSms(to, smsText, mt);          // 알림톡 요청 자체가 거절되면 서버가 바로 문자로
+     return "sms";
+   }
+@@ -6971,6 +6996,7 @@
+    화면이 쓰기 요청에 rid(영문 소문자·숫자 24자)를 붙이면 (제품 · 업체 · 사람 · 기능 · rid)를 한 줄로 잡고,
+    같은 열쇠가 다시 오면 다시 하지 않고 처음 답을 그대로 돌려줌 · 처리 중이면 «처리 중이에요» · 실패하면 줄을 지움 · 표가 없으면 예전처럼 */
+ const IDEM_BUSY = "처리 중이에요. 잠시 뒤 다시 확인해 주세요.";
++const IDEM_CHECK = "확인 중이에요 — 보낸 기록에서 확인해 주세요. 자동으로 다시 보내지 않아요.";
+ /** 저장할 답에서 비밀값 칸을 뺌(보안 방 · 비밀번호·열쇠·토큰이 표에 남지 않게) — 이름에 pw/pass/secret/token/key/sid 가 든 칸 */
+ function idemScrub(v: unknown, depth = 0): unknown {
+   if (depth > 6 || v === null || typeof v !== "object") return v;
+@@ -6982,38 +7008,78 @@
+   }
+   return o;
+ }
+-const IDEM_STALE_MS = 5 * 60000;   // «처리 중» 줄이 5분 넘게 남으면(중간에 끊김) 낡은 줄로 보고 다시 처리
+-/* sb28(보안 방 중간): rid 를 받는 기능은 «쓰기 목록»만 — 직원 계정·비밀번호(UFN)·본사(hq…)·결제(payStart/payConfirm: 주문번호로 따로 막음)·읽기는 빼요 */
++/* sb29(3차 · 검수 «오류 시 중복 방지 해제 금지») — 체크 v54 와 같은 약속:
++   · 보내기(IDEM_SEND)는 «한 번만 표»에 줄을 못 잡으면(23505 말고 다른 DB 오류 · SQL 26 전) 보내지 않고 «잠시 뒤 다시»
++   · 문자 업체가 받았을 수도 있는데 결과를 모름(시간 초과 · 응답 끊김 · 완료 저장 실패 · 중간에 끊김) = «확인 중»(unknown).
++     지우지 않고, 같은 rid 로 다시 와도 자동으로 다시 보내지 않음 → «확인 중 — 보낸 기록에서 확인». 다시 보내려면 화면이 새 rid(«다시 보내기»).
++   · 문자 업체가 받지 않음이 확정(보내기 전 거절 · 4xx · 전부 거절) = retry → 같은 rid 로 다시 하면 다시 처리
++   · 다시 잡기는 «읽고→지우고→넣기» 대신 조건을 건 update 한 번(state·at 조건) — 둘이 동시에 와도 한 쪽만 잡음
++   · 기록 저장(보내기 아님)은 같은 id 덮어쓰기라 지금 정책 유지: 표 오류면 그냥 처리 · 5분 넘게 끊긴 «처리 중»은 다시 잡음 */
++const IDEM_STALE_MS = 5 * 60000;
++const IDEM_DAY_MS = 24 * 3600e3;
++const IDEM_LATER = "지금은 보낼 수 없어요(중복 막기 확인 실패). 잠시 뒤 다시 해 주세요.";
+ const IDEM_FNS = new Set(["apiSet", "apiSetMany", "apiDel", "apiWipeDemo", "driveUpload", "driveUploadMany", "sendMsg", "cancelSchedule",
+   "shopBiz", "viewBill", "pbIssue", "billIssue", "billOff", "cashAsk", "noticeHide", "joinPlanSet", "trialUse"]);
++const IDEM_SEND = new Set(["sendMsg"]);   // 문자·알림톡이 바깥으로 나가는 기능
+ async function idemRun(tenant: string, who: string, fn: string, rid: string, run: () => Promise<unknown>): Promise<unknown> {
+-  const key = { product: "wash", tenant: String(tenant || "").slice(0, 80), who: digits(who).slice(0, 80), fn: String(fn || "").slice(0, 60), rid };
+-  if (!key.tenant || !key.who) return await run();
+-  const same = () => sb.from("cgg_idem").delete().eq("product", "wash").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
+-  let { error } = await sb.from("cgg_idem").insert({ ...key, state: "run" });
++  const key = { product: "wash", tenant, who: digits(who), fn, rid };
++  const send = IDEM_SEND.has(fn);
++  if (!key.tenant || !key.who) { if (send) throw new Error(IDEM_LATER); return await run(); }
++  const mine = (q: any) => q.eq("product", "wash").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
++  const at = new Date().toISOString();                                       // 이 처리의 표시(나중에 끝낼 때 «내 줄»인지 확인)
++  const { error } = await sb.from("cgg_idem").insert({ ...key, state: "run", at });
+   if (error && String((error as any).code || "") === "23505") {
+-    const { data: had } = await sb.from("cgg_idem").select("state,result,at").eq("product", "wash").eq("tenant", key.tenant)
+-      .eq("who", key.who).eq("fn", key.fn).eq("rid", rid).maybeSingle();
+-    const age = Date.now() - Date.parse(String((had && had.at) || ""));
+-    if (had && (age > 24 * 3600e3 || (had.state !== "done" && age > IDEM_STALE_MS))) {   // 하루 지남 · 끊겨 남은 «처리 중»
+-      await same();
+-      ({ error } = await sb.from("cgg_idem").insert({ ...key, state: "run" }));
+-      if (error) throw new Error(IDEM_BUSY);
+-    } else {
+-      if (had && had.state === "done") return had.result;       // 같은 누름 → 처음 답 그대로
+-      throw new Error(IDEM_BUSY);
+-    }
++    const { data: had, error: e2 } = await mine(sb.from("cgg_idem").select("state,result,at")).maybeSingle();
++    if (e2 || !had) throw new Error(IDEM_BUSY);
++    const age = Date.now() - Date.parse(String(had.at || ""));
++    if (had.state === "done" && (send || !(age > IDEM_DAY_MS))) return had.result;   // 같은 누름 → 처음 답 그대로(다시 처리 안 함)
++    if (had.state === "unknown" || (send && had.state === "run" && age > IDEM_STALE_MS)) throw new Error(IDEM_CHECK);
++    let q = mine(sb.from("cgg_idem").update({ state: "run", at, result: null, done_at: null }));
++    if (had.state === "retry") q = q.eq("state", "retry").eq("at", had.at);                                   // 실패 확정 → 다시
++    else if (!send && had.state === "run" && age > IDEM_STALE_MS) q = q.eq("state", "run").eq("at", had.at);  // 기록만: 끊긴 «처리 중»
++    else if (!send && had.state === "done") q = q.eq("state", "done").eq("at", had.at);                       // 기록만: 하루 지난 열쇠
++    else throw new Error(IDEM_BUSY);                                                                            // 아직 처리 중
++    const { data: got, error: e3 } = await q.select("rid");
++    if (e3 || !Array.isArray(got) || got.length !== 1) throw new Error(IDEM_BUSY);                             // 다른 쪽이 먼저 잡음
+   } else if (error) {
+-    console.error("idem", String((error as any).code || ""), String(error.message || "").slice(0, 60));   // SQL 26 전이면 예전처럼
+-    return await run();
+-  }
++    console.error("idem", String((error as any).code || ""), String(error.message || "").slice(0, 60));
++    if (send) throw new Error(IDEM_LATER);           // 3차: 표를 못 잡으면 보내지 않음(보호 없이 보내기 금지)
++    return await run();                              // 기록 저장은 같은 id 덮어쓰기라 지금처럼
++  }
++  const fin = async (state: string, result: unknown) => {
++    const { data, error: e4 } = await mine(sb.from("cgg_idem").update({ state, result, done_at: new Date().toISOString() }))
++      .eq("state", "run").eq("at", at).select("rid");
++    if (e4) console.error("idem fin", state, String((e4 as any).code || ""));
++    return !e4 && Array.isArray(data) && data.length === 1;
++  };
++  const checking = (o: unknown) => o && typeof o === "object" && !Array.isArray(o) ? { ...(o as any), checking: true, checkMsg: IDEM_CHECK } : o;
++  const mark: SendMark = { ok: 0, no: 0, unk: 0 };
++  let out: unknown;
+   try {
+-    const out = await run();
+-    await sb.from("cgg_idem").update({ state: "done", result: idemScrub(out ?? null), done_at: new Date().toISOString() })
+-      .eq("product", "wash").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
+-    if (Math.random() < 0.02) sb.from("cgg_idem").delete().lt("at", new Date(Date.now() - 24 * 3600e3).toISOString()).then(() => {}, () => {});
++    out = await SEND_MARK.run(mark, run);
++  } catch (e) {
++    if (send && (mark.ok || mark.unk)) {             // 이미 받았거나 받았는지 모름 → «확인 중» · 자동 재발송 없음
++      await fin("unknown", { checking: true });
++      throw new Error(IDEM_CHECK);
++    }
++    await fin("retry", null);                        // 받지 않음 확정 → 같은 rid 로 다시 하기 가능(지우지 않음)
++    throw e;
++  }
++  if (send && mark.unk) {                            // 결과를 모름 → 답에 «확인 중» 표시 · 줄은 unknown
++    const res = checking(out);
++    await fin("unknown", idemScrub(res ?? null));
++    return res;
++  }
++  if (send && !mark.ok) {                            // 문자 업체가 하나도 받지 않음(확정) → 같은 rid 로 다시 해도 안전
++    await fin("retry", null);
+     return out;
+-  } catch (e) { await same(); throw e; }
++  }
++  if (!(await fin("done", idemScrub(out ?? null))) && send) {   // 보냈는데 «끝남»을 못 남김 → «확인 중»
++    await fin("unknown", { checking: true });
++    return checking(out);
++  }
++  if (Math.random() < 0.02) sb.from("cgg_idem").delete().in("state", ["done", "retry"]).lt("at", new Date(Date.now() - IDEM_DAY_MS).toISOString()).then(() => {}, () => {});
++  return out;
+ }
+ Deno.serve(async (req) => {
+   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+@@ -7099,6 +7165,7 @@
+     return out({ result: await f(shop, args, ss) });
+   } catch (e) {
+     const em = e instanceof Error ? e.message : String(e);
++    if (em === IDEM_CHECK) return out({ __err: em, __checking: true });   // sb29: 화면이 «확인 중»을 «못 보냄»과 따로 보여 주게
+     /* sb14: 본사(관리) 말고는 영어·코드·원문을 숨김 */
+     return out(hqRaw ? { __err: em, __raw: true } : { __err: em });
+   }
