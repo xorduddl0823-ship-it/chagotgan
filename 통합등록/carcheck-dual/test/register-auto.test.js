@@ -100,13 +100,17 @@ test('엔트리 다음 번호가 이 차 카인포 번호와 다르면 엔트리
   assert.strictEqual(t.W.world.entry.rows.length, 0);
 });
 
-test('카모두에 다른 번호로 저장됨 → 멈춤 + «지우고 다시 등록 → 관리자 확인» 안내, 다음 차도 막힘', async () => {
+test('카모두에 다른 번호로 저장됨 → 멈춤 + «실제 등록 상태 확인 → 관리자 정정 절차 확인» 안내(지우고 재등록은 기본 안내 아님), 다음 차도 막힘', async () => {
   const t = setup();
   t.W.world.faults.carmodoo = 'wrongNumber';
   const r = await t.flow.runAll({ ...CAR, data: CAR }, RUN);
   assert.strictEqual(r.ok, false);
   assert.strictEqual(r.siteName, '카모두');
-  assert.match(r.action, /관리자 확인으로 정리/);
+  assert.match(r.action, /실제로 어떻게 등록됐는지/);
+  assert.match(r.action, /관리자 정정 절차/);
+  assert.match(r.action, /이어 하지 않아요/);
+  assert.ok(r.action.indexOf('실제로 어떻게') < r.action.indexOf('정정 절차'), '등록 상태 확인이 먼저');
+  assert.doesNotMatch(r.action, /지우고|다시 등록(?!하지)/, '지우고 재등록을 기본으로 안내하지 않음');
   const b = await t.flow.runAll({ ...CAR2, data: CAR2 }, RUN);
   assert.strictEqual(b.ok, false);
   assert.match(b.reason, /앞 작업/);

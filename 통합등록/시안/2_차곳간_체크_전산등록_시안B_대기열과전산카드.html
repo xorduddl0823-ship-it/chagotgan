@@ -1563,7 +1563,7 @@ function askSave(site,c){
 }
 function askRecover(c){
   CGG.dialog({size:"form",title:"관리자 확인으로 정리",desc:"번호가 어긋난 작업을 닫고, 세 전산 목록을 직접 확인한 뒤 다음 차를 허용해요.",
-    body:'<div class="pin"><label>관리자 이름<input value="대표님"></label><label>관리자 비밀번호 (숫자 6자리 이상)<input id="rPin" type="password" inputmode="numeric" placeholder="●●●●●●"></label><label>까닭<input id="rWhy" placeholder="예: 카인포·카모두 지우고 다시 등록함"></label><label>작업 번호를 그대로 적어 주세요 (1019-002)<input id="rJob" placeholder="1019-002"></label></div>'
+    body:'<div class="pin"><label>관리자 이름<input value="대표님"></label><label>관리자 비밀번호 (숫자 6자리 이상)<input id="rPin" type="password" inputmode="numeric" placeholder="●●●●●●"></label><label>까닭<input id="rWhy" placeholder="예: 세 전산 목록 확인 · 관리자 정정 완료"></label><label>작업 번호를 그대로 적어 주세요 (1019-002)<input id="rJob" placeholder="1019-002"></label></div>'
       +'<div class="chk3"><label><input type="checkbox" class="rChk">카인포 목록을 직접 확인했어요</label><label><input type="checkbox" class="rChk">카모두 목록을 직접 확인했어요</label><label><input type="checkbox" class="rChk">엔트리 목록을 직접 확인했어요</label></div>',
     ok:"정리하고 다음 차 허용",onOk:function(d){
       var miss=[]; if(!/^\d{6,12}$/.test(d.querySelector("#rPin").value)) miss.push("관리자 비밀번호");
@@ -1639,7 +1639,7 @@ function draw(){
     mline:function(r){ return r[1]+" · "+r[3]+" · "+r[4]; },
     onName:function(r){ CGG.dialog({size:"detail",title:r[0]+" · "+r[1],rows:[["딜러",r[2]],["들어온 시각",r[3]],["점검번호",r[4]],["상태",r[5]]]}); }});
   var d=document.getElementById("detail");
-  var stopTop=MODE==="stop"?'<div class="stopbox"><h3>멈춤 — 카모두 번호가 달라요</h3><p class="why">기대 <b>T-0201</b> · 읽은 값 <b>T-9999</b>. 다른 차 기록일 수 있어요. 프로그램은 지우지 않아요.</p><ol><li>세 전산 목록에서 12가3456 확인</li><li>카인포·카모두 지우고 다시 등록 (대표님 직접)</li><li>관리자 확인 — 세 전산 확인 표시 → 다음 차 허용</li></ol></div>':"";
+  var stopTop=MODE==="stop"?'<div class="stopbox"><h3>멈춤 — 카모두 번호가 달라요</h3><p class="why">기대 <b>T-0201</b> · 읽은 값 <b>T-9999</b>. 다른 차 기록일 수 있어요. 프로그램은 지우지 않아요.</p><ol><li>세 전산 목록에서 12가3456 확인</li><li>관리자 정정 절차 확인 (지우기·다시 등록은 대표님 판단)</li><li>관리자 확인 — 세 전산 확인 표시 → 다음 차 허용</li></ol></div>':"";
   var chk=MODE==="check"?'<div class="checkbox"><h3>저장됐는지 확인해 주세요</h3><p class="why">카모두 저장 뒤 결과를 못 받았어요. 확인 전에는 다시 저장할 수 없어요(두 번 등록 막기).</p></div>':"";
   d.innerHTML=stopTop+chk+'<div class="card"><h3>'+c.no+' · '+c.car+'</h3><p class="csub">'+c.dealer+' · 작업 번호 1019-002</p><div id="stp"></div>'+numBoxes(c)+'</div>'
     +'<div class="cols3">'+SITES.map(function(s){ return siteCard(s[0],s[1],c); }).join("")+'</div>'

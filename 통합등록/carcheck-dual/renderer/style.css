@@ -183,6 +183,7 @@ button.ghost { color: var(--muted); }
 .rbox { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
 .rbox.ok h3 { color: var(--good); }
 .rbox.bad h3 { color: var(--bad); }
+.rbox.warn h3 { color: var(--warn); }
 .rbox h3 { margin: 0 0 8px; font-size: 14px; }
 .list { margin: 8px 0; font-size: 12px; }
 .list ul { margin: 4px 0 0; padding-left: 18px; }
@@ -246,6 +247,13 @@ button.ghost { color: var(--muted); }
   border-radius: 50%; animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* 세 전산 자동 등록 진행 칸 — 지금 하는 곳(now) · 끝난 곳(done) */
+.busy-steps { display: flex; gap: 6px; margin-top: 8px; }
+.busy-steps.hidden { display: none; }
+.busy-steps span { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: #eef1f5; color: var(--muted); }
+.busy-steps span.now { background: #e6efff; color: var(--accent); font-weight: 600; }
+.busy-steps span.done { background: #e7f5ee; color: var(--good); }
+.busy-steps span.done::before { content: '✓ '; }
 
 /* ── 자동으로 채워지는 항목 구역 ─────────────── */
 .auto-note {

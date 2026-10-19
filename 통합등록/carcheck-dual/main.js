@@ -569,6 +569,14 @@ async function ensureCarinfoReady(win) {
 /** 카인포: 신규등록 → 차량번호 → 딜러 검색·선택 → 확인 까지 자동 진행 */
 ipcMain.handle('carinfo:prepare', async (_e, opts) => {
   { const b = legacyBlock('carinfo'); if (b) return { ok: false, error: b }; }   // 흐름 중 우회 막기
+  return prepareCarinfo(opts);
+});
+
+/**
+ * 카인포 신규등록 — 입력 화면 [신규등록] 단추와 등록 흐름(7차)이 함께 쓴다.
+ *  (예전 carinfo:prepare 안에 있던 코드를 그대로 함수로 옮김 — 동작 같음)
+ */
+async function prepareCarinfo(opts) {
   const win = siteWindow('carinfo', 'auto');
 
   const ready = await ensureCarinfoReady(win);
@@ -579,7 +587,7 @@ ipcMain.handle('carinfo:prepare', async (_e, opts) => {
   } catch (err) {
     return { ok: false, step: '스크립트 실행', error: err.message };
   }
-});
+}
 
 /**
  * 경기조합에서 차대번호 전체를 받아, 뒷 6자리를 카인포에 넣는다.
@@ -2144,15 +2152,30 @@ const siteConfig = require('./src/sites/site-config');
 
 let flowCtx = null;
 
-/** 흐름의 값 넣기 = 기존 전송(sendToSite) 그대로 — 입력 화면의 같은 자료(121칸·사진)를 쓴다 */
+/**
+ * 흐름의 값 넣기 = 기존 전송(sendToSite) 그대로 — 입력 화면의 같은 자료(121칸)를 쓴다.
+ *  사진은 여기서 보내지 않는다(7차) — 흐름의 «사진 올리기» 단계(flowPhotos)가 전산 설정(photoPhase)대로 따로 올린다.
+ */
 async function flowSend(site, data) {
-  const C = siteConfig.REAL[site] || {};
-  const withPhotos = Array.isArray(C.fillAllow) && C.fillAllow.length > 0;
-  const r = await sendToSite(site, withPhotos ? data : noPhotos(data));
+  const r = await sendToSite(site, noPhotos(data));
   if (r && r.needDealerPick) return { needDealerPick: true, rows: r.rows || [], filled: [], missing: [] };
   if (!r || !r.ok) return { filled: [], missing: [(r && r.error) || '전송 실패'] };
-  const hasPhoto = Object.keys(data || {}).some((k) => /^photo\d+$/.test(k) && String(data[k] || '').trim());
-  return { ...r, missing: (r.missing || []).concat(!withPhotos && hasPhoto ? ['사진 — 이 전산의 사진 올리기 경로가 아직 확인되지 않아 보내지 않음'] : []) };
+  return r;
+}
+
+/**
+ * 흐름의 사진 올리기(7차) = 기존 사진 올리기(sendCarinfoPhotos · sendCarmodooPhotos) 그대로, 고른 칸만.
+ *  돌려줌 { done:[photo1…], missing[] } — 성공 문구(«1. 전면사진 → 앞면»)로 올라간 칸을 가린다.
+ */
+async function flowPhotos(site, data, opts) {
+  const only = new Set((opts && opts.only) || []);
+  const pick = {};
+  Object.keys(data || {}).forEach((k) => { if (only.has(k)) pick[k] = data[k]; });
+  const win = siteWindow(site, 'auto');
+  await waitReady(win);
+  const r = site === 'carmodoo' ? await sendCarmodooPhotos(win, pick) : await sendCarinfoPhotos(win, pick);
+  const done = [...only].filter((k) => (r.filled || []).some((n) => String(n).startsWith(k.replace('photo', '') + '. ') && String(n).includes(' → ')));
+  return { done, missing: r.missing || [] };
 }
 
 /** 사진 칸(photo1~8) 뺀 값 */
@@ -2184,6 +2207,10 @@ function flow() {
       carmodoo: async (data) => flowSend('carmodoo', data),
       entry: async () => ({ filled: [], missing: ['엔트리 연결 모듈이 아직 없습니다(10/19 화면 확인 뒤)'] }),
     },
+    photoFns: { carinfo: (data, o) => flowPhotos('carinfo', data, o), carmodoo: (data, o) => flowPhotos('carmodoo', data, o) },
+    //  카인포 신규등록 — 입력 화면 [신규등록] 단추와 같은 기능. 딜러를 골라야 하면 needPick·candidates 를 그대로 돌려준다
+    prepareFn: (data) => prepareCarinfo({ carNo: data.carNo, dealer: data.dealerName, pickKey: data.ciPickKey,
+                                          tradePersonal: String(data.tradeType || '0') === '1', clientName: data.clientName, hp: data.dealerHp }),
   });
   const siteConfirmed = { carinfo: C.carinfo.confirmed, carmodoo: C.carmodoo.confirmed, entry: C.entry.confirmed };
   flowCtx = { admin, jobLog, flow: createRegisterFlow({ jobLog, adapters, siteConfirmed }) };

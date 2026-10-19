@@ -6,7 +6,8 @@ const { createSaveGuard } = require('../../src/core/save-guard');
 
 function createWorld(opts = {}) {
   const w = {
-    carinfo: { rows: (opts.carinfoRows || []).slice(), seq: opts.carinfoSeq || 100 },
+    carinfo: { rows: (opts.carinfoRows || []).slice(), seq: opts.carinfoSeq || 100, form: { open: false, carNo: '', checkNo: '' }, prepares: 0 },
+    photos: { carinfo: [], carmodoo: [] },          // 올라간 사진 칸(올린 차례대로)
     carmodoo: { rows: (opts.carmodooRows || []).slice(), form: { autoAssignOn: true, numberValue: '' } },
     entry: { rows: (opts.entryRows || []).slice(), loggedIn: opts.entryLoggedIn !== false, next: null, loaded: null },
     faults: {},                         // 사이트별 고장 흉내: { carinfo: 'serverErrorButSaved' | 'networkLost' | 'foreignPopup' | 'vinPartial' | 'wrongNumber' }
@@ -25,6 +26,13 @@ function createWorld(opts = {}) {
 
   /** 사이트에서 실제로 저장이 일어나면 생기는 일 */
   function commit(site, ctx) {
+    if (site === 'carinfo' && w.carinfo.form.checkNo) {
+      //  신규등록 때 이미 생긴 줄 → 저장하면 «완료»로 바뀜(새 줄 아님)
+      const row = w.carinfo.rows.find((r) => r.checkNo === w.carinfo.form.checkNo);
+      row.status = '완료';
+      w.entry.next = row.checkNo;
+      return row.checkNo;
+    }
     if (site === 'carinfo') {
       const no = 'T-' + String(++w.carinfo.seq).padStart(4, '0');
       const vin = w.faults.carinfo === 'vinPartial' ? '*********' + ctx.vin.slice(-8) : ctx.vin;
@@ -44,6 +52,18 @@ function createWorld(opts = {}) {
   }
 
   const ctx = { carNo: '', vin: '', date: opts.date || '2026-10-19' };
+
+  /** 사진 올리기 흉내 — faults.photoFail = 'photo3' 이면 그 칸 한 번 실패 */
+  function photoUp(site, only) {
+    const done = [];
+    const missing = [];
+    for (const k of only || []) {
+      if (w.faults.photoFail === k) { w.faults.photoFail = null; missing.push(k + ' : 자리에 나타나지 않음(흉내)'); continue; }
+      w.photos[site].push(k); done.push(k);
+    }
+    w.calls.push(site + '.photos:' + (only || []).join(','));
+    return { done, missing };
+  }
 
   /** 사람이 사이트 창에서 [저장]을 누름 — 저장 통제기를 거친다 */
   function clickSave(site) {
@@ -69,6 +89,25 @@ function createWorld(opts = {}) {
 
   const adapters = {
     carinfo: {
+      ...(opts.prepare ? {
+        async prepareState() { return { ...w.carinfo.form }; },
+        async prepare(data) {
+          w.calls.push('carinfo.prepare');
+          w.carinfo.prepares++;
+          if (w.faults.preparePick && !data.ciPickKey) return { ok: false, needPick: true, candidates: [{ key: 'k1', de: '시험딜러' }, { key: 'k2', de: '시험딜러' }] };
+          if (w.faults.prepareCrash) { w.faults.prepareCrash = false; return { ok: false, error: '화면이 멈춤(흉내)' }; }
+          let no = '';
+          if (opts.prepareCreatesRow) {                       // 신규등록 [확인] 때 목록 줄·번호가 먼저 생기는 경우
+            no = 'T-' + String(++w.carinfo.seq).padStart(4, '0');
+            w.carinfo.rows.unshift({ checkNo: no, carNo: data.carNo, vin: data.vin, date: ctx.date, status: '작성중' });
+          }
+          w.carinfo.form = { open: true, carNo: data.carNo, checkNo: no };
+          return { ok: true, checkNo: no };
+        },
+      } : {}),
+      ...(opts.prepare ? { prepareCreatesRow: !!opts.prepareCreatesRow, savedStatus: opts.savedStatus || null } : {}),
+      ...(opts.photoPhase && opts.photoPhase.carinfo !== undefined ? { photoPhase: opts.photoPhase.carinfo } : {}),
+      async photos(data, o) { return photoUp('carinfo', o.only); },
       async readList(car) { return car ? w.carinfo.rows.filter((r) => r.carNo === car.carNo) : w.carinfo.rows.slice(); },
       async fill(data) { ctx.carNo = data.carNo; ctx.vin = data.vin; w.calls.push('carinfo.fill'); return { filled: ['차량번호'], missing: [] }; },
       async armGuard() { if (w.faults.armFail === 'carinfo') throw new Error('개발자 연결 실패(흉내)'); newGuard('carinfo'); },
@@ -80,6 +119,8 @@ function createWorld(opts = {}) {
       async timeout() { guards.carinfo.onTimeout(); },
     },
     carmodoo: {
+      ...(opts.photoPhase && opts.photoPhase.carmodoo !== undefined ? { photoPhase: opts.photoPhase.carmodoo } : {}),
+      async photos(data, o) { return photoUp('carmodoo', o.only); },
       async fill(data, extra) {
         ctx.carNo = data.carNo; ctx.vin = data.vin;
         w.carmodoo.form.autoAssignOn = false;                       // «자동 부여» 끄기

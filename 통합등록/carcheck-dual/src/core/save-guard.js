@@ -33,13 +33,20 @@ function compile(list) {
   return (list || []).map((p) => (p instanceof RegExp ? p : new RegExp(String(p), 'i')));
 }
 
-function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, readAllow, fillAllow, confirmed, popupAuto } = {}) {
+function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, readAllow, fillAllow, phaseAllow, confirmed, popupAuto } = {}) {
   const hosts = new Set([].concat(siteHosts || [], siteHost || []).map((h) => String(h).toLowerCase()).filter(Boolean));
   const saveRe = compile(savePatterns);
   const saveGetRe = compile(saveGetPatterns);
   const allowRe = compile(readAllow);
   //  값 넣기 단계에서만 통과시키는 쓰기 요청(예: 사진 올리기) — 저장 허락 뒤·잠금(봉인) 뒤에는 통과 안 함
   const fillRe = compile(fillAllow);
+  //  «단계 문»(7차) — 정해진 단계 동안만 그 단계의 쓰기 요청을 통과시킨다
+  //   prepare: 카인포 신규등록(값 넣기 전) · photo: 사진 올리기(저장 전이든 뒤든 — 봉인 뒤에도 사진 주소만)
+  //   저장 주소(savePatterns)와 겹치면 절대 통과시키지 않는다
+  const phaseRe = {};
+  Object.keys(phaseAllow || {}).forEach((k) => { phaseRe[k] = compile(phaseAllow[k]); });
+  let phase = null;
+  let phaseSent = 0;
 
   let unlocked = false;
   let sent = 0;
@@ -66,6 +73,7 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
     const isGet = m === 'GET' || m === 'HEAD';
     if (h && hosts.size && !hosts.has(h)) return isGet ? 'ignore' : 'foreignWrite';
     if (isGet) return saveGetRe.some((r) => r.test(url)) ? 'write' : 'ignore';
+    if (phase && (phaseRe[phase] || []).some((r) => r.test(url)) && !saveRe.some((r) => r.test(url))) return 'phase';
     if (!savePhase && !sealed && fillRe.some((r) => r.test(url)) && !saveRe.some((r) => r.test(url))) return 'ignore';
     if (allowRe.some((r) => r.test(url)) && !saveRe.some((r) => r.test(url))) return 'ignore';
     return 'write';
@@ -90,6 +98,13 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
     seal() { sealed = true; unlocked = false; note('봉인'); },
     get sealed() { return sealed; },
 
+    /** 단계 문 열기/닫기 — 이름이 설정(phaseAllow)에 없으면 false(아무것도 통과 안 함) */
+    openPhase(name) {
+      if (!phaseRe[name] || !phaseRe[name].length) { note('단계 문 없음 ' + name); return false; }
+      phase = name; note(name + ' 단계 문 열림'); return true;
+    },
+    closePhase() { if (phase) note(phase + ' 단계 문 닫힘'); phase = null; },
+
     /**
      * 요청이 나가려 할 때 — 'pass'(내보냄) | 'hold'(붙잡음) | 'ignore'(저장과 무관)
      *  req: { id, url, method, kind: 'ajax'|'form'|'popup', windowId }
@@ -97,6 +112,7 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
     onRequest(req) {
       const c = classify(req);
       if (c === 'ignore') return 'ignore';
+      if (c === 'phase') { phaseSent++; note(phase + ' 단계 요청 내보냄'); return 'ignore'; }
       if (c === 'foreignWrite') {
         const h = hostOf(req.url) || '(주소 없음)';
         unknownHosts.add(h);
@@ -143,6 +159,8 @@ function createSaveGuard({ siteHost, siteHosts, savePatterns, saveGetPatterns, r
         unattachedWindows: reg.filter(([, w]) => !w.attached).map(([id]) => id),
         unknownHosts: [...unknownHosts],
         popups: popupSeen,
+        phase,
+        phaseSent,
         popupAuto: !!popupAuto,
         sealed,
       };

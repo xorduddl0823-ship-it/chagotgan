@@ -16,6 +16,7 @@ const quiet = require('../../src/sites/quiet-window');
 
 app.commandLine.appendSwitch('disable-gpu');
 const CAR = { carNo: '12가3456', vin: 'KMHXX00XXXX123456' };
+const PHOTOS = { photo1: 'front.jpg', photo2: 'rear.jpg', photo3: 'meter.jpg' };
 const results = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -45,14 +46,29 @@ async function setup(faults = {}) {
   const fillFns = {
     carinfo: async (d) => {
       await js('carinfo', 'carNo.value=' + JSON.stringify(d.carNo) + ';vin.value=' + JSON.stringify(d.vin) + ';1');
-      //  사진 올리기 흉내 — 값 넣기 단계의 쓰기 요청(fillAllow)이라 통과해야 함
-      const up = await js('carinfo', 'fetch("/api/photo",{method:"POST",body:"x"}).then(function(r){return r.status;}).catch(function(){return "blocked";})');
-      return { filled: ['차량번호', '차대번호', '사진 ' + up], missing: up === 200 ? [] : ['사진 올리기 막힘'] };
+      return { filled: ['차량번호', '차대번호'], missing: [] };
     },
     carmodoo: async (d) => { await js('carmodoo', 'carNo.value=' + JSON.stringify(d.carNo) + ';1'); return { filled: ['차량번호'], missing: [] }; },
     entry: async () => ({ filled: [], missing: [] }),
   };
-  const adapters = createElectronAdapters({ getWindow: (s) => wins[s], config: mockConfig(M.host), fillFns });
+  //  사진 올리기 흉내 — 칸마다 /api/photo 로 POST(«사진» 단계 문이 열려 있을 때만 통과해야 함)
+  const photoFn = (site) => async (d, o) => {
+    const done = [], missing = [];
+    for (const k of (o && o.only) || []) {
+      if (k === 'photo9') { await js(site, 'document.getElementById("btnSave").click();1'); await sleep(400); }
+      const st = await js(site, 'fetch("/api/photo?site=' + site + '&k=' + k + '",{method:"POST",body:"x"}).then(function(r){return r.status;}).catch(function(){return "blocked";})');
+      (st === 200 ? done : missing).push(st === 200 ? k : k + ' : ' + st);
+    }
+    return { done, missing };
+  };
+  //  카인포 신규등록 흉내 — [신규등록]을 누르고 등록 화면(번호 칸)이 채워질 때까지
+  const prepareFn = async (d) => {
+    await js('carinfo', 'newCar.value=' + JSON.stringify(d.carNo) + ';document.getElementById("btnNew").click();1');
+    const no = await until(() => js('carinfo', 'formNo.value||(msg.textContent==="blocked"?"X":null)'), 3000);
+    return no && no !== 'X' ? { ok: true, checkNo: no } : { ok: false, error: '신규등록 요청이 막힘' };
+  };
+  const adapters = createElectronAdapters({ getWindow: (s) => wins[s], config: mockConfig(M.host), fillFns,
+    photoFns: { carinfo: photoFn('carinfo'), carmodoo: photoFn('carmodoo') }, ...(faults.noPrepare ? {} : { prepareFn }) });
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cc-el-')), 'jobs.jsonl');
   const jobLog = createJobLog(file);
   const flow = createRegisterFlow({ jobLog, adapters, mock: true, now: () => new Date('2026-10-19T10:00:00') });
@@ -68,7 +84,7 @@ async function setup(faults = {}) {
     }
     M.close();
   };
-  return { M, wins, js, adapters, jobLog, flow, clickSave, settle, done, file };
+  return { M, wins, js, adapters, jobLog, flow, clickSave, settle, done, file, prepareFn };
 }
 
 async function siteRound(t, jobId, s) {
@@ -222,13 +238,15 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
-  await scenario('완전 자동: runAll 한 번 → 사진 포함 값 넣기·[저장](프로그램)·번호 검증·닫기까지 사람 조작 0번, 창도 안 나옴', async () => {
+  await scenario('완전 자동(7차): runAll 한 번 → 카인포 신규등록(줄 먼저 생김)·값 넣기·[저장]·번호 검증·사진(카인포 저장 뒤 · 카모두 저장 전)·닫기까지 사람 조작 0번, 창도 안 나옴', async () => {
     const t = await setup();
-    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    const r = await t.flow.runAll({ ...CAR, data: { ...CAR, ...PHOTOS } }, { pollMs: 50, waitMs: 8000 });
     assert.strictEqual(r.ok, true, JSON.stringify(r));
     assert.deepStrictEqual(r.numbers, { carinfo: 'T-0201', carmodoo: 'T-0201', entry: 'T-0201' });
     assert.deepStrictEqual(t.M.S.saves, { carinfo: 1, carmodoo: 1, entry: 1 });
-    assert.strictEqual(t.M.S.photos, 1, '사진 올리기는 값 넣기 단계에서 통과');
+    assert.strictEqual(t.M.S.prepares, 1, '신규등록 한 번');
+    assert.deepStrictEqual(t.M.S.carinfo.map((x) => x[0] + ':' + x[4]), ['T-0201:완료'], '카인포 줄 하나 · 완료');
+    assert.deepStrictEqual(t.M.S.photoKeys, { carinfo: ['photo1', 'photo2', 'photo3'], carmodoo: ['photo1', 'photo2', 'photo3'] }, '사진 칸 모두');
     assert.strictEqual(t.jobLog.get(r.jobId).closed, true);
     BrowserWindow.getAllWindows().forEach((w) => assert.strictEqual(w.isVisible(), false));
     assert.strictEqual(BrowserWindow.getFocusedWindow(), null);
@@ -275,6 +293,32 @@ app.whenReady().then(async () => {
     await sleep(300);
     const r2 = await t.flow.runAll({ jobId: r.jobId, data: CAR }, { pollMs: 50, waitMs: 8000 });
     assert.strictEqual(r2.ok, true, JSON.stringify(r2));
+    await t.done();
+  });
+
+  await scenario('단계 문: 통제기가 걸린 뒤 «신규등록» 문 밖의 신규등록 요청은 서버에 안 닿음 · «사진» 문이 열려도 저장 주소는 못 나감', async () => {
+    const t = await setup();
+    await t.adapters.carinfo.armGuard();
+    await t.js('carinfo', 'newCar.value="12가3456";document.getElementById("btnNew").click();1');
+    await sleep(500);
+    assert.strictEqual(t.M.S.prepares, 0, '문 밖 신규등록이 새어 나감');
+    const r = await t.adapters.carinfo.photos({ photo1: 'a.jpg' }, { only: ['photo1'] });
+    assert.deepStrictEqual(r.done, ['photo1'], '사진 문 안에서는 사진 통과');
+    //  사진 문을 연 채로 [저장] 눌러 보기(photo9 = 흉내에서 «올리는 중 [저장] 클릭») — 저장 주소는 문과 무관하게 막혀야
+    await t.adapters.carinfo.photos({ photo9: 'x.jpg' }, { only: ['photo9'] });
+    assert.strictEqual(t.M.S.saves.carinfo, 0, '사진 문으로 저장이 새어 나감');
+    assert.ok((await t.adapters.carinfo.coverage()).phaseSent >= 1);
+    await t.done();
+  });
+
+  await scenario('단추로 미리 신규등록(번호 있는 줄 생김) 뒤 runAll → 흐름은 신규등록을 다시 안 하고 그 번호로 세 전산 끝', async () => {
+    const t = await setup();
+    const p = await t.prepareFn(CAR);                                   // 사람이 입력 화면 [신규등록]을 누른 것(흐름 전)
+    assert.strictEqual(p.ok, true);
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r.ok, true, JSON.stringify(r));
+    assert.deepStrictEqual(r.numbers, { carinfo: 'T-0201', carmodoo: 'T-0201', entry: 'T-0201' });
+    assert.strictEqual(t.M.S.prepares, 1, '신규등록 다시 안 함');
     await t.done();
   });
 

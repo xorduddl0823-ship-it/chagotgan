@@ -239,6 +239,7 @@ function createJobLog(file, opts = {}) {
         const prev = j.meta || {};
         j.meta = Object.assign({}, prev, e.meta || {});
         if (prev.oldBySite || (e.meta && e.meta.oldBySite)) j.meta.oldBySite = Object.assign({}, prev.oldBySite || {}, (e.meta && e.meta.oldBySite) || {});
+        if (prev.photos || (e.meta && e.meta.photos)) j.meta.photos = Object.assign({}, prev.photos || {}, (e.meta && e.meta.photos) || {});
       } else if (e.type === 'release') {
         j.released = true;
         j.release = { method: e.method, by: e.by, reason: e.reason, checkedAt: e.checkedAt, at: e.at };
@@ -360,6 +361,20 @@ function createJobLog(file, opts = {}) {
         });
       }
       ['startDate', 'entryNext', 'carinfoLast'].forEach((k) => { if (meta && meta[k] != null) m[k] = String(meta[k]).slice(0, 40); });
+      //  카인포 신규등록 기록(7차) — 누가 했는지(button=입력 화면 단추 · flow=자동) · 그때 화면 번호 · 실패 표시. null 이면 지움
+      if (meta && 'prepared' in meta) {
+        const p = meta.prepared;
+        m.prepared = p && typeof p === 'object'
+          ? { by: String(p.by || '').slice(0, 10), checkNo: String(p.checkNo || '').slice(0, 40), ...(p.failed ? { failed: true } : {}) }
+          : null;
+      }
+      //  전산별 올린 사진 칸(photo1~8) — 이어 하기 때 남은 칸만 올리려고
+      if (meta && meta.photos && typeof meta.photos === 'object') {
+        m.photos = {};
+        Object.keys(meta.photos).slice(0, 5).forEach((k) => {
+          if (Array.isArray(meta.photos[k])) m.photos[String(k).slice(0, 20)] = meta.photos[k].map(String).filter((x) => /^photo\d+$/.test(x)).slice(0, 20);
+        });
+      }
       withLock(() => {
         const j = getJob(load().jobs, jobId);
         if (j.closed) throw new Error('이미 닫힌 작업입니다: ' + jobId);

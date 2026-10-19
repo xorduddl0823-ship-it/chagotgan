@@ -67,9 +67,9 @@
   <!-- 세 전산 자동 등록 — 저장하기 전 한 번 확인(되돌리기 어려운 일) -->
   <div id="auto-confirm" class="overlay hidden">
     <div class="panel">
-      <h2 id="auto-confirm-title">세 전산에 저장할까요?</h2>
+      <h2 id="auto-confirm-title">세 전산에 등록할까요?</h2>
       <p class="sub" id="auto-confirm-text"></p>
-      <div class="panel-foot"><button id="auto-confirm-no" class="ghost">취소</button><button id="auto-confirm-yes" class="primary">저장</button></div>
+      <div class="panel-foot"><button id="auto-confirm-no" class="ghost">취소</button><button id="auto-confirm-yes" class="primary">등록</button></div>
     </div>
   </div>
 
@@ -104,7 +104,12 @@
   </div>
   
   <div id="busy" class="overlay hidden">
-    <div class="busy-box"><div class="spinner"></div><span id="busy-text">처리 중…</span></div>
+    <div class="busy-box"><div class="spinner"></div>
+      <div><span id="busy-text">처리 중…</span>
+        <!-- 세 전산 자동 등록 때만 보이는 진행 칸 -->
+        <div id="busy-steps" class="busy-steps hidden"><span>카인포</span><span>카모두</span><span>엔트리</span></div>
+      </div>
+    </div>
   </div>
 
   <script src="parts-diagram.js"></script>

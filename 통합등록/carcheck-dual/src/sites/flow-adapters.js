@@ -43,6 +43,8 @@ const textExpr = (sel) => '(function(){var e=document.querySelector(' + JSON.str
  * @param o.getWindow(site)   → BrowserWindow (그 전산 창)
  * @param o.config            site-config (REAL 또는 mockConfig(...))
  * @param o.fillFns           { carinfo(data), carmodoo(data, extra), entry(data, extra) } → {filled, missing} (기존 기능 감싼 것)
+ * @param o.photoFns          (7차) { carinfo(data, {only}), carmodoo(data, {only}) } → {done:[photo1…], missing[]} (기존 사진 올리기 감싼 것)
+ * @param o.prepareFn         (7차) 카인포 신규등록(data) → {ok, needPick, candidates, checkNo, error} (기존 신규등록 감싼 것)
  */
 function createElectronAdapters(o) {
   const C = o.config;
@@ -67,7 +69,7 @@ function createElectronAdapters(o) {
         const win = o.getWindow(site);
         if (!win) throw new Error(site + ' 창이 없습니다.');
         const guard = createSaveGuard({ siteHosts: cfg.hosts, savePatterns: cfg.savePatterns, saveGetPatterns: cfg.saveGetPatterns,
-                                        readAllow: cfg.readAllow, fillAllow: cfg.fillAllow, confirmed: cfg.confirmed, popupAuto: cfg.popupAuto === true });
+                                        readAllow: cfg.readAllow, fillAllow: cfg.fillAllow, phaseAllow: cfg.phaseAllow, confirmed: cfg.confirmed, popupAuto: cfg.popupAuto === true });
         const hold = attachSaveHold(win, guard, { name: site });
         ctl[site] = { guard, hold };
         const ok = await hold.ready;                      // 붙이기가 끝난 뒤에 돌려준다(그 전 저장 요청이 새지 않게)
@@ -88,6 +90,17 @@ function createElectronAdapters(o) {
         return ok === true;
       },
       async readList(car) { return rowsOf(site, car); },
+      /**
+       * 사진 올리기(7차) — «사진» 단계 문을 연 동안만 사진 주소 요청을 내보낸다(저장 주소는 그래도 막힘).
+       *  opts.only: 올릴 칸만(이어 하기 때 남은 칸). 돌려줌 {done:[칸], missing:[까닭]}
+       */
+      async photos(data, opts) {
+        if (!o.photoFns || !o.photoFns[site]) return { done: [], missing: ['사진 올리기 기능이 연결되지 않았습니다.'] };
+        const g = ctl[site] && ctl[site].guard;
+        if (!g) return { done: [], missing: ['저장 통제기가 걸려 있지 않아 사진을 올리지 않았습니다.'] };
+        if (!g.openPhase('photo')) return { done: [], missing: ['사진 올리기 주소 설정이 없습니다(실제 화면 확인 필요).'] };
+        try { return await o.photoFns[site](data, opts || {}); } finally { g.closePhase(); }
+      },
       async saveOutcome() { return ctl[site] ? ctl[site].guard.outcome() : { result: 'unknownPath', reasons: ['저장 통제기가 걸려 있지 않음'] }; },
       async coverage() { return ctl[site] ? ctl[site].guard.coverage() : { windows: 0, unattachedWindows: ['(통제기 없음)'] }; },
       async release() { if (ctl[site]) { await ctl[site].hold.detach(); delete ctl[site]; } },
@@ -96,7 +109,28 @@ function createElectronAdapters(o) {
 
   const carinfo = Object.assign(common('carinfo'), {
     async readList(car) { return rowsOf('carinfo', car); },
+    /** 지금 카인포에 신규등록(점검 등록) 화면이 열려 있나 — { open, carNo, checkNo } · 설정이 없으면 unknown */
+    async prepareState() {
+      const P = C.carinfo.prepare;
+      if (!P || !P.formCarNo) return { open: false, unknown: true };
+      const w = o.getWindow('carinfo');
+      const carNo = await inAnyFrame(w, textExpr(P.formCarNo));
+      const checkNo = P.formNo ? await inAnyFrame(w, textExpr(P.formNo)) : null;
+      return { open: !!(carNo && String(carNo).trim()), carNo: carNo || '', checkNo: checkNo || '' };
+    },
+    /** 카인포 신규등록 — «신규등록» 단계 문을 연 동안만 그 요청을 내보낸다 */
+    async prepare(data) {
+      if (!o.prepareFn) return { ok: false, error: '카인포 신규등록 기능이 연결되지 않았습니다.' };
+      const g = ctl.carinfo && ctl.carinfo.guard;
+      if (!g) return { ok: false, error: '저장 통제기가 걸려 있지 않아 신규등록을 하지 않았습니다.' };
+      if (!g.openPhase('prepare')) return { ok: false, notConfigured: true, error: '카인포 신규등록 요청 주소 설정이 없습니다(실제 화면 확인 필요).' };
+      try { return await o.prepareFn(data); } finally { g.closePhase(); }
+    },
   });
+  if (!o.prepareFn) delete carinfo.prepare;                // 신규등록 기능을 안 넘기면 흐름이 신규등록 단계를 건너뜀(예전 시험·사람이 미리 함)
+  //  신규등록 [확인] 때 목록 줄이 먼저 생기나 — true/false/null(모름 → 생긴다고 보고 «상태» 칸으로만 저장 확인)
+  carinfo.prepareCreatesRow = C.carinfo.prepare && C.carinfo.prepare.createsRow != null ? C.carinfo.prepare.createsRow : null;
+  carinfo.savedStatus = (C.carinfo.list && C.carinfo.list.savedStatus) || null;
 
   const carmodoo = Object.assign(common('carmodoo'), {
     async fill(data, extra) {
@@ -160,6 +194,9 @@ function createElectronAdapters(o) {
     },
   });
   //  실제 엔트리 화면 설정이 없으면 «미구현» — 흐름이 끝난 것처럼 보이지 않게(검수 4차)
+  //  사진을 언제 올리나(설정) — 엔트리는 사진 칸이 없다고 보고 undefined(사진 단계 없음)
+  carinfo.photoPhase = C.carinfo.photoPhase || null;
+  carmodoo.photoPhase = C.carmodoo.photoPhase || null;
   entry.implemented = !!(C.entry && C.entry.loggedIn && C.entry.nextNumber && C.entry.loadButton && C.entry.list && C.entry.list.cols);
 
   return { carinfo, carmodoo, entry };

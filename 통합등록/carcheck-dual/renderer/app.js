@@ -179,7 +179,22 @@ function applyDeps() {
 /* ───────────────────────── 공통 UI ───────────────────────── */
 
 const busy = (txt) => { $('#busy-text').textContent = txt; $('#busy').classList.remove('hidden'); };
-const unbusy = () => $('#busy').classList.add('hidden');
+const unbusy = () => { $('#busy').classList.add('hidden'); $('#busy-steps').classList.add('hidden'); };
+
+/** 자동 등록 진행 칸 — 몇 번째 전산까지 왔는지(0 카인포 · 1 카모두 · 2 엔트리 · 3 모두 끝) */
+function autoSteps(i) {
+  const box = $('#busy-steps');
+  box.classList.remove('hidden');
+  box.querySelectorAll('span').forEach((s, k) => { s.className = k < i ? 'done' : k === i ? 'now' : ''; });
+}
+const AUTO_ORDER = ['carinfo', 'carmodoo', 'entry'];
+/** 진행 알림 → 한 줄 글 + 진행 칸 (엔트리 로그인 확인은 맨 처음이라 카인포 칸에 둔다) */
+function autoProgress(info) {
+  const pre = info.step === '엔트리 로그인 확인';
+  const i = info.step === '마무리' ? 3 : pre ? 0 : Math.max(0, AUTO_ORDER.indexOf(info.site));
+  busy(pre ? '시작 전 확인 · 엔트리 로그인…' : (info.siteName ? info.siteName + ' · ' : '') + info.step + (info.note ? ' — ' + info.note : '') + '…');
+  autoSteps(i);
+}
 
 function report(title, blocks) {
   $('#report').querySelector('h2').textContent = title;
@@ -187,7 +202,7 @@ function report(title, blocks) {
   body.innerHTML = '';
   blocks.forEach((b) => {
     const box = document.createElement('div');
-    box.className = 'rbox ' + (b.ok ? 'ok' : 'bad');
+    box.className = 'rbox ' + (b.tone || (b.ok ? 'ok' : 'bad'));
     const h = document.createElement('h3');
     h.textContent = b.title;
     box.appendChild(h);
@@ -195,7 +210,7 @@ function report(title, blocks) {
       if (!l.items || !l.items.length) return;
       const d = document.createElement('div');
       d.className = 'list ' + (l.cls || '');
-      d.innerHTML = '<strong>' + l.title + ' (' + l.items.length + ')</strong>';
+      d.innerHTML = '<strong>' + l.title + (l.noCount ? '' : ' (' + l.items.length + ')') + '</strong>';
       const ul = document.createElement('ul');
       l.items.forEach((x) => { const li = document.createElement('li'); li.textContent = x; ul.appendChild(li); });
       d.appendChild(ul);
@@ -529,16 +544,28 @@ async function autoRegister(resumeJobId) {
     return;
   }
   const go = resumeJobId
-    ? await askAuto('멈춘 곳부터 이어서 저장할까요?', '작업 번호 ' + resumeJobId + ' · 차량 ' + (data.carNo || '-') + ' · 저장된 곳은 다시 저장하지 않아요.')
-    : await askAuto('세 전산에 저장할까요?', '차량 ' + data.carNo + ' · 1대 · 카인포 → 카모두 → 엔트리 3곳에 차례로 저장해요.');
+    ? await askAuto('멈춘 곳부터 이어서 등록할까요?', '작업 번호 ' + resumeJobId + ' · 차량 ' + (data.carNo || '-') + ' · 이미 등록된 곳은 다시 등록하지 않아요.')
+    : await askAuto('세 전산에 등록할까요?', '차량 ' + data.carNo + ' · 1대 · 카인포 → 카모두 → 엔트리 3곳에 차례로 등록해요.');
   if (!go) return;
-  window.api.flow.onProgress((info) => busy((info.siteName ? info.siteName + ' · ' : '') + info.step + (info.note ? ' — ' + info.note : '') + '…'));
+  window.api.flow.onProgress(autoProgress);
   busy('세 전산 자동 등록을 시작해요…');
+  if (!resumeJobId) autoSteps(0);                       // 이어 하기는 첫 진행 알림이 올 때 칸을 보임(멈춘 전산부터)
   let res;
   try {
     res = await window.api.flow.runAll(resumeJobId ? { jobId: resumeJobId, data } : { carNo: data.carNo, vin: data.vin, data });
   } finally {
     unbusy();
+  }
+  return afterAuto(res, data);
+}
+
+/** 자동 등록 결과 처리 — 딜러 고르기면 고른 뒤 이어 가고, 끝이면 결과, 아니면 멈춤 안내 (처음·이어 하기 공통) */
+async function afterAuto(res, data) {
+  //  카인포 신규등록에서 딜러를 골라야 함 — 고르면 그 딜러로 신규등록부터 이어 간다
+  if (res && res.ok === false && res.detail && res.detail.prepareNeedPick) {
+    const picked = await pickDealer(res.detail.rows || []);
+    if (!picked) { showAutoStop({ ...res, reason: '카인포 딜러를 고르지 않았어요.', action: '딜러를 고른 뒤 [이어 하기]를 눌러 주세요.' }); return; }
+    return runResume(res.jobId, { ciPickKey: picked.key });
   }
   if (res && res.ok === false && res.detail && res.detail.needDealerPick) {
     const chosen = await pickRow(res.detail.rows || []);
@@ -561,41 +588,47 @@ async function autoRegisterDone(res, data) {
   {
     const n = res.numbers || {};
     await window.api.saveRecord({ carNo: res.carNo, checkNo: n.carinfo, data });
+    //  «같아요»는 세 번호가 실제로 같을 때만
+    const same = !!(n.carinfo && n.carinfo === n.carmodoo && n.carmodoo === n.entry);
     report('세 전산 등록 끝', [{
-      ok: true,
-      title: res.carNo + ' — 세 곳 모두 저장했어요',
+      ok: same,
+      tone: same ? 'ok' : 'warn',                       // 번호 확인 필요 = 주황(멈춤 빨강과 구분)
+      title: res.carNo + (same ? ' — 세 곳 모두 등록했어요' : ' — 번호를 확인해 주세요'),
       lists: [
-        { title: '점검번호', items: ['카인포 ' + (n.carinfo || '번호 못 받음'), '카모두 ' + (n.carmodoo || '번호 못 받음'), '엔트리 ' + (n.entry || '번호 못 받음')], cls: 'good' },
-        { title: '걸린 시간', items: [Math.round((res.ms || 0) / 1000) + '초'], cls: 'muted' },
+        { title: '점검번호', items: ['카인포 ' + (n.carinfo || '번호 못 받음'), '카모두 ' + (n.carmodoo || '번호 못 받음'), '엔트리 ' + (n.entry || '번호 못 받음')], cls: same ? 'good' : 'warn', noCount: true },
+        { title: '걸린 시간', items: [Math.round((res.ms || 0) / 1000) + '초'], cls: 'muted', noCount: true },
       ],
-      note: (n.carinfo && n.carmodoo && n.entry) ? '세 전산 번호가 모두 같아요. 확인만 해 주세요.' : '받지 못한 번호가 있어요. 해당 전산에서 확인해 주세요.',
+      note: same ? '세 전산 번호가 모두 같아요. 확인만 해 주세요.' : '받지 못했거나 다른 번호가 있어요. 해당 전산에서 확인해 주세요.',
     }]);
   }
 }
 
-/** 딜러를 고른 바로 뒤 — 방금 [저장]을 확인한 같은 작업이라 확인 창 없이 이어 간다 */
-async function runResume(jobId) {
+/** 딜러를 고른 바로 뒤 — 방금 [등록]을 확인한 같은 작업이라 확인 창 없이 이어 간다 (진행 칸도 다시 보임) */
+async function runResume(jobId, extra) {
   const { data } = collect();
+  window.api.flow.onProgress(autoProgress);
   busy('이어서 등록하는 중…');
   let res;
-  try { res = await window.api.flow.runAll({ jobId, data }); } finally { unbusy(); }
-  if (res && res.ok) { autoStop = null; $('#btn-auto-resume').classList.add('hidden'); return autoRegisterDone(res, data); }
-  return showAutoStop(res || { reason: '알 수 없는 오류' });
+  try { res = await window.api.flow.runAll({ jobId, data: { ...data, ...(extra || {}) } }); } finally { unbusy(); }
+  return afterAuto(res, data);
 }
 
 function showAutoStop(res) {
-  autoStop = res.jobId ? { jobId: res.jobId } : null;
+  //  번호 어긋남·사람 확인이 필요한 멈춤은 관리자 확인 전에는 [이어 하기]를 보이지 않는다(정정 절차를 건너뛰지 않게)
+  const d = res.detail || {};
+  const needAdmin = !!(d.stopped || d.manual || d.needsConfirm);
+  autoStop = res.jobId && !needAdmin ? { jobId: res.jobId } : null;
   $('#btn-auto-resume').classList.toggle('hidden', !autoStop);
   report('자동 등록 멈춤', [{
     ok: false,
     title: (res.siteName || '등록') + (res.step ? ' · ' + res.step : '') + ' 에서 멈췄어요',
     lists: [
-      { title: '차량', items: [res.carNo || '-'] },
-      { title: '까닭', items: [res.reason || res.error || '알 수 없음'], cls: 'warn' },
-      { title: '할 일', items: [res.action || '내용을 확인해 주세요.'], cls: 'muted' },
-      { title: '작업 번호', items: [res.jobId || '-'], cls: 'muted' },
+      { title: '차량', items: [res.carNo || '-'], noCount: true },
+      { title: '까닭', items: [res.reason || res.error || '알 수 없음'], cls: 'warn', noCount: true },
+      { title: '할 일', items: [res.action || '내용을 확인해 주세요.'], cls: 'muted', noCount: true },
+      { title: '작업 번호', items: [res.jobId || '-'], cls: 'muted', noCount: true },
     ],
-    note: res.jobId ? '고친 뒤 [이어 하기]를 누르면 멈춘 곳부터 이어 가요.' : '',
+    note: needAdmin ? '대표님(관리자) 확인이 끝나기 전에는 이어 하지 않아요.' : res.jobId ? '고친 뒤 [이어 하기]를 누르면 멈춘 곳부터 이어 가요.' : '',
   }]);
 }
 

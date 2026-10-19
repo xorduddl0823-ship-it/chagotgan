@@ -1551,7 +1551,7 @@ function askSave(site,c){
 }
 function askRecover(c){
   CGG.dialog({size:"form",title:"관리자 확인으로 정리",desc:"번호가 어긋난 작업을 닫고, 세 전산 목록을 직접 확인한 뒤 다음 차를 허용해요.",
-    body:'<div class="pin"><label>관리자 이름<input value="대표님"></label><label>관리자 비밀번호 (숫자 6자리 이상)<input id="rPin" type="password" inputmode="numeric" placeholder="●●●●●●"></label><label>까닭<input id="rWhy" placeholder="예: 카인포·카모두 지우고 다시 등록함"></label><label>작업 번호를 그대로 적어 주세요 (1019-002)<input id="rJob" placeholder="1019-002"></label></div>'
+    body:'<div class="pin"><label>관리자 이름<input value="대표님"></label><label>관리자 비밀번호 (숫자 6자리 이상)<input id="rPin" type="password" inputmode="numeric" placeholder="●●●●●●"></label><label>까닭<input id="rWhy" placeholder="예: 세 전산 목록 확인 · 관리자 정정 완료"></label><label>작업 번호를 그대로 적어 주세요 (1019-002)<input id="rJob" placeholder="1019-002"></label></div>'
       +'<div class="chk3"><label><input type="checkbox" class="rChk">카인포 목록을 직접 확인했어요</label><label><input type="checkbox" class="rChk">카모두 목록을 직접 확인했어요</label><label><input type="checkbox" class="rChk">엔트리 목록을 직접 확인했어요</label></div>',
     ok:"정리하고 다음 차 허용",onOk:function(d){
       var miss=[]; if(!/^\d{6,12}$/.test(d.querySelector("#rPin").value)) miss.push("관리자 비밀번호");
@@ -1614,7 +1614,7 @@ function draw(){
   if(MODE==="login") acts+='<button class="cgg-btn pri" id="bLogin">엔트리 로그인 창 열기</button><button class="cgg-btn" id="bRe">로그인했어요 — 번호 다시 확인</button>';
   if(MODE==="stop") acts+='<button class="cgg-btn pri" id="bRec">관리자 확인으로 정리</button><button class="cgg-btn" id="bWin">카모두 창 보기</button>';
   acts+='</div><p class="note1">'+({ok:"저장은 한 번만 허락돼요. 두 번 눌러도 두 번째는 막혀요.",check:"확인 전에는 다시 저장할 수 없어요(두 번 등록 막기).",login:"문자 인증을 마치면 번호·차량·차대번호를 처음부터 다시 확인해요.",stop:"프로그램은 지우거나 고치지 않아요. 정리는 대표님이 직접 해요."})[MODE]+'</p>';
-  var stopTop=MODE==="stop"?'<div class="stopbox"><h3>멈춤 — 다른 차 기록일 수 있어요</h3><p class="why">카모두에 저장된 번호 <b>T-9999</b> 가 카인포 번호 <b>T-0201</b> 과 달라요.</p><ol><li>카인포 목록에서 12가3456 이 T-0201 인지 확인</li><li>카모두 T-9999 줄을 지우기 (대표님이 직접)</li><li>카인포 T-0201 도 지우고 두 곳 다시 등록 (정정 절차 없음)</li><li>[관리자 확인으로 정리] — 세 전산 목록 확인 표시 후 다음 차 허용</li></ol></div>':"";
+  var stopTop=MODE==="stop"?'<div class="stopbox"><h3>멈춤 — 다른 차 기록일 수 있어요</h3><p class="why">카모두에 저장된 번호 <b>T-9999</b> 가 카인포 번호 <b>T-0201</b> 과 달라요.</p><ol><li>카인포 목록에서 12가3456 이 T-0201 인지 확인</li><li>카모두 T-9999 줄이 어느 차 기록인지 확인</li><li>관리자 정정 절차 확인 (지우기·다시 등록은 대표님 판단)</li><li>[관리자 확인으로 정리] — 세 전산 목록 확인 표시 후 다음 차 허용</li></ol></div>':"";
   now.innerHTML=stopTop+'<div class="card">'+top+acts+'</div>';
   CGG.steps(document.getElementById("stp"),stepsOf(c));
   var on=function(id,f){ var b=document.getElementById(id); if(b) b.onclick=f; };
