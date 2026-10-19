@@ -1,0 +1,26 @@
+{
+ "app": "/tmp/claude-0/-home-user-chagotgan/ab0455c9-38b7-52f1-ab75-a68bbb3b4143/scratchpad/before7c/통합등록/carcheck-dual",
+ "presses": [
+  {
+   "press": 1,
+   "seconds": 200.2,
+   "firstDialogSeconds": null,
+   "registerCalls": 0,
+   "saveCalls": 0,
+   "uploads": 0,
+   "newForms": 0,
+   "dialogs": [],
+   "pageErrors": [
+    "Error invoking remote method 'site:send': Error: ERR_CONNECTION_REFUSED (-102) loading 'https://ck.carmodoo.com/carCheck/carCheckList.do'"
+   ],
+   "busyShown": "경기조합 (carmodoo) 전송 중…",
+   "report": "(기다린 시간 안에 결과 창이 안 뜸 — 화면은 «전송 중…»에 멈춰 있음)"
+  }
+ ],
+ "sameCarRecords": [],
+ "totals": {
+  "register": 0,
+  "save": 0,
+  "upload": 0
+ }
+}

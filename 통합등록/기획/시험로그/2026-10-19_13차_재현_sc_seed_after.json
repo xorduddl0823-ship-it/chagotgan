@@ -1,0 +1,26 @@
+{
+ "app": "/home/user/chagotgan/통합등록/carcheck-dual",
+ "presses": [
+  {
+   "press": 1,
+   "seconds": 0.3,
+   "firstDialogSeconds": null,
+   "registerCalls": 0,
+   "saveCalls": 0,
+   "uploads": 0,
+   "newForms": 0,
+   "dialogs": [],
+   "pageErrors": [],
+   "busyShown": null,
+   "report": "경기조합 (carmodoo) — 실패 경기조합에 이 차(99가9999)의 오늘 접수가 이미 있어요(성능번호 0426002768). 새 접수를 열지 않았어요. 그 접수를 경기조합 창에서 열어 둔 뒤 다시 [경기조합만]을 누르면 그 화면에 값을 넣어요. 같은 차가 여러 건이면 정리는 대표님(관리자)이 판단해 주세요."
+  }
+ ],
+ "sameCarRecords": [
+  "0426002768 사진없음"
+ ],
+ "totals": {
+  "register": 0,
+  "save": 0,
+  "upload": 0
+ }
+}

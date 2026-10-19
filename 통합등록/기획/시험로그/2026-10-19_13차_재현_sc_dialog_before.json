@@ -1,0 +1,26 @@
+{
+ "app": "/tmp/claude-0/-home-user-chagotgan/ab0455c9-38b7-52f1-ab75-a68bbb3b4143/scratchpad/before7c/통합등록/carcheck-dual",
+ "presses": [
+  {
+   "press": 1,
+   "seconds": 90.6,
+   "firstDialogSeconds": 0.5,
+   "registerCalls": 0,
+   "saveCalls": 0,
+   "uploads": 0,
+   "newForms": 1,
+   "dialogs": [
+    "alert: 차량번호를 다시 확인하세요."
+   ],
+   "pageErrors": [],
+   "busyShown": null,
+   "report": "경기조합 (carmodoo) — 실패 전송 응답이 없어 중단했습니다 (90초)"
+  }
+ ],
+ "sameCarRecords": [],
+ "totals": {
+  "register": 0,
+  "save": 0,
+  "upload": 0
+ }
+}

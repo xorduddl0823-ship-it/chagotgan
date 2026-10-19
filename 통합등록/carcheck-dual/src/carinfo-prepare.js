@@ -111,6 +111,28 @@ function buildPrepareScript({ carNo, dealer, pickKey, tradePersonal, clientName,
   }
   if (!P.carNo) return fail('차량번호가 비어 있습니다.');
 
+  // ── 0-C. 같은 차 오늘 등록이 이미 있는지 (10/19 경기조합 중복 사고 뒤 — 카인포도 신규등록 전에 확인) ──
+  //  목록 표(#carcheckTable)를 못 찾으면 확인할 수 없으므로 신규등록을 하지 않는다.
+  step = '같은 차 확인';
+  var tbl = document.querySelector('#carcheckTable');
+  if (!tbl) return fail('성능점검 목록을 찾지 못해 같은 차 등록이 이미 있는지 확인하지 못했어요. 신규등록을 하지 않았어요.\\n카인포 창을 성능점검 목록 화면으로 두고 다시 눌러 주세요.');
+  var heads = [].map.call(tbl.querySelectorAll('thead th, thead td'), function (h) { return norm(h.textContent); });
+  var iCar = heads.indexOf('차량번호'); if (iCar < 0) iCar = 2;
+  var iNo = heads.indexOf('점검번호'); if (iNo < 0) iNo = heads.indexOf('성능번호'); if (iNo < 0) iNo = 3;
+  var dd = new Date(), today = dd.getFullYear() + '-' + ('0' + (dd.getMonth() + 1)).slice(-2) + '-' + ('0' + dd.getDate()).slice(-2);
+  var dup = [];
+  [].forEach.call(tbl.querySelectorAll('tbody tr'), function (tr) {
+    var c = tr.querySelectorAll('td');
+    if (norm((c[iCar] || {}).textContent) !== norm(P.carNo)) return;
+    if (norm(tr.textContent).indexOf(norm(today)) < 0) return;      // 오늘 줄만(같은 차가 다른 날 다시 점검받는 것은 정상) — 날짜도 줄표 빼고 견줌
+    dup.push(norm((c[iNo] || {}).textContent) || '(번호 없음)');
+  });
+  if (dup.length) {
+    return fail('카인포에 이 차(' + P.carNo + ')의 오늘 등록이 이미 있어요(점검번호 ' + dup.join(', ') + '). 신규등록을 하지 않았어요.\\n' +
+                '목록에서 그 줄을 열어 이어서 하거나, 같은 차가 여러 건이면 정리는 대표님(관리자)이 판단해 주세요.');
+  }
+  log.push('같은 차 오늘 등록 없음(목록 ' + tbl.querySelectorAll('tbody tr').length + '줄 확인)');
+
   // ── 1. [신규등록] ────────────────────────────────────────────────
   step = '신규등록 창 열기';
   var newBtn = document.querySelector('#btnNewCarcheck');

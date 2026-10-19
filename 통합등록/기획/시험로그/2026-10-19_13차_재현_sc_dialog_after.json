@@ -1,0 +1,26 @@
+{
+ "app": "/home/user/chagotgan/통합등록/carcheck-dual",
+ "presses": [
+  {
+   "press": 1,
+   "seconds": 0.5,
+   "firstDialogSeconds": 0.4,
+   "registerCalls": 0,
+   "saveCalls": 0,
+   "uploads": 0,
+   "newForms": 1,
+   "dialogs": [
+    "alert: 차량번호를 다시 확인하세요."
+   ],
+   "pageErrors": [],
+   "busyShown": null,
+   "report": "경기조합 (carmodoo) — 실패 사이트 알림창이 떠서 멈췄어요: «차량번호를 다시 확인하세요.» — 알림창을 읽고 직접 눌러 주세요. 프로그램은 다시 시도하지 않아요."
+  }
+ ],
+ "sameCarRecords": [],
+ "totals": {
+  "register": 0,
+  "save": 0,
+  "upload": 0
+ }
+}

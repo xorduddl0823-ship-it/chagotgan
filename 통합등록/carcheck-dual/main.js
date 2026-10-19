@@ -24,6 +24,9 @@ const cmDealer = require('./src/carmodoo-dealer');
 const ciDealer = require('./src/carinfo-dealer');
 const safety = require('./src/core/safety');
 const quiet = require('./src/sites/quiet-window');
+const { createDialogWatch } = require('./src/sites/dialog-watch');
+//  사이트 알림창이 뜨면 그 화면에 보내던 명령을 바로 멈춘다(10/19 먹통·지연) — [확인]·[취소]는 누르지 않음
+const dialogs = createDialogWatch();
 
 const SITES = {
   carmodoo: {
@@ -344,7 +347,7 @@ function waitReady(win, ms = 15000) {
  */
 function runScript(win, script, ms = 60000, label = '스크립트') {
   return Promise.race([
-    win.webContents.executeJavaScript(script, true),
+    dialogs.guard(win.webContents, win.webContents.executeJavaScript(script, true)),
     new Promise((_r, rej) =>
       setTimeout(() => rej(new Error(label + ' 응답이 없어 중단했습니다 (' + Math.round(ms / 1000) + '초)')), ms)
     ),
@@ -448,9 +451,17 @@ async function sendToSite(id, data) {
    *  사원선택이 고른 값을 돌려주지 못한다. */
   let formFrame = null;
   if (id === 'carmodoo') {
-    const form = await ensureCarmodooForm(win);
+    const form = await ensureCarmodooForm(win, data && data.carNo);
     if (!form.ok) return { ok: false, error: form.error };
     formFrame = form.frame;
+    //  이미 열려 있던 접수 화면이 다른 차면 값을 넣지 않는다(그 차 접수를 이 차로 바꿔 버릴 수 있음)
+    if (!form.opened) {
+      const open = await runFrame(formFrame, "(function(){var e=document.getElementById('j_carNumber');return e?String(e.value||''):'';})()", 8000, '열린 접수 확인');
+      const norm = (s) => String(s || '').replace(/\s+/g, '');
+      if (norm(open) && norm(open) !== norm(data && data.carNo)) {
+        return { ok: false, error: '경기조합에 다른 차(' + open + ')의 접수 화면이 열려 있어요. 값을 넣지 않았어요 — 그 화면을 닫거나 접수차량 리스트로 돌아간 뒤 다시 해 주세요.' };
+      }
+    }
   }
 
   const url = win.webContents.getURL();
@@ -1188,15 +1199,52 @@ async function findFormFrame(win) {
 }
 
 /** 등록 화면을 연다 — 이미 열려 있으면 그 조각을 그대로 쓴다 */
-async function ensureCarmodooForm(win) {
+/*  (10/19 중복 6건) 새 접수를 열기 «전»에 접수차량 리스트에서 같은 차 오늘 접수가 있는지 본다.
+ *  표 머리글(성능번호·접수일·차량번호 — 10/19 화면 사진)로 칸을 찾는다. 표를 못 찾으면 «확인 못 함» → 새 접수를 열지 않는다. */
+const cmListSameExpr = (carNo, today) => `(function () {
+  function norm(s) { return String(s || '').replace(/\\s+/g, ''); }
+  var tables = document.querySelectorAll('table');
+  for (var t = 0; t < tables.length; t++) {
+    var hs = [].map.call(tables[t].querySelectorAll('thead th, thead td'), function (h) { return norm(h.textContent); });
+    var iNo = hs.indexOf('성능번호'), iCar = hs.indexOf('차량번호'), iDate = hs.indexOf('접수일');
+    if (iNo < 0 || iCar < 0) continue;
+    var rows = [].slice.call(tables[t].querySelectorAll('tbody tr')), same = [];
+    rows.forEach(function (r) {
+      var c = r.querySelectorAll('td');
+      if (norm((c[iCar] || {}).textContent) !== ${JSON.stringify(String(carNo || '').replace(/\s+/g, ''))}) return;
+      var d = iDate >= 0 ? norm((c[iDate] || {}).textContent) : '';
+      if (d && d.indexOf(${JSON.stringify(today)}) < 0) return;
+      same.push(norm((c[iNo] || {}).textContent));
+    });
+    return { found: true, rows: rows.length, same: same };
+  }
+  return { found: false };
+})()`;
+function todayYmd() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+async function ensureCarmodooForm(win, carNo) {
   let f = await findFormFrame(win);
   if (f) return { ok: true, frame: f };
+
+  //  차량번호를 모르면(딜러 고르기 등) 새 접수를 열지 않는다 — 열린 접수 화면에서만 일함
+  if (!String(carNo || '').trim()) return { ok: false, error: '경기조합 접수 화면이 열려 있지 않아요. [경기조합만]으로 먼저 보내 주세요(새 접수는 차량번호를 확인한 뒤에만 열어요).' };
 
   const site = SITES.carmodoo;
   const url = win.webContents.getURL();
   if (!url.includes('carCheckList')) {
     await win.loadURL(site.list);
     await waitReady(win, 20000);
+  }
+
+  //  같은 차 오늘 접수가 이미 있으면 새 접수를 열지 않는다(확인 못 하면 열지 않음)
+  let seen = null;
+  for (const fr of [win.webContents.mainFrame].concat((win.webContents.mainFrame.framesInSubtree || []).filter((x) => x !== win.webContents.mainFrame))) {
+    try { const r = await runFrame(fr, cmListSameExpr(carNo, todayYmd()), 8000, '접수차량 리스트 확인'); if (r && r.found) { seen = r; break; } } catch (e) { if (e && e.siteDialog) throw e; }
+  }
+  if (!seen) return { ok: false, error: '접수차량 리스트에서 같은 차 접수가 있는지 확인하지 못해 새 접수를 열지 않았어요. 경기조합 창을 접수차량 리스트로 두고 다시 해 주세요.' };
+  if (seen.same.length) {
+    return { ok: false, duplicate: true, error: '경기조합에 이 차(' + carNo + ')의 오늘 접수가 이미 있어요(성능번호 ' + seen.same.join(', ') + '). 새 접수를 열지 않았어요. ' +
+             '그 접수를 경기조합 창에서 열어 둔 뒤 다시 [경기조합만]을 누르면 그 화면에 값을 넣어요. 같은 차가 여러 건이면 정리는 대표님(관리자)이 판단해 주세요.' };
   }
 
   const opened = await runScript(win, CM_OPEN_FORM_EXPR, 15000, '접수등록 열기');
@@ -1215,8 +1263,10 @@ async function ensureCarmodooForm(win) {
 
 /** 화면 조각에서 스크립트를 돌린다 (창이 아니라 조각에) */
 function runFrame(frame, script, ms = 20000, label = '스크립트') {
+  let wc = null;
+  try { wc = require('electron').webContents.fromFrame(frame); } catch {}
   return Promise.race([
-    frame.executeJavaScript(script, true),
+    dialogs.guard(wc, frame.executeJavaScript(script, true)),
     new Promise((_r, rej) =>
       setTimeout(() => rej(new Error(label + ' 응답이 없어 중단했습니다 (' +
         Math.round(ms / 1000) + '초)')), ms)),
