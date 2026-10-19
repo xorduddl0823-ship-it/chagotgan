@@ -2298,7 +2298,7 @@ async function diagSnap(d) {
       } catch {}
     }
   }
-  d.snaps.push({ at: new Date().toISOString(), frames });
+  d.snaps.push({ at: new Date().toISOString(), frames: maskDiag(frames).data });   // 기록하는 순간 가림(메모리에도 가린 것만)
   return d.snaps.length;
 }
 
@@ -2345,7 +2345,7 @@ ipcMain.handle('diag:start', flowCall(async (a) => {
   if (!hosts.length) return { ok: false, error: '이 전산의 주소를 몰라 진단하지 않아요.' };
   const win = site === 'entry' ? diagEntryWindow(false) : (windows[site] && !windows[site].isDestroyed() ? windows[site] : null);
   if (!win) return { ok: false, error: (site === 'entry' ? '먼저 [엔트리 창 열기]로 엔트리에 로그인해 주세요.' : '먼저 맨 위 [' + ({ carinfo: '카인포', carmodoo: '경기조합' })[site] + ' 창] 단추로 창을 열고 로그인해 주세요.') };
-  const rec = createDiagRecorder({ siteHosts: hosts });
+  const rec = createDiagRecorder({ siteHosts: hosts, readPaths: (siteConfig.REAL[site] || {}).diagReadPaths || [] });
   const st = { rec, win, snaps: [], startedAt: new Date().toISOString() };
   st.ds = startDiagSession({ win, rec, onAbort: (why) => {
     diagFinish(site, why).then((r) => {

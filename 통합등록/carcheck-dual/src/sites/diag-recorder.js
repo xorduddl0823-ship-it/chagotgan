@@ -23,6 +23,8 @@ const NEVER = /^(websocket|ping|cspreport|eventsource|beacon)$/;
 
 function hostOf(url) { try { return new URL(url).host.toLowerCase(); } catch { return ''; } }
 function pathOf(url) { try { return new URL(url).pathname; } catch { return String(url || '').split('?')[0].slice(0, 200); } }
+/** 기록용 경로 — %EA%B0%80 같은 글자를 풀어서 가리기 규칙이 제대로 걸리게 */
+function pathForLog(url) { const p = pathOf(url); try { return decodeURIComponent(p); } catch { return p; } }
 function queryKeys(url) { try { return [...new URL(url).searchParams.keys()].slice(0, 40); } catch { return []; } }
 /** 물음표 뒤 «이름=값» 전체에 저장처럼 보이는 말이 있나 (?cmd=save 같은 GET 저장) — 값은 판단에만 쓰고 기록하지 않음 */
 function queryLooksWrite(url) {
@@ -39,23 +41,26 @@ function kindName(k) {
 }
 
 /**
- * 진단 중 이 요청을 내보내도 되나 — «안전한 조회만 허용»(8차 검수 보완)
- *  내보냄: ① 그림·글꼴·모양·코드 파일 GET  ② 그 전산 주소로 가는 화면·조회 GET 중 주소·물음표 뒤에 저장 같은 말이 없는 것
- *  막음:   그 밖의 모든 것 — POST·PUT·PATCH·DELETE · 저장처럼 보이는 GET · 다른 주소로 가는 화면·조회 · 실시간 연결·신호
- *  hosts 가 비어 있으면(아직 모름) 화면·조회 GET 도 막는다.
+ * 진단 중 이 요청을 내보내도 되나 — «확인된 읽기 전용 경로만 허용»(8차 보완 2차 검수)
+ *  내보냄: ① 그 전산 주소(같은 host)의 그림·글꼴·모양·코드 파일 GET (주소·물음표 뒤에 저장 같은 말이 없을 때)
+ *          ② 그 전산 주소로 가는 화면·조회 GET 중 «읽기 전용으로 확인된 경로»(설정 diagReadPaths)에 맞고, 저장 같은 말이 없는 것
+ *  막음:   그 밖의 모든 것 — 확인 안 된 GET(기본 차단) · POST·PUT·PATCH·DELETE · 다른 주소 · 실시간 연결·신호
+ *  금지 단어 검사는 «덧붙인 막기»일 뿐, 허용의 근거는 확인된 경로 목록이다. 목록이 비어 있으면 화면·조회 GET 은 전부 막힌다.
+ *  (막힌 GET 의 경로는 기록에 남으므로, 그 기록을 보고 읽기 전용임을 확인한 경로만 목록에 더한다)
  */
-function decide(req, hosts) {
+function decide(req, hosts, readPaths) {
   const m = String(req.method || 'GET').toUpperCase();
   const kind = kindName(req.kind || req.resourceType);
   const url = String(req.url || '');
-  if (/^(data|blob|about|chrome|devtools|file):/i.test(url)) return { allow: true, why: '내부 자료' };
+  if (/^(data|blob|about|devtools):/i.test(url)) return { allow: true, why: '내부 자료' };
   if (NEVER.test(kind)) return { allow: false, why: '실시간 연결·신호(' + kind + ')' };
   if (m !== 'GET' && m !== 'HEAD') return { allow: false, why: '쓰기(' + m + ')' };
-  if (STATIC.test(kind)) return { allow: true, why: '정적 자료' };
   const h = hostOf(url);
-  if (!hosts.size || !hosts.has(h)) return { allow: false, why: '다른 주소(또는 주소 모름)로 가는 화면·조회' };
+  if (!hosts.size || !hosts.has(h)) return { allow: false, why: '다른 주소(또는 주소 모름)' };
   if (WRITE_WORDS.test(pathOf(url)) || queryLooksWrite(url)) return { allow: false, why: '저장처럼 보이는 GET' };
-  return { allow: true, why: '조회' };
+  if (STATIC.test(kind)) return { allow: true, why: '정적 자료' };
+  if ((readPaths || []).some((re) => re.test(pathOf(url)))) return { allow: true, why: '확인된 읽기 경로' };
+  return { allow: false, why: '확인 안 된 GET(기본 차단)' };
 }
 
 /** 보낸 자료에서 «칸 이름»만 꺼낸다(값은 버림) — JSON 은 맨 위 이름, 폼 모양은 이름=값 의 이름 */
@@ -82,6 +87,8 @@ function bodyKeys(postData) {
  */
 function createDiagRecorder(o = {}) {
   const hosts = new Set((o.siteHosts || []).map((h) => String(h).toLowerCase()).filter(Boolean));
+  //  읽기 전용으로 확인된 경로 무늬(설정 diagReadPaths) — 잘못된 무늬는 버림(막는 쪽)
+  const readPaths = (o.readPaths || []).map((x) => { try { return new RegExp(x); } catch { return null; } }).filter(Boolean);
   const now = o.now || (() => new Date());
   const entries = [];
   const windows = new Map();
@@ -89,28 +96,28 @@ function createDiagRecorder(o = {}) {
 
   function note(req, d) {
     if (entries.length >= 800) return;
-    entries.push({
+    entries.push(maskEntry({
       at: now().toISOString(), verdict: (d.allow ? '내보냄 · ' : '막음 · ') + d.why, method: String(req.method || 'GET').toUpperCase(),
-      kind: kindName(req.kind || req.resourceType), host: hostOf(req.url), path: pathOf(req.url), queryKeys: queryKeys(req.url),
+      kind: kindName(req.kind || req.resourceType), host: hostOf(req.url), path: pathForLog(req.url), queryKeys: queryKeys(req.url),
       bodyKeys: bodyKeys(req.postData),
-    });
+    }));
   }
 
   return {
     hosts,
-    decide: (req) => decide(req, hosts),
+    decide: (req) => decide(req, hosts, readPaths),
     registerWindow(id, kind) { if (!windows.has(id)) windows.set(id, { kind: kind || 'main', attached: false, since: Date.now() }); },
     attachWindow(id) { const w = windows.get(id) || {}; windows.set(id, { ...w, attached: true }); },
     detachWindow(id) { windows.delete(id); },
     /** 세션 거르개 — true(막음) / false(내보냄) */
     onSessionRequest(req) {
-      const d = decide(req, hosts);
+      const d = decide(req, hosts, readPaths);
       if (d.allow) passed++; else held++;
       if (!d.allow || kindName(req.resourceType) === 'xhr' || kindName(req.resourceType) === 'document') note(req, d);
       return !d.allow;
     },
     /** 창별 붙잡기(save-hold) 모양 — 'hold' | 'ignore' (기록 안 함) */
-    onRequest(req) { return decide(req, hosts).allow ? 'ignore' : 'hold'; },
+    onRequest(req) { return decide(req, hosts, readPaths).allow ? 'ignore' : 'hold'; },
     onResponse() {}, onNetworkError() {}, onWindowClosed() {}, onTimeout() {},
     unlock() { return false; },                            // 진단 중에는 어떤 허락도 받지 않음
     seal() {},
@@ -258,5 +265,8 @@ async function pageSnapshot(opt) {
 /** includeCode: 사이트 코드 파일 내용까지 받기 — 기본은 끔(주소 목록만). 설정 diagScripts:true 일 때만 켬 */
 const pageExpr = (opt) => '(' + pageSnapshot.toString() + ')(' + JSON.stringify(opt || {}) + ')';
 const PAGE_EXPR = pageExpr({});
+
+/** 기록 한 줄을 남기는 순간 바로 가림(메모리에도 가린 것만 둠) */
+function maskEntry(e) { const at = e.at; const d = maskDiag(e).data; d.at = at; return d; }
 
 module.exports = { createDiagRecorder, decide, ELEMENTS_EXPR, PAGE_EXPR, pageExpr, bodyKeys, WRITE_WORDS, maskDiag, checkDiag };

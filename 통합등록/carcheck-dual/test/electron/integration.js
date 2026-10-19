@@ -42,7 +42,7 @@ async function setup(faults = {}) {
   for (const s of ['carinfo', 'carmodoo', 'entry']) {
     wins[s] = new BrowserWindow({ show: quiet.initialShow('auto', true), webPreferences: { contextIsolation: true, nodeIntegration: false, ...quiet.extraPrefs(true) } });
     wins[s].webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: quiet.popupOptions(true) }));
-    await wins[s].loadURL(M.base + '/' + s);
+    await wins[s].loadURL(M.base + (s === 'entry' && faults.entryPage ? faults.entryPage : '/' + s));
   }
   const js = (s, code) => wins[s].webContents.executeJavaScript(code, true);
   const fillFns = {
@@ -69,14 +69,16 @@ async function setup(faults = {}) {
     const no = await until(() => js('carinfo', 'formNo.value||(msg.textContent==="blocked"?"X":null)'), 3000);
     return no && no !== 'X' ? { ok: true, checkNo: no } : { ok: false, error: '신규등록 요청이 막힘' };
   };
-  const adapters = createElectronAdapters({ getWindow: (s) => wins[s], config: mockConfig(M.host), fillFns,
+  const adapters = createElectronAdapters({ getWindow: (s) => wins[s], config: mockConfig(M.host, { entryQuick: !!faults.entryQuick }), fillFns,
     photoFns: { carinfo: photoFn('carinfo'), carmodoo: photoFn('carmodoo') }, ...(faults.noPrepare ? {} : { prepareFn }) });
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cc-el-')), 'jobs.jsonl');
   const jobLog = createJobLog(file);
   const flow = createRegisterFlow({ jobLog, adapters, mock: true, now: () => new Date('2026-10-19T10:00:00') });
   const clickSave = async (s) => { await js(s, 'document.getElementById("btnSave").click();1'); };
   const settle = async (s) => until(async () => (await adapters[s].saveOutcome()).result !== 'waiting' || null);
+  const stops = [];                                                     // 진단 막기 — 시험이 중간에 실패해도 반드시 풂
   const done = async () => {
+    for (const f of stops) { try { await f(); } catch {} }
     for (const s of Object.keys(wins)) { try { await adapters[s].release(); } catch {} }
     for (const w of BrowserWindow.getAllWindows()) {
       if (w.isDestroyed()) continue;
@@ -86,7 +88,7 @@ async function setup(faults = {}) {
     }
     M.close();
   };
-  return { M, wins, js, adapters, jobLog, flow, clickSave, settle, done, file, prepareFn };
+  return { M, wins, js, adapters, jobLog, flow, clickSave, settle, done, file, prepareFn, stops };
 }
 
 async function siteRound(t, jobId, s) {
@@ -324,11 +326,50 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
+  //  ── 8차 보완: 엔트리 연결 모듈 — 실제 화면 모양 흉내(/entry2) ──
+  const Q = { entryPage: '/entry2', entryQuick: true };
+  await scenario('(엔트리) [간편 접수] → 미리 들어간 번호 확인(고치지 않음) → [불러오기] → 차량번호·차대번호 17자리 검증 → [저장]만 → 목록·상세로 결과 검증 · 전송·출력 안 누름', async () => {
+    const t = await setup(Q);
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r.ok, true, JSON.stringify(r));
+    assert.deepStrictEqual(r.numbers, { carinfo: 'T-0201', carmodoo: 'T-0201', entry: 'T-0201' });
+    assert.deepStrictEqual(t.M.S.saves, { carinfo: 1, carmodoo: 1, entry: 1 });
+    assert.deepStrictEqual(t.M.S.entry[0], ['T-0201', CAR.carNo, CAR.vin], '엔트리에 이 차·17자리로 등록');
+    assert.strictEqual(await t.js('entry', '!!window.__printed || !!window.__sent'), false, '[성능점검기록부 출력]·[전송] 안 누름');
+    assert.ok(t.adapters.entry.implemented, '흉내 설정에서는 연결 모듈 갖춤');
+    console.log('INFO 엔트리 흉내(간편 접수) 포함 1대: ' + r.ms + 'ms · 전산별 ' + JSON.stringify(r.times));
+    await t.done();
+  });
+
+  await scenario('(엔트리) 미리 들어간 번호가 이 차 카인포 번호와 다르면 [불러오기]를 누르지 않고 멈춤 · 번호 칸은 그대로 · 엔트리 저장 0번', async () => {
+    const t = await setup(Q);
+    t.M.S.faults.entryNext = 'T-0150';
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r.ok, false);
+    assert.ok(r.detail.mismatch, JSON.stringify(r));
+    assert.strictEqual(await t.js('entry', 'quickNo.value'), 'T-0150', '번호 칸을 고치지 않음');
+    assert.strictEqual(await t.js('entry', 'document.getElementById("form").style.display'), 'none', '불러오지 않음');
+    assert.strictEqual(t.M.S.saves.entry, 0);
+    await t.done();
+  });
+
+  await scenario('(엔트리) 이미 엔트리에 있는 번호를 불러오면 [저장]이 꺼져 있음 → 누르지 않고 «저장 불가 · 원인 확인 필요»', async () => {
+    const t = await setup(Q);
+    t.M.S.entry.push(['T-0201', '12가3456', 'KMHXX00XXXX123456']);
+    const r = await t.flow.runAll({ ...CAR, data: CAR }, { pollMs: 50, waitMs: 8000 });
+    assert.strictEqual(r.ok, false);
+    assert.ok(r.detail.saveBlocked, JSON.stringify(r));
+    assert.strictEqual(t.M.S.saves.entry, 0);
+    await t.done();
+  });
+
   //  ── 8차 검수 보완: 진단 두 겹 막기 (모의 서버에서만 · 실제 차량 자료 없음) ──
   const diagOn = async (t, win, extra = {}) => {
-    const rec = createDiagRecorder({ siteHosts: [t.M.host] });
+    //  읽기 전용으로 «확인된» 경로만(모의 서버) — 나머지 GET 은 기본 차단
+    const rec = createDiagRecorder({ siteHosts: [t.M.host], readPaths: ['^/api/list$', '^/carinfo$', '^/framepage$', '^/frame-inner$', '^/pii$'] });
     const aborts = [];
     const ds = startDiagSession({ win, rec, onAbort: (w) => aborts.push(w), ...extra });
+    t.stops.push(() => ds.stop());
     return { rec, ds, aborts, ok: await ds.ready };
   };
 
@@ -350,6 +391,9 @@ app.whenReady().then(async () => {
     assert.deepStrictEqual(d.aborts, [], '중단 없음(팝업에도 붙음)');
     await d.ds.stop();
     for (const x of BrowserWindow.getAllWindows()) if (!Object.values(t.wins).includes(x)) x.close();
+    //  끝난 뒤 저절로 저장이 일어나지 않음 — 진단 중에 막힌 [저장]·[신규등록]·사진이 다시 보내지지 않는다
+    await sleep(1500);
+    assert.deepStrictEqual({ saves: t.M.S.saves.carinfo, prepares: t.M.S.prepares, photos: t.M.S.photos || 0 }, { saves: 0, prepares: 0, photos: 0 }, '진단 끝난 뒤 저절로 저장됨');
     //  끝난 뒤: 막기가 풀려 기존 기능(사람이 누르는 [저장])이 예전처럼 서버에 닿음
     await t.js('carinfo', 'document.getElementById("btnSave").click();1');
     await until(() => t.M.S.saves.carinfo === 1, 3000);
@@ -373,15 +417,23 @@ app.whenReady().then(async () => {
     await t.done();
   });
 
-  await scenario('(검수) GET 으로 바꾸는 요청(/api/update · /api/delete 이동 · ?cmd=save) 막음 · 보통 조회 GET 은 나감', async () => {
+  await scenario('(검수) GET 으로 바꾸는 요청(/api/update · /api/delete 이동 · ?cmd=save) 막음 · 확인 안 된 GET 기본 차단 · 확인된 읽기 경로·같은 주소 그림만 나감', async () => {
     const t = await setup({ noPrepare: true });
     const w = t.wins.carinfo;
     const d = await diagOn(t, w);
     const list = await t.js('carinfo', 'fetch("/api/list?site=carinfo").then(function(r){return r.status}).catch(function(){return "blocked"})');
     await t.js('carinfo', 'fetch("/api/update?id=1").catch(function(){});fetch("/api/list?cmd=save").catch(function(){});var i=document.createElement("img");i.src="/x.png";1');
+    await sleep(300);
+    const other = await t.js('carinfo', 'fetch("/api/other?x=1").then(function(r){return r.status}).catch(function(){return "blocked"})');
+    const img = await t.js('carinfo', 'new Promise(function(ok){var i=new Image();i.onload=i.onerror=function(){ok(1)};i.src="/logo.png";})');
+    await sleep(300);
+    assert.strictEqual(list, 200, '확인된 읽기 경로는 나감');
+    assert.strictEqual(other, 'blocked', '확인 안 된 GET 은 기본 차단');
+    assert.strictEqual(t.M.S.hits['/api/other'] || 0, 0, '확인 안 된 GET 이 서버에 닿음');
+    assert.ok(img && (t.M.S.hits['/logo.png'] || 0) >= 1, '같은 주소 그림 파일은 나감');
+    //  화면 이동으로 GET 변경(맨 마지막 — 막히면 화면이 오류 화면으로 바뀌므로)
     await t.js('carinfo', 'location.href="/api/delete?id=1";1').catch(() => {});
-    await sleep(1000);
-    assert.strictEqual(list, 200, '보통 조회는 나감');
+    await sleep(800);
     assert.strictEqual(t.M.S.getWrites || 0, 0, 'GET 변경 요청이 서버에 닿음');
     await d.ds.stop();
     await t.done();

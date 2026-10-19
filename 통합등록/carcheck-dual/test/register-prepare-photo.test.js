@@ -200,7 +200,7 @@ test('작업 기록: 신규등록 표시(지우기 포함)·사진 칸 기록이
 });
 
 test('실제 카인포 목록 모양: 번호 칸의 «재성능» 표시를 떼고 숫자만, 날짜는 앞 날짜만 읽음', () => {
-  const { JSDOM } = require('./node_modules/jsdom');
+  const { JSDOM } = require('./helpers/need-jsdom')();
   const { listExpr } = require('../src/sites/flow-adapters');
   const { REAL } = require('../src/sites/site-config');
   const td = (a) => '<tr>' + a.map((x) => '<td>' + x + '</td>').join('') + '</tr>';
@@ -233,7 +233,7 @@ test('목록에 차대번호 칸이 없을 때(실제 카인포): 이번에 생�
 });
 
 test('카모두 번호 칸(10/19 실제 화면): «수동입력» 체크를 켜야 칸이 열리고 카인포 번호가 들어감 — 이미 켜져 있으면 끄지 않음', () => {
-  const { JSDOM } = require('./node_modules/jsdom');
+  const { JSDOM } = require('./helpers/need-jsdom')();
   const { carmodooNumberExpr, carmodooReadExpr } = require('../src/sites/flow-adapters');
   const cfg = { manualInput: '#manual', numberField: '#no' };
   const html = (on) => '<input id="no" value="자동입력" disabled><input type="checkbox" id="manual"' + (on ? ' checked' : '') + '>';
@@ -271,7 +271,10 @@ test('엔트리 [간편 접수] 번호 칸(대표님 10/19 결정): 프로그램
   assert.ok(r.detail.mismatch);
   assert.ok(!t.W.world.calls.includes('entry.clickSave'));
   const src = require('fs').readFileSync(require('path').join(__dirname, '../src/sites/flow-adapters.js'), 'utf8');
-  assert.ok(!/numberInput\)/.test(src), '엔트리 번호 칸에 값을 넣는 코드가 없어야 함');
+  //  번호 칸(numberInput)을 다루는 줄은 «읽기»만 — 값을 넣는(=) 코드가 없어야 함 (실제로 칸이 그대로인지는 Electron 시험에서도 확인)
+  const touch = src.split('\n').filter((l) => /numberInput/.test(l));
+  assert.ok(touch.length > 0);
+  assert.ok(touch.every((l) => !/\.value\s*=(?!=)|setAttribute\(\s*["']value/.test(l)), '엔트리 번호 칸에 값을 넣는 코드가 없어야 함: ' + touch.join(' | '));
 });
 
 test('(8차) 엔트리 [저장] 단추가 꺼져 있으면 누르지 않고 «저장 불가 · 원인 확인 필요» — «이미 등록됨»으로 단정하지 않고 원인 세 가지를 안내', async () => {
@@ -324,7 +327,7 @@ test('(8차) 카인포 저장 확인: «저장 끝» 상태 설정이 있으면 
 });
 
 test('[저장] 단추는 글자가 정확히 «저장»인 것만 — [접수저장]·[성능점검기록부 전송]은 누르지 않음 · 꺼져 있으면 안 누름 · 둘 이상이면 안 누름', () => {
-  const { JSDOM } = require('./node_modules/jsdom');
+  const { JSDOM } = require('./helpers/need-jsdom')();
   const { saveButtonExpr } = require('../src/sites/flow-adapters');
   const cfg = { saveButtonText: '저장' };
   const run = (html, press) => {

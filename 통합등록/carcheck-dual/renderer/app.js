@@ -724,7 +724,8 @@ function diagReport(r) {
       { title: '개인정보 검사', items: ['가린 것: ' + (masked.join(' · ') || '없음'), '남은 것: ' + (left.join(' · ') || '없음')], cls: left.length ? 'warn' : 'muted', noCount: true },
       { title: '기록', items: ['막은 요청 ' + (r.held || 0) + '건 · 화면 칸 기록 ' + (r.snaps || 0) + '번', r.file || '기록 파일 없음'], cls: 'muted', noCount: true },
     ],
-    note: r.file ? '이 기록 파일을 방에 보내 주세요. 개인정보는 가리고 다시 검사했어요.' : '기록 파일은 만들지 않았어요.',
+    note: '요청 막기를 풀었어요 — 이제부터 이 전산 창에서 누르는 [저장]은 실제로 저장돼요. 진단 중에 눌렀던 [저장]은 다시 보내지 않아요. ' +
+      (r.file ? '이 기록 파일을 방에 보내 주세요. 개인정보는 가리고 다시 검사했어요.' : '기록 파일은 만들지 않았어요.'),
   }]);
 }
 

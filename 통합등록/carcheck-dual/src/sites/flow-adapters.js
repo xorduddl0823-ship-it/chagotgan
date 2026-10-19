@@ -67,12 +67,14 @@ const carmodooReadExpr = (cfg) => carmodooNumberExpr(cfg, '').replace('if(m){if(
  *  press=true 면 켜진 단추 하나를 누르고 true · false 면 켜져 있는지만(true/false), 없으면 null
  *  같은 글자의 단추가 둘 이상 보이면 누르지 않는다(null).
  */
-function saveButtonExpr(cfg, press) {
-  return '(function(){var C=' + JSON.stringify({ sel: cfg.saveButton || null, text: cfg.saveButtonText || null }) + ';var b=null;' +
+function saveButtonExpr(cfg, press) { return buttonExpr({ sel: cfg.saveButton || null, text: cfg.saveButtonText || null }, press); }
+/** 단추 찾기(선택자 또는 «정확히 같은» 글자 · 보이는 것 하나만) — 누르기(press) 또는 켜졌는지 보기 */
+function buttonExpr(spec, press) {
+  return '(function(){var C=' + JSON.stringify({ sel: spec.sel || null, text: spec.text || null }) + ';var b=null;' +
     'if(C.sel){b=document.querySelector(C.sel);}' +
     'else if(C.text){var all=document.querySelectorAll("button,a,input[type=button],input[type=submit]");var hit=[];' +
     'for(var i=0;i<all.length;i++){var e=all[i];var t=String(e.value!=null&&e.tagName==="INPUT"?e.value:(e.textContent||"")).replace(/\\s+/g,"");' +
-    'if(t===C.text&&(e.offsetWidth||e.offsetHeight||e.getClientRects().length))hit.push(e);}if(hit.length!==1)return null;b=hit[0];}' +
+    'if(t===String(C.text).replace(/\\s+/g,"")&&(e.offsetWidth||e.offsetHeight||e.getClientRects().length))hit.push(e);}if(hit.length!==1)return null;b=hit[0];}' +
     'if(!b)return null;var off=b.disabled||b.getAttribute("aria-disabled")==="true"||/(^|\\s)disabled(\\s|$)/.test(b.className);' +
     (press ? 'if(off)return null;b.click();return true;' : 'return !off;') + '})()';
 }
@@ -214,6 +216,21 @@ function createElectronAdapters(o) {
     },
   });
 
+  //  (8차 보완) 엔트리 [간편 접수] 창 — 여는 단추 글자 · 번호 칸 · [불러오기] 글자 · 실패 안내의 [확인] 글자
+  const Q = C.entry && C.entry.quick && C.entry.quick.numberInput ? C.entry.quick : null;
+  /** 엔트리가 매긴 번호 읽기 — [간편 접수] 창이 닫혀 있으면 열고(보기만) 미리 들어간 번호를 읽는다. 번호 칸은 절대 고치지 않음 */
+  async function readNextRaw() {
+    const w = o.getWindow('entry');
+    if (!Q) return inAnyFrame(w, textExpr(C.entry.nextNumber));
+    const vis = '(function(){var e=document.querySelector(' + JSON.stringify(Q.numberInput) + ');return e&&(e.offsetWidth||e.offsetHeight)?String(e.value||"").trim():null;})()';
+    let v = await inAnyFrame(w, vis);
+    if (v == null) {
+      if (!(await inAnyFrame(w, buttonExpr({ text: Q.openText }, true)))) return null;     // [간편 접수] 누르기
+      const until = Date.now() + 4000;
+      while (Date.now() < until && !(v = await inAnyFrame(w, vis))) await new Promise((res) => setTimeout(res, 100));
+    }
+    return v || null;
+  }
   //  엔트리 번호는 «26-28-604413»처럼 줄표를 넣어 보여 준다(10/19 화면 사진) — 카인포 번호(2628604413)와 견주려면 숫자만
   const enNo = (v) => (C.entry && C.entry.numberDigitsOnly && v != null ? String(v).replace(/[^0-9]+/g, '') : v);
   const entry = Object.assign(common('entry'), {
@@ -222,10 +239,11 @@ function createElectronAdapters(o) {
       const cfg = C.entry;
       if (!cfg.loggedIn) return { loggedIn: false, canRead: false, reason: '엔트리 화면 설정 없음' };
       const who = await inAnyFrame(o.getWindow('entry'), textExpr(cfg.loggedIn));
-      const next = cfg.nextNumber ? await inAnyFrame(o.getWindow('entry'), textExpr(cfg.nextNumber)) : null;
+      //  [간편 접수] 화면이면 번호는 창을 열어야 보이므로 로그인만 보면 읽을 수 있다고 본다(번호는 readNext 에서 확인)
+      const next = Q ? true : cfg.nextNumber ? await inAnyFrame(o.getWindow('entry'), textExpr(cfg.nextNumber)) : null;
       return { loggedIn: !!who, canRead: !!who && !!next };
     },
-    async readNext() { return enNo(await inAnyFrame(o.getWindow('entry'), textExpr(C.entry.nextNumber))); },
+    async readNext() { return enNo(await readNextRaw()); },
     /** 엔트리 화면 새로 고치기 — 다시 그려져 로그인 표시나 로그인 칸이 보일 때까지(최대 6초) */
     async refresh() {
       const w = o.getWindow('entry');
@@ -250,19 +268,27 @@ function createElectronAdapters(o) {
       //   다시 할 때마다 엔트리 번호를 다시 읽어 처음과 다르면 즉시 멈춘다.
       const R = cfg.loadRetry || {};
       const times = R.pureRead === true ? Math.min(3, Math.max(1, R.times || 1)) : 1;
-      const first = enNo(await inAnyFrame(w, textExpr(cfg.nextNumber)));
+      const first = enNo(await readNextRaw());
       for (let i = 0; i < times; i++) {
         if (i) {
           await new Promise((res) => setTimeout(res, R.waitMs || 3000));
-          const now = enNo(await inAnyFrame(w, textExpr(cfg.nextNumber)));
+          const now = enNo(await readNextRaw());
           if (now !== first) return { ...r, missing: (r.missing || []).concat(['다시 불러오는 중 엔트리 번호가 바뀜(' + first + ' → ' + now + ') — 멈춤']) };
         }
-        const ok = await inAnyFrame(w, '(function(){var b=document.querySelector(' + JSON.stringify(cfg.loadButton) + ');if(!b)return null;b.click();return true;})()');
+        const ok = await inAnyFrame(w, Q && Q.loadText ? buttonExpr({ text: Q.loadText }, true)
+          : '(function(){var b=document.querySelector(' + JSON.stringify(cfg.loadButton) + ');if(!b)return null;b.click();return true;})()');
         if (!ok) return { ...r, missing: (r.missing || []).concat(['엔트리 불러오기 단추를 찾지 못함']) };
         await new Promise((res) => setTimeout(res, 300));
         const failed = R.failText ? await inAnyFrame(w, '(function(){var t=' + JSON.stringify(R.failText) + ';var b=document.body&&document.body.innerText||"";' +
           'if(b.indexOf(t)<0)return null;var c=' + JSON.stringify(R.failClose || '') + ';var e=c&&document.querySelector(c);if(e)e.click();return true;})()') : null;
-        if (!failed) return { ...r, filled: (r.filled || []).concat(['엔트리 불러오기']) };
+        if (failed && Q && Q.failCloseText) await inAnyFrame(w, buttonExpr({ text: Q.failCloseText }, true));   // 안내 창 [확인]
+        if (!failed) {
+          //  불러온 화면이 뜰 때까지(번호 칸이 채워질 때까지) 기다림
+          const L = C.entry.loaded;
+          const until2 = Date.now() + 5000;
+          while (L && L.entryNo && Date.now() < until2 && !(await inAnyFrame(w, textExpr(L.entryNo)))) await new Promise((res2) => setTimeout(res2, 100));
+          return { ...r, filled: (r.filled || []).concat(['엔트리 불러오기']) };
+        }
       }
       return { ...r, missing: (r.missing || []).concat(['엔트리에서 이 차 기록을 불러오지 못함(카인포 기록이 아직 안 넘어왔을 수 있어요)']) };
     },
@@ -307,9 +333,10 @@ function createElectronAdapters(o) {
   if (!(C.entry && C.entry.detail && C.entry.detail.carNo && C.entry.detail.vin && C.entry.list && C.entry.list.rows)) delete entry.readSavedDetail;
   //  목록에 차대번호 칸이 있는 전산은 저장 확인 때 차대번호를 반드시 읽음(8차)
   carmodoo.listHasVin = !!(C.carmodoo.list && C.carmodoo.list.cols && C.carmodoo.list.cols.vin != null);
-  entry.implemented = !!(C.entry && C.entry.loggedIn && C.entry.nextNumber && C.entry.loadButton && C.entry.list && C.entry.list.cols);
+  entry.implemented = !!(C.entry && C.entry.loggedIn && (C.entry.nextNumber || Q) && (C.entry.loadButton || (Q && Q.loadText)) &&
+    C.entry.list && C.entry.list.rows && C.entry.list.cols && C.entry.loaded && C.entry.loaded.entryNo && C.entry.loaded.carNo && C.entry.loaded.vin);
 
   return { carinfo, carmodoo, entry };
 }
 
-module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr, saveButtonExpr };
+module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr, saveButtonExpr, buttonExpr };

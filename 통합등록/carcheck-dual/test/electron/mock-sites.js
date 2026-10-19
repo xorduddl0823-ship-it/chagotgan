@@ -26,6 +26,8 @@ function createMockSites() {
 
   const server = http.createServer((req, res) => {
     const u = new URL(req.url, 'http://x');
+    S.hits = S.hits || {};
+    S.hits[u.pathname] = (S.hits[u.pathname] || 0) + 1;                 // 어떤 주소가 서버에 닿았는지(진단 시험용)
     const send = (code, type, body) => { res.writeHead(code, { 'content-type': type + '; charset=utf-8' }); res.end(body); };
     if (u.pathname === '/api/list') {
       const site = u.searchParams.get('site');
@@ -137,6 +139,52 @@ function createMockSites() {
           try { await fetch('/api/save', { method:'POST', body: JSON.stringify({ site:'carmodoo', checkNo: checkNo.value, carNo: carNo.value }) }); } catch (e) {}
           loadList('carmodoo');
         };`));
+    }
+    //  (8차 보완 · 엔트리 실제 화면 모양 흉내 — 10/19 대표님 화면 사진)
+    //   성능점검 현황(목록: 번호·가린 차량번호·[성능점검]) · 오른쪽 위 [간편 접수] → «불러올 성능번호를 입력해 주세요» 창(다음 번호가 미리 들어감)
+    //   → [불러오기] → 차량정보 화면(차량번호·차대번호 17자리) · 맨 아래 [성능점검기록부 전송](꺼짐) · [성능점검기록부 출력] · [저장](새 기록이면 켜짐)
+    //   없는 번호 → «성능 불러오기가 실패하였습니다» [확인] · 저장하면 목록으로
+    if (u.pathname === '/entry2') {
+      return send(200, 'text/html', page('엔트리 흉내 2',
+        '<header><span id=who2></span></header><button id=bQuick>간편 접수</button>' +
+        '<section id=listView><table id=list><tbody></tbody></table></section>' +
+        '<div id=quick style="display:none"><p>불러올 성능번호를 입력해 주세요</p><input id=quickNo><button id=bLoad>불러오기</button></div>' +
+        '<div id=fail style="display:none"><p>성능 불러오기가 실패하였습니다</p><button id=bFailOk>확인</button></div>' +
+        '<section id=form style="display:none"><input id=fNo readonly><input id=fCar readonly><input id=fVin readonly>' +
+        '<button id=bSend disabled>성능점검기록부 전송</button><button id=bPrint>성능점검기록부 출력</button><button id=bSave2>저장</button></section>' +
+        '<section id=detail style="display:none"><span id=dCar></span><span id=dVin></span></section>',
+        LIST_JS.replace("'<td>'+c+'</td>'", "'<td>'+c+'</td>'") + `
+        loadList('entry');
+        let ST = {};
+        async function tick(){ try { ST = await (await fetch('/api/entryState')).json(); who2.innerHTML = ST.logged ? '<b id=whoName>시험자 (tester)</b>' : '<input type=password>'; } catch (e) {} }
+        tick(); setInterval(tick, 150);
+        const show = (id, on) => { document.getElementById(id).style.display = on ? '' : 'none'; };
+        bQuick.onclick = async () => { await tick(); quickNo.value = ST.next || ''; show('quick', true); };
+        bLoad.onclick = async () => {
+          const no = quickNo.value;
+          const r = await (await fetch('/api/entryLoad?no=' + encodeURIComponent(no))).json();
+          if (!r.row) { show('fail', true); return; }
+          show('quick', false); show('listView', false);
+          fNo.value = r.row[0]; fCar.value = r.row[1]; fVin.value = r.row[2];
+          bSave2.disabled = !!r.already; show('form', true);
+        };
+        bFailOk.onclick = () => show('fail', false);
+        bPrint.onclick = () => { window.__printed = true; };
+        bSend.onclick = () => { window.__sent = true; };
+        bSave2.onclick = async () => {
+          try { await fetch('/api/save', { method:'POST', body: JSON.stringify({ site:'entry', checkNo: fNo.value, carNo: fCar.value, vin: fVin.value }) }); } catch (e) {}
+          show('form', false); show('listView', true); loadList('entry');
+        };
+        document.addEventListener('click', async (e) => {
+          const b = e.target.closest && e.target.closest('button.dt'); if (!b) return;
+          const d = await (await fetch('/api/detail?no=' + encodeURIComponent(b.dataset.no))).json();
+          dCar.textContent = d.carNo; dVin.textContent = d.vin; show('detail', true);
+        });`));
+    }
+    if (u.pathname === '/api/entryLoad') {
+      const no = u.searchParams.get('no');
+      const row = S.carinfo.find((r) => r[0] === no && r[4] === '완료');                 // 카인포에 저장 끝난 기록만 불러옴
+      return send(200, 'application/json', JSON.stringify({ row: row || null, already: S.entry.some((r) => r[0] === no) }));
     }
     if (u.pathname === '/entry') {
       //  흉내 엔트리 — 로그인 상태·다음 번호를 스스로 새로 읽는다(자동 등록 중 사람이 새로고침하지 않으므로)

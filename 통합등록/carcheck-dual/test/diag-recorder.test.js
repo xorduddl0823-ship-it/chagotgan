@@ -4,31 +4,31 @@ const assert = require('node:assert');
 const { createDiagRecorder, decide, bodyKeys, maskDiag, checkDiag } = require('../src/sites/diag-recorder');
 
 const H = new Set(['ai.carinfo.co.kr']);
-const allow = (method, url, kind) => decide({ method, url, kind }, H).allow;
+const R = [/^\/ct\/carcheck_list$/, /^\/car\/model_list$/];             // 읽기 전용으로 «확인된» 경로(시험용)
+const allow = (method, url, kind) => decide({ method, url, kind }, H, R).allow;
 
-test('안전한 조회만 내보냄: 그림·코드 파일 GET · 그 전산 주소의 조회 GET 만 — 나머지는 모두 막음', () => {
+test('확인된 읽기 경로만 허용: 그 전산 주소의 정적 파일 · 확인된 경로의 조회 GET 만 — 확인 안 된 GET 은 기본 차단', () => {
   //  내보냄
   assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/carcheck_list?carNo=12', 'xhr'), true);
   assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/car/model_list', 'xhr'), true, 'model 의 del 같은 짧은 말로 막지 않음');
-  assert.strictEqual(allow('GET', 'https://cdn.example/app.js', 'script'), true, '정적 코드 파일');
-  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/upload/photo.jpg', 'image'), true, '그림은 주소에 upload 가 있어도 보기만');
-  //  막음 — 쓰기
-  for (const m of ['POST', 'PUT', 'PATCH', 'DELETE']) assert.strictEqual(allow(m, 'https://ai.carinfo.co.kr/ct/list', 'xhr'), false, m);
-  //  막음 — GET 으로 바꾸는 요청
-  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/insertPhoto.do?no=1', 'xhr'), false, '주소에 insert');
-  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/api?cmd=save&no=1', 'xhr'), false, '물음표 뒤 cmd=save');
-  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/api?mode=delete', 'document'), false, '화면 이동도');
-  //  막음 — 다른 주소로 가는 화면·조회, 실시간 연결·신호
-  assert.strictEqual(allow('GET', 'https://other.example/list', 'xhr'), false);
+  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/js/app.js', 'script'), true, '같은 주소 코드 파일');
+  //  기본 차단 — 확인 안 된 GET
+  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/other_list', 'xhr'), false, '목록에 없는 조회');
+  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/carcheck_list_x', 'document'), false, '무늬는 끝까지 맞아야');
+  assert.strictEqual(decide({ method: 'GET', url: 'https://ai.carinfo.co.kr/ct/carcheck_list', kind: 'xhr' }, H, []).allow, false, '목록이 비면 모두 막힘');
+  assert.strictEqual(allow('GET', 'https://cdn.example/app.js', 'script'), false, '다른 주소 파일');
+  //  막음 — 쓰기 · 저장처럼 보이는 GET(확인된 경로라도) · 실시간 연결·신호
+  for (const m of ['POST', 'PUT', 'PATCH', 'DELETE']) assert.strictEqual(allow(m, 'https://ai.carinfo.co.kr/ct/carcheck_list', 'xhr'), false, m);
+  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/ct/carcheck_list?cmd=save', 'xhr'), false, '확인된 경로라도 cmd=save');
+  assert.strictEqual(allow('GET', 'https://ai.carinfo.co.kr/upload/photo.jpg', 'image'), false, '주소에 upload');
   assert.strictEqual(allow('GET', 'https://other.example/', 'subFrame'), false, '다른 주소 iframe 화면');
   assert.strictEqual(allow('GET', 'wss://ai.carinfo.co.kr/ws', 'webSocket'), false);
   assert.strictEqual(allow('POST', 'https://ai.carinfo.co.kr/log', 'ping'), false);
-  //  주소를 모르면 화면·조회 GET 도 막음
-  assert.strictEqual(decide({ method: 'GET', url: 'https://x.example/list', kind: 'xhr' }, new Set()).allow, false);
+  assert.strictEqual(decide({ method: 'GET', url: 'https://x.example/list', kind: 'xhr' }, new Set(), R).allow, false, '주소를 모르면 막음');
 });
 
 test('기록: 막은 요청은 «경로·물음표 뒤 이름·보내려던 칸 이름»만 — 값 없음 · 창별 붙잡기는 판단만(두 번 적지 않음)', () => {
-  const r = createDiagRecorder({ siteHosts: ['ai.carinfo.co.kr'], now: () => new Date('2026-10-19T10:00:00Z') });
+  const r = createDiagRecorder({ siteHosts: ['ai.carinfo.co.kr'], readPaths: ['^/ct/carcheck_list$'], now: () => new Date('2026-10-19T10:00:00Z') });
   assert.strictEqual(r.onSessionRequest({ method: 'POST', url: 'https://ai.carinfo.co.kr/ct/carcheck_save.do?no=2628604413', resourceType: 'xhr', postData: 'carNo=12%EA%B0%803456&vin=KMHXX00XXXX123456' }), true);
   assert.strictEqual(r.onSessionRequest({ method: 'GET', url: 'https://ai.carinfo.co.kr/ct/carcheck_list', resourceType: 'xhr' }), false);
   assert.strictEqual(r.onRequest({ method: 'POST', url: 'https://ai.carinfo.co.kr/x', kind: 'ajax' }), 'hold');

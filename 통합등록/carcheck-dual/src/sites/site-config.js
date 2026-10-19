@@ -22,6 +22,8 @@
  *          photoPhase   사진을 언제 올리나: 'beforeSave'(저장 전) · 'afterSave'(저장해 번호가 생긴 뒤) · null(아직 모름 → 사진이 있으면 멈춤)
  *          list.savedStatus  목록 «상태» 칸에서 «저장 끝»을 뜻하는 글자(정규식) — 신규등록 때 줄이 먼저 생기는 전산에서
  *                            «저장했는지 모름»을 목록으로 가릴 때만 씀. 모르면 null(사람 확인)
+ *    (8차 보완) diagReadPaths  진단 중에도 내보내도 되는 «읽기 전용으로 확인된» GET 경로 무늬(정규식). 비어 있으면 화면·조회 GET 은 모두 막힘.
+ *                   진단 기록에 남은 «막은 GET» 경로를 보고 읽기 전용임을 확인한 것만 더한다(지금은 모두 비어 있음 — 확인 전)
  *  ※ 엔트리는 «다음 번호»를 프로그램이 정하지 않는다 — 화면에 보이는 값을 읽어 카인포 번호와 같은지만 본다.
  */
 
@@ -30,6 +32,7 @@ const REAL = {
     confirmed: false,
     hosts: ['ai.carinfo.co.kr'],
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
+    diagReadPaths: [],                                                   // 진단 중 내보내도 되는 «읽기 전용 확인» GET 경로 — 확인 전이라 비움
     //  10/19 대표님 화면 사진: 목록 칸 = # · 점검일자(성능만료일자) · 차량번호 · 성능점검번호(«재성능» 표시가 붙기도 함) · 카히스토리 · 차량명 ·
     //   주행거리 · 점검원 · 매매상사 · 고객명 · 보증구분 · 점검비 · 보험료 · 합계금액 · 점검상태(저장된 차 «점검완료») · 특약
     //   목록에 차대번호 칸이 없음 → 이번에 생긴 줄을 눌러 위쪽 차량정보의 차대번호를 읽음(vinFromForm)
@@ -54,6 +57,7 @@ const REAL = {
     confirmed: false,
     hosts: ['ck.carmodoo.com'],
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
+    diagReadPaths: [],                                                   // 진단 중 내보내도 되는 «읽기 전용 확인» GET 경로 — 확인 전이라 비움
     //  10/19 대표님 화면 사진(접수등록 «① 신청인 및 접수정보» 탭): «점검번호» 칸 = 기본 «자동입력»(잠김) + 옆 «수동입력» 체크.
     //   «수동입력»을 «켜야» 칸이 열려(«숫자만 입력») 카인포 번호를 넣을 수 있음 — «자동 부여»를 «끄는» 모양이 아님(대표님 지적)
     //   → manualInput(켜야 하는 체크) 을 씀. 두 칸의 선택자(id)는 사진으로 알 수 없어 아직 비움
@@ -73,6 +77,7 @@ const REAL = {
     confirmed: false,
     hosts: [],                                                           // 엔트리 주소 — 10/19
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
+    diagReadPaths: [],                                                   // 진단 중 내보내도 되는 «읽기 전용 확인» GET 경로 — 확인 전이라 비움
     //  10/19 대표님 화면 사진(«성능점검 현황»):
     //   · 로그인할 때마다 문자 «본인확인»(인증번호, 3분) · 한동안 안 쓰면 끊겨 다시 로그인+문자 — 사람이 함(프로그램은 우회·연장 안 함)
     //   · 로그인되면 오른쪽 위에 이름(아이디) 표시 → loggedIn 은 그 자리(선택자는 사진으로 알 수 없어 비움)
@@ -89,6 +94,9 @@ const REAL = {
     //  (8차) 저장 뒤 상세 기록 확인 — 목록의 [성능점검] 단추로 열리는 화면의 차량번호·차대번호 칸(선택자는 진단 때)
     detail: { openText: '성능점검', carNo: null, vin: null },
     loggedIn: null, nextNumber: null, numberInput: null, loadButton: null,
+    //  (8차 보완) [간편 접수] 흐름 — 단추 글자는 화면 사진으로 확인(간편 접수 · 불러오기 · 확인), 번호 칸 선택자(numberInput)는 진단 뒤에.
+    //   numberInput 이 비어 있으면 이 흐름은 꺼져 있음(엔트리 연결 미구현으로 표시)
+    quick: { openText: '간편 접수', numberInput: null, loadText: '불러오기', failCloseText: '확인' },
     loaded: { entryNo: null, carNo: null, vin: null },
     //  10/19 화면 사진(불러오기 성공 뒤 «자동차성능·상태점검»): 차량번호·차대번호 17자리가 가리지 않고 보임 · 점검 내용·사진(«2/2»)도 카인포에서 채워짐
     //   맨 아래 [성능점검기록부 전송] · [성능점검기록부 출력] · [저장] — [저장]은 새 기록일 때 빨갛게 켜지고, 이미 등록된 것은 꺼져 있음
@@ -101,7 +109,7 @@ const REAL = {
 };
 
 /** 모의 시험용 흉내 사이트 설정 (host 는 시험이 정함) */
-function mockConfig(host) {
+function mockConfig(host, opt = {}) {
   const base = { confirmed: true, hosts: [host], savePatterns: ['/api/save'], saveGetPatterns: [], readAllow: ['/api/list'], fillAllow: [], saveButton: '#btnSave' };
   return {
     //  흉내 카인포: 신규등록 [확인] 때 목록에 «작성중» 줄과 번호가 먼저 생기고, 저장하면 «완료» · 사진은 저장 뒤
@@ -113,7 +121,15 @@ function mockConfig(host) {
     entry: { ...base, loggedIn: '#who', nextNumber: '#nextNo', numberInput: '#inNo', loadButton: '#btnLoad',
              loaded: { entryNo: '#ldNo', carNo: '#ldCar', vin: '#ldVin' },
              list: { rows: '#list tbody tr', cols: { checkNo: 0, carNo: 1 } },
-             detail: { openText: '성능점검', carNo: '#dtCar', vin: '#dtVin' } },
+             detail: { openText: '성능점검', carNo: '#dtCar', vin: '#dtVin' },
+             //  (8차 보완) 실제 엔트리 모양 흉내(/entry2) — [간편 접수] → 미리 들어간 번호 → [불러오기] → [저장](글자로 찾음)
+             ...(opt.entryQuick ? {
+               saveButton: null, saveButtonText: '저장', loggedIn: '#whoName', nextNumber: null, loadButton: null,
+               quick: { openText: '간편 접수', numberInput: '#quickNo', loadText: '불러오기', failCloseText: '확인' },
+               loaded: { entryNo: '#fNo', carNo: '#fCar', vin: '#fVin' },
+               detail: { openText: '성능점검', carNo: '#dCar', vin: '#dVin' },
+               loadRetry: { times: 3, waitMs: 400, failText: '성능 불러오기가 실패하였습니다', pureRead: true },
+             } : {}) },
   };
 }
 
