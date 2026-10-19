@@ -42,10 +42,17 @@ function createMockCarmodoo(opt = {}) {
     const body = () => new Promise((r) => { let b = ''; req.on('data', (d) => { b += d; }); req.on('end', () => { try { r(JSON.parse(b || '{}')); } catch { r({}); } }); });
     if (u.pathname === '/main/index.do') return send(res, 200, 'text/html', page('메인', '<a href="/carCheck/carCheckList.do">접수차량 리스트</a>'));
     if (u.pathname === '/carCheck/carCheckList.do') {
-      const rows = S.records.map((r) => '<tr><td><input type=checkbox></td><td>' + r.no + '</td><td>' + r.date + '</td><td>' + r.date + '</td><td>' + r.carNo + '</td><td>' + r.vin + '</td><td>차</td><td>' + (r.photos ? 'O' : 'X') + '</td></tr>').join('');
+      //  쪽 나누기(opt.pageSize) — 첫 쪽만 보여 주고 «Total N»과 쪽 번호. opt.noTotal 이면 Total 글을 안 보여 줌
+      //  opt.search 가 있으면 ?carNo= 검색 결과만
+      const q = u.searchParams.get('carNo');
+      const all = q ? S.records.filter((r) => r.carNo === q) : S.records;
+      const shown = all.slice(0, opt.pageSize || 1000);
+      const rows = shown.map((r) => '<tr><td><input type=checkbox></td><td>' + r.no + '</td><td>' + r.date + '</td><td>' + r.date + '</td><td>' + r.carNo + '</td><td>' + r.vin + '</td><td>차</td><td>' + (r.photos ? 'O' : 'X') + '</td></tr>').join('');
       return send(res, 200, 'text/html', page('접수차량 리스트',
         '<button id=btnNew onclick="location.href=\'/carCheck/pop_carcheck.do\'">접수등록</button>' +
-        '<table id=list><thead><tr><th>체크</th><th>성능번호</th><th>접수일</th><th>검사일</th><th>차량번호</th><th>차대번호</th><th>차명</th><th>사진</th></tr></thead><tbody>' + rows + '</tbody></table>'));
+        (opt.noTotal ? '' : '<div>Total ' + all.length + '</div>') +
+        '<table id=list><thead><tr><th>체크</th><th>성능번호</th><th>접수일</th><th>검사일</th><th>차량번호</th><th>차대번호</th><th>차명</th><th>사진</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        (all.length > shown.length ? '<div class=paging>' + Array.from({ length: Math.ceil(all.length / opt.pageSize) }, (_, i) => '<a href="#">' + (i + 1) + '</a>').join(' ') + '</div>' : '')));
     }
     if (u.pathname === '/carCheck/pop_carcheck.do') {
       S.newForms++;

@@ -69,6 +69,15 @@ try {
 const tiOk = /wtitle=.*시험판/.test(ti) && /userData=carcheck-dual-시험판/.test(ti);
 console.log((tiOk ? 'ok' : 'not ok') + ' - 시험판: 기록 폴더를 업무용(carcheck-dual)과 따로 쓰고 창 제목에 «시험판»' + (tiOk ? '' : '\n  error: ' + ti));
 if (!tiOk) process.exit(1);
+const useX = process.platform === 'linux' && !process.env.DISPLAY && fs.existsSync('/usr/bin/xvfb-run');
+//  (13·14차) 기존 업무용 [경기조합만] — 진짜 프로그램을 띄워 흉내 경기조합에 보내 중복 접수·먹통·알림창 대기를 확인
+const lc = spawnSync(process.execPath, [path.join(__dirname, 'legacy-checks.js')], { encoding: 'utf8', timeout: 3000000 });
+process.stdout.write(String(lc.stdout || '') + (lc.status === 0 ? '' : String(lc.stderr || '').slice(-400)));
+if (lc.status !== 0) process.exit(1);
+//  (14차) 실행 안정성 — 입력·경고창 뒤 입력·사진 고르기·위아래 단추 전부·기록 폴더(윈도우 EXE 는 PACKAGED_EXE 로 같은 시험)
+const wc = spawnSync(useX ? 'xvfb-run' : process.execPath, (useX ? ['-a', process.execPath] : []).concat([path.join(__dirname, 'windows-check.js')]), { encoding: 'utf8', timeout: 900000 });
+process.stdout.write(String(wc.stdout || '').split('\n').filter((l) => /^(ok|not ok)/.test(l)).join('\n') + '\n');
+if (wc.status !== 0) process.exit(1);
 if (r.status !== 0) {
   const err = String(r.stderr || '').split('\n').filter((l) => !/dbus|bus\.cc|viz_main|shared_image|one_copy|Fontconfig|gpu/i.test(l)).slice(-15).join('\n');
   if (err.trim()) process.stdout.write('--- stderr ---\n' + err + '\n');

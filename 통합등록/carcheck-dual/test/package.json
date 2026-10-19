@@ -3,6 +3,7 @@
   "private": true,
   "description": "모의 시험 도구 (실제 전산에 접속하지 않음). 프로그램 설치 파일에는 들어가지 않는다.",
   "devDependencies": {
-    "jsdom": "24.1.3"
+    "jsdom": "24.1.3",
+    "playwright-core": "1.56.1"
   }
 }

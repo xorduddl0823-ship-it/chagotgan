@@ -1,0 +1,42 @@
+# carcheck-dual 윈도우 EXE 확인 (14차 · 초안 — 대표님 허락 뒤에만 저장소 맨 위 .github/workflows/ 로 옮겨 켬)
+#  GitHub 의 윈도우 PC(windows-latest)에서: 단위 시험 → 시험판 EXE 만들기 → EXE 를 실제로 띄워
+#  입력·경고창 뒤 입력·사진 고르기·위아래 단추 17개·기록 폴더 분리(windows-check) + 기존 [경기조합만] 6가지(legacy-checks)를 확인.
+#  실제 전산에는 접속하지 않음(전산 주소는 닫힌 주소 또는 흉내 사이트). 실제 차량 자료 없음. 만든 EXE 는 결과물로 내려받을 수 있음.
+name: carcheck-dual 윈도우 EXE 확인
+on:
+  workflow_dispatch:
+  push:
+    branches: [ccr-d02a591d-1pqbtu]
+    paths: ['통합등록/carcheck-dual/**']
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+        working-directory: 통합등록/carcheck-dual
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npm --prefix test ci --no-audit --no-fund
+      - name: 단위 시험
+        run: node --test "test/*.test.js"
+      - name: 시험판 EXE 만들기(기록 폴더 따로 · 서명 없음)
+        run: |
+          echo '{"dataFolder":"carcheck-dual-시험판"}' > test-install.json
+          node -e "const b=require('./package.json').build;b.files=b.files.concat(['test-install.json']);b.productName='성능점검 이중등록 시험판';b.directories={output:'../exe-out',buildResources:'build'};b.win.signAndEditExecutable=false;require('fs').writeFileSync('../builder-ci.json',JSON.stringify(b))"
+          npx electron-builder --win dir --x64 --config ../builder-ci.json
+          rm -f test-install.json
+      - name: EXE 실행 확인(입력·경고창·사진 고르기·단추·기록 폴더)
+        run: PACKAGED_EXE="$(cd ../exe-out/win-unpacked && pwd -W)/성능점검 이중등록 시험판.exe" node test/electron/windows-check.js
+      - name: EXE 로 기존 [경기조합만] 확인(중복 접수·여러 쪽 목록·먹통·알림창)
+        run: PACKAGED_EXE="$(cd ../exe-out/win-unpacked && pwd -W)/성능점검 이중등록 시험판.exe" node test/electron/legacy-checks.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: carcheck-dual-시험판-windows
+          path: 통합등록/exe-out/win-unpacked

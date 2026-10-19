@@ -1,7 +1,7 @@
 /*  기존 업무용 [경기조합만] 실제 실행 재현 (10/19 대표님 PC 오류) — 진짜 프로그램(main.js·화면)을 그대로 띄우고
  *  단추를 눌러 흉내 경기조합(mock-carmodoo.js)에 보낸다. 실제 사이트 접속 없음 · 실제 기록 폴더 안 씀(임시 폴더).
  *  사용: node test/electron/legacy-carmodoo-run.js [프로그램 폴더] [몇 번 누를지(기본 2)]
- *  필요: playwright-core(/opt/node-tools 또는 PLAYWRIGHT_CORE), xvfb(리눅스), openssl
+ *  필요: test 폴더의 playwright-core(npm --prefix test install), 리눅스는 xvfb, openssl
  *  출력: 누른 횟수별 걸린 시간 · 결과 창 글 · 사이트 알림창 · 흉내 사이트가 받은 «접수 등록»·«저장»·«사진 올리기» 횟수 · 목록의 같은 차 줄 수 */
 const fs = require('fs');
 const os = require('os');
@@ -10,12 +10,15 @@ const { createMockCarmodoo } = require('./mock-carmodoo');
 
 const appDir = path.resolve(process.argv[2] || path.join(__dirname, '..', '..'));
 const presses = Number(process.argv[3] || 2);
-const { _electron } = require(process.env.PLAYWRIGHT_CORE || '/opt/node-tools/node_modules/playwright-core');
+const { _electron } = (() => { try { return require('../node_modules/playwright-core'); } catch { return require(process.env.PLAYWRIGHT_CORE || 'playwright-core'); } })();
 const electronBin = require(path.join(__dirname, '..', '..', 'node_modules', 'electron'));
 const CAR = '99가9999';
 
 (async () => {
-  const M = await createMockCarmodoo({ seed: process.env.SEED === '1' ? [CAR] : [], dialogOnFill: process.env.DIALOG_ON_FILL === '1' });
+  //  SEED=1: 같은 차 오늘 접수가 이미 있음 · OTHERS=N: 그 뒤에 다른 차 N건(같은 차가 2쪽으로 밀림) · PAGE_SIZE=n: 한 쪽 줄 수 · NO_TOTAL=1: Total 글 없음
+  const others = Array.from({ length: Number(process.env.OTHERS || 0) }, (_, i) => '88가' + String(1000 + i));
+  const M = await createMockCarmodoo({ seed: (process.env.SEED === '1' ? [CAR] : []).concat(others), dialogOnFill: process.env.DIALOG_ON_FILL === '1',
+                                       pageSize: Number(process.env.PAGE_SIZE || 0) || undefined, noTotal: process.env.NO_TOTAL === '1' });
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-legacy-'));
   const photo = (n) => { const f = path.join(tmp, n + '.jpg'); fs.writeFileSync(f, Buffer.from('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==', 'base64')); return f; };
   const p1 = photo('front'), p2 = photo('back');

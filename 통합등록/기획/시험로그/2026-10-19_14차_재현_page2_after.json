@@ -1,0 +1,26 @@
+{
+ "app": "/home/user/chagotgan/통합등록/carcheck-dual",
+ "presses": [
+  {
+   "press": 1,
+   "seconds": 0.3,
+   "firstDialogSeconds": null,
+   "registerCalls": 0,
+   "saveCalls": 0,
+   "uploads": 0,
+   "newForms": 0,
+   "dialogs": [],
+   "pageErrors": [],
+   "busyShown": null,
+   "report": "경기조합 (carmodoo) — 실패 접수차량 리스트가 여러 쪽이에요(전체 13건 중 10건만 보임). 같은 차 접수가 다른 쪽에 있는지 확인하지 못했어요. 새 접수를 열지 않았어요. 경기조합 리스트에서 이 차량번호로 검색해 한 쪽에 다 보이게 한 뒤 다시 해 주세요."
+  }
+ ],
+ "sameCarRecords": [
+  "0426002768 사진없음"
+ ],
+ "totals": {
+  "register": 0,
+  "save": 0,
+  "upload": 0
+ }
+}

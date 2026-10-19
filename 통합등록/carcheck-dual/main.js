@@ -560,6 +560,12 @@ async function ensureCarinfoReady(win) {
       await waitReady(win);
     }
 
+    //  화면을 불러오지 못했으면(연결 실패 등) 40초를 기다리지 않고 바로 알린다(14차 실행 확인에서 찾음)
+    if (lastLoadError.carinfo) {
+      const le = lastLoadError.carinfo;
+      return { ok: false, error: '카인포 화면을 열지 못했습니다(' + (le.desc || '연결 실패') + ').\n인터넷 연결과 카인포 창 상태를 확인한 뒤 다시 눌러 주세요.' };
+    }
+
     // 로그인 화면이면 더 진행하지 않는다
     const gate = await probe(
       win,
@@ -1208,7 +1214,8 @@ const cmListSameExpr = (carNo, today) => `(function () {
     var hs = [].map.call(tables[t].querySelectorAll('thead th, thead td'), function (h) { return norm(h.textContent); });
     var iNo = hs.indexOf('성능번호'), iCar = hs.indexOf('차량번호'), iDate = hs.indexOf('접수일');
     if (iNo < 0 || iCar < 0) continue;
-    var rows = [].slice.call(tables[t].querySelectorAll('tbody tr')), same = [];
+    //  «자료 없음» 한 줄(칸 하나짜리)은 줄로 세지 않음
+    var rows = [].slice.call(tables[t].querySelectorAll('tbody tr')).filter(function (r) { return r.querySelectorAll('td').length > 1; }), same = [];
     rows.forEach(function (r) {
       var c = r.querySelectorAll('td');
       if (norm((c[iCar] || {}).textContent) !== ${JSON.stringify(String(carNo || '').replace(/\s+/g, ''))}) return;
@@ -1216,7 +1223,9 @@ const cmListSameExpr = (carNo, today) => `(function () {
       if (d && d.indexOf(${JSON.stringify(today)}) < 0) return;
       same.push(norm((c[iNo] || {}).textContent));
     });
-    return { found: true, rows: rows.length, same: same };
+    //  목록 위 «Total 14»(10/19 화면 사진) — 전체 건수. 보이는 줄보다 많으면 여러 쪽이라 전체를 못 본 것
+    var tm = String(document.body.innerText || '').match(/Total\\s*([\\d,]+)/i);
+    return { found: true, rows: rows.length, total: tm ? Number(tm[1].replace(/,/g, '')) : null, same: same };
   }
   return { found: false };
 })()`;
@@ -1242,6 +1251,13 @@ async function ensureCarmodooForm(win, carNo) {
     try { const r = await runFrame(fr, cmListSameExpr(carNo, todayYmd()), 8000, '접수차량 리스트 확인'); if (r && r.found) { seen = r; break; } } catch (e) { if (e && e.siteDialog) throw e; }
   }
   if (!seen) return { ok: false, error: '접수차량 리스트에서 같은 차 접수가 있는지 확인하지 못해 새 접수를 열지 않았어요. 경기조합 창을 접수차량 리스트로 두고 다시 해 주세요.' };
+  if (!seen.same.length && (seen.total == null || seen.total > seen.rows)) {
+    //  같은 차가 다른 쪽(2쪽 이후)에 있을 수 있다 — 전체를 확인 못 하면 새 접수를 열지 않는다(13차 검수)
+    return { ok: false, error: (seen.total == null
+      ? '접수차량 리스트의 전체 건수(Total)를 읽지 못해 같은 차 접수가 다른 쪽에 있는지 확인하지 못했어요. '
+      : '접수차량 리스트가 여러 쪽이에요(전체 ' + seen.total + '건 중 ' + seen.rows + '건만 보임). 같은 차 접수가 다른 쪽에 있는지 확인하지 못했어요. ') +
+      '새 접수를 열지 않았어요. 경기조합 리스트에서 이 차량번호로 검색해 한 쪽에 다 보이게 한 뒤 다시 해 주세요.' };
+  }
   if (seen.same.length) {
     return { ok: false, duplicate: true, error: '경기조합에 이 차(' + carNo + ')의 오늘 접수가 이미 있어요(성능번호 ' + seen.same.join(', ') + '). 새 접수를 열지 않았어요. ' +
              '그 접수를 경기조합 창에서 열어 둔 뒤 다시 [경기조합만]을 누르면 그 화면에 값을 넣어요. 같은 차가 여러 건이면 정리는 대표님(관리자)이 판단해 주세요.' };

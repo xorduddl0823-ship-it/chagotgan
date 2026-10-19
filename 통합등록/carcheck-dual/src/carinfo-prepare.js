@@ -131,6 +131,14 @@ function buildPrepareScript({ carNo, dealer, pickKey, tradePersonal, clientName,
     return fail('카인포에 이 차(' + P.carNo + ')의 오늘 등록이 이미 있어요(점검번호 ' + dup.join(', ') + '). 신규등록을 하지 않았어요.\\n' +
                 '목록에서 그 줄을 열어 이어서 하거나, 같은 차가 여러 건이면 정리는 대표님(관리자)이 판단해 주세요.');
   }
+  //  (13차 검수) 목록이 여러 쪽이면 같은 차가 다른 쪽에 있을 수 있다 — 표 아래 건수 안내(DataTables «… 57 …»)로 전체 건수를 읽고,
+  //  보이는 줄보다 많거나 건수를 못 읽으면 신규등록을 하지 않는다
+  var shownRows = [].filter.call(tbl.querySelectorAll('tbody tr'), function (tr) { return tr.querySelectorAll('td').length > 1; }).length;
+  var info = document.querySelector('#carcheckTable_info, .dataTables_info');
+  var nums = info ? (String(info.textContent || '').replace(/,/g, '').match(/\\d+/g) || []).map(Number) : [];
+  var total = nums.length ? Math.max.apply(null, nums) : null;
+  if (total == null) return fail('성능점검 목록의 전체 건수를 읽지 못해 같은 차 등록이 다른 쪽에 있는지 확인하지 못했어요. 신규등록을 하지 않았어요.\\n카인포 목록에서 이 차량번호로 검색해 한 쪽에 다 보이게 한 뒤 다시 눌러 주세요.');
+  if (total > shownRows) return fail('성능점검 목록이 여러 쪽이에요(전체 ' + total + '건 중 ' + shownRows + '건만 보임). 같은 차 등록이 다른 쪽에 있는지 확인하지 못해 신규등록을 하지 않았어요.\\n카인포 목록에서 이 차량번호로 검색해 한 쪽에 다 보이게 한 뒤 다시 눌러 주세요.');
   log.push('같은 차 오늘 등록 없음(목록 ' + tbl.querySelectorAll('tbody tr').length + '줄 확인)');
 
   // ── 1. [신규등록] ────────────────────────────────────────────────
