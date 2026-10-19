@@ -6,7 +6,7 @@ g.__WDB = g.__WDB ?? {} as Record<string, Row[]>;
 export const store: Record<string, Row[]> = g.__WDB;
 export const rpcLog: { fn: string; args: any }[] = [];
 export const signLog: { bucket: string; paths: string[]; ttl: number }[] = [];
-export const knobs = { rateBroken: false, missing: new Set<string>(), cash: {} as Record<string, number>, cashLog: [] as any[] };
+export const knobs = { rateBroken: false, missing: new Set<string>(), cash: {} as Record<string, number>, cashLog: [] as any[], bizUniq: false };
 
 const val = (r: Row, k: string) => {
   if (k.includes("->>")) { const [a, b] = k.split("->>"); return r[a]?.[b]; }
@@ -55,10 +55,27 @@ class Q {
         if (ps.some((p) => tbl.some((r) => r.shop === p.shop && r.rec_id === p.rec_id)))
           return { data: null, error: { code: "23505", message: "duplicate key value violates unique constraint" } };
       }
+      /* sb28·v53 시험: 승인 요청 표 기본값(SQL 24 와 같음) — 번호 · 대기 · 종사업장 0000 · 기다리는 같은 요청은 하나만 */
+      if (this.t === "biz_share_req" && this.op === "insert") {
+        for (const p of [].concat(this.payload) as Row[]) {
+          const q = Object.assign({ id: tbl.length + 1, state: "wait", biz_sub: "0000", at: new Date().toISOString() }, p);
+          if (tbl.some((r) => r.state === "wait" && r.product === q.product && r.code === q.code && r.biz_no === q.biz_no && r.biz_sub === q.biz_sub))
+            return { data: null, error: { code: "23505", message: "duplicate key" } };
+          tbl.push(q);
+        }
+        return { data: null, error: null };
+      }
       for (const p of [].concat(this.payload)) tbl.push({ ...(p as Row) });
       return { data: null, error: null };
     }
     if (this.op === "update") {
+      /* sb28 시험: SQL 24 문지기 흉내(knobs.bizUniq) — 다른 업체가 쓰는 번호(숫자만 비교)로 바꾸면 23505 */
+      if (knobs.bizUniq && this.t === "wash_shops" && this.payload && this.payload.biz_no) {
+        const dg = (x: any) => String(x ?? "").replace(/[^0-9]/g, "");
+        const n = dg(this.payload.biz_no);
+        if (n && tbl.some((r) => !hit.includes(r) && dg(r.biz_no) === n))
+          return { data: null, error: { code: "23505", message: "이미 등록된 사업자번호예요." } };
+      }
       hit.forEach((r) => Object.assign(r, this.payload));
       /* update().select() 이면 바뀐 줄을 돌려줌 (sb9 조건 걸고 한 번에 바꾸기 시험) */
       return { data: this.ret ? hit.map((r) => ({ ...r })) : null, error: null };
