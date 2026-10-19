@@ -44,6 +44,8 @@
       <button id="btn-photo-cm" class="ghost">사진만 전송 (조합)</button>
       <button id="btn-photo-ci" class="ghost">사진만 전송 (카인포)</button>
       <button id="btn-photo-probe" class="ghost">사진 화면 조사</button>
+      <!-- 전산 진단(설정 diagnose 가 켜졌을 때만 보임) — 저장 요청을 보내지 않고 기록만 -->
+      <button id="btn-diag" class="ghost hidden">전산 진단 (저장 안 함)</button>
     </div>
     <div class="right">
       <button id="btn-send-cm">경기조합만</button>
@@ -70,6 +72,16 @@
       <h2 id="auto-confirm-title">세 전산에 등록할까요?</h2>
       <p class="sub" id="auto-confirm-text"></p>
       <div class="panel-foot"><button id="auto-confirm-no" class="ghost">취소</button><button id="auto-confirm-yes" class="primary">등록</button></div>
+    </div>
+  </div>
+
+  <div id="diag" class="overlay hidden">
+    <div class="panel">
+      <h2>전산 진단 (저장 안 함)</h2>
+      <p class="sub">진단하는 동안 그 전산의 저장·신규등록·사진 올리기 요청은 서버로 가지 않고 기록만 돼요. 값(차량번호·이름)은 기록하지 않아요.</p>
+      <div class="diag-sites"><button data-site="carinfo">카인포 진단 시작</button><button data-site="carmodoo">카모두 진단 시작</button><button data-site="entry">엔트리 진단 시작</button></div>
+      <p class="sub" id="diag-state">진단할 전산을 골라 주세요.</p>
+      <div class="panel-foot"><button id="diag-close" class="ghost">닫기</button><button id="diag-snap" class="ghost" disabled>지금 화면 칸 기록</button><button id="diag-stop" class="primary" disabled>진단 끝</button></div>
     </div>
   </div>
 

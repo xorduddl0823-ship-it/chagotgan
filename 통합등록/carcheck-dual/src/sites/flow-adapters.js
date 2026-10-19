@@ -246,10 +246,17 @@ function createElectronAdapters(o) {
       //  번호 칸은 «절대 고치지 않는다»(대표님 10/19 결정) — 엔트리가 스스로 매긴 다음 번호를 그대로 둔다.
       //   그 번호가 이 차 카인포 번호와 같은지는 앞 단계(엔트리 번호 규칙 확인)에서 이미 봤고, 저장 전에 불러온 번호·차량·차대번호를 다시 본다
       //  불러오기 — 카인포 기록이 엔트리로 아직 안 넘어왔으면 «성능 불러오기가 실패하였습니다»가 뜬다(10/19 화면).
-      //   불러오기는 읽기라 몇 번 다시 해도 된다(저장 아님). 정한 횟수만 하고 안 되면 멈춘다.
-      const R = cfg.loadRetry || { times: 1, waitMs: 0 };
-      for (let i = 0; i < Math.max(1, R.times); i++) {
-        if (i) await new Promise((res) => setTimeout(res, R.waitMs || 3000));
+      //   (8차) 다시 불러오기는 불러오기가 «순수 조회»임을 진단으로 확인했을 때(pureRead)만, 최대 3번.
+      //   다시 할 때마다 엔트리 번호를 다시 읽어 처음과 다르면 즉시 멈춘다.
+      const R = cfg.loadRetry || {};
+      const times = R.pureRead === true ? Math.min(3, Math.max(1, R.times || 1)) : 1;
+      const first = enNo(await inAnyFrame(w, textExpr(cfg.nextNumber)));
+      for (let i = 0; i < times; i++) {
+        if (i) {
+          await new Promise((res) => setTimeout(res, R.waitMs || 3000));
+          const now = enNo(await inAnyFrame(w, textExpr(cfg.nextNumber)));
+          if (now !== first) return { ...r, missing: (r.missing || []).concat(['다시 불러오는 중 엔트리 번호가 바뀜(' + first + ' → ' + now + ') — 멈춤']) };
+        }
         const ok = await inAnyFrame(w, '(function(){var b=document.querySelector(' + JSON.stringify(cfg.loadButton) + ');if(!b)return null;b.click();return true;})()');
         if (!ok) return { ...r, missing: (r.missing || []).concat(['엔트리 불러오기 단추를 찾지 못함']) };
         await new Promise((res) => setTimeout(res, 300));
@@ -260,6 +267,28 @@ function createElectronAdapters(o) {
       return { ...r, missing: (r.missing || []).concat(['엔트리에서 이 차 기록을 불러오지 못함(카인포 기록이 아직 안 넘어왔을 수 있어요)']) };
     },
     async load() {},
+    /**
+     * (8차) 저장한 기록의 상세 화면에서 차량번호·차대번호 읽기 — 설정(entry.detail)이 있을 때만.
+     *  detail: { openText: 그 줄에서 누를 단추 글자(예 «성능점검»), carNo, vin, back? } — 보기만 하고 아무것도 바꾸지 않음
+     */
+    async readSavedDetail(checkNo) {
+      const D = C.entry.detail;
+      const L = C.entry.list;
+      const w = o.getWindow('entry');
+      const opened = await inAnyFrame(w, '(function(){var L=' + JSON.stringify({ rows: L.rows, col: L.cols.checkNo, text: D.openText }) + ',no=' + JSON.stringify(String(checkNo)) + ';' +
+        'var nz=function(v){return String(v||"").replace(/[\\s-]+/g,"");};' +
+        'var trs=document.querySelectorAll(L.rows);for(var i=0;i<trs.length;i++){var c=trs[i].children[L.col];if(!c||nz(c.textContent)!==nz(no))continue;' +
+        'var bs=trs[i].querySelectorAll("button,a");for(var k=0;k<bs.length;k++){if(String(bs[k].textContent||"").replace(/\\s+/g,"")===L.text){bs[k].click();return true;}}}return null;})()');
+      if (!opened) return null;
+      const until = Date.now() + 6000;
+      while (Date.now() < until) {
+        const carNo = await inAnyFrame(w, textExpr(D.carNo));
+        const vin = await inAnyFrame(w, textExpr(D.vin));
+        if (carNo && vin) return { carNo, vin };
+        await new Promise((res) => setTimeout(res, 150));
+      }
+      return null;
+    },
     /** 엔트리 [저장] 단추가 켜져 있나 — true/false · 설정이 없으면 null(모름) */
     async saveEnabled() {
       if (!C.entry.saveButton && !C.entry.saveButtonText) return null;
@@ -275,6 +304,9 @@ function createElectronAdapters(o) {
   //  사진을 언제 올리나(설정) — 엔트리는 사진 칸이 없다고 보고 undefined(사진 단계 없음)
   carinfo.photoPhase = C.carinfo.photoPhase || null;
   carmodoo.photoPhase = C.carmodoo.photoPhase || null;
+  if (!(C.entry && C.entry.detail && C.entry.detail.carNo && C.entry.detail.vin && C.entry.list && C.entry.list.rows)) delete entry.readSavedDetail;
+  //  목록에 차대번호 칸이 있는 전산은 저장 확인 때 차대번호를 반드시 읽음(8차)
+  carmodoo.listHasVin = !!(C.carmodoo.list && C.carmodoo.list.cols && C.carmodoo.list.cols.vin != null);
   entry.implemented = !!(C.entry && C.entry.loggedIn && C.entry.nextNumber && C.entry.loadButton && C.entry.list && C.entry.list.cols);
 
   return { carinfo, carmodoo, entry };

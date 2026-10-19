@@ -29,7 +29,13 @@ function createMockSites() {
     const send = (code, type, body) => { res.writeHead(code, { 'content-type': type + '; charset=utf-8' }); res.end(body); };
     if (u.pathname === '/api/list') {
       const site = u.searchParams.get('site');
+      //  (8차) 실제 엔트리처럼: 차량번호 앞을 가리고(****3456) 차대번호 칸 없음 · 줄마다 [성능점검] 단추(상세 화면)
+      if (site === 'entry') return send(200, 'application/json', JSON.stringify(S.entry.map((r) => [r[0], '****' + String(r[1] || '').slice(-4), '<button class=dt data-no="' + r[0] + '">성능점검</button>'])));
       return send(200, 'application/json', JSON.stringify(S[site] || []));
+    }
+    if (u.pathname === '/api/detail') {
+      const r = S.entry.find((x) => x[0] === u.searchParams.get('no')) || [];
+      return send(200, 'application/json', JSON.stringify({ carNo: r[1] || '', vin: r[2] || '' }));
     }
     if (u.pathname === '/api/save' && req.method === 'POST') {
       let body = '';
@@ -42,6 +48,7 @@ function createMockSites() {
         const pre = site === 'carinfo' && p.formNo ? S.carinfo.find((r) => r[0] === p.formNo) : null;
         if (pre) { pre[4] = '완료'; pre[2] = p.vin || pre[2]; }            // 신규등록 때 생긴 줄 → 저장하면 완료(차대번호도 채워짐)
         else if (site === 'carinfo') S.carinfo.unshift(['T-' + String(++S.seq).padStart(4, '0'), p.carNo, p.vin, p.date || '2026-10-19', '완료']);
+        else if (site === 'entry') S.entry.unshift([p.checkNo, p.carNo, p.vin || '']);
         else S[site].unshift([p.checkNo, p.carNo]);
         if (site === 'carinfo' && S.faults.carinfo500) return send(500, 'text/plain', 'error after save');
         send(200, 'application/json', '{"ok":true}');
@@ -118,9 +125,14 @@ function createMockSites() {
       //  흉내 엔트리 — 로그인 상태·다음 번호를 스스로 새로 읽는다(자동 등록 중 사람이 새로고침하지 않으므로)
       return send(200, 'text/html', page('엔트리 흉내',
         '<div id=auth></div><button id=btnLoad>불러오기</button><span id=ldNo></span><span id=ldCar></span><span id=ldVin></span>' +
-        '<button id=btnSave>저장</button><table id=list><tbody></tbody></table>',
+        '<button id=btnSave>저장</button><table id=list><tbody></tbody></table><div>상세: <span id=dtCar></span> <span id=dtVin></span></div>',
         LIST_JS + `
         loadList('entry');
+        document.addEventListener('click', async (e) => {
+          const b = e.target.closest && e.target.closest('button.dt'); if (!b) return;
+          const d = await (await fetch('/api/detail?no=' + encodeURIComponent(b.dataset.no))).json();
+          dtCar.textContent = d.carNo; dtVin.textContent = d.vin;
+        });
         let ROW = [];
         async function tick(){
           try {
@@ -132,7 +144,7 @@ function createMockSites() {
         tick(); setInterval(tick, 150);
         document.getElementById('btnLoad').onclick = () => { ldNo.textContent = ROW[0]||''; ldCar.textContent = ROW[1]||''; ldVin.textContent = ROW[2]||''; };
         document.getElementById('btnSave').onclick = async () => {
-          try { await fetch('/api/save', { method:'POST', body: JSON.stringify({ site:'entry', checkNo: ldNo.textContent, carNo: ldCar.textContent }) }); } catch (e) {}
+          try { await fetch('/api/save', { method:'POST', body: JSON.stringify({ site:'entry', checkNo: ldNo.textContent, carNo: ldCar.textContent, vin: ldVin.textContent }) }); } catch (e) {}
           loadList('entry');
         };`));
     }

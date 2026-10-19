@@ -274,17 +274,53 @@ test('엔트리 [간편 접수] 번호 칸(대표님 10/19 결정): 프로그램
   assert.ok(!/numberInput\)/.test(src), '엔트리 번호 칸에 값을 넣는 코드가 없어야 함');
 });
 
-test('엔트리 [저장] 단추가 꺼져 있으면(이미 등록된 번호) 누르지 않고 «이미 등록됨 의심»으로 멈춤', async () => {
+test('(8차) 엔트리 [저장] 단추가 꺼져 있으면 누르지 않고 «저장 불가 · 원인 확인 필요» — «이미 등록됨»으로 단정하지 않고 원인 세 가지를 안내', async () => {
   const t = setup();
   t.W.adapters.entry.saveEnabled = async () => false;
   const r = await t.flow.runAll({ ...CAR, data: CAR }, RUN);
   assert.strictEqual(r.ok, false);
-  assert.ok(r.detail.alreadyThere, JSON.stringify(r));
-  assert.match(r.action, /이미 등록됐는지/);
+  assert.ok(r.detail.saveBlocked, JSON.stringify(r));
+  assert.match(r.reason, /원인 확인 필요/);
+  assert.doesNotMatch(r.reason, /이미 등록돼 있을/);
+  assert.match(r.action, /이미 등록돼 있는지.*필수 칸.*권한/);
   assert.ok(!t.W.world.calls.includes('entry.clickSave'));
   const u = setup();
   u.W.adapters.entry.saveEnabled = async () => true;
   assert.strictEqual((await u.flow.runAll({ ...CAR, data: CAR }, RUN)).ok, true);
+});
+
+test('(8차) 엔트리 저장 확인: 목록이 차량번호를 가리면 상세 기록의 차량번호·차대번호 17자리까지 맞아야 성공 — 상세를 못 열거나 차대번호가 다르면 성공으로 정하지 않음', async () => {
+  const masked = (t) => { const o = t.W.adapters.entry.readList; t.W.adapters.entry.readList = async (c) => (await o(c)).map((x) => ({ ...x, carNo: '****' + x.carNo.slice(-4) })); };
+  const a = setup(); masked(a);
+  assert.strictEqual((await a.flow.runAll({ ...CAR, data: CAR }, RUN)).ok, true, '상세 기록이 맞으면 성공');
+  const b = setup(); masked(b); b.W.world.faults.entryDetail = 'none';
+  const rb = await b.flow.runAll({ ...CAR, data: CAR }, RUN);
+  assert.strictEqual(rb.ok, false); assert.ok(rb.detail.manual); assert.match(rb.reason, /상세 화면을 확인해야/);
+  const c = setup(); masked(c); c.W.world.faults.entryDetail = 'otherVin';
+  const rc = await c.flow.runAll({ ...CAR, data: CAR }, RUN);
+  assert.strictEqual(rc.ok, false); assert.match(rc.reason, /차대번호가 이 차 17자리와 같지 않습니다/);
+  assert.deepStrictEqual(c.W.world.calls.filter((x) => x === 'entry.clickSave'), ['entry.clickSave'], '다시 저장하지 않음');
+});
+
+test('(8차) 카모두 저장 확인: 목록에 차대번호 칸이 있으면 반드시 읽어 17자리 비교 — 못 읽으면 성공으로 정하지 않음', async () => {
+  const t = setup();
+  t.W.adapters.carmodoo.listHasVin = true;
+  const r = await t.flow.runAll({ ...CAR, data: CAR }, RUN);
+  assert.strictEqual(r.ok, false);
+  assert.match(r.reason, /카모두|carmodoo/);
+  assert.match(r.reason, /차대번호를 읽지 못해/);
+  const nc = require('../src/core/number-check');
+  assert.deepStrictEqual(nc.findNewSavedRow([{ checkNo: 'A1', carNo: '12가3456', vin: CAR.vin }], CAR, new Set(), '카모두 목록', { requireVin: true }), { ok: true, checkNo: 'A1' });
+});
+
+test('(8차) 카인포 저장 확인: «저장 끝» 상태 설정이 있으면 신규등록과 상관없이 언제나 상태도 봄 — 번호·차량·차대번호가 맞아도 상태가 아니면 성공 아님', async () => {
+  const t = setup();
+  t.W.adapters.carinfo.savedStatus = '^완료$';
+  const o = t.W.adapters.carinfo.readList;
+  t.W.adapters.carinfo.readList = async (c) => (await o(c)).map((x) => ({ ...x, status: '점검중' }));
+  const r = await t.flow.runAll({ ...CAR, data: CAR }, RUN);
+  assert.strictEqual(r.ok, false);
+  assert.match(r.reason, /아직 저장 끝 상태가 아닙니다/);
 });
 
 test('[저장] 단추는 글자가 정확히 «저장»인 것만 — [접수저장]·[성능점검기록부 전송]은 누르지 않음 · 꺼져 있으면 안 누름 · 둘 이상이면 안 누름', () => {

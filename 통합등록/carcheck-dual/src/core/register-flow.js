@@ -52,7 +52,7 @@ function actionFor(r, site) {
   if (r.otherCar) return '카인포에 다른 차 등록 화면이 열려 있어요. 그 차 일을 먼저 마치거나 카인포를 목록 화면으로 돌린 뒤 다시 눌러 주세요.';
   if (r.prepareLost) return '카인포 목록에서 이 차 줄이 새로 생겼는지 먼저 확인해 주세요. 생겼으면 그 줄을 열어 두고 [이어 하기], 없으면 대표님(관리자)께 알려 주세요. 신규등록은 다시 하지 않았어요.';
   if (r.photoFail) return (NAME[site] || site) + ' 사진 창에서 어느 사진이 올라갔는지 확인해 주세요. [이어 하기]를 누르면 못 올린 칸만 다시 올려요. 점검 기록은 이미 저장됐어요.';
-  if (r.alreadyThere) return '엔트리 «성능점검 현황»에서 이 번호가 이미 등록됐는지 확인한 뒤 대표님(관리자)께 알려 주세요. 엔트리에는 다시 저장하지 않았어요.';
+  if (r.saveBlocked) return '엔트리에서 ① 이 번호가 이미 등록돼 있는지(성능점검 현황) ② 비어 있는 필수 칸이 있는지 ③ 로그인·권한 문제인지 확인한 뒤 대표님(관리자)께 알려 주세요. 엔트리에는 저장하지 않았어요.';
   if (r.mismatch) return '엔트리에서 다음 번호가 왜 다른지(다른 차가 먼저 들어갔는지) 확인해 주세요. 엔트리에는 저장하지 않았어요. 바로잡힌 뒤 [이어 하기]를 누르면 번호부터 다시 확인해요.';
   if (r.needLogin) return '엔트리에 로그인(업무폰 문자 인증)한 뒤 [이어 하기]를 눌러 주세요.';
   if (r.needDealerPick) return '같은 이름 딜러가 여럿이에요. 목록에서 고른 뒤 [이어 하기]를 눌러 주세요.';
@@ -61,7 +61,7 @@ function actionFor(r, site) {
   if (r.manual) return (NAME[site] || site) + ' 목록에서 이 차가 저장됐는지 확인한 뒤 대표님(관리자)께 알려 주세요. 다시 저장은 하지 않았어요.';
   if (r.uncertain) return '다시 저장은 하지 않았어요. 잠시 뒤 [이어 하기]를 누르면 ' + (NAME[site] || site) + ' 목록으로 저장됐는지만 다시 확인해요.';
   if (r.stopped) return '① 세 전산 목록에서 이 차가 실제로 어떻게 등록됐는지(번호·차량번호) 확인해 주세요. ② 그다음 관리자 정정 절차를 확인해 주세요. ③ 확인한 내용을 대표님(관리자)께 알려 주세요. 관리자 확인 전에는 이어 하지 않아요. 프로그램은 지우거나 다시 등록하지 않았어요.';
-  if (r.missing) return '못 넣은 칸을 확인해 고친 뒤 [이어 하기]를 눌러 주세요.';
+  if (r.missing) return (NAME[site] || '그 전산') + ' 화면에서 비어 있는 필수 칸·못 넣은 칸을 확인해 고친 뒤 [이어 하기]를 눌러 주세요.';
   if (r.unconfirmed) return '이 전산의 실제 화면 설정이 아직 확정되지 않았어요(개발 쪽 일).';
   return '내용을 확인한 뒤 [이어 하기]를 눌러 주세요.';
 }
@@ -272,9 +272,10 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
         const c = nc.checkEntryBeforeSave({ carinfoNo: carinfoNo(j), entryNo: ld.entryNo, entryCarNo: ld.carNo, entryVin: ld.vin,
                                             car: car(j), partialConfirmedBy: opts.partialConfirmedBy });
         if (!c.ok) return { ok: false, needsConfirm: !!c.needsConfirm, reason: c.reason };
-        //  10/19 엔트리 화면: 이미 등록된 번호를 불러오면 [저장] 단추가 꺼져 있다 → 두 번 등록 의심으로 멈춤(누르지 않음)
+        jobLog.setMeta(jobId, { entryLoadedCar: ld.carNo || '', entryLoadedVin: ld.vin || '' });     // 저장 뒤 상세 기록과 견줄 값
+        //  엔트리 [저장] 단추가 꺼져 있으면 누르지 않는다 — «이미 등록됨»으로 단정하지 않고 «저장 불가 · 원인 확인 필요»(8차)
         if (A.entry.saveEnabled && (await A.entry.saveEnabled()) === false) {
-          return { ok: false, alreadyThere: true, reason: '엔트리 [저장] 단추가 꺼져 있어요 — 이 번호(' + carinfoNo(j) + ')가 이미 엔트리에 등록돼 있을 수 있어요.' };
+          return { ok: false, saveBlocked: true, reason: '엔트리 [저장] 단추가 꺼져 있어 저장할 수 없어요(번호 ' + carinfoNo(j) + ') — 원인 확인 필요.' };
         }
       }
       const b = jobLog.beginSubmit(jobId, site);
@@ -350,7 +351,8 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
         }
         //  신규등록 때 목록 줄이 먼저 생기는 전산이면(또는 그런지 아직 모르면) «줄이 있다»는 저장 증거가 못 된다 —
         //  저장 전에도 그 줄이 있기 때문. 목록 «상태» 칸이 «저장 끝»(설정 savedStatus)일 때만 저장됨으로 본다. 모르면 사람 확인.
-        if (j.meta.prepared && A.carinfo.prepareCreatesRow !== false && !String(opts.manualChecked || '').trim()) {
+        //  (8차) «저장 끝» 상태 글자가 설정돼 있으면 언제나 그 상태도 확인(번호·차량번호·차대번호 17자리·이번 작업 줄과 함께 — 상태만으로 끝내지 않음)
+        if ((A.carinfo.savedStatus || (j.meta.prepared && A.carinfo.prepareCreatesRow !== false)) && !String(opts.manualChecked || '').trim()) {
           const row = rows.find((x) => nc.normNo(x.checkNo) === r.checkNo);
           const re = A.carinfo.savedStatus ? new RegExp(A.carinfo.savedStatus) : null;
           if (!re || !row || !re.test(String(row.status || ''))) {
@@ -370,11 +372,28 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
       const old = j.meta && j.meta.oldBySite && j.meta.oldBySite[site];
       if (!old) return { ok: false, reason: site + ' 저장 전 목록을 찍어 둔 기록이 없어 이번 저장 줄을 구분할 수 없습니다.' };
       const rows = await A[site].readList(car(j));
-      const r = nc.findNewSavedRow(rows, car(j), new Set(old), site + ' 목록');
+      const r = nc.findNewSavedRow(rows, car(j), new Set(old), site + ' 목록', { requireVin: !!A[site].listHasVin });
       if (!r.ok) {
         if (r.multiple) return stop(jobId, site, r.reason);
         if (st === 'uncertain') jobLog.noteUncertain(jobId, site, r.reason);
         return { ok: false, uncertain: st === 'uncertain', needsConfirm: !!r.needsConfirm, reason: r.reason };
+      }
+      //  (8차) 엔트리 목록은 차량번호를 가리고(****5528) 차대번호 칸이 없다 → 뒷자리·번호만으로 성공을 정하지 않는다.
+      //   저장한 기록의 상세 화면에서 차량번호·차대번호 17자리를 읽어, 저장 전에 불러온 값과 이 차 값 모두와 같아야 성공. 못 읽으면 사람 확인.
+      if (site === 'entry') {
+        const row = rows.find((x) => nc.normNo(x.checkNo) === r.checkNo) || {};
+        const weak = /\*/.test(String(row.carNo || '')) || !nc.normVin(row.vin);
+        if (weak) {
+          const d = A.entry.readSavedDetail ? await A.entry.readSavedDetail(r.checkNo) : null;
+          const why = !d ? '엔트리 목록은 차량번호를 가리고 차대번호가 없어, 저장한 기록의 상세 화면을 확인해야 하는데 확인할 수 없습니다.'
+            : nc.normCar(d.carNo) !== nc.normCar(j.carNo) ? '엔트리 상세 기록의 차량번호(' + d.carNo + ')가 이 차와 다릅니다.'
+              : nc.vinMatchLevel(d.vin, j.vin) !== 'full' ? '엔트리 상세 기록의 차대번호가 이 차 17자리와 같지 않습니다.'
+                : (j.meta.entryLoadedVin && nc.normVin(d.vin) !== nc.normVin(j.meta.entryLoadedVin)) ? '엔트리 상세 기록의 차대번호가 저장 전에 불러온 값과 다릅니다.' : '';
+          if (why) {
+            if (st === 'uncertain') jobLog.noteUncertain(jobId, site, why);
+            return { ok: false, manual: true, uncertain: st === 'uncertain', reason: why };
+          }
+        }
       }
       if (st === 'uncertain') jobLog.mark(jobId, site, 'saveConfirmed', { checkNo: r.checkNo, ...(opts.manualChecked ? { by: opts.manualChecked } : {}) });
       const c = nc.checkCarmodooAfterSave({ carinfoNo: carinfoNo(j), savedNo: r.checkNo });
@@ -515,7 +534,7 @@ function createRegisterFlow({ jobLog, adapters, siteConfirmed, mock, now } = {})
         }
         say(site, 'verify');
         const v = await this.afterSave(jobId, site);
-        if (!v.ok) return fail(site, v.notSent ? 'save' : 'verify', v.notSent ? { ...v, reason: NAME[site] + ' [저장] 요청이 나가지 않았어요(단추를 못 찾았거나 화면이 막힘).', missing: ['저장 단추'] } : v);
+        if (!v.ok) return fail(site, v.notSent ? 'save' : 'verify', v.notSent ? { ...v, reason: NAME[site] + ' [저장] 요청이 나가지 않았어요 — 비어 있는 필수 칸이 있거나 [저장] 단추를 못 찾았어요(프로그램은 임의 값을 넣지 않아요).', missing: ['저장 단추·필수 칸'] } : v);
         const pa = await afterPhotos(site);
         if (!pa.ok) return pa;
         times[site] = Date.now() - ts;

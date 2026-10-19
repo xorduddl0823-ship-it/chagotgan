@@ -360,7 +360,7 @@ function createJobLog(file, opts = {}) {
           if (Array.isArray(meta.oldBySite[k])) m.oldBySite[String(k).slice(0, 20)] = meta.oldBySite[k].map((x) => String(x).slice(0, 40)).slice(0, 200);
         });
       }
-      ['startDate', 'entryNext', 'carinfoLast'].forEach((k) => { if (meta && meta[k] != null) m[k] = String(meta[k]).slice(0, 40); });
+      ['startDate', 'entryNext', 'carinfoLast', 'entryLoadedCar', 'entryLoadedVin'].forEach((k) => { if (meta && meta[k] != null) m[k] = String(meta[k]).slice(0, 40); });
       //  카인포 신규등록 기록(7차) — 누가 했는지(button=입력 화면 단추 · flow=자동) · 그때 화면 번호 · 실패 표시. null 이면 지움
       if (meta && 'prepared' in meta) {
         const p = meta.prepared;

@@ -632,6 +632,61 @@ function showAutoStop(res) {
   }]);
 }
 
+/* ─────────── 전산 진단 (8차 · 설정 diagnose 가 켜졌을 때만) ───────────
+ *  고른 전산 창에서 평소처럼 눌러 보면, 저장·신규등록·사진 요청은 서버로 가지 않고 «무슨 주소·무슨 칸 이름»만 기록된다. */
+let diagSite = null;
+let diagNote = '';      // 상태 줄에 잠깐 보일 말(실패·기록 결과) — 없으면 기본 안내
+const DIAG_NAME = { carinfo: '카인포', carmodoo: '카모두', entry: '엔트리' };
+function diagUi() {
+  $('#diag-snap').disabled = !diagSite;
+  $('#diag-stop').disabled = !diagSite;
+  document.querySelectorAll('.diag-sites button').forEach((b) => { b.disabled = !!diagSite; });
+  //  창을 닫아도 진단 중인 것이 보이게 — 아래 단추 글자·색을 바꾸고, 보내기 단추는 끈다
+  $('#btn-diag').textContent = diagSite ? '전산 진단 중 (' + DIAG_NAME[diagSite] + ') · 눌러서 열기' : '전산 진단 (저장 안 함)';
+  $('#btn-diag').classList.toggle('diag-on', !!diagSite);
+  ['#btn-send-cm', '#btn-send-ci', '#btn-send-all', '#btn-auto'].forEach((q) => { const b = $(q); if (b) b.disabled = !!diagSite; });
+  $('#diag-state').textContent = diagNote || (diagSite
+    ? DIAG_NAME[diagSite] + ' 진단 중이에요. ' + DIAG_NAME[diagSite] + ' 창에서 평소처럼 눌러 보세요. [저장]을 눌러도 저장되지 않아요.'
+    : '진단할 전산을 골라 주세요.');
+}
+/** 진단 단추를 누르는 동안 전부 끄고, 끝나면(오류여도) 다시 맞춤 — 두 번 눌러 꼬이지 않게 */
+async function diagBusy(fn) {
+  document.querySelectorAll('#diag button').forEach((b) => { b.disabled = true; });
+  try { await fn(); } finally { diagUi(); }
+}
+function initDiag() {
+  $('#btn-diag').addEventListener('click', () => { if (!diagSite) diagNote = ''; diagUi(); $('#diag').classList.remove('hidden'); });
+  $('#diag-close').addEventListener('click', () => $('#diag').classList.add('hidden'));
+  document.querySelectorAll('.diag-sites button').forEach((b) => b.addEventListener('click', () => diagBusy(async () => {
+    const r = await window.api.diag.start(b.dataset.site);
+    if (!r || !r.ok) { diagNote = '진단을 시작하지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭'); return; }
+    diagSite = b.dataset.site;
+    diagNote = '';
+  })));
+  $('#diag-snap').addEventListener('click', () => diagBusy(async () => {
+    const r = await window.api.diag.snap(diagSite);
+    diagNote = r && r.ok ? DIAG_NAME[diagSite] + ' 진단 중 · 지금 화면의 단추·칸 이름을 기록했어요(' + r.snaps + '번째). 다른 화면도 열어 보고 다시 눌러 주세요.' : '화면 칸을 기록하지 못했어요.';
+  }));
+  $('#diag-stop').addEventListener('click', () => diagBusy(async () => {
+    const site = diagSite;
+    if (!site) return;
+    const r = await window.api.diag.stop(site);
+    diagSite = null;
+    diagNote = '';
+    $('#diag').classList.add('hidden');
+    if (!r || !r.ok) { report('전산 진단', [{ ok: false, title: '진단 기록을 남기지 못했어요', note: (r && r.error) || '' }]); return; }
+    report('전산 진단 끝', [{
+      ok: true,
+      title: DIAG_NAME[site] + ' — 서버로 보내지 않고 기록만 했어요',
+      lists: [
+        { title: '서버로 안 보내고 막은 요청', items: r.heldPaths.length ? r.heldPaths : ['없음'], cls: 'muted' },
+        { title: '기록', items: ['막은 요청 ' + r.held + '건 · 화면 칸 기록 ' + r.snaps + '번', r.file], cls: 'muted', noCount: true },
+      ],
+      note: '이 기록 파일을 방에 보내 주세요. 값(차량번호·이름)은 들어 있지 않아요.',
+    }]);
+  }));
+}
+
 /* ───────────────────────── 시작 ───────────────────────── */
 
 (async function init() {
@@ -678,6 +733,11 @@ function showAutoStop(res) {
       $('#btn-auto').addEventListener('click', () => autoRegister().catch((e) => { unbusy(); showAutoStop({ reason: e.message }); }));
       $('#btn-auto-resume').addEventListener('click', () => autoStop && autoRegister(autoStop.jobId).catch((e) => { unbusy(); showAutoStop({ reason: e.message }); }));
     }
+  } catch {}
+  //  전산 진단(설정 diagnose 가 켜졌을 때만)
+  try {
+    const cfgD = await window.api.getConfig();
+    if (cfgD && cfgD.diagnose === true && window.api.diag) { $('#btn-diag').classList.remove('hidden'); initDiag(); }
   } catch {}
   $('#btn-send-cm').addEventListener('click', () => send(['carmodoo']));
   $('#btn-send-ci').addEventListener('click', () => send(['carinfo']));

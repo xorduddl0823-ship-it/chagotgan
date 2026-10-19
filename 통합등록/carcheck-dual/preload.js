@@ -60,4 +60,10 @@ contextBridge.exposeInMainWorld('api', {
     isSet:  () => ipcRenderer.invoke('admin:isSet'),
     setPin: (o) => ipcRenderer.invoke('admin:setPin', o),
   },
+  //  전산 진단(8차 · 설정 diagnose 가 켜졌을 때만) — 저장 요청을 서버로 보내지 않고 기록만
+  diag: {
+    start: (site) => ipcRenderer.invoke('diag:start', { site }),
+    snap:  (site) => ipcRenderer.invoke('diag:snap', { site }),
+    stop:  (site) => ipcRenderer.invoke('diag:stop', { site }),
+  },
 });

@@ -129,7 +129,7 @@ function findNewNumber(rows, car, oldNos, since, opts) {
  *  · 지운·취소된 줄 제외 · 차량번호 같음 · 목록에 차대번호가 있으면 17자리 전체 같아야(일부만이면 확인 필요)
  *  · 정확히 한 줄일 때만 ok. 없거나 여럿이면 멈춤
  */
-function findNewSavedRow(rows, car, oldNos, label) {
+function findNewSavedRow(rows, car, oldNos, label, opts = {}) {
   const name = label || '목록';
   if (!(oldNos instanceof Set)) return { ok: false, reason: name + ': 저장 전 목록을 찍어 두지 않아 이번 저장 줄을 구분할 수 없습니다.' };
   const fresh = (rows || []).filter((r) => sameCar(r.carNo, car.carNo) && normNo(r.checkNo) &&
@@ -140,6 +140,8 @@ function findNewSavedRow(rows, car, oldNos, label) {
              fresh.map((r) => normNo(r.checkNo)).join(', ') + '). 두 번 저장됐을 수 있어 멈춥니다.', multiple: true };
   }
   const row = fresh[0];
+  //  (8차) 목록에 차대번호 칸이 있는 전산(카모두)은 차대번호를 «반드시» 읽어 17자리 비교 — 못 읽으면 성공으로 정하지 않음
+  if (opts.requireVin && !normVin(row.vin)) return { ok: false, reason: name + ' 줄의 차대번호를 읽지 못해 이 차인지 확인할 수 없습니다.', checkNo: normNo(row.checkNo) };
   if (normVin(row.vin)) {
     const v = vinVerdict(vinMatchLevel(row.vin, car.vin), name + ' 줄의');
     if (!v.ok) return { ...v, checkNo: normNo(row.checkNo) };

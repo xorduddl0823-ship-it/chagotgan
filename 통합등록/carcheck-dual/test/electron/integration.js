@@ -13,6 +13,8 @@ const { createRegisterFlow } = require('../../src/core/register-flow');
 const { createElectronAdapters } = require('../../src/sites/flow-adapters');
 const { mockConfig } = require('../../src/sites/site-config');
 const quiet = require('../../src/sites/quiet-window');
+const { createDiagRecorder, ELEMENTS_EXPR } = require('../../src/sites/diag-recorder');
+const { attachSaveHold } = require('../../src/sites/save-hold');
 
 app.commandLine.appendSwitch('disable-gpu');
 const CAR = { carNo: '12가3456', vin: 'KMHXX00XXXX123456' };
@@ -319,6 +321,30 @@ app.whenReady().then(async () => {
     assert.strictEqual(r.ok, true, JSON.stringify(r));
     assert.deepStrictEqual(r.numbers, { carinfo: 'T-0201', carmodoo: 'T-0201', entry: 'T-0201' });
     assert.strictEqual(t.M.S.prepares, 1, '신규등록 다시 안 함');
+    await t.done();
+  });
+
+  await scenario('(8차) 전산 진단: 기록기가 붙은 창에서 [저장]·[신규등록]·사진·팝업 저장·다른 주소 저장을 눌러도 서버에 하나도 안 닿고, 값 없이 주소·칸 이름만 기록 · 화면 요소 목록', async () => {
+    const t = await setup({ noPrepare: true });
+    const w = t.wins.carinfo;
+    const rec = createDiagRecorder({ siteHosts: [t.M.host] });
+    const hold = attachSaveHold(w, rec, { name: 'diag' });
+    assert.strictEqual(await hold.ready, true);
+    await t.js('carinfo', 'carNo.value="12가3456";vin.value="KMHXX00XXXX123456";newCar.value="12가3456";1');
+    await t.js('carinfo', 'document.getElementById("btnSave").click();document.getElementById("btnNew").click();fetch("/api/photo?site=carinfo&k=photo1",{method:"POST",body:"x"}).catch(function(){});1');
+    await t.js('carinfo', 'pfCar.value="12가3456";document.getElementById("btnPopupPost").click();document.getElementById("btnPopup").click();1');
+    await sleep(1500);
+    assert.deepStrictEqual({ saves: t.M.S.saves.carinfo, prepares: t.M.S.prepares, photos: t.M.S.photos || 0, foreign: t.M.S.saves.foreign || 0 }, { saves: 0, prepares: 0, photos: 0, foreign: 0 }, '서버에 닿은 쓰기');
+    const s = rec.summary();
+    const paths = [...new Set(s.entries.filter((e) => /붙잡음/.test(e.verdict)).map((e) => e.path))].sort();
+    assert.deepStrictEqual(paths, ['/api/photo', '/api/prepare', '/api/save', '/upload'], JSON.stringify(paths));
+    assert.ok(s.entries.some((e) => e.path === '/api/save' && e.bodyKeys.includes('carNo')), '칸 이름 기록');
+    assert.ok(!/12가3456|KMHXX00XXXX123456/.test(JSON.stringify(s)), '값은 기록에 없음');
+    assert.ok(s.windows.some((x) => x.kind === 'popup' && x.attached), '팝업에도 붙음');
+    const el = await w.webContents.executeJavaScript(ELEMENTS_EXPR, true);
+    assert.ok(el.buttons.some((b) => b.text === '저장' && b.id === 'btnSave'));
+    assert.ok(el.fields.some((f) => f.id === 'carNo') && !JSON.stringify(el).includes('12가3456'), '칸 목록에 값 없음');
+    await hold.detach();
     await t.done();
   });
 

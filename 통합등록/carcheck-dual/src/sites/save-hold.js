@@ -44,7 +44,7 @@ function attachSaveHold(win, guard, opts = {}) {
         if (method === 'Fetch.requestPaused') {
           const rid = id + ':' + (++seq);
           if (p.networkId) byNet.set(p.networkId, rid);
-          const v = guard.onRequest({ id: rid, url: p.request.url, method: p.request.method, kind: kindOf(p), windowId: id });
+          const v = guard.onRequest({ id: rid, url: p.request.url, method: p.request.method, kind: kindOf(p), windowId: id, postData: p.request.postData });
           if (v === 'hold') await dbg.sendCommand('Fetch.failRequest', { requestId: p.requestId, errorReason: 'BlockedByClient' });
           else await dbg.sendCommand('Fetch.continueRequest', { requestId: p.requestId });
         } else if (method === 'Network.responseReceived') {

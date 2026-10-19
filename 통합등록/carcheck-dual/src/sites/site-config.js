@@ -84,7 +84,10 @@ const REAL = {
     //   [불러오기] → «자동차성능·상태점검» 화면에 카인포 기록이 채워짐. 없는 번호면 «성능 불러오기가 실패하였습니다»
     //   번호 칸은 고쳐 쓸 수 있지만 «프로그램은 절대 고치지 않음»(대표님 10/19 결정 — 카인포 번호는 순서대로 매겨져 잘못 넣으면 엔트리 번호가 꼬임)
     //   → 엔트리가 매긴 번호가 이 차 카인포 번호와 같을 때만 불러오고, 다르면 멈춤. (그래서 numberInput 은 쓰지 않음)
-    loadRetry: { times: 3, waitMs: 3000, failText: '성능 불러오기가 실패하였습니다', failClose: null },
+    //  pureRead: 불러오기가 저장·신규등록을 만들지 않는 «순수 조회»임을 진단 기능으로 확인했을 때만 true → 그때만 최대 3번 다시 불러옴
+    loadRetry: { times: 3, waitMs: 3000, failText: '성능 불러오기가 실패하였습니다', failClose: null, pureRead: false },
+    //  (8차) 저장 뒤 상세 기록 확인 — 목록의 [성능점검] 단추로 열리는 화면의 차량번호·차대번호 칸(선택자는 진단 때)
+    detail: { openText: '성능점검', carNo: null, vin: null },
     loggedIn: null, nextNumber: null, numberInput: null, loadButton: null,
     loaded: { entryNo: null, carNo: null, vin: null },
     //  10/19 화면 사진(불러오기 성공 뒤 «자동차성능·상태점검»): 차량번호·차대번호 17자리가 가리지 않고 보임 · 점검 내용·사진(«2/2»)도 카인포에서 채워짐
@@ -109,7 +112,8 @@ function mockConfig(host) {
                 phaseAllow: { photo: ['/api/photo'] }, photoPhase: 'beforeSave' },
     entry: { ...base, loggedIn: '#who', nextNumber: '#nextNo', numberInput: '#inNo', loadButton: '#btnLoad',
              loaded: { entryNo: '#ldNo', carNo: '#ldCar', vin: '#ldVin' },
-             list: { rows: '#list tbody tr', cols: { checkNo: 0, carNo: 1 } } },
+             list: { rows: '#list tbody tr', cols: { checkNo: 0, carNo: 1 } },
+             detail: { openText: '성능점검', carNo: '#dtCar', vin: '#dtVin' } },
   };
 }
 

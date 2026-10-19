@@ -47,7 +47,8 @@ function createWorld(opts = {}) {
       return no;
     }
     const no = w.entry.loaded && w.entry.loaded.entryNo;
-    w.entry.rows.unshift({ checkNo: no, carNo: ctx.carNo });
+    //  실제 엔트리처럼 목록에는 차대번호가 없다 — 상세 화면(readSavedDetail)에서만 보임
+    w.entry.rows.unshift({ checkNo: no, carNo: ctx.carNo, _vin: w.entry.loaded && w.entry.loaded.vin });
     return no;
   }
 
@@ -160,7 +161,14 @@ function createWorld(opts = {}) {
       async seal() { guards.entry.seal(); },
       async clickSave() { w.calls.push('entry.clickSave'); return clickSave('entry'); },
       async timeout() { guards.entry.onTimeout(); },
-      async readList(car) { return w.entry.rows.filter((x) => !car || x.carNo === car.carNo); },
+      async readList(car) { return w.entry.rows.filter((x) => !car || x.carNo === car.carNo).map((x) => ({ checkNo: x.checkNo, carNo: x.carNo })); },
+      /** 저장한 기록의 상세 화면 — faults.entryDetail: 'none'(못 엶) · 'otherVin'(다른 차대번호) */
+      async readSavedDetail(no) {
+        if (w.faults.entryDetail === 'none') return null;
+        const r = w.entry.rows.find((x) => x.checkNo === no);
+        if (!r) return null;
+        return { carNo: r.carNo, vin: w.faults.entryDetail === 'otherVin' ? 'KMHZZ00ZZZZ999999' : r._vin };
+      },
     },
   };
 
