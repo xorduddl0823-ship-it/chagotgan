@@ -89,7 +89,7 @@
   function go(x){
     title("들어가는 중",""); $("hlGoTxt").textContent=x.name+" · 차곳간 "+PROD[x.product]+"로 들어가고 있어요."; step("hl4"); msg("");
     post("homeGo",[x.id],S.token).then(function(r){
-        var u=String(r.url||""), ok=/^https:\/\/(app|check|dealer)\.cgg\.co\.kr\/[^\s]*#go=[A-Za-z0-9_-]{16,}$/.test(u);
+        var u=String(r.url||""), ok=/^https:\/\/(app|check|dealer)\.cgg\.co\.kr\/[^\s]*#go=[A-Za-z0-9_-]{24,}$/.test(u);
         if(DEMO){ $("hlGoTxt").textContent="(예시) 실제로는 여기서 "+HOME[x.product]+" 로 넘어가요. 다시 로그인하지 않아요."; return; }
         if(!ok){ throw KO(FAIL); }
         S.token=""; location.replace(u); })
