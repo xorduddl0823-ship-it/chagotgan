@@ -40,6 +40,26 @@ function listExpr(list) {
     'return out;})()';
 }
 
+/**
+ * 카모두 번호 넣기 스크립트 — 두 가지 화면 모양을 받는다
+ *  · manualInput(실제 카모두 10/19 화면): «수동입력» 체크를 «켜야» 번호 칸이 열림(꺼져 있으면 «자동입력»)
+ *  · autoAssign(예전 짐작·모의 사이트): «자동 부여» 체크를 «꺼야» 함
+ *  돌려줌 {auto: 자동으로 매겨질 상태인가, no: 칸의 값} · 칸을 못 찾으면 null
+ */
+function carmodooNumberExpr(cfg, checkNo) {
+  return '(function(){var C=' + JSON.stringify({ manual: cfg.manualInput || null, auto: cfg.autoAssign || null, field: cfg.numberField }) + ',no=' + JSON.stringify(String(checkNo || '')) + ';' +
+    'var n=document.querySelector(C.field);var m=C.manual?document.querySelector(C.manual):null;var a=C.auto?document.querySelector(C.auto):null;' +
+    'if(!n||(!m&&!a))return null;' +
+    'function ev(e,t){e.dispatchEvent(new Event(t,{bubbles:true}));}' +
+    'if(m){if(!m.checked){m.click();if(!m.checked){m.checked=true;ev(m,"change");}}}' +
+    'else if(a.checked){a.click();if(a.checked){a.checked=false;ev(a,"change");}}' +
+    'if(no!==""){n.removeAttribute("readonly");n.disabled=false;n.value=no;["input","change","blur"].forEach(function(t){ev(n,t);});}' +
+    'return {auto:m?!m.checked:!!a.checked,no:n.value};})()';
+}
+/** 카모두 번호 칸 상태 읽기(넣지 않음) */
+const carmodooReadExpr = (cfg) => carmodooNumberExpr(cfg, '').replace('if(m){if(!m.checked){m.click();if(!m.checked){m.checked=true;ev(m,"change");}}}' +
+  'else if(a.checked){a.click();if(a.checked){a.checked=false;ev(a,"change");}}', '');
+
 const textExpr = (sel) => '(function(){var e=document.querySelector(' + JSON.stringify(sel) + ');' +
   'return e?String(e.value!=null&&e.tagName!=="SPAN"&&e.tagName!=="DIV"&&e.tagName!=="TD"?e.value:e.textContent).trim():null;})()';
 
@@ -166,22 +186,17 @@ function createElectronAdapters(o) {
     async fill(data, extra) {
       const r = await o.fillFns.carmodoo(data, extra || {});
       const cfg = C.carmodoo;
-      if (!cfg.autoAssign || !cfg.numberField) return { ...r, missing: (r.missing || []).concat(['«자동 부여»·번호 칸 설정 없음(10/19 확인 필요)']) };
-      //  «자동 부여» 끄기 + 카인포 번호 넣기
-      const put = await inAnyFrame(o.getWindow('carmodoo'), '(function(){var a=document.querySelector(' + JSON.stringify(cfg.autoAssign) + ');' +
-        'var n=document.querySelector(' + JSON.stringify(cfg.numberField) + ');if(!a||!n)return null;' +
-        'if(a.checked){a.click();if(a.checked){a.checked=false;a.dispatchEvent(new Event("change",{bubbles:true}));}}' +
-        'n.value=' + JSON.stringify(String(extra.checkNo || '')) + ';["input","change","blur"].forEach(function(t){n.dispatchEvent(new Event(t,{bubbles:true}));});' +
-        'return {auto:a.checked,no:n.value};})()');
-      if (!put) return { ...r, missing: (r.missing || []).concat(['«자동 부여»·번호 칸을 화면에서 찾지 못함']) };
-      return { ...r, filled: (r.filled || []).concat(['자동 부여 끔', '성능점검번호']) };
+      if (!(cfg.manualInput || cfg.autoAssign) || !cfg.numberField) return { ...r, missing: (r.missing || []).concat(['«수동입력»·번호 칸 설정 없음(실제 화면 확인 필요)']) };
+      //  «수동입력» 켜기(또는 «자동 부여» 끄기) + 카인포 번호 넣기
+      const put = await inAnyFrame(o.getWindow('carmodoo'), carmodooNumberExpr(cfg, extra.checkNo));
+      if (!put) return { ...r, missing: (r.missing || []).concat(['«수동입력»·번호 칸을 화면에서 찾지 못함']) };
+      return { ...r, filled: (r.filled || []).concat([cfg.manualInput ? '수동입력 켬' : '자동 부여 끔', '성능점검번호']) };
     },
     async readForm() {
       const cfg = C.carmodoo;
-      if (!cfg.autoAssign || !cfg.numberField) return { autoAssignOn: undefined, numberValue: '' };
-      const v = await inAnyFrame(o.getWindow('carmodoo'), '(function(){var a=document.querySelector(' + JSON.stringify(cfg.autoAssign) + ');' +
-        'var n=document.querySelector(' + JSON.stringify(cfg.numberField) + ');if(!a||!n)return null;return {autoAssignOn:!!a.checked,numberValue:n.value};})()');
-      return v || { autoAssignOn: undefined, numberValue: '' };
+      if (!(cfg.manualInput || cfg.autoAssign) || !cfg.numberField) return { autoAssignOn: undefined, numberValue: '' };
+      const v = await inAnyFrame(o.getWindow('carmodoo'), carmodooReadExpr(cfg));
+      return v ? { autoAssignOn: v.auto, numberValue: v.no } : { autoAssignOn: undefined, numberValue: '' };
     },
   });
 
@@ -232,4 +247,4 @@ function createElectronAdapters(o) {
   return { carinfo, carmodoo, entry };
 }
 
-module.exports = { createElectronAdapters, inAnyFrame, listExpr };
+module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr };

@@ -231,3 +231,19 @@ test('목록에 차대번호 칸이 없을 때(실제 카인포): 이번에 생�
   assert.strictEqual(r2.ok, false);
   assert.match(r2.reason, /차대번호를 읽지 못해/);
 });
+
+test('카모두 번호 칸(10/19 실제 화면): «수동입력» 체크를 켜야 칸이 열리고 카인포 번호가 들어감 — 이미 켜져 있으면 끄지 않음', () => {
+  const { JSDOM } = require('./node_modules/jsdom');
+  const { carmodooNumberExpr, carmodooReadExpr } = require('../src/sites/flow-adapters');
+  const cfg = { manualInput: '#manual', numberField: '#no' };
+  const html = (on) => '<input id="no" value="자동입력" disabled><input type="checkbox" id="manual"' + (on ? ' checked' : '') + '>';
+  for (const on of [false, true]) {
+    const dom = new JSDOM(html(on), { runScripts: 'outside-only' });
+    //  실제 화면처럼: 체크를 켜면 칸이 열림
+    dom.window.eval('document.getElementById("manual").addEventListener("click",function(){var n=document.getElementById("no");n.disabled=!this.checked;if(this.checked)n.value="";})');
+    assert.deepStrictEqual(dom.window.eval(carmodooReadExpr(cfg)).auto, !on, '읽기만 하면 바꾸지 않음');
+    const r = dom.window.eval(carmodooNumberExpr(cfg, '2628604413'));
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(r)), { auto: false, no: '2628604413' });
+    assert.strictEqual(dom.window.document.getElementById('manual').checked, true);
+  }
+});

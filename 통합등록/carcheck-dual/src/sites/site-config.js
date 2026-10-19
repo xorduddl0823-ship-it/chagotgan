@@ -52,11 +52,19 @@ const REAL = {
     confirmed: false,
     hosts: ['ck.carmodoo.com'],
     savePatterns: [], saveGetPatterns: [], readAllow: [], fillAllow: [], saveButton: null,
-    autoAssign: null,                                                    // 10/19
-    numberField: '#j_assocNumber',                                       // schema.js 의 «조합 성능번호» — 같은 칸인지 10/19 확인
-    list: { rows: null, cols: null },
+    //  10/19 대표님 화면 사진(접수등록 «① 신청인 및 접수정보» 탭): «점검번호» 칸 = 기본 «자동입력»(잠김) + 옆 «수동입력» 체크.
+    //   «수동입력»을 «켜야» 칸이 열려(«숫자만 입력») 카인포 번호를 넣을 수 있음 — «자동 부여»를 «끄는» 모양이 아님(대표님 지적)
+    //   → manualInput(켜야 하는 체크) 을 씀. 두 칸의 선택자(id)는 사진으로 알 수 없어 아직 비움
+    manualInput: null,
+    autoAssign: null,
+    numberField: '#j_assocNumber',                                       // schema.js 의 «조합 성능번호» — «점검번호» 칸과 같은지 확인 필요
+    //  ⚠ 화면 오른쪽 위에 [접수저장]과 [저장] 두 단추가 있음 — 어느 쪽을 누르는지 대표님 확인 필요(saveButton 비움)
+    //  10/19 화면 사진(접수차량 리스트): 칸 = 체크 · 성능번호 · 접수일 · 검사일 · 차량번호 · 차대번호(17자리 다 보임) · 차명 · 회사명 · 신청인 · … · 맨 끝 ✕(지우기 — 누르지 않음)
+    //   줄 선택자는 사진으로 알 수 없어 아직 비움
+    list: { rows: null, cols: { checkNo: 1, date: 3, carNo: 4, vin: 5 } },
     phaseAllow: { photo: [] },
-    photoPhase: null,                                                    // 기존 기능은 같은 접수 화면 «4 자동차사진» 탭에서 올림 — 언제 서버로 가는지 확인 필요
+    //  같은 접수 화면 «④ 자동차사진» 탭에서 올림(기존 기능) → 저장 전. 사진이 그때 서버로 가는지는 진단 때 확인
+    photoPhase: 'beforeSave',
   },
   entry: {
     confirmed: false,
