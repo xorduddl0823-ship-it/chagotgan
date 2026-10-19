@@ -38,6 +38,7 @@ mk out "$Z/체크정식_v55_index만_$C.zip"; rm -rf out
 #   시험 주소와 달리 «로그인»은 실제 app.cgg.co.kr 그대로 (주소 바꾸기 없음)
 mkdir out && cp 홈페이지/소개/0_차곳간_홈페이지_v2.html out/index.html && cp 홈페이지/join_v6.html out/join.html
 python3 홈페이지/통합입구/도구/올림/홈페이지정식_머리.py out/index.html >/dev/null   # 실제 홈페이지만 검색에 나오게(총괄 10/19)
+cp 홈페이지/통합입구/도구/올림/정식/og.png 홈페이지/통합입구/도구/올림/정식/robots.txt 홈페이지/통합입구/도구/올림/정식/sitemap.xml out/   # 공유 그림 · 검색 안내
 printf '/*\n  X-Frame-Options: SAMEORIGIN\n  X-Content-Type-Options: nosniff\n  Content-Security-Policy: frame-ancestors '"'"'self'"'"'\n  Referrer-Policy: strict-origin-when-cross-origin\n' > out/_headers
 mk out "$Z/홈페이지정식_v2_$C.zip"; rm -rf out
 ls -la "$Z"

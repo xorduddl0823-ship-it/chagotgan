@@ -13,7 +13,7 @@
 //   AB_OK=시험업체만 API=https://<프로젝트>.supabase.co/functions/v1 \
 //   WA_SHOP= WA_TOKEN= WA_REC=<A 차 기록 id> WA_PHOTO=<A 사진 id sb/…> WA_BIZ=<A 사업자번호> \
 //   WB_SHOP= WB_TOKEN=   (B 는 사업자번호가 비어 있는 시험 업체여야 W6 이 뜻이 있음) \
-//   CA_OFFICE= CA_TOKEN= CA_INVOICE=<A 청구서 id> CA_YM=<그 달 2026-10> CA_DELIV_PHOTO=<A 배달 사진 id> \
+//   CA_OFFICE= CA_TOKEN= CA_INVOICE=<A 청구서 id> CA_YM=<그 달 2026-10> CA_DELIV_PHOTO=<A 배달 사진 id> CA_CAR=<A 검사 기록(차) id> \
 //   CB_OFFICE= CB_TOKEN= \
 //   DA_TOKEN=<딜러 A 열쇠> DB_TOKEN=<딜러 B 열쇠>   (딜러 A 의 차는 WA_SHOP 의 WA_REC — 딜러 B 번호로는 안 들어온 차) \
 //   node 보안/검사기록/중복사업자번호_10-19/AB_시험_업체격리.js
@@ -33,6 +33,7 @@ const MSG = {
   cNoPhoto: "사진을 찾지 못했습니다.",                                  // check 3659
   dNoCar: "이 차를 찾지 못했습니다 (내 번호로 들어온 차만 볼 수 있어요)", // dealer 577
   dNoCar2: "이 차를 찾지 못했습니다",                                   // dealer 603
+  cNotMyCar: "이 검사소 차가 아닙니다.",                               // check 998 (기록 고치기)
 };
 
 /* ── 응답 읽기: {status, ok:해석됨, j} → 판정 함수가 씀 ── */
@@ -68,6 +69,7 @@ const W_SHOT_HAS = (id) => J.result((x) => !isObj(x) || !isObj(x.links) ? "links
 const W_SHOT_NONE = J.result((x) => !isObj(x) || !isObj(x.links) ? "links 칸 없음" : Object.keys(x.links).length !== 0 ? "다른 업체 사진 주소가 나옴(" + Object.keys(x.links).length + "개)" : "");
 const C_ROWS = J.result((x) => Array.isArray(x) ? "" : "줄 목록(배열)이 아님");
 const C_DEL0 = J.result((x) => !isObj(x) ? "모양 다름" : typeof x.n !== "number" || typeof x.missing !== "number" ? "n · missing 칸 없음" : x.n !== 0 ? "지운 수 " + x.n : x.missing !== 1 ? "missing " + x.missing + "(1 이어야 함)" : "");
+const W_DEL_ANY = (r) => { const s = shape(r); if (s) return s; if ("__err" in r.j) return ""; return isObj(r.j.result) && r.j.result.ok === true ? "" : "모양 다름"; };   // B 자기 칸 지우기 — 결과보다 «A 기록이 그대로인지»(W9b)가 판정
 const D_CAR_OK = J.result((x) => !isObj(x) || !isObj(x.car) || typeof x.car.plate !== "string" || !x.car.plate ? "차 정보 없음" : "");
 
 /* ── 시험 목록 (모두 필수) ── */
@@ -93,6 +95,8 @@ function plan(E) {
     { id: "W6", what: "B 가 A 사업자번호를 자기 업체에 넣기 → 겹침 거절", req: w(E.WB_SHOP, E.WB_TOKEN, "shopBiz", [{ bizNo: E.WA_BIZ }]), judge: J.reject(MSG.wBizTaken) },
     { id: "W7", what: "B 열쇠로 본사 기능 → 거절", req: w(E.WB_SHOP, E.WB_TOKEN, "hqShops", []), judge: J.reject(MSG.wHq) },
     { id: "W8", what: "B 열쇠 + ADMIN 코드 → 거절", req: w("ADMIN", E.WB_TOKEN, "hqShops", []), judge: J.reject(MSG.wOther) },
+    { id: "W2b", what: "B 가 A 기록 id 로 지우기(B 자기 칸) — 뒤 W9b 로 A 기록 확인", req: w(E.WB_SHOP, E.WB_TOKEN, "apiDel", ["intakes", E.WA_REC]), judge: W_DEL_ANY },
+    { id: "W9b", what: "다시 대조: A 기록이 그대로 있음(보기 코드 받힘)", req: w(E.WA_SHOP, E.WA_TOKEN, "viewLink", [E.WA_REC]), judge: W_LINK_OK },
     { id: "W9", what: "다시 대조: A 사진 주소 그대로 나옴", req: w(E.WA_SHOP, E.WA_TOKEN, "shotLinks", [[E.WA_PHOTO]]), judge: W_SHOT_HAS(E.WA_PHOTO) },
     /* 체크 */
     { id: "C0", what: "대조: A 가 A 청구서 줄 읽음(전 지문 저장)", req: c(E.CA_OFFICE, E.CA_TOKEN, "invoiceRows", [E.CA_INVOICE]), judge: C_ROWS, snap: "before" },
@@ -101,6 +105,7 @@ function plan(E) {
     { id: "C3", what: "B 가 A 청구서 id 로 줄 보기 → 거절", req: c(E.CB_OFFICE, E.CB_TOKEN, "invoiceRows", [E.CA_INVOICE]), judge: J.reject(MSG.cNotMine) },
     { id: "C4", what: "B 가 A 청구서 지우기 → n 0 · missing 1", req: c(E.CB_OFFICE, E.CB_TOKEN, "invoiceDel", [{ ym: E.CA_YM, ids: [E.CA_INVOICE] }]), judge: C_DEL0 },
     { id: "C5", what: "B 가 A 배달 사진 → 못 찾음", req: c(E.CB_OFFICE, E.CB_TOKEN, "deliv_photo", [E.CB_TOKEN, E.CA_DELIV_PHOTO]), judge: J.reject(MSG.cNoPhoto) },
+    { id: "C7", what: "B 가 A 검사 기록(차) 검사비 고치기 → 거절", req: c(E.CB_OFFICE, E.CB_TOKEN, "carFeeSet", [{ carId: E.CA_CAR, fee: 1 }]), judge: J.reject(MSG.cNotMyCar) },
     { id: "C6", what: "다시 대조: A 청구서 줄이 C0 과 똑같음", req: c(E.CA_OFFICE, E.CA_TOKEN, "invoiceRows", [E.CA_INVOICE]), judge: C_ROWS, snap: "after" },
     /* 딜러 */
     { id: "D0", what: "대조: 딜러 A 가 자기 차 상세 봄", req: d(E.DA_TOKEN, "car", [E.WA_SHOP, E.WA_REC]), judge: D_CAR_OK },
@@ -109,7 +114,7 @@ function plan(E) {
   ];
 }
 const NEED = ["API", "WA_SHOP", "WA_TOKEN", "WA_REC", "WA_PHOTO", "WA_BIZ", "WB_SHOP", "WB_TOKEN",
-  "CA_OFFICE", "CA_TOKEN", "CA_INVOICE", "CA_YM", "CA_DELIV_PHOTO", "CB_OFFICE", "CB_TOKEN", "DA_TOKEN", "DB_TOKEN"];
+  "CA_OFFICE", "CA_TOKEN", "CA_INVOICE", "CA_YM", "CA_DELIV_PHOTO", "CA_CAR", "CB_OFFICE", "CB_TOKEN", "DA_TOKEN", "DB_TOKEN"];
 
 /* ── 실행 ── */
 async function send(fetchFn, API, q) {
@@ -156,7 +161,7 @@ async function selfTest() {
     W5: { __err: MSG.wNoFile }, W6: { __err: MSG.wBizTaken }, W7: { __err: MSG.wHq }, W8: { __err: MSG.wOther },
     W9: { result: { links: { "sb/TA/202610/x.jpg": "https://x/s2" } } },
     C0: { result: [{ id: 1, total: 5 }] }, C1: { __err: MSG.cNoOffice + " (01000000000)" }, C2: { __err: MSG.cNoOffice + " (01000000000)" },
-    C3: { __err: MSG.cNotMine }, C4: { result: { n: 0, kept: [], missing: 1, cleared: 0 } }, C5: { __err: MSG.cNoPhoto },
+    C3: { __err: MSG.cNotMine }, C7: { __err: MSG.cNotMyCar }, W2b: { result: { ok: true, rev: 1 } }, W9b: { result: { code: "B".repeat(24) } }, C4: { result: { n: 0, kept: [], missing: 1, cleared: 0 } }, C5: { __err: MSG.cNoPhoto },
     C6: { result: [{ id: 1, total: 5 }] }, D0: { result: { car: { plate: "12가3456" } } }, D1: { __err: MSG.dNoCar }, D2: { __err: MSG.dNoCar2 },
   };
   const P = plan(E);
@@ -175,6 +180,9 @@ async function selfTest() {
     ["C3 결과로 줄이 나옴", { C3: { body: JSON.stringify({ result: [{ id: "FAKE_INV" }] }) } }, 1],
     ["C4 {result:{deleted:1}}", { C4: { body: JSON.stringify({ result: { deleted: 1 } }) } }, 1],
     ["C4 n 1", { C4: { body: JSON.stringify({ result: { n: 1, missing: 0 } }) } }, 1],
+    ["W9b A 기록이 사라짐", { W9b: { body: JSON.stringify({ __err: MSG.wNoCar }) } }, 1],
+    ["C7 남의 검사 기록 고치기 성공", { C7: { body: JSON.stringify({ result: { ok: true, carId: "x", fee: 1 } }) } }, 1],
+    ["W2b 모르는 모양", { W2b: { body: JSON.stringify({ result: { deleted: 1 } }) } }, 1],
     ["C6 A 줄이 바뀜", { C6: { body: JSON.stringify({ result: [{ id: 1, total: 0 }] }) } }, 1],
     ["W0 대조군 {}", { W0: { body: JSON.stringify({}) } }, 1],
     ["W0 대조군 {result:{}}", { W0: { body: JSON.stringify({ result: {} }) } }, 1],
