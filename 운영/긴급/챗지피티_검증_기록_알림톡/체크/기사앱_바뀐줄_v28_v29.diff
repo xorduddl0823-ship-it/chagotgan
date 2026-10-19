@@ -1,0 +1,66 @@
+diff --git "a/\354\262\264\355\201\254/driver/index_v28.html" "b/\354\262\264\355\201\254/driver/index_v29.html"
+index 165a9eb..c13d275 100644
+--- "a/\354\262\264\355\201\254/driver/index_v28.html"
++++ "b/\354\262\264\355\201\254/driver/index_v29.html"
+@@ -1,4 +1,5 @@
+ <!DOCTYPE html>
++<!-- 기사 앱 v29 (v28 + 도착 보내기 같은 일 표시 rid · 다시 보내기 · 10/19) -->
+ <html lang="ko">
+ <head>
+ <base target="_top">
+@@ -253,9 +254,13 @@ function telFmt(v){ var n=String(v||'').replace(/\D/g,''); if(n.length===11) ret
+ /* ── 차곳간체크 서버로 부릅니다 (예전 구글 스크립트 자리) ──
+    화면 코드는 그대로 두고, 이 다리 하나만 바꿨습니다. */
+ var API='https://ybfpxmmjofyvfprtvmhj.supabase.co/functions/v1/check-api';
++/* v29: 같은 일 표시 — 도착 보내기 한 건마다 무작위 24자. 답을 못 받아 다시 보내면 같은 값(서버가 한 번만 처리 · 알림 한 번) */
++var DRV_RID='';
++function newRid(){ var A='abcdefghijklmnopqrstuvwxyz0123456789', a=new Uint8Array(24); try{ crypto.getRandomValues(a); }catch(e){ for(var i=0;i<24;i++) a[i]=Math.floor(Math.random()*256); }
++  return Array.prototype.map.call(a,function(x){ return A[x%36]; }).join(''); }
+ function call(fn){ var a=[].slice.call(arguments,1);
+   return fetch(API,{ method:'POST', headers:{'Content-Type':'application/json'},
+-    body: JSON.stringify({ fn: String(fn).replace(/^api_/,'deliv_'), args: a }) })
++    body: JSON.stringify(DRV_RID ? { fn: String(fn).replace(/^api_/,'deliv_'), args: a, rid: DRV_RID } : { fn: String(fn).replace(/^api_/,'deliv_'), args: a }) })
+   .then(function(r){ return r.text().then(function(t){
+     var j=null; try{ j=JSON.parse(t); }catch(e){}
+     if(!j){ try{ console.warn('check-api 답이 JSON 이 아님', r.status, String(t).slice(0,300)); }catch(e){}
+@@ -288,7 +293,7 @@ function niceMsg(m, formal){
+   return m;
+ }
+ /* 보낸 결과 — 방법 코드(ATA · MMS · LMS · SMS)는 우리말로, 이유가 영어 · 코드면 쉬운 말로 */
+-function howKo(h){ h=String(h||'').toUpperCase(); return h==='ATA'?'알림톡':h==='MMS'?'사진 문자':(h==='LMS'||h==='SMS')?'문자':(h||'-'); }
++function howKo(h){ h=String(h||'').toUpperCase(); return h==='ATA'?'알림톡':h==='MMS'?'사진 문자':h==='LMS'?'긴 문자':h==='SMS'?'짧은 문자':'—'; }
+ /* v28: 기록 상태 — 알림 기준 [보이는 말, 칩 색] (기록 저장 자체는 따로 말하지 않음) */
+ function sendTag(r){
+   if(r.상태==='취소') return ['취소','p-bad'];
+@@ -1053,7 +1058,7 @@ function alert2(t,h){ modal('<h3>'+esc(t)+'</h3><div class="bad" style="margin-b
+ 
+ /* ---------- 보내기 ---------- */
+ function check(){
+-  saveDraft();
++  saveDraft(); S.rid='';   /* v29: 내용이 바뀌면 새 일 */
+   var why=[], tel=String(S.tel||'').replace(/\D/g,'');
+   if(!S.dealer && !tel) why.push('딜러');
+   if(!S.dest) why.push('목적지');
+@@ -1074,7 +1079,9 @@ function doSend(force){
+   var rec={ plate:S.plate, car:S.car?S.car[1]:'', no:S.car?S.car[5]:'', vin:S.car?S.car[6]:'', dealer:S.dealer, comp:S.comp, tel:S.tel,
+     dest:S.dest, destKind:S.destKind, driver:me.name, lat:S.gps?S.gps.lat:'', lng:S.gps?S.gps.lng:'', acc:S.gps?S.gps.acc:'',
+     photo:S.sendJpg||'', photos:(S.more||[]).slice(0,2), plateHow:S.plateHow, force:force };
+-  call('api_arrive', me.pin, rec).then(function(r){
++  if(force || !S.rid) S.rid=newRid();   /* v29: «그래도 보내기»는 새 일 · 다시 보내기는 같은 일 */
++  DRV_RID=S.rid; var sent=call('api_arrive', me.pin, rec); DRV_RID='';
++  sent.then(function(r){
+     if(r.dup){
+       modal('<h3>방금 보낸 기록이 있어요</h3><div class="warn">'+esc(r.at)+' 에 같은 차·같은 목적지로 보냈어요.</div>'+
+         '<button class="big b-main" id="m-ok">그래도 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">그만두기</button>');
+@@ -1092,8 +1099,9 @@ function doSend(force){
+       '<button class="big b-main" id="m-next">다음 차량</button>');
+     $('m-next').onclick=function(){ closeModal(); clearForm(); start(); };
+   }).catch(function(e){
+-    modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-bottom:14px">'+esc(e.message)+'</div><button class="big b-sub" id="m-no">닫기</button>');
+-    $('m-no').onclick=closeModal;
++    modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-bottom:14px">'+esc(e.message)+'</div>'+
++      '<button class="big b-main" id="m-again">다시 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">닫기</button>');
++    $('m-no').onclick=function(){ S.rid=''; closeModal(); }; $('m-again').onclick=function(){ doSend(false); };   /* v29: «다시 보내기»만 같은 일 표시 — 닫고 고쳐 보내면 새 일 */
+   });
+ }
+ function clearForm(){
