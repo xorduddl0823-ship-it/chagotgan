@@ -29,6 +29,10 @@ head = re.sub(r'<link rel="apple-touch-icon" href="data:image/png;base64,[^"]+">
               '<link rel="apple-touch-icon" href="data:image/png;base64,' + base64.b64encode(open(CI + "/apple-touch-icon.png", "rb").read()).decode() + '">', head)
 head = re.sub(r'<link rel="icon" href="data:image/png;base64,[^"]+">\n?', "", head)   # 탭 아이콘은 CGG.favicon() 이 CI 로 넣어요
 assert head.count("apple-touch-icon") == 1 and "Noto+Sans+KR" in head
+# d4.1: 검색에 안 나오게 (워시 v141 과 같은 글 — 체크 본 화면은 아직 없음 · 총괄 2026-10-19)
+vp = '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
+assert head.count(vp) == 1 and 'name="robots"' not in head
+head = head.replace(vp, vp + '\n<meta name="robots" content="noindex,nofollow">')
 
 html = ("<!DOCTYPE html>\n<html lang=\"ko\">\n"
   "<!-- 차곳간 딜러앱 화면 · 판 d4.1 (2026-10-19, 찾기 칸 안내 글 딜러용 · d4.0 의 확정 통합 디자인 — 공통 부품 cgg-j4 1.13.2 · 미리보기 11판 «딜러앱» 모양) · 바탕 d3.9 "
