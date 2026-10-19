@@ -10,6 +10,7 @@
 //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
 //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
 // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
+// sb28 (2026-10-19) 보안 방(중간): rid 는 쓰기 목록 기능만 · 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시.
 // sb28 (2026-10-19) 기록·알림톡 마감: 발송 기록(wash_sendlog) 새 줄은 받는 번호 가림 · 글 대신 길이만 · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 업체+사람+기능+rid · 체크 v53 과 같음).
 // sb28 (2026-10-19) 긴급(중복 사업자번호 · 운영/긴급/2026-10-19_중복사업자번호_검증요청.md) — 다른 곳이 쓰는 사업자번호는 어디로도 못 들어가게:
 //   ① 설정 저장(write · settings/config)의 supplier.bizNo: 이 업체에 등록된 번호가 있으면 그 번호로 덮고, 없으면 다른 곳(워시·체크·본사)이
@@ -6970,6 +6971,21 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
    화면이 쓰기 요청에 rid(영문 소문자·숫자 24자)를 붙이면 (제품 · 업체 · 사람 · 기능 · rid)를 한 줄로 잡고,
    같은 열쇠가 다시 오면 다시 하지 않고 처음 답을 그대로 돌려줌 · 처리 중이면 «처리 중이에요» · 실패하면 줄을 지움 · 표가 없으면 예전처럼 */
 const IDEM_BUSY = "처리 중이에요. 잠시 뒤 다시 확인해 주세요.";
+/** 저장할 답에서 비밀값 칸을 뺌(보안 방 · 비밀번호·열쇠·토큰이 표에 남지 않게) — 이름에 pw/pass/secret/token/key/sid 가 든 칸 */
+function idemScrub(v: unknown, depth = 0): unknown {
+  if (depth > 6 || v === null || typeof v !== "object") return v;
+  if (Array.isArray(v)) return v.slice(0, 500).map((x) => idemScrub(x, depth + 1));
+  const o: Record<string, unknown> = {};
+  for (const k of Object.keys(v as Record<string, unknown>)) {
+    if (/pw|pass|secret|token|key|sid|otp/i.test(k)) continue;
+    o[k] = idemScrub((v as any)[k], depth + 1);
+  }
+  return o;
+}
+const IDEM_STALE_MS = 5 * 60000;   // «처리 중» 줄이 5분 넘게 남으면(중간에 끊김) 낡은 줄로 보고 다시 처리
+/* sb28(보안 방 중간): rid 를 받는 기능은 «쓰기 목록»만 — 직원 계정·비밀번호(UFN)·본사(hq…)·결제(payStart/payConfirm: 주문번호로 따로 막음)·읽기는 빼요 */
+const IDEM_FNS = new Set(["apiSet", "apiSetMany", "apiDel", "apiWipeDemo", "driveUpload", "driveUploadMany", "sendMsg", "cancelSchedule",
+  "shopBiz", "viewBill", "pbIssue", "billIssue", "billOff", "cashAsk", "noticeHide", "joinPlanSet", "trialUse"]);
 async function idemRun(tenant: string, who: string, fn: string, rid: string, run: () => Promise<unknown>): Promise<unknown> {
   const key = { product: "wash", tenant: String(tenant || "").slice(0, 80), who: digits(who).slice(0, 80), fn: String(fn || "").slice(0, 60), rid };
   if (!key.tenant || !key.who) return await run();
@@ -6978,7 +6994,8 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
   if (error && String((error as any).code || "") === "23505") {
     const { data: had } = await sb.from("cgg_idem").select("state,result,at").eq("product", "wash").eq("tenant", key.tenant)
       .eq("who", key.who).eq("fn", key.fn).eq("rid", rid).maybeSingle();
-    if (had && Date.now() - Date.parse(String(had.at || "")) > 24 * 3600e3) {
+    const age = Date.now() - Date.parse(String((had && had.at) || ""));
+    if (had && (age > 24 * 3600e3 || (had.state !== "done" && age > IDEM_STALE_MS))) {   // 하루 지남 · 끊겨 남은 «처리 중»
       await same();
       ({ error } = await sb.from("cgg_idem").insert({ ...key, state: "run" }));
       if (error) throw new Error(IDEM_BUSY);
@@ -6992,7 +7009,7 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
   }
   try {
     const out = await run();
-    await sb.from("cgg_idem").update({ state: "done", result: out ?? null, done_at: new Date().toISOString() })
+    await sb.from("cgg_idem").update({ state: "done", result: idemScrub(out ?? null), done_at: new Date().toISOString() })
       .eq("product", "wash").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
     if (Math.random() < 0.02) sb.from("cgg_idem").delete().lt("at", new Date(Date.now() - 24 * 3600e3).toISOString()).then(() => {}, () => {});
     return out;
@@ -7078,7 +7095,7 @@ Deno.serve(async (req) => {
     if (!f) return out({ __err: "지원하지 않는 기능입니다. 화면을 새로 고쳐 주세요." });
     const rid = String(body.rid || "");
     /* sb28: 열쇠 = 업체 + 사람 + 기능 + rid (로그인한 사람만 · rid 만으로는 남의 답을 못 받음) */
-    if (ss && /^[a-z0-9]{24}$/.test(rid)) return out({ result: await idemRun(shop, String(ss.phone || ""), fn, rid, () => Promise.resolve(f(shop, args, ss))) });
+    if (ss && /^[a-z0-9]{24}$/.test(rid) && IDEM_FNS.has(fn)) return out({ result: await idemRun(shop, String(ss.phone || ""), fn, rid, () => Promise.resolve(f(shop, args, ss))) });
     return out({ result: await f(shop, args, ss) });
   } catch (e) {
     const em = e instanceof Error ? e.message : String(e);

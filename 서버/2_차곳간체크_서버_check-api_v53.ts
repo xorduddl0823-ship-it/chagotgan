@@ -13,7 +13,7 @@
 //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
 //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
 //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
-//  v53 (2026-10-19) 기록·알림톡 마감: 알림톡 변수에 빈 값(«-»)이 있으면 대체 문구 문자로(워시와 같음) · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 검사소+사람+기능+rid) ·
+//  v53 (2026-10-19) 보안 방: 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시 · 기록·알림톡 마감: 알림톡 변수에 빈 값(«-»)이 있으면 대체 문구 문자로(워시와 같음) · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 검사소+사람+기능+rid) ·
 //    긴급(중복 사업자번호): 기사 «회사 비밀번호»가 사업자번호이고 그 번호를 쓰는 검사소가 둘 이상이면 거절(보안 C5 · 코드로만) · officeSave 사업자번호는 숫자 10자리로만 저장(정규화) · 팝빌 아이디도 다른 검사소가 쓰면 거절 ·
 //    DB 같은 번호 막기(SQL 24 문지기·유일 색인)에 걸리면 같은 안내 · 안내 글 «이미 등록된 사업자번호예요. 본인 업체라면 차곳간에 문의해 주세요.»
 //    대표님 확정(04): 고유 키 = 사업자번호 + 종사업장번호(biz_sub · 없으면 0000) · 같은 번호로 두 번째 가게·제품은 «본사 승인» 때만
@@ -4859,6 +4859,18 @@ const FN: Record<string, (ctx: Ctx, ...a: any[]) => Promise<unknown>> = {
    (제품 · 검사소 · 사람 · 기능 · rid)를 한 줄로 잡고, 같은 열쇠가 다시 오면 다시 하지 않고 처음 답을 그대로 돌려줌.
    처음 것이 처리 중이면 «처리 중이에요». 실패하면 줄을 지워 다시 하기가 되게. 표가 없으면(SQL 26 전) 예전처럼. */
 const IDEM_BUSY = "처리 중이에요. 잠시 뒤 다시 확인해 주세요.";
+/** 저장할 답에서 비밀값 칸을 뺌(보안 방 · 비밀번호·열쇠·토큰이 표에 남지 않게) — 이름에 pw/pass/secret/token/key/sid 가 든 칸 */
+function idemScrub(v: unknown, depth = 0): unknown {
+  if (depth > 6 || v === null || typeof v !== "object") return v;
+  if (Array.isArray(v)) return v.slice(0, 500).map((x) => idemScrub(x, depth + 1));
+  const o: Record<string, unknown> = {};
+  for (const k of Object.keys(v as Record<string, unknown>)) {
+    if (/pw|pass|secret|token|key|sid|otp/i.test(k)) continue;
+    o[k] = idemScrub((v as any)[k], depth + 1);
+  }
+  return o;
+}
+const IDEM_STALE_MS = 5 * 60000;   // «처리 중» 줄이 5분 넘게 남으면(중간에 끊김) 낡은 줄로 보고 다시 처리
 const IDEM_DRIVER = new Set(["deliv_arrive"]);       // 로그인 없이 기사 열쇠(args[0])로 부르는 쓰기
 async function idemSha(t: string) {
   const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)));
@@ -4871,7 +4883,8 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
   if (error && S((error as any).code) === "23505") {
     const { data: had } = await db.from("cgg_idem").select("state,result,at").eq("product", "check").eq("tenant", key.tenant)
       .eq("who", key.who).eq("fn", key.fn).eq("rid", rid).maybeSingle();
-    if (had && Date.now() - Date.parse(S(had.at)) > 24 * 3600e3) {          // 하루 지난 열쇠는 새로
+    const age = Date.now() - Date.parse(S(had?.at));
+    if (had && (age > 24 * 3600e3 || (had.state !== "done" && age > IDEM_STALE_MS))) {   // 하루 지남 · 끊겨 남은 «처리 중»
       await db.from("cgg_idem").delete().eq("product", "check").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
       ({ error } = await db.from("cgg_idem").insert({ ...key, state: "run" }));
       if (error) throw new Error(IDEM_BUSY);
@@ -4885,7 +4898,7 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
   }
   try {
     const out = await run();
-    await db.from("cgg_idem").update({ state: "done", result: out ?? null, done_at: new Date().toISOString() })
+    await db.from("cgg_idem").update({ state: "done", result: idemScrub(out ?? null), done_at: new Date().toISOString() })
       .eq("product", "check").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
     if (Math.random() < 0.02) db.from("cgg_idem").delete().lt("at", new Date(Date.now() - 24 * 3600e3).toISOString()).then(() => {}, () => {});
     return out;
