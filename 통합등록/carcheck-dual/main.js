@@ -2260,7 +2260,7 @@ ipcMain.handle('flow:releaseAfterForce', flowCall((a) => {
  *  실제 전산 화면에서 «무엇을 누르면 어느 주소로 무슨 칸 이름이 가는지»와 화면 요소(단추·칸·표 머리글)를 기록한다.
  *  진단하는 동안 그 전산 창(과 팝업)의 쓰기 요청은 «하나도» 서버로 가지 않는다(src/sites/diag-recorder.js · 모의 시험으로 확인).
  *  값(차량번호·이름 등)은 기록하지 않는다. 기록은 기록 폴더의 diag 안 파일로만 남는다. */
-const { createDiagRecorder, ELEMENTS_EXPR } = require('./src/sites/diag-recorder');
+const { createDiagRecorder, ELEMENTS_EXPR, PAGE_EXPR } = require('./src/sites/diag-recorder');
 const { attachSaveHold } = require('./src/sites/save-hold');
 const diagState = {};                                    // site → { rec, hold, win, snaps, startedAt }
 
@@ -2283,7 +2283,14 @@ async function diagSnap(site) {
   for (const w of wins) {
     let list = [];
     try { list = [w.webContents.mainFrame].concat((w.webContents.mainFrame.framesInSubtree || []).filter((f) => f !== w.webContents.mainFrame)); } catch {}
-    for (const f of list) { try { frames.push(await f.executeJavaScript(ELEMENTS_EXPR, true)); } catch {} }
+    for (const f of list) {
+      try {
+        const el = await f.executeJavaScript(ELEMENTS_EXPR, true);
+        //  화면 뼈대(값 지움)와 사이트 코드 파일 — 대표님이 로그인한 뒤 방이 화면 구성·작동 방식을 보려고(8차 보강)
+        try { el.page = await f.executeJavaScript(PAGE_EXPR, true); } catch (e) { el.page = { error: String(e && e.message || e) }; }
+        frames.push(el);
+      } catch {}
+    }
   }
   d.snaps.push({ at: new Date().toISOString(), frames });
   return d.snaps.length;

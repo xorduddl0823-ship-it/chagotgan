@@ -641,12 +641,14 @@ function diagUi() {
   $('#diag-snap').disabled = !diagSite;
   $('#diag-stop').disabled = !diagSite;
   document.querySelectorAll('.diag-sites button').forEach((b) => { b.disabled = !!diagSite; });
+  $('#diag-entry-url').disabled = !!diagSite;              // 진단 중에는 주소를 바꿔도 반영되지 않으므로 잠금
   //  창을 닫아도 진단 중인 것이 보이게 — 아래 단추 글자·색을 바꾸고, 보내기 단추는 끈다
   $('#btn-diag').textContent = diagSite ? '전산 진단 중 (' + DIAG_NAME[diagSite] + ') · 눌러서 열기' : '전산 진단 (저장 안 함)';
   $('#btn-diag').classList.toggle('diag-on', !!diagSite);
   ['#btn-send-cm', '#btn-send-ci', '#btn-send-all', '#btn-auto'].forEach((q) => { const b = $(q); if (b) b.disabled = !!diagSite; });
   $('#diag-state').textContent = diagNote || (diagSite
-    ? DIAG_NAME[diagSite] + ' 진단 중이에요. ' + DIAG_NAME[diagSite] + ' 창에서 평소처럼 눌러 보세요. [저장]을 눌러도 저장되지 않아요.'
+    ? DIAG_NAME[diagSite] + ' 진단 중이에요. ' + DIAG_NAME[diagSite] + ' 창에서 ' + (diagSite === 'entry' ? '로그인(문자 인증)한 뒤 ' : '') +
+      '보고 싶은 화면을 열 때마다 [지금 화면 칸 기록]을 눌러 주세요. [저장]을 눌러도 저장되지 않아요.'
     : '진단할 전산을 골라 주세요.');
 }
 /** 진단 단추를 누르는 동안 전부 끄고, 끝나면(오류여도) 다시 맞춤 — 두 번 눌러 꼬이지 않게 */
@@ -655,9 +657,23 @@ async function diagBusy(fn) {
   try { await fn(); } finally { diagUi(); }
 }
 function initDiag() {
-  $('#btn-diag').addEventListener('click', () => { if (!diagSite) diagNote = ''; diagUi(); $('#diag').classList.remove('hidden'); });
+  $('#btn-diag').addEventListener('click', async () => {
+    if (!diagSite) diagNote = '';
+    try { const c = await window.api.getConfig(); $('#diag-entry-url').value = (c && c.entryUrl) || ''; } catch {}
+    diagUi();
+    $('#diag').classList.remove('hidden');
+  });
   $('#diag-close').addEventListener('click', () => $('#diag').classList.add('hidden'));
   document.querySelectorAll('.diag-sites button').forEach((b) => b.addEventListener('click', () => diagBusy(async () => {
+    //  엔트리 주소는 이 칸에 넣은 것을 설정에 저장해 쓴다(파일을 직접 고치지 않아도 되게)
+    if (b.dataset.site === 'entry') {
+      const url = $('#diag-entry-url').value.trim();
+      if (!/^https:\/\//.test(url)) { diagNote = '엔트리 주소를 https:// 로 시작하게 넣어 주세요.'; return; }
+      try {
+        const c = (await window.api.getConfig()) || {};
+        await window.api.setConfig({ ...c, entryUrl: url });
+      } catch { diagNote = '엔트리 주소를 저장하지 못했어요.'; return; }
+    }
     const r = await window.api.diag.start(b.dataset.site);
     if (!r || !r.ok) { diagNote = '진단을 시작하지 못했어요: ' + ((r && r.error) || '알 수 없는 까닭'); return; }
     diagSite = b.dataset.site;

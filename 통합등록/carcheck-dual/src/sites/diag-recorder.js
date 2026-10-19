@@ -110,4 +110,68 @@ const ELEMENTS_EXPR = `(function(){
   var ifr=document.querySelectorAll('iframe');for(var q=0;q<ifr.length;q++){out.frames.push({id:ifr[q].id||'',name:ifr[q].name||'',src:String(ifr[q].getAttribute('src')||'').split('?')[0].slice(0,120)});}
   return out;})()`;
 
-module.exports = { createDiagRecorder, ELEMENTS_EXPR, bodyKeys, WRITE_WORDS };
+/**
+ * 화면 구조·코드 저장 스크립트 (8차 보강 — 대표님 «로그인한 뒤 화면 구성·코드·작동 방식을 확인»)
+ *  · 화면(HTML)은 «뼈대»만: 표 칸·글 칸(td·span·div 등)의 글자는 «·»로 지우고, 머리글·이름표·단추 글자(th·label·button·h1~h6·legend)만 남김.
+ *    입력 칸의 값·title·data-값은 지움(이름만 남김). → 차량번호·이름·전화번호 같은 값이 남지 않음
+ *  · 페이지 안 코드(인라인 script)는 따옴표 안 글자를 «…»로 지움(로그인한 사람 이름·아이디가 코드에 박혀 있을 수 있어서)
+ *  · 바깥 코드 파일(script src — 사이트 프로그램 자체)은 같은 사이트 것만 그대로 받아 둠(합쳐 6MB까지)
+ *  · 사이트 서버에는 아무것도 보내지 않는다(코드 파일 받기는 GET 조회 — 진단 기록기가 그대로 둠)
+ */
+/* 페이지 안에서 돌릴 함수 — 글로 바꿔 executeJavaScript 로 넘긴다(바깥 변수를 쓰지 않음) */
+async function pageSnapshot() {
+  var KEEP = { TH: 1, LABEL: 1, BUTTON: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1, LEGEND: 1, CAPTION: 1 };
+  var QUOTED = /(["'`])(?:\\.|(?!\1)[^\\])*\1/g;
+  var root = document.documentElement.cloneNode(true);
+  function scrub(n) {
+    for (var c = n.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) {
+        var p = c.parentNode && c.parentNode.nodeName;
+        if (p === 'SCRIPT') c.nodeValue = String(c.nodeValue).replace(QUOTED, '"…"');
+        else if (p === 'STYLE') { /* 모양 규칙은 그대로 */ }
+        else if (KEEP[p]) c.nodeValue = String(c.nodeValue).replace(/\d{2,}[\d-]*/g, '#');
+        else if (String(c.nodeValue).trim()) c.nodeValue = '·';
+      } else if (c.nodeType === 1) {
+        var at = [].slice.call(c.attributes || []);
+        for (var i = 0; i < at.length; i++) {
+          var nm = at[i].name;
+          if (nm === 'value' && !/^(button|submit|checkbox|radio)$/.test(c.type || '')) c.setAttribute(nm, '');
+          else if (nm === 'title' || nm === 'alt' || nm === 'aria-label' || nm === 'placeholder' && /\d{3,}/.test(at[i].value) || /^data-/.test(nm)) c.setAttribute(nm, '');
+          else if (nm === 'src' && c.nodeName === 'IMG') c.setAttribute(nm, '');
+          else if (nm === 'href' && at[i].value.indexOf('?') >= 0) c.setAttribute(nm, at[i].value.split('?')[0] + '?…');
+          else if (/^on/.test(nm)) c.setAttribute(nm, at[i].value.replace(QUOTED, '"…"'));
+        }
+        if (c.nodeName === 'TEXTAREA') c.textContent = '';
+        if (c.nodeName === 'OPTION' && !/^\s*(선택|전체)?\s*$/.test(c.textContent)) c.textContent = '·';
+        scrub(c);
+      }
+    }
+  }
+  scrub(root);
+  var scripts = [], total = 0, ss = document.querySelectorAll('script[src]');
+  for (var k = 0; k < ss.length && k < 60; k++) {
+    var src = ss[k].src, same = false;
+    try { same = new URL(src).host === location.host; } catch (e) {}
+    var item = { src: String(src).split('?')[0], sameSite: same, size: 0, code: null };
+    if (same && total < 6000000) {
+      try {
+        var r = await fetch(src, { credentials: 'same-origin' });
+        var t = await r.text();
+        item.size = t.length;
+        if (total + t.length <= 6000000) { item.code = t; total += t.length; }
+      } catch (e) { item.error = String((e && e.message) || e); }
+    }
+    scripts.push(item);
+  }
+  return { path: location.pathname, html: '<!doctype html>' + root.outerHTML, scripts: scripts };
+}
+/**
+ * 화면 구조·코드 저장 스크립트 (8차 보강 — 대표님 «로그인한 뒤 화면 구성·코드·작동 방식을 확인»)
+ *  · 화면(HTML)은 «뼈대»만: 표 칸·글 칸(td·span·div 등)의 글자는 «·»로 지우고, 머리글·이름표·단추 글자(th·label·button·h1~h6)만 남김(그 안 숫자도 #).
+ *    입력 칸의 값·title·data-값·선택지 글자는 지움(이름만 남김) → 차량번호·이름·전화번호 같은 값이 남지 않음
+ *  · 페이지 안 코드(인라인 script·onclick)는 따옴표 안 글자를 «…»로 지움(로그인한 사람 이름·아이디가 박혀 있을 수 있어서)
+ *  · 바깥 코드 파일(script src — 사이트 프로그램 자체)은 같은 사이트 것만 그대로 받아 둠(합쳐 6MB까지). 받기는 GET 조회뿐
+ */
+const PAGE_EXPR = '(' + pageSnapshot.toString() + ')()';
+
+module.exports = { createDiagRecorder, ELEMENTS_EXPR, PAGE_EXPR, bodyKeys, WRITE_WORDS };
