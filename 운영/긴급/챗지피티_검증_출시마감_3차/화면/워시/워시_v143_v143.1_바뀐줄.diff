@@ -1,0 +1,53 @@
+--- "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.html"	2026-10-19 10:02:56.429384529 +0000
++++ "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.1.html"	2026-10-19 10:10:07.581410158 +0000
+@@ -4703,7 +4703,7 @@
+   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
+     b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
+ }
+-var APP_VER="워시 v143 · UI 3.0 · 2026-10-19";
++var APP_VER="워시 v143.1 · UI 3.0 · 2026-10-19";
+ /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
+ var LAYOUTS=["top","side","icon"];
+ function layoutMode(){
+@@ -13444,7 +13444,7 @@
+     });
+   }).then(function(res){
+     /* 서버 sb29 «확인 중»: {ok:false,checking:true} · 보냈지만 완료 기록 실패 {ok:true,checking:true} */
+-    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message}))))){
++    if(res&&(res.checking||res.unsure||res.state==="확인 중"||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message}))))){
+       if(res.ok){o.res=res.id||"";o.gid=res.groupId||"";o.via=(res.via==="ata"||res.via==="sms")?res.via:"";}
+       throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};}
+     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
+@@ -16823,12 +16823,12 @@
+ ("apiSet apiSetMany apiDel apiWipeDemo sendMsg cancelSchedule shopBiz pbIssue pbModify userAdd userEdit userDel userPw userPhone "+
+  "inviteAdd inviteDel bankLink bankUnlink driveUpload driveUploadMany trialUse joinPlanSet cfgVoice "+
+  "billIssue billOff billStart cashAsk payConfirm payStart noticeHide paidSay").split(" ").forEach(function(k){WRID.W[k]=1;});
+-var WUNK="갔는지 아직 몰라요 — 보낸 기록에서 확인해 주세요";   /* 결과 불명 안내 (한 곳에서) */
++var WUNK="확인 중 — 보낸 기록에서 확인해 주세요";   /* v143.1 체크 v56.7 과 같은 말 */   /* 결과 불명 안내 (한 곳에서) */
+ function wNewRid(){var A="abcdefghijklmnopqrstuvwxyz0123456789",a=new Uint8Array(24);
+   try{crypto.getRandomValues(a);}catch(e){for(var i=0;i<24;i++)a[i]=Math.floor(Math.random()*256);}
+   return Array.prototype.map.call(a,function(x){return A[x%36];}).join("");}
+ /* 답을 못 받았는지(결과 불명) — 다시 하면 같은 rid, 보내기는 «확인 중» */
+-function wUnknown(e){return !!(e&&(e.unknown||/처리 중이에요|확인 중/.test(String(e.message||e.error||e.__err||""))));}
++function wUnknown(e){return !!(e&&(e.unknown||e.unsure||e.__unsure||e.state==="확인 중"||/처리 중이에요|확인 중/.test(String(e.message||e.error||e.__err||""))));}   /* v143.1 체크와 같은 이름도 */
+ function supaRpc(fn,args){
+   if(fn==="webAppUrl")return Promise.resolve(supaHome());
+   var b={shop:SUPA.shop,token:SUPA.key,fn:fn,args:args},lk="",rid="";
+@@ -16845,7 +16845,7 @@
+     .then(function(r){return r.text();},function(){lost();throw {message:"서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",unknown:true};})
+     .then(function(t){
+       var j;try{j=JSON.parse(t);}catch(e){lost();throw {message:"서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",unknown:true};}
+-      if(j&&j.__err){var u=!!j.__checking||wUnknown({message:j.__err});if(u)lost();else done();throw {message:j.__err,unknown:u};}
++      if(j&&j.__err){var u=!!(j.__checking||j.__unsure)||wUnknown({message:j.__err});if(u)lost();else done();throw {message:j.__err,unknown:u};}
+       done();
+       return j?j.result:null;
+     });
+@@ -16874,7 +16874,7 @@
+ function rpcChecked(fn,args){
+   return rpc(fn,args).then(function(r){
+     var v=r;if(typeof r==="string"){try{v=JSON.parse(r);}catch(e){v=null;}}
+-    if(v&&v.__err)throw {message:v.__err,unknown:!!v.__checking||wUnknown({message:v.__err})};   /* v143 */
++    if(v&&v.__err)throw {message:v.__err,unknown:!!(v.__checking||v.__unsure)||wUnknown({message:v.__err})};   /* v143 */
+     return r;
+   });
+ }

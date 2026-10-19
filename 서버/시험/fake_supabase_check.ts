@@ -41,6 +41,11 @@ class Q {
   single() { this.one = true; return this; }
   then(res: any, rej: any) { return Promise.resolve().then(() => this.run()).then(res, rej); }
   run() {
+    /* 출시마감 3차 시험: cgg_idem DB 오류 흉내 — store.__idemFail(op, payload) 가 오류를 돌려주면 그대로(권한·장애·완료 저장 실패) */
+    if (this.t === "cgg_idem" && typeof (store as any).__idemFail === "function") {
+      const e = (store as any).__idemFail(this.op, this.payload);
+      if (e) return { data: null, error: e };
+    }
     const tbl = store[this.t];
     if (!tbl) return { data: null, error: { message: `relation "${this.t}" does not exist` } };
     const hit = tbl.filter((r) => this.filters.every((f) => f(r)));

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 격리 시험 환경: 워시 sb28 · 체크 v53 · 딜러 d9 를 가짜 수파베이스로 127.0.0.1 에 띄우고 보안 방 시험기를 돌림. 운영 접속 0.
+# 격리 시험 환경: 워시 sb29 · 체크 v54 · 딜러 d9 를 가짜 수파베이스로 127.0.0.1 에 띄우고 보안 방 시험기를 돌림. 운영 접속 0.
 D="$(cd "$(dirname "$0")" && pwd)"; M="$D/.."
 deno run -A --no-lock --import-map="$M/import_map_wash.json"   "$D/워시_서버.ts"   >/tmp/cgg_w.log 2>&1 & P1=$!
 deno run -A --no-lock --import-map="$M/import_map_check.json"  "$D/체크_서버.ts"   >/tmp/cgg_c.log 2>&1 & P2=$!

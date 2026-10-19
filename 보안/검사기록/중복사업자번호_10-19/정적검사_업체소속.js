@@ -1,6 +1,6 @@
 // 보안 방 · 2026-10-19 · 업체 소속·권한 «서버 확인» 정적 검사 (읽기만 · 서버를 부르지 않음)
 // 쓰는 법: node 보안/검사기록/중복사업자번호_10-19/정적검사_업체소속.js [워시 서버 파일] [체크 서버 파일] [딜러 서버 파일]
-//   (안 주면 지금 최신판: wash-api sb28 · check-api v53 · dealer-api d9)
+//   (안 주면 지금 최신판: wash-api sb29 · check-api v54 · dealer-api d9)
 // 결과: 항목마다 통과/실패 + 근거 줄. 실패가 하나라도 있으면 끝 코드 1.
 // ⚠ 한계(1차 검수 B06): 이 검사는 «글자 · 정규식» 검사예요. 실행 경로를 증명하지 않아요(예: hqOnly 글자가 있어도 맨 먼저 실행되는지는 사람이 봄).
 //   함수가 기대보다 적게 잡히면(형식이 바뀌면) 통과가 아니라 실패로 쳐요. 실제 막힘은 A/B 시험(실행)으로 따로 확인해요.
@@ -8,8 +8,8 @@
 "use strict";
 const fs = require("fs"), path = require("path");
 let ROOT = __dirname; while (!fs.existsSync(path.join(ROOT, "CLAUDE.md")) && path.dirname(ROOT) !== ROOT) ROOT = path.dirname(ROOT);   // 저장소 맨 위
-const W = process.argv[2] || path.join(ROOT, "서버/1_차곳간워시_서버_wash-api_sb28.ts");
-const C = process.argv[3] || path.join(ROOT, "서버/2_차곳간체크_서버_check-api_v53.ts");
+const W = process.argv[2] || path.join(ROOT, "서버/1_차곳간워시_서버_wash-api_sb29.ts");
+const C = process.argv[3] || path.join(ROOT, "서버/2_차곳간체크_서버_check-api_v54.ts");
 const D = process.argv[4] || path.join(ROOT, "서버/3_딜러앱_서버_dealer-api_d9.ts");
 const rd = (f) => fs.readFileSync(f, "utf8");
 const w = rd(W), c = rd(C), d = rd(D);
@@ -112,7 +112,7 @@ check("R2", "중복 등록: 본사 «사업자번호 확인»(hqBizOk)은 겹치
 check("R3", "중복 등록: 같은 번호 금지를 DB 가 막음(유일 색인 SQL 이 저장소에 있음 · 운영 적용은 SQL ⑧로 확인)",
   /create unique index if not exists wash_shops_biz_uq/.test(rd(path.join(ROOT, "서버/sql/급한고침_사업자번호_잠금.sql"))), "서버/sql/급한고침_사업자번호_잠금.sql — 워시 · 체크 «따로» 색인뿐(두 제품 사이 경쟁은 못 막음)");
 /* 2차(sb28 · v53): 한 번 누름 열쇠 · 관리 기록 · DB 문지기 */
-check("I1", "워시: rid 열쇠 = 업체 + 사람 + 기능 + rid (로그인한 사람만)", /if \(ss && \/\^\[a-z0-9\]\{24\}\$\/\.test\(rid\)\) return out\(\{ result: await idemRun\(shop, String\(ss\.phone/.test(w), "wash " + find(w, /return out\(\{ result: await idemRun\(/));
+check("I1", "워시: rid 열쇠 = 업체 + 사람 + 기능 + rid (로그인한 사람만)", /if \(ss && \/\^\[a-z0-9\]\{24\}\$\/\.test\(rid\)(?: && IDEM_FNS\.has\(fn\))?\) return out\(\{ result: await idemRun\(shop, String\(ss\.phone/.test(w), "wash " + find(w, /return out\(\{ result: await idemRun\(/));
 check("I2", "체크: rid 열쇠 = 검사소 id + 사람 + 기능 + rid (기사는 drv + 열쇠 지문)", /const tenant = OPEN\.has\(fn\) \? "drv" : S\(ctx\.office\?\.id\);/.test(c) && /const who = OPEN\.has\(fn\) \? await idemSha\(S\(args\[0\]\)\) : S\(ctx\.who\);/.test(c), "check " + find(c, /const tenant = OPEN\.has\(fn\)/));
 check("A1", "워시: 관리에서 사업자번호를 바꾸면 기록 먼저(못 남기면 안 바꿈)", /if \(bizAudit && !await hqAuditLog\(ss, "shopBizSet"/.test(w), "wash " + find(w, /if \(bizAudit && !await hqAuditLog/));
 const s24 = (() => { try { return rd(path.join(ROOT, "서버/sql/24_사업자번호_겹침_막기.sql")); } catch (_) { return ""; } })();
