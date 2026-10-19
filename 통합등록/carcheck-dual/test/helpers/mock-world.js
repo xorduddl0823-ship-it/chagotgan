@@ -145,7 +145,7 @@ function createWorld(opts = {}) {
       async fill(data, extra) {
         //  엔트리는 «다음 번호»로 카인포 기록을 끌어온다 — 다음 번호가 어긋나 있으면 다른 차가 끌려온다
         ctx.carNo = data.carNo; ctx.vin = data.vin;
-        const no = w.typesNumber ? extra.checkNo : w.entry.next;       // 번호를 직접 넣어 불러오는 방식이면 이 차 번호
+        const no = w.entry.next;
         const row = w.carinfo.rows.find((r) => r.checkNo === no);
         w.entry.loaded = row ? { entryNo: no, carNo: row.carNo, vin: row.vin } : { entryNo: no, carNo: '', vin: '' };
         return { filled: ['성능점검번호'], missing: [] };

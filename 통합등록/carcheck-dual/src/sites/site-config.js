@@ -79,9 +79,8 @@ const REAL = {
     numberDigitsOnly: true,                                              // 번호는 숫자만 견줌(줄표 뗌)
     //  10/19 화면 사진([간편 접수]): «불러올 성능번호를 입력해 주세요» 창에 다음 번호(카인포 마지막 번호 + 1, 예 26-28-604414)가 미리 들어가 있고
     //   [불러오기] → «자동차성능·상태점검» 화면에 카인포 기록이 채워짐. 없는 번호면 «성능 불러오기가 실패하였습니다»
-    //   번호 칸은 고쳐 쓸 수 있음 → typeNumber(이 차 번호를 직접 넣기)는 대표님이 고를 사항이라 꺼 둠(false = 다음 번호가 이 차 번호와 같을 때만 진행)
-    typeNumber: false,
-    numberFormat: 'NN-NN-NNNNNN',
+    //   번호 칸은 고쳐 쓸 수 있지만 «프로그램은 절대 고치지 않음»(대표님 10/19 결정 — 카인포 번호는 순서대로 매겨져 잘못 넣으면 엔트리 번호가 꼬임)
+    //   → 엔트리가 매긴 번호가 이 차 카인포 번호와 같을 때만 불러오고, 다르면 멈춤. (그래서 numberInput 은 쓰지 않음)
     loadRetry: { times: 3, waitMs: 3000, failText: '성능 불러오기가 실패하였습니다', failClose: null },
     loggedIn: null, nextNumber: null, numberInput: null, loadButton: null,
     loaded: { entryNo: null, carNo: null, vin: null },

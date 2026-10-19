@@ -264,24 +264,12 @@ test('엔트리 목록 모양(10/19 실제 화면): 앞을 가린 차량번호 �
   assert.strictEqual(nc.checkCarmodooAfterSave({ carinfoNo: '2628604413', savedNo: '26-28-604413'.replace(/[^0-9]+/g, '') }).ok, true);
 });
 
-test('엔트리 [간편 접수] 번호 칸(10/19 화면): 다음 번호가 이 차와 다를 때 — 기본은 멈춤 · «직접 넣기»를 켜면 이 차 번호로 불러와 끝, 다른 차가 끌려오지 않음', async () => {
-  const wrongNext = (t) => ({ ...RUN, onStep: (s) => { if (s.step === '엔트리 번호 규칙 확인' && !s.note) t.W.world.entry.next = 'T-0999'; } });
-  const a = setup();
-  const r1 = await a.flow.runAll({ ...CAR, data: CAR }, wrongNext(a));
-  assert.strictEqual(r1.ok, false);
-  assert.ok(r1.detail.mismatch);
-  const b = setup();
-  b.W.adapters.entry.typesNumber = true;
-  b.W.world.typesNumber = true;
-  const r2 = await b.flow.runAll({ ...CAR, data: CAR }, wrongNext(b));
-  assert.strictEqual(r2.ok, true, JSON.stringify(r2));
-  assert.strictEqual(r2.numbers.entry, 'T-0101');
-  assert.strictEqual(b.W.world.entry.rows[0].carNo, CAR.carNo, '이 차 기록이 등록됨');
-});
-
-test('엔트리 번호 모양 맞추기: 2628604413 → 26-28-604413 · 자릿수가 다르면 자르지 않고 그대로', () => {
-  const { fmtNo } = require('../src/sites/flow-adapters');
-  assert.strictEqual(fmtNo('2628604413', 'NN-NN-NNNNNN'), '26-28-604413');
-  assert.strictEqual(fmtNo('26-28-604413', 'NN-NN-NNNNNN'), '26-28-604413');
-  assert.strictEqual(fmtNo('123', 'NN-NN-NNNNNN'), '123');
+test('엔트리 [간편 접수] 번호 칸(대표님 10/19 결정): 프로그램은 번호 칸을 고치지 않음 — 엔트리가 매긴 다음 번호가 이 차 카인포 번호와 다르면 멈춤, 엔트리 저장 0번', async () => {
+  const t = setup();
+  const r = await t.flow.runAll({ ...CAR, data: CAR }, { ...RUN, onStep: (s) => { if (s.step === '엔트리 번호 규칙 확인') t.W.world.entry.next = 'T-0999'; } });
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.detail.mismatch);
+  assert.ok(!t.W.world.calls.includes('entry.clickSave'));
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../src/sites/flow-adapters.js'), 'utf8');
+  assert.ok(!/numberInput\)/.test(src), '엔트리 번호 칸에 값을 넣는 코드가 없어야 함');
 });

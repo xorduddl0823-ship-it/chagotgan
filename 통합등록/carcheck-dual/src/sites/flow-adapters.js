@@ -61,15 +61,6 @@ function carmodooNumberExpr(cfg, checkNo) {
 const carmodooReadExpr = (cfg) => carmodooNumberExpr(cfg, '').replace('if(m){if(!m.checked){m.click();if(!m.checked){m.checked=true;ev(m,"change");}}}' +
   'else if(a.checked){a.click();if(a.checked){a.checked=false;ev(a,"change");}}', '');
 
-/** 번호를 엔트리 모양으로 — '2628604413' + 'NN-NN-NNNNNN' → '26-28-604413' (모양이 없으면 그대로) */
-function fmtNo(no, pattern) {
-  const d = String(no || '').replace(/[^0-9]+/g, '');
-  if (!pattern) return d;
-  let i = 0;
-  const out = pattern.replace(/N/g, () => d[i++] || '');
-  return i === d.length ? out : d;                       // 자릿수가 모양과 다르면 숫자 그대로(엉뚱하게 자르지 않음)
-}
-
 const textExpr = (sel) => '(function(){var e=document.querySelector(' + JSON.stringify(sel) + ');' +
   'return e?String(e.value!=null&&e.tagName!=="SPAN"&&e.tagName!=="DIV"&&e.tagName!=="TD"?e.value:e.textContent).trim():null;})()';
 
@@ -239,14 +230,8 @@ function createElectronAdapters(o) {
       const r = o.fillFns.entry ? await o.fillFns.entry(data, extra || {}) : { filled: [], missing: [] };
       const cfg = C.entry;
       const w = o.getWindow('entry');
-      //  번호 칸: typeNumber 면 이 차 카인포 번호를 엔트리 모양(«26-28-604413»)으로 직접 넣는다(대표님 선택 사항 — 10/19 화면)
-      //   아니면 사이트가 채워 둔 «다음 번호»를 그대로 둔다(앞 단계에서 이 차 번호와 같은지 이미 확인)
-      if (cfg.typeNumber && cfg.numberInput) {
-        const v = fmtNo(extra && extra.checkNo, cfg.numberFormat);
-        const put = await inAnyFrame(w, '(function(){var n=document.querySelector(' + JSON.stringify(cfg.numberInput) + ');if(!n)return null;' +
-          'n.focus();n.value=' + JSON.stringify(v) + ';["input","change","blur"].forEach(function(t){n.dispatchEvent(new Event(t,{bubbles:true}));});return n.value;})()');
-        if (put == null || enNo(put) !== enNo(v)) return { ...r, missing: (r.missing || []).concat(['엔트리 번호 칸에 이 차 번호를 넣지 못함']) };
-      }
+      //  번호 칸은 «절대 고치지 않는다»(대표님 10/19 결정) — 엔트리가 스스로 매긴 다음 번호를 그대로 둔다.
+      //   그 번호가 이 차 카인포 번호와 같은지는 앞 단계(엔트리 번호 규칙 확인)에서 이미 봤고, 저장 전에 불러온 번호·차량·차대번호를 다시 본다
       //  불러오기 — 카인포 기록이 엔트리로 아직 안 넘어왔으면 «성능 불러오기가 실패하였습니다»가 뜬다(10/19 화면).
       //   불러오기는 읽기라 몇 번 다시 해도 된다(저장 아님). 정한 횟수만 하고 안 되면 멈춘다.
       const R = cfg.loadRetry || { times: 1, waitMs: 0 };
@@ -272,10 +257,9 @@ function createElectronAdapters(o) {
   //  사진을 언제 올리나(설정) — 엔트리는 사진 칸이 없다고 보고 undefined(사진 단계 없음)
   carinfo.photoPhase = C.carinfo.photoPhase || null;
   carmodoo.photoPhase = C.carmodoo.photoPhase || null;
-  entry.typesNumber = !!(C.entry && C.entry.typeNumber && C.entry.numberInput);
   entry.implemented = !!(C.entry && C.entry.loggedIn && C.entry.nextNumber && C.entry.loadButton && C.entry.list && C.entry.list.cols);
 
   return { carinfo, carmodoo, entry };
 }
 
-module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr, fmtNo };
+module.exports = { createElectronAdapters, inAnyFrame, listExpr, carmodooNumberExpr, carmodooReadExpr };
