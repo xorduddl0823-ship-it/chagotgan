@@ -32,12 +32,26 @@ def pv_pkg(prod):
     h = h.replace("<script>\n/* 미리보기 전용", '<script>window.__PVP="' + prod + '";</script>\n<script>\n/* 미리보기 전용', 1)
     assert "window.__PVP=" in h and "318-11" not in h
     return base64.b64encode(h.encode("utf-8")).decode("ascii")
+# 검수 6 T10-01 — «둘러본 화면 N / M»: M 은 제품별 체험 화면 열쇠 목록(워시 20 · 체크 23 · 딜러 6), 고유 방문만, 목록에 없는 옛 기록은 빼요.
+#   안쪽 미리보기가 화면을 옮길 때마다 window.parent.__cggSeen(제품, 화면, 열쇠 목록)을 바로 불러요. (손본 뒤에서만 · 홈페이지 방 틀은 읽기만)
+PATCH = [
+ ("var SCREENS=20, SEEN={};", "var SCREENS=20, SEEN={}, KEYS={};\nwindow.__cggSeen=function(p,name,keys){ var first=!KEYS[p]; if(keys&&keys.length) KEYS[p]=keys.slice(); markSeen(p,name); if(first&&p===CUR){ loadSeen(p); store(seenKey(p),JSON.stringify(SEEN[p])); drawBand(p); } };"),
+ ('function loadSeen(p){ try{ SEEN[p]=JSON.parse(store(seenKey(p))||"[]")||[]; }catch(e){ SEEN[p]=[]; } }',
+  'function loadSeen(p){ try{ SEEN[p]=JSON.parse(store(seenKey(p))||"[]")||[]; }catch(e){ SEEN[p]=[]; } if(KEYS[p]) SEEN[p]=SEEN[p].filter(function(k,i,a){ return KEYS[p].indexOf(k)>=0&&a.indexOf(k)===i; }); }'),
+ ("function markSeen(p, name){ if(!name) return; loadSeen(p);", "function markSeen(p, name){ if(!name) return; loadSeen(p); if(KEYS[p]&&KEYS[p].indexOf(name)<0) return;"),
+ ("loadSeen(p); var n=Math.min(SEEN[p].length,SCREENS);", "loadSeen(p); var T=KEYS[p]?KEYS[p].length:SCREENS, n=Math.min(SEEN[p].length,T);"),
+ ("total:SCREENS,", "total:T,"),
+ ('둘러본 화면 "+n+" / "+SCREENS,', '둘러본 화면 "+n+" / "+T,'),
+]
+for a_, b_ in PATCH:
+    assert t.count(a_) == 1, a_
 rep_after = dict(rep); rep_after.update({"@@PKG_WASH@@": pv_pkg("wash"), "@@PKG_CHECK@@": pv_pkg("check"), "@@PKG_DEALER@@": pv_pkg("dealer")})
 t0 = t
 for k, v in rep.items():
     assert k in t, k
     t = t.replace(k, v)
 ta = t0
+for a_, b_ in PATCH: ta = ta.replace(a_, b_)
 for k, v in rep_after.items():
     ta = ta.replace(k, v)
 assert "@@" not in t, "채우지 못한 자리 표시"

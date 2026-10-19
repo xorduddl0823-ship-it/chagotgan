@@ -58,14 +58,14 @@ var PVX=(function(){
   V.a_code=G({t:"가입 코드",d:"여기에 넣은 휴대폰 번호만 새 업체로 가입할 수 있어요. 요금을 받기로 한 곳에만 주세요.",tools:function(){ return btn("＋ 가입 코드 주기",true); },
     cols:["휴대폰","업체명","상태","만들어진 업체","기한","준 날"],kinds:["name","text","state","text","date","date"],rows:[["010-****-0011","예시 광택","가입 완료","W1001","10-20","10-01"],["010-****-0012","가람 세차","기다리는 중","—","10-25","10-15"],["010-****-0013","누리 휠","기한 지남","—","10-10","09-30"]],
     map:{"가입 완료":"done","기다리는 중":"run","기한 지남":"chk"},find:"휴대폰 · 업체명",mf:[[1,"업체"],[2,"상태"],[4,"기한"]]});
-  V.a_accts=G({t:"계정 관리",d:"모든 업체의 대표 · 직원 계정이에요. 줄을 누르면 고칠 수 있어요.",
+  V.a_accts=G({t:"계정 관리",d:"모든 업체의 대표 · 직원 계정이에요. 줄 끝 «고치기»를 누르면 고칠 수 있어요.",
     cols:["이름","업체","아이디","권한","상태","마지막 접속","만든 날"],kinds:["name","text","id","text","state","time","date"],rows:[["김대표","예시 광택","010-****-0001","대표","진행 중","10-18 09:12","03-02"],["직원 A","예시 광택","010-****-0002","직원","진행 중","10-18 08:40","03-05"],["박대표","가람 세차","010-****-0003","대표","보류","10-01 17:00","05-11"]],
     map:{"진행 중":"done","보류":"chk"},find:"이름 · 업체 · 아이디",acts:function(){ return [{key:"edit",label:"고치기"}]; },onAct:function(k,r){ CGG.dialog({size:"form",title:"«"+r[0]+"» 계정 고치기",body:fm([["이름",r[0]],["권한",r[3]]]),ok:"저장",cancel:"취소",onOk:toast("저장했어요")}); }});
   V.a_find=G({t:"휴대폰 번호로 계정 찾기",d:"휴대폰 번호 하나로 워시 · 체크 · 배달 기사 · 딜러 · 통합 로그인 계정을 한꺼번에 찾아요.",tools:function(){ return '<label class="ck">휴대폰 <input type="tel" value="010-****-0001" aria-label="휴대폰 번호" style="width:160px;height:var(--ctl)"></label>'+btn("검색",true)+btn("잠금 모두 풀기",false,"unl")+btn("접속 모두 끊기",false,"kick"); },
     after:function(){ q("unl").onclick=function(){ ask("잠금 모두 풀기","010-****-0001 의 모든 제품 계정","3개"); }; q("kick").onclick=function(){ ask("접속 모두 끊기","010-****-0001 의 켜 둔 기기","4대"); }; },
     cols:["제품","역할","마지막 접속","켜 둔 기기","문자 확인","상태"],kinds:["name","text","time","text","text","state"],rows:[["워시","대표","10-18 09:12","2대","확인함","진행 중"],["딜러","딜러","10-17 20:01","1대","확인함","진행 중"],["통합 로그인","대표","10-18 09:10","1대","—","잠김"]],
     map:{"진행 중":"done","잠김":"stop"},bulk:false});
-  V.a_biz=G({t:"업체 관리",d:"줄을 누르면 고칠 수 있어요. 차곳간 본사 계정은 목록에서 빼 두었어요.",tools:function(){ return chip("요금제 전체",true)+chip("진행 중")+chip("보류")+chip("문자 10% 이하"); },
+  V.a_biz=G({t:"업체 관리",d:"줄 끝 «고치기»를 누르면 고칠 수 있어요. 차곳간 본사 계정은 목록에서 빼 두었어요.",tools:function(){ return chip("요금제 전체",true)+chip("진행 중")+chip("보류")+chip("문자 10% 이하"); },
     k:[{label:"업체",value:"42",unit:"곳"},{label:"진행 중",value:"39",unit:"곳",tone:"in"},{label:"보류",value:"3",unit:"곳",tone:"due"},{label:"문자 다 씀",value:"1",unit:"곳",tone:"stop",zeroMuted:true}],
     cols:["업체명","코드","업종","요금제","끝나는 날","상태"],kinds:["name","id","text","text","text","state"],rows:BZ.map(function(b){ return [b[0],b[1],b[2],b[3],b[4].replace("N일 남음 · 12","12일 남음"),b[5]]; }),map:{"진행 중":"done","보류":"chk"},find:"업체명 · 코드 · 대표 번호",
     mf:[[3,"요금제"],[4,"끝나는 날"],[5,"상태"]],acts:function(){ return [{key:"edit",label:"고치기"}]; },onAct:function(k,r){ CGG.dialog({size:"form",title:"«"+r[0]+"» 고치기",body:'<div class="row" style="margin:0 0 10px">'+chip("7일")+chip("14일")+chip("30일",true)+chip("비우기")+'</div>'+fm([["요금제",r[3]],["끝나는 날","2026-11-12","date"]]),ok:"저장",cancel:"취소",onOk:toast("저장했어요")}); }});
@@ -130,7 +130,7 @@ var PVX=(function(){
       todo:{items:[{tone:"chk",icon:"car",title:"도착한 차 1대 «상품화 완료» 누르기",sub:"12가 3400 · 아반떼"},{tone:"run",icon:"truck",title:"출고된 차 1대 받을 준비",sub:"14가 3414 → 가람 2주차장"},{tone:"done",icon:"today",title:"3일 넘게 걸리는 차가 없어요",sub:""}],total:2,onPick:function(){ go("cars"); },onAll:function(){ go("cars"); }},
       kpis:[{label:"작업 중인 차",value:"1",unit:"대"},{label:"오늘 출고 · 도착",value:"2",unit:"대"},{label:"낼 청구서 금액",value:"730,000",unit:"원",tone:"due"},{label:"상품화 기다리는 차",value:"1",unit:"대",tone:"due"}],
       cal:false,money:false,rank:false,
-      help:"딜러앱 홈도 같은 차례예요: 첫 줄 → 오늘 할 일 → 숫자 칸 4개. 일정 · 입금 카드는 딜러에게 필요 없어서 빼요."});
+      help:"최근 내 차는 차량번호를 누르면 차 상세(사진 · 진행 기록)가 열려요. 딜러앱 홈도 같은 차례예요: 첫 줄 → 오늘 할 일 → 숫자 칸 4개. 일정 · 입금 카드는 딜러에게 필요 없어서 빼요."});
     var x=document.createElement("div"); x.innerHTML=bx("최근 내 차","",'<div id="dcar"></div><div class="row">'+btn("모두 보기",false,"dall")+'</div>'); m.insertBefore(x,m.querySelector(".cgg-help"));
     tbl("dcar",{cols:["차량번호","단계","차종","작업","지금 위치","마지막 기록","들어간 금액"],kinds:["name","state","text","text","text","time","money"],rows:CARS.slice(0,3),stateMap:DSTATE,tabs:[["","전체"]],find:"차량번호",mobileFields:[[2,"차종"],[4,"지금"],[1,"단계"]],select:false,onName:function(r){ carDetail(r); }});
     q("dall").onclick=function(){ go("cars"); }; };

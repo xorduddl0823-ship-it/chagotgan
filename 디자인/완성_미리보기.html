@@ -163,6 +163,8 @@ var AMT=W?[180000,60000,350000,120000,280000,60000,180000]:[33000,44000,33000,22
 function grp(k){ return D.groups.filter(function(g){ return g.key===k.split("/")[0]; })[0]; }
 function rs(g){ return (g.subs||[]).filter(function(s){ return s.key; }); }
 function norm(k){ var g=grp(k); if(!g) return "home"; if(rs(g).length&&k.indexOf("/")<0) return g.key+"/"+rs(g)[0].key; return k; }
+/* 이 제품의 체험 화면 열쇠 목록(메뉴 지도 그대로 — 워시 20 · 체크 23 · 관리 23 · 딜러 6) */
+function ALLKEYS(){ var o=[]; D.groups.forEach(function(g){ var s=rs(g); if(s.length) s.forEach(function(x){ o.push(g.key+"/"+x.key); }); else o.push(g.key); }); return o; }
 function go(k){ cur=norm(k); draw(); window.scrollTo(0,0); }
 function goFeat(f){ if(/^(me|field|hdr)\//.test(f.go)){ CGG.toast("«"+f.label+"» (미리보기)"); return; } go(f.go); }
 function tabKey(){ var g=cur.split("/")[0]; return D.tabs.some(function(t){ return t.key===g; })?g:"__all"; }
@@ -341,7 +343,7 @@ V.ledger=function(m){ m.innerHTML=head("월별 장부","달마다 만든 청구�
 V.deliv=function(m){
   m.innerHTML=head("오늘 배달 <em>7대</em>","차가 어디로 갔는지, 딜러에게 알림이 나갔는지 봐요.")+slot("b")+tools(periods())+slot("k")
    +(W?"":bx("딜러 등록 대기 2건","기사가 적은 이름이 거래처에 없어요. 딜러로 등록하면 알림을 다시 보내요.",'<div class="row">'+btn("고른 줄 등록하고 다시 보내기",true,"rg")+btn("등록 안 함")+btn("빈 차명 채우기",false,"fl")+btn("선택한 줄 취소 표시",false,"cn")+'</div>',true))
-   +slot("t")+CGG.help("배달 문구와 보내는 방식은 «문구 · 발송 설정»에서 바꿔요.");
+   +slot("t")+CGG.help("딜러 이름을 누르면 차량 · 목적지 · 연락처 · 보낸 사람 · 사진까지 자세히 보여요. 배달 문구와 보내는 방식은 «문구 · 발송 설정»에서 바꿔요.");
   band("b",{count:1,tone:"stop",text:"못 보낸 배달 알림 1건 — 골라서 다시 보내요",go:"못 보낸 것만 보기",onGo:toast("못 보낸 것만 보기")});
   CGG.kpis(q("k"),[{label:"배달",value:"7",unit:"대"},{label:"목적지",value:"4",unit:"곳"},{label:"알림 보냄",value:"6",unit:"건",tone:"in"},{label:"못 보냄",value:"1",unit:"건",tone:"stop"}]);
   var rows=DL.map(function(d,i){ return [d[0],d[1],CAR[i],["아반떼","그랜저","BMW 5","쏘렌토","벤츠 E","K5","카니발"][i],["예시상사 매장","가람 2주차장","누리상사","다온카","샘플모터스","새길자동차","미래카"][i],"10-18 "+(9+i)+":10",(W?"직원 ":"기사 ")+["A","B"][i%2],i===3?"못 보냄":"보냄","010-****-00"+(10+i),i<4?"있음":"—"]; });
@@ -349,7 +351,7 @@ V.deliv=function(m){
     bulk(rows,0,[{key:"resend",label:"선택항목 다시 보내기",needSel:true}])));
   if(!W){ q("rg").onclick=function(){ ask("딜러로 등록하고 다시 보내기","등록 대기 딜러","2명"); }; q("fl").onclick=function(){ ask("빈 차명 채우기","차명이 빈 배달 기록","3건"); }; q("cn").onclick=function(){ ask("선택한 줄 취소 표시","고른 배달 기록","1건"); }; }
 };
-V.dest=function(m){ m.innerHTML=head("목적지","자주 가는 목적지를 이름 · 주소와 함께 적어 둬요. 목적지를 누르면 그곳 배달 기록만 보여요.")+tools(btn("＋ 목적지 추가",true)+btn("엑셀 양식 받기")+btn("엑셀로 한꺼번에 올리기"))+slot("t")
+V.dest=function(m){ m.innerHTML=head("목적지","자주 가는 목적지를 이름 · 주소와 함께 적어 둬요.")+tools(btn("＋ 목적지 추가",true)+btn("엑셀 양식 받기")+btn("엑셀로 한꺼번에 올리기"))+slot("t")
    +(W?"":bx("기사 폰 버튼 차례","기사 폰 화면에 목적지 버튼이 나오는 차례예요. 끌어서 바꿔요.",'<div class="row" style="margin:0">'+["1 예시상사 매장","2 가람 2주차장","3 누리상사"].map(function(t){ return chip(t); }).join("")+'</div>',true));
   var rows=[["예시상사 매장","성남시 (예시)","매장","정문 앞","쓰는 중"],["가람 2주차장","용인시 (예시)","주차장","B2","쓰는 중"],["누리상사","수원시 (예시)","매장","—","쉼"]];
   tbl("t",Object.assign({cols:["목적지","주소","구분","메모","쓰는 중"],kinds:["name","text","text","text","state"],rows:rows,stateMap:{"쓰는 중":"done","쉼":"chk"},find:"목적지 찾기"},bulk(rows,0))); };
@@ -432,7 +434,8 @@ function draw(){
   CGG.nav(document.getElementById("nav"), D.groups, cur, go, {find:{feats:D.feats,onGo:goFeat}});
   CGG.tabbar(document.getElementById("tbar"), D.tabs, tabKey(), function(k){ if(k==="__all"){ if(!CGG.closeSheet()) CGG.allMenu(D.groups, cur, go, D.feats, goFeat); return; } CGG.closeSheet(); go(k); });
   var m=document.getElementById("main"), f=V[SCR[cur]];
-  if(PVEMBED) window.S={tab:cur,view:cur};   /* 홈페이지 «미리 써 보기»가 둘러본 화면 수를 세요(S.tab · S.view) */
+  if(PVEMBED){ window.S={tab:cur,view:cur};
+    try{ if(window.parent&&window.parent!==window&&typeof window.parent.__cggSeen==="function") window.parent.__cggSeen(P,cur,ALLKEYS()); }catch(e){} }   /* 홈페이지 «미리 써 보기»가 둘러본 화면 수를 세요(S.tab · S.view) */
   m.innerHTML=""; FMN=0; if(f) f(m); else m.innerHTML=head(E(crumb()),"미리보기에 없는 화면이에요.");
   Array.prototype.forEach.call(m.querySelectorAll("[data-lay]"),function(b){ b.onclick=function(){ var L=b.getAttribute("data-lay"); location.hash=P+(L==="top"?"":"-"+L); }; });
 }
