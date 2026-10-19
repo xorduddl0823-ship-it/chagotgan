@@ -1,0 +1,66 @@
+/* 차곳간 딜러앱 d4.1 (모양은 d4.0 과 같음) — 제품 CSS (공통 부품 cgg-j4 1.13.2 다음에 붙어요 · 1.13.2 토큰만 써요)
+   ① 바탕 글꼴 ② 로그인 · 이용 동의 화면(앱 틀 밖) ③ 미리보기 11판 «딜러앱» 화면 안 상자(.bx · .dph · .dlog · .dbills …) */
+html,body{margin:0;background:var(--bg)}
+body{font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;color:var(--text);word-break:keep-all;overflow-wrap:anywhere}
+[hidden]{display:none!important}
+
+/* ② 로그인 · 이용 동의 (앱 틀 밖 · 폰과 PC 같은 화면 하나) */
+.lg{min-height:100vh;min-height:100dvh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.lg-demo{width:100%;max-width:440px;box-sizing:border-box;background:var(--chk-bg);color:var(--chk-ink);font-size:12.5px;font-weight:700;text-align:center;padding:6px 10px;border-radius:10px;margin-bottom:12px}
+.lg-card{width:100%;max-width:440px;box-sizing:border-box;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:28px 24px;display:flex;flex-direction:column;gap:12px}
+.lg-brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px;color:var(--navy)}
+.lg-brand .ci{width:40px;height:40px;border-radius:12px;background:var(--navy);display:grid;place-items:center;flex:none}
+.lg-brand .ci img{width:28px;height:28px}
+.lg-card h2{margin:8px 0 0;font-size:24px;line-height:1.3;font-weight:900;letter-spacing:-.02em}
+.lg-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.6}
+.lg-card label.t{font-size:13px;font-weight:700;color:var(--muted)}
+.lg-in{height:52px;box-sizing:border-box;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:0 14px;font:inherit;font-size:18px;background:var(--surface);color:var(--text);width:100%}
+.lg-in:focus,.lg-otp input:focus{outline:3px solid var(--sky);outline-offset:1px;border-color:var(--blue)}
+.lg-otp{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.lg-otp input{height:56px;box-sizing:border-box;border:1px solid var(--ln2);border-radius:12px;text-align:center;font:inherit;font-size:22px;font-weight:800;background:var(--surface);color:var(--text);min-width:0;padding:0}
+.lg-card .cgg-btn{width:100%;justify-content:center;min-height:48px;font-size:16px}
+.lg-link{border:0;background:none;color:var(--blue);font:inherit;font-weight:700;font-size:14px;padding:8px;cursor:pointer;align-self:center}
+.lg-err{color:var(--stop-ink);font-weight:700;font-size:14px;margin:0}
+.lg-foot{font-size:12.5px!important}
+.lg-note{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--muted);line-height:1.6}
+.lg-all{display:flex;align-items:center;gap:12px;background:var(--navy);color:#fff;border-radius:14px;padding:14px 16px;cursor:pointer}
+.lg-all small{color:var(--sky)}
+.lg-list{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.lg-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--line)}
+.lg-row:first-child{border-top:0}
+.lg-row label{display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;font-size:14.5px}
+.lg-row button{border:0;background:none;color:var(--blue);font:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:6px}
+.lg-doc{white-space:pre-wrap;max-height:40vh;overflow:auto;padding:12px 14px;border-top:1px solid var(--line);background:var(--bg);font-size:13px;color:var(--muted);line-height:1.6}
+.lg input[type=checkbox]{width:22px;height:22px;accent-color:var(--blue);flex:none}
+
+/* ③ 화면 안 상자 — 미리보기 11판과 같은 모양 */
+.bx{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh);padding:18px 20px;margin:0 0 var(--sec-gap);line-height:1.5}
+.bx h3{margin:0 0 4px;font-size:16px;font-weight:800}
+.bx p.d{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+.fm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.fm label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+.fm input{height:var(--ctl);box-sizing:border-box;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:0 12px;font:inherit;font-size:14px;background:var(--surface);color:var(--text);min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.ck{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0;cursor:pointer}
+.ck input{width:20px;height:20px;accent-color:var(--blue);flex:none}
+.dph{height:160px;border-radius:12px;background:linear-gradient(135deg,var(--tabon),var(--bg));display:grid;place-items:center;color:var(--muted);font-weight:700;margin:12px 0;position:relative;overflow:hidden}
+.dph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dph small{position:absolute;right:8px;bottom:8px;background:rgba(11,37,69,.72);color:#fff;border-radius:6px;padding:2px 8px;font-size:12px}
+button.dph{width:100%;border:0;padding:0;font:inherit;cursor:zoom-in}
+.dlog{margin:0 0 10px;padding-left:18px;display:grid;gap:6px;font-size:14px}
+.dlog li b{font-variant-numeric:tabular-nums}
+.dlog li small{color:var(--muted);margin-left:4px}
+.dlog li.now{font-weight:700}
+.dbills{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--sec-gap);margin-bottom:var(--sec-gap)}
+.dbill{margin:0}
+.dbh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dbm{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dbm strong{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums} .dbm strong small{font-size:14px;margin-left:2px;color:var(--muted)}
+.dbm span{font-size:13px;color:var(--muted)}
+.dbm span.late{color:var(--stop-ink);font-weight:700}
+.dacct{font-size:12.5px;color:var(--muted);margin-top:4px}
+.dphoto figure{margin:0 0 10px} .dphoto img{width:100%;border-radius:12px;display:block} .dphoto figcaption{font-size:12px;color:var(--muted);margin-top:4px}
+.dcopy{width:100%;box-sizing:border-box;border:1px solid var(--ln2);border-radius:var(--r-ctl);padding:12px;font:inherit;background:var(--surface);color:var(--text)}
+.ddoc{white-space:pre-wrap;max-height:55vh;overflow:auto;background:var(--bg);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--muted);line-height:1.6}
+.dver{margin:10px 0 0;color:var(--muted);font-size:12.5px}
+@media (max-width:760px){ .bx{padding:14px 14px;margin-bottom:12px} .fm{grid-template-columns:1fr} .lg-card{padding:22px 18px} }
