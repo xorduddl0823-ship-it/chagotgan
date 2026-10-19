@@ -1,0 +1,48 @@
+diff --git "a/\354\262\264\355\201\254/driver/index_v29.html" "b/\354\262\264\355\201\254/driver/index_v30.html"
+index c13d275..d2fe1f4 100644
+--- "a/\354\262\264\355\201\254/driver/index_v29.html"
++++ "b/\354\262\264\355\201\254/driver/index_v30.html"
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<!-- 기사 앱 v29 (v28 + 도착 보내기 같은 일 표시 rid · 다시 보내기 · 10/19) -->
++<!-- 기사 앱 v30 (v29 + 알림 «확인 중» · 10/19) · 기사 앱 v29 (v28 + 도착 보내기 같은 일 표시 rid · 다시 보내기 · 10/19) -->
+ <html lang="ko">
+ <head>
+ <base target="_top">
+@@ -300,6 +300,7 @@ function sendTag(r){
+   if(r.발송결과==='시험') return ['시험','p-test'];
+   if(r.발송결과==='성공') return ['알림 보냄','p-ok'];
+   if(r.발송결과==='실패') return ['못 보냄','p-bad'];
++  if(r.발송결과==='확인 중') return ['확인 중','p-test'];   /* v30: 보냈는지 아직 모름 — 사무실 «보낸 기록»에서 확인 */
+   if(!r.딜러연락처) return ['알림 없음 (번호 없음)','p-test'];
+   return ['보내는 중','p-test'];
+ }
+@@ -1088,6 +1089,7 @@ function doSend(force){
+       $('m-no').onclick=closeModal; $('m-ok').onclick=function(){ doSend(true); }; return;
+     }
+     var row=r.row, ok=row.발송결과!=='실패';
++    if(row.발송결과==='확인 중'){ unsureDone(row); return; }   /* v30 */
+     clearDraft();                                  /* 보냈으니 저장본은 지웁니다 (다시 열어도 같은 건이 안 나오게) */
+     var rec2=(ls(RECENT)||[]).filter(function(x){ return x!==S.dest; }); rec2.unshift(S.dest); ls(RECENT, rec2.slice(0,30));
+     freqAdd(S.dest);
+@@ -1099,11 +1101,20 @@ function doSend(force){
+       '<button class="big b-main" id="m-next">다음 차량</button>');
+     $('m-next').onclick=function(){ closeModal(); clearForm(); start(); };
+   }).catch(function(e){
++    if(/^확인 중/.test(String(e&&e.message||''))){ unsureDone(null); return; }   /* v30: 앞 것이 확인 중 — 다시 보내지 않아요 */
+     modal('<h3>보내지 못했어요</h3><div class="bad" style="margin-bottom:14px">'+esc(e.message)+'</div>'+
+       '<button class="big b-main" id="m-again">다시 보내기</button><div style="height:8px"></div><button class="big b-sub" id="m-no">닫기</button>');
+     $('m-no').onclick=function(){ S.rid=''; closeModal(); }; $('m-again').onclick=function(){ doSend(false); };   /* v29: «다시 보내기»만 같은 일 표시 — 닫고 고쳐 보내면 새 일 */
+   });
+ }
++/* v30: 기록은 저장됐고 알림만 결과를 아직 모름 — 다시 보내지 않게, 사무실 «보낸 기록»에서 확인 */
++function unsureDone(row){
++  clearDraft(); S.rid='';
++  modal('<h3>기록은 됐어요 — 알림은 확인 중이에요</h3><div class="warn" style="margin-bottom:14px">'+(row?esc(row.차량번호)+' → '+esc(row.목적지)+'<br>':'')+
++    '알림이 나갔는지 아직 확인 중이에요. 다시 보내지 말고, 사무실 «보낸 기록»에서 확인해 주세요.</div>'+
++    '<button class="big b-main" id="m-next">다음 차량</button>');
++  $('m-next').onclick=function(){ closeModal(); clearForm(); start(); };
++}
+ function clearForm(){
+   resetS(); $('cam').value=''; $('line').value=''; $('line-fix').innerHTML=''; if($('dest-q')) $('dest-q').value='';
+   lineOut('카톡에 올리던 그대로 적으세요. 순서는 상관없고, 차량번호를 같이 적어도 돼요.');

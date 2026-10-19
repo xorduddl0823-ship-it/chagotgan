@@ -1,0 +1,147 @@
+diff --git "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.6.html" "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.7.html"
+index c322746..c59c275 100644
+--- "a/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.6.html"
++++ "b/\354\262\264\355\201\254/2_\354\260\250\352\263\263\352\260\204_\354\262\264\355\201\254_index_v56.7.html"
+@@ -6,7 +6,7 @@
+ <meta name="robots" content="noindex,nofollow">
+ <meta name="theme-color" content="#1668C4">
+ <title>차곳간체크</title>
+-<!-- 체크 v56.6 (v56.5 + 기록 저장 믿음 · 알림 결과 · 대표님 10/19 최우선) · 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
++<!-- 체크 v56.7 (v56.6 + 알림 «확인 중» · 출시마감 3차 10/19) · 체크 v56.6 (v56.5 + 기록 저장 믿음 · 알림 결과 · 대표님 10/19 최우선) · 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
+ <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231668C4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+@@ -3395,7 +3395,7 @@ function chkHdr(){
+   var sig=[nm,ln,who,(ST&&ST.role)||"",ps?ps.value:""].join("|");
+   if(CHK_H && CHK_SIG===sig && $("hdrTop").firstChild){ chkHdrSync(); return; }
+   CHK_SIG=sig;
+-  CHK_H=CGG.header($("hdrTop"),{product:"체크", sub:"성능점검 정산", ver:"체크 v56.6", date:"10/19",
++  CHK_H=CGG.header($("hdrTop"),{product:"체크", sub:"성능점검 정산", ver:"체크 v56.7", date:"10/19",
+     biz:{name:nm||"—", line:ln},
+     find:{mode:"nav", feats:chkFeats(), onGo:chkGoFeat},
+     notice:function(){ if(window.ccwNotice) window.ccwNotice(); },
+@@ -3551,7 +3551,7 @@ function delivRange(){   /* v55.1: 기간 칸에서 고른 기간까지 받아 
+ }
+ function mapDrive(r){
+   var how=String(r.발송방법||"").toUpperCase();
+-  var alarm = r.발송결과==="성공" ? "보냄" : r.발송결과==="실패" ? "못 보냄" : "안 보냄";
++  var alarm = r.발송결과==="성공" ? "보냄" : r.발송결과==="실패" ? "못 보냄" : r.발송결과==="확인 중" ? "확인 중" : "안 보냄";   /* v56.7 */
+   if(r.상태==="취소") alarm="취소";
+   var shots=[]; if(r.사진ID) shots.push(r.사진ID);
+   String(r.추가사진ID||"").split(",").forEach(function(x){ if(x) shots.push(x); });
+@@ -6156,7 +6156,7 @@ function delivDetail(){
+         kvs([["도착한 때",esc(d.at)],["기사",esc(d.driver)],
+              ["세운 곳",esc(d.pos)||"—"],
+              ["번호판 읽은 값",'<b>'+esc(d.ocr)+'</b> <span style="color:var(--muted);font-weight:600">(자동으로 읽음)</span>'],
+-             ["알림 보낸 방법",esc(d.how)+(d.alarm==="보냄"?" · 보냄":d.alarm==="못 보냄"?" · 실패":" · 시험")]])+
++             ["알림 보낸 방법",esc(d.how)+(d.alarm==="보냄"?" · 보냄":d.alarm==="못 보냄"?" · 실패":d.alarm==="확인 중"?" · 확인 중 — 보낸 기록에서 확인해 주세요":" · 시험")]])+
+         '<p class="note" style="margin:10px 0 12px">아래 칸은 <b>고쳐서 저장</b>할 수 있어요. 번호판을 잘못 읽었거나 차명이 비었을 때 여기서 채워요.</p>'+
+         '<div class="row2">'+fld("딜러",d.dealer,"","dealer")+fld("상사",d.comp,"","comp")+'</div>'+
+         '<div class="row2">'+fld("딜러 연락처",d.tel,"010-0000-0000","tel")+fld("차량번호",d.plate,"","plate")+'</div>'+
+@@ -7797,7 +7797,7 @@ function openApp(){
+     /* 판 번호는 짧게 — 앞의 판 번호만 남깁니다 (전체는 마우스를 올리면 보입니다) */
+   var _v=String(ST.ver||"");
+   var _m=_v.match(/v[\d.]+/i);
+-  $("hdVer").textContent="체크 v56.6 · "+(_m?("서버 "+_m[0]):"");
++  $("hdVer").textContent="체크 v56.7 · "+(_m?("서버 "+_m[0]):"");
+   $("hdVer").title=_v||"";
+     $("dbState").innerHTML='연결됨 <span id="clock"></span>';
+     CHK_CONN=true; try{ chkHdrSync(); }catch(e){}   /* v50: 머리말 «연결됨» (초록 점) */
+@@ -12064,7 +12064,9 @@ function bundleGo(L, due, test){   /* v56.1: 공통 1.13 차례 보내기 + 진
+     if(stop && !ok){ tell("아직 쓸 수 없어요","체크 서버를 v51로 올리면 바로 돼요. 아무것도 보내지 않았어요."); return; }
+     if(test) bar(ok?"내 번호로 시험 알림을 보냈어요. 휴대폰을 확인해 주세요.":"시험 알림을 보내지 못했어요 — "+whyKo(out[0]&&out[0].why), ok?"ok":"err");
+     else if(ok===out.length) bar(won(ok)+"명에게 밀린 달 청구서를 보냈어요.","ok");
+-    else tell(won(out.length-ok)+"명에게 못 보냈어요", CGG.list(out.filter(function(x){ return !x.ok; }).map(function(x){ return x.item.name+" — "+whyKo(x.why); }))+(ok?won(ok)+"명에게는 보냈어요.":""));
++    else { var un=out.filter(function(x){ return !x.ok && /^확인 중/.test(String(x.why||"")); }), bad=out.filter(function(x){ return !x.ok && un.indexOf(x)<0; });   /* v56.7 */
++      if(!bad.length) bar(won(ok)+"명에게 보냈어요. 확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요.","info");
++      else tell(won(bad.length)+"명에게 못 보냈어요", CGG.list(bad.map(function(x){ return x.item.name+" — "+whyKo(x.why); }))+(un.length?"확인 중 "+won(un.length)+"명 — 보낸 기록에서 확인해 주세요. ":"")+(ok?won(ok)+"명에게는 보냈어요.":"")); }
+     if(!test){ clearPick("bill"); refresh(["bill"]); }
+   });
+ }
+@@ -12182,7 +12184,7 @@ function slLoad(){
+       SL.sums=r.sums||{}; SL.need=r.need?String(r.need):""; if(SL.days===7) SL7=SL.sums; })
+     .catch(function(e){ SL.rows=[]; SL.sums=null; SL.err=slOld(e)?"old":String((e&&e.message)||""); });
+ }
+-function slSt(v,r){ var k=/실패/.test(v)?"stop":/대기/.test(v)?"run":/안 보냄/.test(v)?"chk":"done";
++function slSt(v,r){ var k=/실패/.test(v)?"stop":/대기|확인 중/.test(v)?"run":/안 보냄/.test(v)?"chk":"done";
+   return '<span class="cgg-st '+k+'">'+esc(v||"—")+'</span>'+(r&&r.err?'<span class="b" style="color:var(--stop)">'+esc(CGG.sendWhy?CGG.sendWhy(r.err):r.err)+'</span>':'')   /* v56.3: 쉬운 까닭(공통) · esc */; }
+ function slLeft(){ try{ var pp=window.ccwPlanGet&&window.ccwPlanGet(); if(pp&&pp.smsLeft!=null) return won(pp.smsLeft)+"건"; }catch(e){} return "-"; }
+ PAGE.sendlog=function(){
+@@ -12430,5 +12432,77 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
+   window.chkV566={isWrite:isWrite, fly:function(){ return Object.keys(FLY).length; }};
+ })();
+ </script>
++<script>
++/* ═══ 체크 v56.7 — 알림 «확인 중»(결과 불명) 바르게 (출시마감 3차 · 운영/긴급/2026-10-19_출시마감_3차_요청.md «체크» 줄)
++   서버가 «보냈는지 아직 모름»(공급자 접수 뒤 답 잃음 · 완료 기록 실패 · 시간 넘김)으로 답하면
++   «보냄»도 «못 보냄»도 아닌 «확인 중 — 보낸 기록에서 확인해 주세요»로 보여 주고, 다시 하기 단추를 붙이지 않아요(자동으로 다시 보내지 않음).
++   알아보는 법(서버 칸 이름이 정해지기 전에도 맞게): 줄에 unsure:true · state "확인 중" · 까닭이 «확인 중»으로 시작 / 오류 글이 «확인 중»으로 시작
++   돈 셈 · 보내기 함수(billSendGo · billSendResult) 본문은 그대로 — 받은 답을 바깥에서 고르고 그린 뒤 표를 고쳐요. ═══ */
++(function(){
++  if(typeof window.call!=="function") return;
++  var MSG="확인 중 — 보낸 기록에서 확인해 주세요";
++  var SEND={billSend:1, remindSend:1, billBundleSend:1, deliv_resend:1};
++  function unsure(x){ return !!x && (x.unsure===true || x.state==="확인 중" || /^확인 중/.test(String(x.why||""))); }
++  function isUnsureErr(e){ return !!e && (e.unsure===true || /^확인 중/.test(String(e.message||""))); }
++  function goLog(){ try{ go("sendlog"); }catch(e){} }
++  function barInfo(text){
++    if(typeof bar!=="function") return; bar(text,"info");
++    var m=document.querySelector("#bar .msg"); if(!m) return;
++    var b=document.createElement("button"); b.type="button"; b.className="cgg-btn sm"; b.setAttribute("data-v567-log","1");
++    b.style.marginLeft="10px"; b.textContent="보낸 기록 보기"; b.onclick=goLog; m.appendChild(b);
++  }
++  /* 표 · 폰 목록의 «못 보냄» 칩 가운데 까닭이 «확인 중»인 줄은 노란 «확인 중» 칩으로 */
++  function patch(){
++    try{
++      Array.prototype.forEach.call(document.querySelectorAll("#main .tag, #main .cgg-st"),function(t){
++        if(String(t.textContent).trim()!=="못 보냄") return;
++        var row=t.closest("tr,.cgg-mrow,li,.cgg-mf"); if(!row || String(row.textContent).indexOf(MSG)<0) return;
++        t.textContent="확인 중";
++        if(t.classList.contains("cgg-st")){ t.classList.remove("stop"); t.classList.add("run"); } else { t.style.background="var(--warn-soft)"; t.style.color="var(--warn)"; }
++      });
++      Array.prototype.forEach.call(document.querySelectorAll("#main .card, #main .cgg-card"),function(c){
++        var u=0; Array.prototype.forEach.call(c.querySelectorAll("tbody tr"),function(r){   /* 표 줄만 셈(폰 목록은 같은 줄을 한 번 더 그려요) */ if(String(r.textContent).indexOf(MSG)>=0) u++; });
++        if(!u) return;
++        Array.prototype.forEach.call(c.querySelectorAll(".csub b, .csub, .sub"),function(b){
++          if(b.getAttribute("data-v567")) return;
++          var m=String(b.textContent).match(/(\d[\d,]*)(곳|명) 못 보냄/); if(!m || b.children.length) return;
++          var n=Number(m[1].replace(/,/g,""))-u; b.setAttribute("data-v567","1");
++          b.textContent=String(b.textContent).replace(m[0],(n>0?won(n)+m[2]+" 못 보냄 · ":"")+"확인 중 "+won(u)+m[2]);
++          if(n<=0) b.style.color="var(--warn)";
++        });
++      });
++    }catch(e){}
++  }
++  var rawDraw=window.draw;
++  if(typeof rawDraw==="function") window.draw=function(){ var r=rawDraw.apply(this,arguments); patch(); return r; };
++
++  var inner=window.call;
++  window.call=function(fn,args){
++    var p=inner.apply(this,arguments);
++    if(!SEND[fn]) return p;
++    return p.then(function(r){
++      r=r||{}; var u=0, ok=0, bad=0, unit=(fn==="billSend")?"곳":"명";
++      if(Array.isArray(r.results)){
++        r.results.forEach(function(x){ if(unsure(x)){ x.ok=false; x.why=MSG; u++; } else if(x.ok) ok++; else bad++; });
++      } else if(fn==="billBundleSend"){ if(unsure(r)){ r.ok=false; r.why=MSG; } }
++      else if(fn==="deliv_resend"){ u=Number(r.unsure)||0; ok=Number(r.ok)||0; bad=Number(r.bad)||0; unit="건"; }
++      if(u && fn!=="billBundleSend") setTimeout(function(){   /* 보내기 함수가 맨 위 글을 쓴 뒤 — 숫자를 셋으로 나눠 다시 */
++        var sent=ok?won(ok)+(unit==="명"?"명에게 보냈어요. ":unit==="곳"?"곳에 보냈어요. ":"건을 보냈어요. "):"";
++        var t=sent+"확인 중 "+won(u)+unit+" — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요."+(bad?" 못 보낸 "+won(bad)+unit+"은 아래에서 까닭을 확인해 주세요.":"");
++        if(bad && typeof bar==="function") bar(t,"err"); else barInfo(t);
++        patch(); },0);
++      else setTimeout(patch,0);
++      return r;
++    },function(e){
++      if(isUnsureErr(e)){ e.unsure=true;
++        setTimeout(function(){   /* 같은 일을 다시 보냈는데 앞 것이 확인 중 — 다시 하기 대신 보낸 기록으로 */
++          Array.prototype.forEach.call(document.querySelectorAll("[data-v566-retry],[data-v566-err]"),function(x){ x.remove(); });
++          barInfo("알림이 "+MSG+". 다시 보내지 마세요."); },0); }
++      throw e;
++    });
++  };
++  window.chkV567={unsure:unsure, patch:patch};
++})();
++</script>
+ </body>
+ </html>
