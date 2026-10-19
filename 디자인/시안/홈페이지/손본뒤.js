@@ -79,6 +79,11 @@
   var EX=[[/^결제 성공으로 보기$/,"예시: 결제가 끝난 뒤 화면 보기"],[/^결제가 완료되었습니다\.$/,"(예시) 결제가 끝나면 이렇게 보여요."],[/^회원가입이 완료되었습니다\. (.*)$/,"(예시) 가입이 끝나면: $1"],[/^(차곳간 .+가 열렸어요)$/,"(예시) $1"]];
   function ex(root){ var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null), n; while((n=w.nextNode())){ var t=n.nodeValue.trim(); if(!t||/^\(예시\)|^예시:/.test(t)) continue; EX.forEach(function(r){ if(r[0].test(t)) n.nodeValue=t.replace(r[0],r[1]); }); } }
   var fl=document.getElementById("flow"); if(fl){ ex(fl); new MutationObserver(function(){ ex(fl); }).observe(fl,{childList:true,subtree:true}); }
+  /* 검수 5 F17 — 요금제 탭: 고른 탭만 Tab 으로 들어가고(나머지 tabindex -1), 탭 ↔ 요금제 칸(tabpanel)을 이어요 */
+  function roving(){ var pl=document.getElementById("plans"); if(pl){ pl.setAttribute("role","tabpanel"); pl.setAttribute("tabindex","0"); }
+    Array.prototype.forEach.call(document.querySelectorAll('.ptabs [role="tab"], .ptabs button'),function(b,i){ if(!b.id) b.id="ptab"+i; b.setAttribute("role","tab"); b.setAttribute("aria-controls","plans");
+      var on=b.getAttribute("aria-selected")==="true"; b.setAttribute("tabindex",on?"0":"-1"); if(on&&pl) pl.setAttribute("aria-labelledby",b.id); }); }
+  roving(); var pt=document.querySelector(".ptabs"); if(pt) new MutationObserver(roving).observe(pt,{attributes:true,subtree:true,attributeFilter:["aria-selected"],childList:true});
   /* F17 — 탭(role=tab)은 왼쪽 · 오른쪽 화살표로 옮겨요 */
   document.addEventListener("keydown",function(e){ var t=e.target; if(!t||t.getAttribute("role")!=="tab"||(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")) return;
     var L=Array.prototype.slice.call(t.closest('[role="tablist"]').querySelectorAll('[role="tab"]')), i=L.indexOf(t), n=L[(i+(e.key==="ArrowRight"?1:-1)+L.length)%L.length]; if(n){ e.preventDefault(); n.focus(); n.click(); } });

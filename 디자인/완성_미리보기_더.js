@@ -132,7 +132,7 @@ var PVX=(function(){
       cal:false,money:false,rank:false,
       help:"딜러앱 홈도 같은 차례예요: 첫 줄 → 오늘 할 일 → 숫자 칸 4개. 일정 · 입금 카드는 딜러에게 필요 없어서 빼요."});
     var x=document.createElement("div"); x.innerHTML=bx("최근 내 차","",'<div id="dcar"></div><div class="row">'+btn("모두 보기",false,"dall")+'</div>'); m.insertBefore(x,m.querySelector(".cgg-help"));
-    tbl("dcar",{cols:["차량번호","단계","차종","작업","지금 위치","마지막 기록","들어간 금액"],kinds:["name","state","text","text","text","time","money"],rows:CARS.slice(0,3),stateMap:DSTATE,tabs:[["","전체"]],find:"차량번호",mobileFields:[[2,"차종"],[4,"지금"],[1,"단계"]]});
+    tbl("dcar",{cols:["차량번호","단계","차종","작업","지금 위치","마지막 기록","들어간 금액"],kinds:["name","state","text","text","text","time","money"],rows:CARS.slice(0,3),stateMap:DSTATE,tabs:[["","전체"]],find:"차량번호",mobileFields:[[2,"차종"],[4,"지금"],[1,"단계"]],select:false,onName:function(r){ carDetail(r); }});
     q("dall").onclick=function(){ go("cars"); }; };
   var DSTATE={"입고":"run","작업 중":"run","출고":"run","도착":"chk","상품화 완료":"done"};   /* 딜러앱 d3.9 STMAP 그대로 */
   V.d_cars=function(m){ var SEL=[]; m.innerHTML=head("작업 중인 차 <em>1대</em>, 도착한 차 <em>1대</em>가 있어요","업체에 맡긴 내 차가 지금 어디 있는지, 어디까지 됐는지 확인해요.")+tools(btn("선택한 차 상품화 완료",true,"done"))+slot("t");
@@ -152,10 +152,10 @@ var PVX=(function(){
     var sum=function(st){ return B.filter(function(b){ return b[4]===st; }).reduce(function(t,b){ return t+b[2]; },0); }, late=sum("기한 지남"), soon=sum("입금 전");
     m.innerHTML=head("낼 금액 <em>"+won(late+soon)+"원</em>","기한 지난 것 "+won(late)+"원(1곳) + 기한 전 "+won(soon)+"원(1곳) · 다음 기한 10/31")+'<div class="dbills">'+B.map(function(b,i){ return '<section class="bx dbill"><div class="dbh"><b>'+E(b[0])+'</b>'+CGG.status(b[4],{"입금 전":"chk","기한 지남":"stop","입금 확인":"done"})+'</div><p class="d">'+E(b[1])+'</p><div class="dbm"><strong>'+won(b[2])+'<small>원</small></strong><span>'+E(b[3])+'</span></div><div class="row">'+(b[4]==="입금 확인"?"":btn("계좌 복사",false,"ac"+i)+btn("금액 복사",false,"am"+i))+btn("내역 보기",b[4]!=="입금 확인","bv"+i)+'</div></section>'; }).join("")+'</div>'
       +bx("한 번에 결제는 곧 열려요","지금은 업체마다 계좌로 보내 주세요. 차곳간은 금액을 받지 않고, 업체 계좌로 바로 보내요.","");
-    B.forEach(function(b,i){ ["ac","am"].forEach(function(p){ var x=q(p+i); if(x) x.onclick=toast(p==="ac"?"계좌를 복사했어요":"금액을 복사했어요"); }); q("bv"+i).onclick=toast("업체가 보낸 청구서를 새 창으로 열어요"); }); };
+    B.forEach(function(b,i){ ["ac","am"].forEach(function(p){ var x=q(p+i); if(x) x.onclick=function(){ CGG.toast(p==="ac"?"(미리보기) 실제로는 업체 계좌가 복사돼요":"(미리보기) 실제로는 금액이 복사돼요"); }; }); q("bv"+i).onclick=toast("업체가 보낸 청구서를 새 창으로 열어요"); }); };
   V.d_hist=function(m){ m.innerHTML=head("카히스토리","차량번호로 사고 · 정비 이력을 조회해요. (곧 열려요)")+bx("남은 조회 0건","조회할 때마다 1건씩 빠져요 · 앱은 무료",'<div class="row">'+btn("5건 충전")+btn("10건 충전")+btn("30건 충전")+'</div>')+bx("조회","",fm([["차량번호","예: 123가4567"]])+'<div class="row">'+btn("조회",true,"hq")+'</div>')+bx("최근 조회","아직 조회한 차가 없어요.","");
     q("hq").onclick=toast("곧 열려요"); Array.prototype.forEach.call(m.querySelectorAll(".bx .cgg-btn"),function(b){ if(/충전/.test(b.textContent)){ b.disabled=true; b.title="곧 열려요"; } }); };
-  V.d_me=function(m){ m.innerHTML=head("내 정보","김민수 딜러 · 예시상사")+bx("알림 받기","",[["입고 · 출고 알림","업체에 들어가고 나올 때",1],["목적지 도착 알림","사진과 함께",1],["청구서 알림","알림톡으로 받기 (안 되면 문자)",1],["재검사 안내","성능점검 유효기간이 끝나기 전에 (날수는 검사소 설정 #{유효일수}일)",0]].map(function(a,i){ return '<label class="ck"><input type="checkbox"'+(a[2]?" checked":"")+'> <span><b>'+E(a[0])+'</b> <small style="color:var(--muted)">'+E(a[1])+'</small></span></label>'; }).join(""))
+  V.d_me=function(m){ m.innerHTML=head("내 정보","김민수 딜러 · 예시상사")+bx("알림 받기","",[["입고 · 출고 알림","업체에 들어가고 나올 때",1],["목적지 도착 알림","사진과 함께",1],["청구서 알림","알림톡으로 받기 (안 되면 문자)",1],["재검사 안내","검사소에서 정한 유효기간이 끝나기 전에 알려 드려요",0]].map(function(a,i){ return '<label class="ck"><input type="checkbox"'+(a[2]?" checked":"")+'> <span><b>'+E(a[0])+'</b> <small style="color:var(--muted)">'+E(a[1])+'</small></span></label>'; }).join(""))
       +bx("번호","010-****-0000 · 로그인 번호 · 업체에 알려 준 번호",'<div class="row">'+btn("약관 동의 보기")+'</div>')+bx("로그아웃","",'<div class="row">'+btn("로그아웃",false,"lo")+btn("동의 철회 (이용 그만두기)",false,"wd")+'</div><p class="d" style="margin-top:10px">차곳간 딜러 d4.0 · 문의 1600-0000 (예시)</p>');
     q("lo").onclick=function(){ CGG.dialog({size:"confirm",title:"로그아웃할까요?",ok:"로그아웃",cancel:"취소",onOk:toast("로그아웃했어요")}); };
     q("wd").onclick=function(){ CGG.dialog({size:"confirm",title:"동의를 철회할까요?",desc:"철회하면 내 차 · 청구서를 더 볼 수 없어요.",ok:"동의 철회",cancel:"취소",onOk:toast("철회했어요")}); }; };
@@ -173,8 +173,9 @@ var PVX=(function(){
     /* PC 1440 — 두 화면을 위아래로, 1440 폭 그대로 그린 뒤 칸 폭에 맞춰 줄여 보여요 · 폰 400 — 400 폭 두 개를 나란히 */
     function fit(){ var v=box.getAttribute("data-v"); Array.prototype.forEach.call(box.querySelectorAll("iframe"),function(f){ var fg=f.parentNode, W=fg.clientWidth;
       if(v==="pc"){ var sc=Math.min(1,W/1440); f.style.width="1440px"; f.style.height=Math.round(900)+"px"; f.style.transform="scale("+sc+")"; f.style.transformOrigin="0 0"; fg.style.height=(Math.round(900*sc)+42)+"px"; }
-      else { f.style.width=v==="phone"?"400px":""; f.style.transform=""; f.style.height=""; fg.style.height=""; } }); }
-    window.addEventListener("resize",fit);
+      else if(v==="phone"){ var s2=Math.min(1,W/400), H=760; f.style.width="400px"; f.style.height=H+"px"; f.style.transform="scale("+s2+")"; f.style.transformOrigin="0 0"; fg.style.width=""; fg.style.height=(Math.round(H*s2)+42)+"px"; }   /* N02 — 안쪽은 늘 400 폭, 바깥에 맞춰 줄여요 */
+      else { f.style.width=""; f.style.transform=""; f.style.height=""; fg.style.height=""; } }); }
+    window.addEventListener("resize",fit); setTimeout(fit,0);
     q("mk").onchange=function(){ q("aft").src="시안/홈페이지/손본뒤.html"+(this.checked?"?mark":"")+A; }; }
   function site(root, page){
     /* 검수 3 F09 — #site-try · #site-price · #site-ask 는 홈페이지 안 그 구역으로 */
