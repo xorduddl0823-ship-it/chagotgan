@@ -1,5 +1,5 @@
 --- "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v141.html"	2026-10-19 03:13:01.297201414 +0000
-+++ "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.html"	2026-10-19 09:55:30.021357993 +0000
++++ "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.html"	2026-10-19 10:02:56.429384529 +0000
 @@ -1085,6 +1085,7 @@
  tbody tr{cursor:pointer}
  tbody tr:hover td{background:var(--surface2)}
@@ -193,7 +193,7 @@
    };
    $("awC2").onclick=function(){ vlCopy(j.url,"주소"); };
    $("awOpen").onclick=function(){
-@@ -13403,11 +13421,13 @@
+@@ -13403,45 +13421,42 @@
    var c=sendCfg();
    if(!o.to)return Promise.reject({code:"no_to",message:"받는 번호가 없어요"});
    var plan=ataPlan(o);
@@ -207,36 +207,45 @@
      if(plan){body.kind="ATA";body.templateId=plan.tpl;body.pfId=plan.pfId;
        body.variables=plan.vars;body.text=plan.text;body.disableSms=!plan.fallback;}
      else if(o.hq&&!HQATA.off){body.kind="ATA";body.ataKey=o.hq.key;body.variables=o.hq.vars;body.imageB64="";body.disableSms=false;
-@@ -13421,27 +13441,33 @@
-         body.kind=o.kind||c.mode||"AUTO";if(body.kind==="ATA")body.kind="AUTO";
-         delete body.ataKey;delete body.variables;delete body.disableSms;delete body.rec;delete body.codes;body.imageB64=b2||"";
-         o.sentKind=body.kind;
+       if(o.hq.rec)body.rec=String(o.hq.rec);
+       if(o.hq.codes&&o.hq.codes.length)body.codes=o.hq.codes.slice(0,24);}   /* v139 sb27 밀린 달 묶음의 다른 달 보기코드 */
+     o.sentKind=body.kind;
+-    /* 알림톡이 안 되면 그 자리에서 예전처럼 문자로 다시 */
+-    function asSms(){
+-      var o2=Object.assign({},o);delete o2.hq;
+-      return jobImage(o2).then(function(b2){
+-        body.kind=o.kind||c.mode||"AUTO";if(body.kind==="ATA")body.kind="AUTO";
+-        delete body.ataKey;delete body.variables;delete body.disableSms;delete body.rec;delete body.codes;body.imageB64=b2||"";
+-        o.sentKind=body.kind;
 -        return GS.send(body);
-+        return GS.send(body,o.rid);
-       });
-     }
+-      });
+-    }
 -    return GS.send(body).then(function(res){
+-      /* 본사 템플릿이 아직 없거나 옛 서버 → 문자로 (이 화면에서는 다시 묻지 않음) */
++    /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */
 +    return GS.send(body,o.rid).then(function(res){
-       /* 본사 템플릿이 아직 없거나 옛 서버 → 문자로 (이 화면에서는 다시 묻지 않음) */
++      /* 본사 템플릿이 아직 없으면 이 화면에서는 다음부터 문자로 (지금 건은 «실패»로 남김) */
        if(body.ataKey&&!(res&&res.ok)&&/템플릿 ID|채널 ID|pfId/.test(String((res&&(res.error||res.message))||""))){
 -        if(!(o.hq&&o.hq.soft))HQATA.off=true; return asSms();
-+        if(!(o.hq&&o.hq.soft))HQATA.off=true; return res;   /* v143 대체는 서버가(sb29) — 화면은 다시 보내지 않고 «실패»로 */
++        if(!(o.hq&&o.hq.soft))HQATA.off=true;
        }
        return res;
-     },function(err){
-       /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
+-    },function(err){
+-      /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
 -      if(body.ataKey) return asSms();
-+      throw err;   /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */
-       throw err;
+-      throw err;
      });
    }).then(function(res){
 +    /* 서버 sb29 «확인 중»: {ok:false,checking:true} · 보냈지만 완료 기록 실패 {ok:true,checking:true} */
-+    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message})))))throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};
++    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message}))))){
++      if(res.ok){o.res=res.id||"";o.gid=res.groupId||"";o.via=(res.via==="ata"||res.via==="sms")?res.via:"";}
++      throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};}
      if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
        o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";
        if(o.via==="sms"&&o.sentKind==="ATA")o.sentKind="AUTO"; else if(o.via==="ata")o.sentKind="ATA";}
      else{o.status="실패";o.err=((window.CGG&&CGG.sendWhy)?CGG.sendWhy(String((res&&(res.error||res.message))||"")):"")||kmsg(res&&(res.error||res.message),"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");}   /* v139 sendWhy 먼저 */
-     return saveJob(o).then(function(){return o;});
+-    return saveJob(o).then(function(){return o;});
++    return saveJob(o).then(function(){return o;},function(e2){if(o.status==="보냄"||o.status==="예약")return o;throw e2;});   /* v143 */
    }).catch(function(e){
 +    if(wUnknown(e)){   /* v143 결과 불명 — 자동으로 다시 보내지 않고 «확인 중» */
 +      o.status="확인 중";o.err="";
@@ -245,7 +254,7 @@
      o.status="실패";
      o.err=((window.CGG&&CGG.sendWhy)?CGG.sendWhy(String((e&&(e.message||e.error||e.__err))||(typeof e==="string"?e:""))):"")||kmsg(e,"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");   /* v139 sendWhy 먼저 */
      return saveJob(o).then(function(){throw e;});
-@@ -13455,8 +13481,9 @@
+@@ -13455,8 +13470,9 @@
      }
      return sendNow(o).then(function(x){
          if(x&&x.status==="실패"){toast("자동 발송 실패 — 보낸 기록에 남겼어요. 문자 앱으로 보내요",true);if(openFallback)openFallback();return x;}
@@ -257,7 +266,7 @@
          toast("자동 발송 실패 — 보낸 기록에 남겼어요. 문자 앱으로 보내요",true);
          if(openFallback)openFallback();
        });
-@@ -13464,7 +13491,9 @@
+@@ -13464,7 +13480,9 @@
  }
  /* ===== 차곳간 UI 1.0 — 보낸 기록 (설정 ▸ 알림에서 떼어냈어요) ===== */
  /* v124 — 보낸 방식 말하기: 서버가 res.via(ata/sms)를 주면 그대로, 없으면 «보냈어요» */
@@ -268,7 +277,7 @@
  /* 보내기 실패 이유를 쉬운 말로 — 영어 코드는 감춥니다 */
  function sendErrText(raw){
    if(window.CGG&&CGG.sendWhy)return CGG.sendWhy(raw);   /* v139 공통 1.13.2 (같은 셈 · 쉬운 말) */
-@@ -13488,19 +13517,20 @@
+@@ -13488,19 +13506,20 @@
    var nSent = OBL.filter(function(o){return o.status==="보냄";}).length;
    var nFail = OBL.filter(function(o){return o.status==="실패";}).length;
    var nWait = OBL.filter(function(o){return o.status==="예약";}).length;
@@ -294,7 +303,7 @@
        '<div class="sum"><span>예약</span><b style="color:var(--brand)">'+nWait+'건</b></div>'+
        '<div class="sum"><span>남은 문자</span><b style="color:var(--good)">'+(smsLeft==null?"-":(comma(smsLeft)+"건"))+'</b></div>'+
      '</div>'+
-@@ -13513,12 +13543,15 @@
+@@ -13513,12 +13532,15 @@
      {k:"type",label:"종류"},
      {k:"to",label:"받는 번호"},
      {k:"kind",label:"방식",val:function(o){return o.sentKind||o.kind||"";},
@@ -313,7 +322,7 @@
      {k:"text",label:"내용",html:function(o){return esc(String(o.text||"").replace(/\n/g," ").slice(0,40));}}
    ],S.outbox||[],{sel:true,id:function(o){return o.id;},min:900,ph:"번호·내용 검색",
      text:function(o){return [o.to,o.text,o.type,o.status].join(" ");},
-@@ -13532,8 +13565,11 @@
+@@ -13532,10 +13554,15 @@
      if(!ids.length)return toast("먼저 줄을 골라 주세요",true);
      var jobs=(S.outbox||[]).filter(function(o){return ids.indexOf(o.id)>=0&&o.status!=="예약";});
      if(!jobs.length)return toast("다시 보낼 건이 없어요 (예약 건은 빼고)",true);
@@ -325,9 +334,14 @@
 +    jobs.forEach(function(o){if(o.scheduledDate&&new Date(o.scheduledDate)<new Date(Date.now()+10*60000))o.scheduledDate="";
 +      o.rid=wNewRid();});   /* v143 일부러 다시 보내기 = 새 rid */
      Promise.all(jobs.map(function(o){return sendNow(o).catch(function(){});}))
-      .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});},"다시 보내기");
+-     .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});},"다시 보내기");
++     .then(function(){OB.sel={};   /* v143 결과를 건수로 */
++       var n={s:0,f:0,c:0};jobs.forEach(function(o){if(o.status==="보냄"||o.status==="예약")n.s++;else if(o.status==="확인 중")n.c++;else n.f++;});
++       toast("보냄 "+n.s+"건"+(n.f?" · 실패 "+n.f+"건":"")+(n.c?" · 확인 중 "+n.c+"건":""),!!(n.f||n.c));renderOutbox();});},"다시 보내기");
    };
-@@ -13877,6 +13913,7 @@
+   $("obCancel").onclick=function(){
+     var ids=Object.keys(OB.sel||{});
+@@ -13877,6 +13904,7 @@
    var noBiz=Object.keys(comps).filter(function(c){
      var x=S.comps.filter(function(y){return y.name===c;})[0];return !x||!x.bizNo||!bizNoOk(x.bizNo);});
    var failed=(S.outbox||[]).filter(function(o){return o.status==="실패";});
@@ -335,7 +349,7 @@
    var lateList=lateCars();
    var lowMats=(S.mats||[]).filter(matLow);
    var todayK=dayKey(nowIso());
-@@ -13908,7 +13945,8 @@
+@@ -13908,7 +13936,8 @@
        function(){S.tab="ledger";L.month="";L.monthSet=true;L.page=1;L.sel={};
          $("lStatus").value="입고";$("lq").value="";L.q="";decideMode(false);
          window.scrollTo(0,0);}],
@@ -345,7 +359,7 @@
        S.tab="settings"; S.setSub="outbox";
        try{ OB.sel={}; (S.outbox||[]).forEach(function(o){ if(o.status==="실패") OB.sel[o.id]=true; }); }catch(e){}
        decideMode(false); window.scrollTo(0,0);
-@@ -16789,14 +16827,35 @@
+@@ -16789,14 +16818,35 @@
  }
  
  function ccwTitle(){try{var app='차곳간';try{app=appName();}catch(e){}var n='';try{n=shopLabel();}catch(e){}if(!n||n===app||n==='차곳간'||n==='차곳간 워시'){try{n=localStorage.getItem('ccw_shop')||'';}catch(e){}}var t=n?(app+' · '+n):app;if(document.title!==t)document.title=t;try{document.querySelectorAll('[data-appname]').forEach(function(el){if(el.textContent!==app)el.textContent=app;});}catch(e){}}catch(e){}}setInterval(ccwTitle,1500);function supaHome(){return location.origin+location.pathname+"?shop="+SUPA.shop+"&key="+SUPA.key;}
@@ -385,7 +399,16 @@
        return j?j.result:null;
      });
  }
-@@ -16882,7 +16941,7 @@
+@@ -16824,7 +16874,7 @@
+ function rpcChecked(fn,args){
+   return rpc(fn,args).then(function(r){
+     var v=r;if(typeof r==="string"){try{v=JSON.parse(r);}catch(e){v=null;}}
+-    if(v&&v.__err)throw {message:v.__err};
++    if(v&&v.__err)throw {message:v.__err,unknown:!!v.__checking||wUnknown({message:v.__err})};   /* v143 */
+     return r;
+   });
+ }
+@@ -16882,7 +16932,7 @@
  }
  GS.text=function(id){return gsCall("driveText",[id]);};
  GS.b64=function(id){return gsCall("driveB64",[id]);};
@@ -394,7 +417,7 @@
    return typeof t==="string"?JSON.parse(t):t;});};
  GS.ping=function(){return gsCall("ping").then(function(t){return typeof t==="string"?JSON.parse(t):t;});};
  /* ===== 사진 서명 주소 (v115 · 보안 ⑤) =====
-@@ -16972,6 +17031,49 @@
+@@ -16972,6 +17022,49 @@
    return {docs:Object.keys(m).map(function(k){
      return {id:k,exists:true,data:function(){return m[k];}};})};
  }
@@ -444,7 +467,7 @@
  function gsDB(){
    function colRef(name){
      var q={
-@@ -16987,19 +17089,32 @@
+@@ -16987,19 +17080,32 @@
            get:function(){var m=GS.cache[name]||{};
              return Promise.resolve({id:id,exists:!!m[id],data:function(){return m[id];}});},
            set:function(obj){

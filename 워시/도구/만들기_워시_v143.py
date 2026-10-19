@@ -184,4 +184,56 @@ rep('''          .then(function(){return {ok:true};},function(){return {ok:true,
 rep('''    else CGG.dialog({size:"confirm",title:(out.length-ok)+"명에게 못 보냈어요",''',
 '''    else CGG.dialog({size:"confirm",title:(out.length-ok)+"명에게 못 보냈어요"+(out.some(function(r){return r.unk;})?" · 확인 필요":""),''')
 
+# 재검사 권장: 안 쓰는 문자 대체 코드 · 옛 설명 정리 (동작 같음)
+rep("""    /* 알림톡이 안 되면 그 자리에서 예전처럼 문자로 다시 */
+    function asSms(){
+      var o2=Object.assign({},o);delete o2.hq;
+      return jobImage(o2).then(function(b2){
+        body.kind=o.kind||c.mode||"AUTO";if(body.kind==="ATA")body.kind="AUTO";
+        delete body.ataKey;delete body.variables;delete body.disableSms;delete body.rec;delete body.codes;body.imageB64=b2||"";
+        o.sentKind=body.kind;
+        return GS.send(body,o.rid);
+      });
+    }
+    return GS.send(body,o.rid).then(function(res){
+      /* 본사 템플릿이 아직 없거나 옛 서버 → 문자로 (이 화면에서는 다시 묻지 않음) */
+      if(body.ataKey&&!(res&&res.ok)&&/템플릿 ID|채널 ID|pfId/.test(String((res&&(res.error||res.message))||""))){
+        if(!(o.hq&&o.hq.soft))HQATA.off=true; return res;   /* v143 대체는 서버가(sb29) — 화면은 다시 보내지 않고 «실패»로 */
+      }
+      return res;
+    },function(err){
+      /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
+      throw err;   /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */
+      throw err;
+    });""", """    /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */
+    return GS.send(body,o.rid).then(function(res){
+      /* 본사 템플릿이 아직 없으면 이 화면에서는 다음부터 문자로 (지금 건은 «실패»로 남김) */
+      if(body.ataKey&&!(res&&res.ok)&&/템플릿 ID|채널 ID|pfId/.test(String((res&&(res.error||res.message))||""))){
+        if(!(o.hq&&o.hq.soft))HQATA.off=true;
+      }
+      return res;
+    });""")
+# {ok:true,checking} 일 때 서버가 준 id · via 도 남겨요
+rep("""    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message})))))throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};""",
+"""    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message}))))){
+      if(res.ok){o.res=res.id||"";o.gid=res.groupId||"";o.via=(res.via==="ata"||res.via==="sms")?res.via:"";}
+      throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};}""")
+# 보냈는데 보낸 기록 저장만 실패 → «보냄» 그대로(저장 띠로 알림) — «실패»로 남아 두 번 보내지 않게
+rep("""    return saveJob(o).then(function(){return o;});
+  }).catch(function(e){
+    if(wUnknown(e)){""", """    return saveJob(o).then(function(){return o;},function(e2){if(o.status==="보냄"||o.status==="예약")return o;throw e2;});   /* v143 */
+  }).catch(function(e){
+    if(wUnknown(e)){""")
+# rpcChecked 안쪽 __err 에도 __checking
+rep("""    if(v&&v.__err)throw {message:v.__err};
+    return r;""", """    if(v&&v.__err)throw {message:v.__err,unknown:!!v.__checking||wUnknown({message:v.__err})};   /* v143 */
+    return r;""")
+# [다시 보내기] 결과를 건수로
+rep("""    Promise.all(jobs.map(function(o){return sendNow(o).catch(function(){});}))
+     .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});},"다시 보내기");""",
+"""    Promise.all(jobs.map(function(o){return sendNow(o).catch(function(){});}))
+     .then(function(){OB.sel={};   /* v143 결과를 건수로 */
+       var n={s:0,f:0,c:0};jobs.forEach(function(o){if(o.status==="보냄"||o.status==="예약")n.s++;else if(o.status==="확인 중")n.c++;else n.f++;});
+       toast("보냄 "+n.s+"건"+(n.f?" · 실패 "+n.f+"건":"")+(n.c?" · 확인 중 "+n.c+"건":""),!!(n.f||n.c));renderOutbox();});},"다시 보내기");""")
+
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))

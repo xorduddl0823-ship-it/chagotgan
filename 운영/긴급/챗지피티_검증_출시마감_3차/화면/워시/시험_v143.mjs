@@ -220,7 +220,7 @@ for (const how of ['새로고침','다시 로그인']) {
   ok('⑩ 알림톡 실패 답 → 화면은 문자를 따로 안 보냄(서버가 대체) · «실패»',r.n===1&&r.status==='실패',JSON.stringify(r));
   await p.close(); }
 // ⑪ 서버 sb29 «확인 중» 답 모양 3가지 → «확인 중» · 자동 다시 없음
-for (const [name,set] of [['{ok:false,checking:true}',"window.__CHK='no'"],['{ok:true,checking:true}',"window.__CHK='ok'"],['__err + __checking',"window.__CHKERR=1"]]) {
+for (const [name,set] of [['{ok:false,checking:true}',"window.__CHK='no'"],['{ok:true,checking:true}',"window.__CHK='ok'"],['__err + __checking',"window.__CHKERR=1"],['__err(글에 «확인 중» 없음) + __checking',"window.__CHKERR=2"]]) {
   const p=await page('?ata=on&srv=15',null,1366,1000);
   const r=await p.evaluate(async(set)=>{ eval(set); const i=__t.recs().findIndex(x=>x.phone); const n0=__PV.sent().length;
     const res=await __t.inn(i).then(()=>'ok',e=>'ERR '+(e&&e.message||e)); await new Promise(r=>setTimeout(r,1200));

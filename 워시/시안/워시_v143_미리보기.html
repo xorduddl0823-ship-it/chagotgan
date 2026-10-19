@@ -13581,35 +13581,24 @@ function sendNow(o){
       if(o.hq.rec)body.rec=String(o.hq.rec);
       if(o.hq.codes&&o.hq.codes.length)body.codes=o.hq.codes.slice(0,24);}   /* v139 sb27 밀린 달 묶음의 다른 달 보기코드 */
     o.sentKind=body.kind;
-    /* 알림톡이 안 되면 그 자리에서 예전처럼 문자로 다시 */
-    function asSms(){
-      var o2=Object.assign({},o);delete o2.hq;
-      return jobImage(o2).then(function(b2){
-        body.kind=o.kind||c.mode||"AUTO";if(body.kind==="ATA")body.kind="AUTO";
-        delete body.ataKey;delete body.variables;delete body.disableSms;delete body.rec;delete body.codes;body.imageB64=b2||"";
-        o.sentKind=body.kind;
-        return GS.send(body,o.rid);
-      });
-    }
+    /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */
     return GS.send(body,o.rid).then(function(res){
-      /* 본사 템플릿이 아직 없거나 옛 서버 → 문자로 (이 화면에서는 다시 묻지 않음) */
+      /* 본사 템플릿이 아직 없으면 이 화면에서는 다음부터 문자로 (지금 건은 «실패»로 남김) */
       if(body.ataKey&&!(res&&res.ok)&&/템플릿 ID|채널 ID|pfId/.test(String((res&&(res.error||res.message))||""))){
-        if(!(o.hq&&o.hq.soft))HQATA.off=true; return res;   /* v143 대체는 서버가(sb29) — 화면은 다시 보내지 않고 «실패»로 */
+        if(!(o.hq&&o.hq.soft))HQATA.off=true;
       }
       return res;
-    },function(err){
-      /* 서버가 알림톡 준비 중 거절(예: 청구서 보기 주소 만료 · 차를 못 찾음) → 그 한 건만 문자로 */
-      throw err;   /* v143 서버 sb29: 알림톡 → 문자 대체는 서버 안에서(같은 rid). 화면은 문자를 따로 또 보내지 않아요 */
-      throw err;
     });
   }).then(function(res){
     /* 서버 sb29 «확인 중»: {ok:false,checking:true} · 보냈지만 완료 기록 실패 {ok:true,checking:true} */
-    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message})))))throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};
+    if(res&&(res.checking||(!res.ok&&(res.unknown||res.status==="unknown"||wUnknown({message:res.error||res.message}))))){
+      if(res.ok){o.res=res.id||"";o.gid=res.groupId||"";o.via=(res.via==="ata"||res.via==="sms")?res.via:"";}
+      throw {message:String(res.checkMsg||res.error||res.message||"확인 중"),unknown:true};}
     if(res&&res.ok){if(GS.demo)o.demo=true;o.status=o.scheduledDate?"예약":"보냄";
       o.via=(res.via==="ata"||res.via==="sms")?res.via:(res.kind==="ATA"?"ata":(/^(SMS|LMS|MMS)$/.test(String(res.kind||""))?"sms":""));o.err="";o.sentAt=nowIso();o.res=res.id||"";o.gid=res.groupId||"";
       if(o.via==="sms"&&o.sentKind==="ATA")o.sentKind="AUTO"; else if(o.via==="ata")o.sentKind="ATA";}
     else{o.status="실패";o.err=((window.CGG&&CGG.sendWhy)?CGG.sendWhy(String((res&&(res.error||res.message))||"")):"")||kmsg(res&&(res.error||res.message),"보내지 못했어요. 보낸 기록에서 다시 보내 주세요.");}   /* v139 sendWhy 먼저 */
-    return saveJob(o).then(function(){return o;});
+    return saveJob(o).then(function(){return o;},function(e2){if(o.status==="보냄"||o.status==="예약")return o;throw e2;});   /* v143 */
   }).catch(function(e){
     if(wUnknown(e)){   /* v143 결과 불명 — 자동으로 다시 보내지 않고 «확인 중» */
       o.status="확인 중";o.err="";
@@ -13718,7 +13707,9 @@ gTable("obTable",OB,[
     jobs.forEach(function(o){if(o.scheduledDate&&new Date(o.scheduledDate)<new Date(Date.now()+10*60000))o.scheduledDate="";
       o.rid=wNewRid();});   /* v143 일부러 다시 보내기 = 새 rid */
     Promise.all(jobs.map(function(o){return sendNow(o).catch(function(){});}))
-     .then(function(){OB.sel={};toast("다시 보냈어요");renderOutbox();});},"다시 보내기");
+     .then(function(){OB.sel={};   /* v143 결과를 건수로 */
+       var n={s:0,f:0,c:0};jobs.forEach(function(o){if(o.status==="보냄"||o.status==="예약")n.s++;else if(o.status==="확인 중")n.c++;else n.f++;});
+       toast("보냄 "+n.s+"건"+(n.f?" · 실패 "+n.f+"건":"")+(n.c?" · 확인 중 "+n.c+"건":""),!!(n.f||n.c));renderOutbox();});},"다시 보내기");
   };
   $("obCancel").onclick=function(){
     var ids=Object.keys(OB.sel||{});
@@ -17030,7 +17021,7 @@ function rpc(fn,args){
 function rpcChecked(fn,args){
   return rpc(fn,args).then(function(r){
     var v=r;if(typeof r==="string"){try{v=JSON.parse(r);}catch(e){v=null;}}
-    if(v&&v.__err)throw {message:v.__err};
+    if(v&&v.__err)throw {message:v.__err,unknown:!!v.__checking||wUnknown({message:v.__err})};   /* v143 */
     return r;
   });
 }
