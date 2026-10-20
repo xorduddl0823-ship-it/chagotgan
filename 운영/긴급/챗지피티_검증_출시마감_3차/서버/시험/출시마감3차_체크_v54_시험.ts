@@ -13,7 +13,8 @@ Object.assign(store, {
   check_user: [{ id: "uA", office_id: "oA", phone: "01000000031", name: "대표A", role: "owner", active: true, pw_hash: "x" }],
   check_session: [{ sid: "chk_" + "a".repeat(30), phone: "01000000031", office_id: "oA", role: "owner", expires_at: day }],
   cgg_access: [], wash_sessions: [], check_log: [], check_rate: [], cgg_sendlog: [], cgg_idem: [],
-  wash_hq: [{ id: 1, ata_cfg: { pfId: "PF", tpl: { bill: "T_BILL" } } }],
+  wash_hq: [{ id: 1, cron_key: "CRONKEY-0123456789abc", ata_cfg: { pfId: "PF", tpl: { bill: "T_BILL" } } }],
+  check_remind_rule: [], check_remind_log: [], check_remind_view: [], check_car: [],
   check_dealer: [{ id: "dA", office_id: "oA", name: "A딜러", tel: "010-3333-4444", active: true }],
   check_invoice: [{ id: "iA", office_id: "oA", ym: "2026-10", bill_to_id: "dA", bill_to_name: "A딜러", total_amount: 11000, view_key: "a".repeat(18), created_at: day }],
   check_invoice_row: [{ id: "rA", invoice_id: "iA" }],
@@ -116,6 +117,28 @@ fresh(); a0 = accepted; R = rid(); plan.push("e400", "e400");
 await bill(R);
 const many = await Promise.all([1, 2, 3, 4].map(() => bill(R)));
 check("«다시 가능» 줄을 동시에 4번 다시 잡음 → 받음 1번", accepted === a0 + 1 && many.every((x) => x.result?.sent === 1 || /처리 중이에요/.test(x.__err || "")), [accepted - a0, many]);
+
+console.log("⑤ 화면과 맞춘 이름(unsure) · 보낸 기록 «확인 중»");
+fresh(); R = rid(); plan.push("lost");
+const n1 = await bill(R), n2 = await bill(R);
+check("처음 답 unsure:true · 줄별 unsure:true", n1.result?.unsure === true && n1.result?.results?.[0]?.unsure === true, n1);
+check("같은 rid 다시 → __unsure:true · «확인 중…»으로 시작", n2.__unsure === true && /^확인 중/.test(n2.__err || ""), n2);
+store.cgg_sendlog.forEach((x: any) => { x.at ??= new Date().toISOString(); });   // 가짜 표는 시각 기본값이 없어서 넣어 줌
+const lg = await call("sendLogList", [{}]);
+check("보낸 기록 줄 상태 «확인 중»(실패로 세지 않음)", JSON.stringify(lg).includes("확인 중") && store.cgg_sendlog.some((x: any) => x.result === "unknown"), store.cgg_sendlog.map((x: any) => x.result));
+
+console.log("⑥ 재검사 «매일 자동» — check_remind 코드 없으면 막음");
+const rs = await call("remindRuleSave", [{ steps: [30, 15, 7], auto: true }]);
+check("코드 없음 → 매일 자동 켜기 거절", /켤 수 없어요/.test(rs.__err || "") && !store.check_remind_rule.some((x: any) => x.auto), rs);
+store.check_remind_rule.push({ office_id: "oA", steps: [30, 15, 7], auto: true, past: true });   // 예전 판에서 이미 켜 둔 규칙
+const before = seen.length;
+const cr = await call("remindCron", ["CRONKEY-0123456789abc"]);
+check("코드 없음 → 이미 켜진 규칙도 매일 자동 0건", cr.result?.n === 0 && seen.length === before && /코드 없음/.test(cr.result?.skip || ""), cr);
+const rr = await call("remindRule", []);
+check("규칙 보기: auto false · autoBlocked true 로 알려 줌", rr.result?.auto === false && rr.result?.autoBlocked === true, rr);
+store.wash_hq[0].ata_cfg.tpl.check_remind = "T_REMIND";
+const rs2 = await call("remindRuleSave", [{ steps: [30, 15, 7], auto: true }]);
+check("코드가 생기면 매일 자동 켜짐", rs2.result?.ok === true, rs2);
 check("판 v54", /v54/.test(JSON.stringify(await call("ping"))));
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);

@@ -1,14 +1,15 @@
 --- "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v53.ts"	2026-10-19 08:46:05.861674812 +0000
-+++ "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v54.ts"	2026-10-19 09:33:23.151064557 +0000
-@@ -13,6 +13,7 @@
++++ "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v54.ts"	2026-10-19 11:53:42.388146787 +0000
+@@ -13,6 +13,8 @@
  //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
  //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
  //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
++//  v54 (2026-10-19) 재검사 «매일 자동»은 check_remind 템플릿 코드가 있어야 켜고 돎(없으면 저장 거절 · 매일 자동 0건 · 손으로 보내기는 그대로) · «확인 중» 이름 unsure(체크 v56.7·기사 v30) · 보낸 기록 «확인 중» ·
 +//  v54 (2026-10-19) 출시마감 3차: 보내기(청구서·밀린 달·재검사·도착 알림)는 «한 번만 표»를 못 잡으면 보내지 않음(«잠시 뒤 다시») · 문자 업체가 받았는지 모름(시간 초과·응답 끊김·완료 저장 실패)은 «확인 중»으로 두고 자동으로 다시 보내지 않음 · 알림톡 응답을 모를 때는 문자로 바로 대신 보내지 않음 · 실패 확정만 같은 rid 로 다시 · 줄은 지우지 않고 조건을 건 한 번의 바꾸기로 다시 잡음
  //  v53 (2026-10-19) 보안 방: 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시 · 기록·알림톡 마감: 알림톡 변수에 빈 값(«-»)이 있으면 대체 문구 문자로(워시와 같음) · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 검사소+사람+기능+rid) ·
  //    긴급(중복 사업자번호): 기사 «회사 비밀번호»가 사업자번호이고 그 번호를 쓰는 검사소가 둘 이상이면 거절(보안 C5 · 코드로만) · officeSave 사업자번호는 숫자 10자리로만 저장(정규화) · 팝빌 아이디도 다른 검사소가 쓰면 거절 ·
  //    DB 같은 번호 막기(SQL 24 문지기·유일 색인)에 걸리면 같은 안내 · 안내 글 «이미 등록된 사업자번호예요. 본인 업체라면 차곳간에 문의해 주세요.»
-@@ -126,6 +127,7 @@
+@@ -126,6 +128,7 @@
  //    사무실 기사 목록에 「가입신청」 표시 (보안 재검사 2026-10-14 A·B·C)
  // ============================================================
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -16,7 +17,7 @@
  
  const db = createClient(
    Deno.env.get("SUPABASE_URL")!,
-@@ -133,7 +135,7 @@
+@@ -133,7 +136,7 @@
    { auth: { persistSession: false } },
  );
  
@@ -25,28 +26,37 @@
  const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
  
  /* ───────── 작은 도구들 ───────── */
-@@ -1134,7 +1136,11 @@
+@@ -745,7 +748,7 @@
+   if (pr) return { unit: pr.price };
+   if (EXPORT_RE.test(g)) return { unit: 0, need: true };
+   if (/재검|가성능/.test(g)) return { unit: 0 };
+-  return { unit: 0, unknown: true };
++  return { unit: 0, unknown: true, unsure: true };
+ }
+ function unknownList(m: Map<string, number>) {
+   return [...m.entries()].map(([goods, n]) => ({ goods, n })).sort((a, b) => b.n - a.n);
+@@ -1134,7 +1137,11 @@
        const r = await solapi("POST", "/messages/v4/send-many/detail", { messages: [{ to, from, text: smsText,
          kakaoOptions: { pfId: ha.pf, templateId: ha.tpl[tplKey], variables: vars, disableSms: false } }] }, meta);
        if (!(r.failedMessageList || []).length) return { ok: true, how: "ata", why: "" };
 -    } catch (_) { /* 아래 문자로 */ }
 +    } catch (e) {
 +      /* v54(3차): 알림톡을 받았는지 모르면 문자로 바로 대신 보내지 않음(두 통이 될 수 있음) */
-+      if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true };
++      if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true, unsure: true };
 +      /* 거절 확정이면 아래 문자로 */
 +    }
    }
    try {
      const type = smsType(smsText);   // v51: 90바이트
-@@ -1142,6 +1148,7 @@
+@@ -1142,6 +1149,7 @@
        Object.assign({}, meta, { tpl: meta.tpl + "_sms" }));
      return { ok: true, how: type.toLowerCase(), why: "" };
    } catch (e) {
-+    if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true };
++    if (sendUnknown(e)) return { ok: false, how: "", why: IDEM_CHECK, unknown: true, unsure: true };
      return { ok: false, how: "", why: sendErrEasy("", "", e) };
    }
  }
-@@ -1192,7 +1199,9 @@
+@@ -1192,7 +1200,9 @@
      Object.assign(r, s2);
      if (test) continue;
      const until = Math.max(Date.parse(S(inv.view_until)) || 0, Date.now() + BILL_VIEW_DAYS * 86400000);
@@ -57,7 +67,7 @@
        send_err: s2.ok ? null : s2.why, view_until: new Date(until).toISOString() }).eq("id", inv.id);
      if (s2.ok) sent++;
    }
-@@ -1304,7 +1313,8 @@
+@@ -1304,7 +1314,8 @@
      const until = new Date(Date.now() + BILL_VIEW_DAYS * 86400000).toISOString();
      for (const v of pick) {
        const keep = Date.parse(S(v.view_until)) > Date.parse(until) ? S(v.view_until) : until;
@@ -67,7 +77,29 @@
          send_err: s2.ok ? null : s2.why, view_until: keep }).eq("office_id", o.id).eq("id", v.id);
      }
    }
-@@ -1433,7 +1443,7 @@
+@@ -1332,13 +1343,19 @@
+ async function remindRule(ctx: Ctx) {
+   const r = await remindRuleOf(S(ctx.office.id));
+   const ha = await hqAta();
+-  return { days: N(ctx.office.ins_valid_days) || 120, steps: r.steps, auto: r.auto, past: r.past, ataReady: !!(ha.tpl.check_remind && ha.pf) };
++  const ready = !!(ha.tpl.check_remind && ha.pf);
++  /* v54: 코드가 없으면 저장된 auto 가 켜져 있어도 실제로는 돌지 않음 → autoBlocked 로 알려 줌 */
++  return { days: N(ctx.office.ins_valid_days) || 120, steps: r.steps, auto: r.auto && ready, autoBlocked: r.auto && !ready, past: r.past, ataReady: ready };
+ }
++const REMIND_AUTO_BLOCK = "재검사 알림톡 템플릿이 승인·등록되기 전에는 «매일 자동»을 켤 수 없어요. 손으로 보내기는 할 수 있어요.";
++async function remindAtaReady() { _ata.at = 0; const ha = await hqAta(); return !!(ha.tpl.check_remind && ha.pf); }
+ async function remindRuleSave(ctx: Ctx, opt: any) {
+   bossOnly(ctx);
+   const steps = (Array.isArray(opt?.steps) ? opt.steps : []).map(N).filter((x: number) => REMIND_STEPS.includes(x));
+   if (!steps.length) throw new Error("알림 날을 하나 이상 골라 주세요 (30·15·7·3일 전).");
+-  const auto = opt?.auto === true;   // v50: 알림톡 승인 전에도 켬 — 그동안은 ataSend 가 대체 문구 문자로 보냄
++  const auto = opt?.auto === true;
++  /* v54(알림톡 방·총괄): check_remind 템플릿 코드가 없으면 «매일 자동»을 켤 수 없음(그동안 매일 장문 문자가 나가던 것 막음) · 손으로 보내기는 그대로 */
++  if (auto && !(await remindAtaReady())) throw new Error(REMIND_AUTO_BLOCK);
+   const { error } = await db.from("check_remind_rule").upsert({ office_id: S(ctx.office.id), steps: [...new Set(steps)],
+     auto, past: opt?.past !== false, updated_at: new Date().toISOString() }, { onConflict: "office_id" });
+   if (error) throw new Error("서버를 준비하는 중입니다(SQL 12). 차곳간(010-9559-3663)으로 알려 주세요.");
+@@ -1433,7 +1450,7 @@
      "#{업체전화}": S(office.tel) || "-", "#{보기코드}": key };
    const s2 = await ataSend(office, to, "check_remind", vars, REMIND_SMS, { shop: S(office.code), tpl: "check_remind", ref: S(dealer.id) });
    Object.assign(r, s2);
@@ -76,7 +108,38 @@
      await db.from("check_remind_log").delete().eq("office_id", S(office.id)).eq("dealer_id", S(dealer.id)).in("car_id", cars.map((c) => c.carId));
    return r;
  }
-@@ -3670,7 +3680,7 @@
+@@ -1515,7 +1532,7 @@
+    ============================================================ */
+ const SENDLOG_TPL: Record<string, string> = { check_bill: "청구서", check_remind: "재검사 안내", check_arrive: "차량 도착 안내",
+   check_deposit_ok: "입금 확인", release: "차량 도착 안내", auth: "인증번호", bill: "청구서", deposit_ok: "입금 확인" };
+-const SENDLOG_RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기", skip: "안 보냄" };
++const SENDLOG_RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기", skip: "안 보냄", unknown: "확인 중" };
+ async function sendLogList(ctx: Ctx, opt: any) {
+   bossOnly(ctx);
+   const ymdOk = (v: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(S(v)) && isFinite(Date.parse(S(v) + "T00:00:00+09:00"));
+@@ -1548,9 +1565,9 @@
+       status: SENDLOG_RES[S(r.result)] || S(r.result), err: S(r.err).slice(0, 80), ref: S(r.ref).slice(0, 60),
+     };
+   });
+-  const sums = { sent: 0, sub: 0, fail: 0, wait: 0, skip: 0 };
++  const sums = { sent: 0, sub: 0, fail: 0, wait: 0, skip: 0, unsure: 0 };
+   (data ?? []).forEach((r: any) => { const x = S(r.result);
+-    if (x === "ata" || x === "sent") sums.sent++; else if (x === "sms") sums.sub++; else if (x === "fail") sums.fail++;
++    if (x === "ata" || x === "sent") sums.sent++; else if (x === "sms") sums.sub++; else if (x === "fail") sums.fail++; else if (x === "unknown") sums.unsure++;   // v54: 확인 중
+     else if (x === "wait") sums.wait++; else if (x === "skip") sums.skip++; });
+   return { from, to, list, sums };
+ }
+@@ -1559,7 +1576,8 @@
+   const { data: hq } = await db.from("wash_hq").select("cron_key").eq("id", 1).maybeSingle();
+   const ck = S(hq?.cron_key);
+   if (ck.length < 16 || !sameText(S(key), ck)) throw new Error("허용되지 않은 요청입니다.");
+-  /* v50: 템플릿 승인 전에도 돎 — 알림톡이 안 되면 대체 문구 문자(ataSend) */
++  /* v54: check_remind 템플릿 코드가 없으면 매일 자동은 한 통도 보내지 않음(이미 켜진 규칙도 건너뜀) */
++  if (!(await remindAtaReady())) return { ok: true, n: 0, list: [], skip: "check_remind 코드 없음", skipped: "check_remind 코드 없음" };
+   const { data: rules } = await db.from("check_remind_rule").select("office_id").eq("auto", true);
+   const out: string[] = [];
+   for (const rr of rules ?? []) {
+@@ -3670,7 +3688,7 @@
      위도: "", 경도: "", "위치정확도(m)": "",
      사진ID: main ? S(main.id) : "", 추가사진ID: more.join(","),
      번호판읽기: S(r.plate_ocr) ? (S(r.plate_ocr) === S(r.plate) ? "자동" : "고침") : "직접",
@@ -85,7 +148,23 @@
      발송사유: S(r.err), 메시지ID: "", 보낸일시: r.sent_at ? fmtTs(new Date(new Date(r.sent_at).getTime() + KST)) : "",
      상태: S(r.state) === "취소" ? "취소" : (r.trashed ? "삭제" : ""), 메모: S(r.memo),
      _view: S(r.view_key), _viewAt: r.view_at ? fmtTs(new Date(new Date(r.view_at).getTime() + KST)) : "",
-@@ -4074,26 +4084,42 @@
+@@ -4058,13 +4076,14 @@
+       const f = failed.find((x: any) => dg(x && x.to) === to);
+       const hit = okList.find((x: any) => dg(x && x.to) === to) || okList[i] || null;
+       const bad = !!err || !!f;
++      const unsure = !f && sendUnknown(err);   // v54: 받았는지 모름 → «확인 중»(실패로 세지 않음)
+       const code = String((f && f.statusCode) || "");
+       return {
+         product: SEND_PRODUCT, shop: String((meta && meta.shop) || "").slice(0, 40),
+         tpl: String((meta && meta.tpl) || (ko ? "ata" : "sms")).slice(0, 40),
+         to_mask: sendMask(to), via: ko ? "ata" : (String((m && m.type) || "").toLowerCase() || "auto"),
+         msg_id: bad ? "" : String((hit && hit.messageId) || "").slice(0, 60), group_id: gid.slice(0, 60),
+-        result: bad ? "fail" : "wait", status_code: code.slice(0, 20),
++        result: unsure ? "unknown" : (bad ? "fail" : "wait"), status_code: code.slice(0, 20),
+         err: bad ? sendErrEasy(code, String((f && (f.statusMessage || f.reason)) || ""), err) : "",
+         vars: ko && ko.variables ? Object.keys(ko.variables).map((k) => k.replace(/^#\{|\}$/g, "").slice(0, 20)).slice(0, 20) : [],
+         ref: String((meta && meta.ref) || "").slice(0, 60), scheduled: !!(payload && payload.scheduledDate),
+@@ -4074,26 +4093,42 @@
      if (error) console.error("sendRecord", String(error.message || "").slice(0, 80));
    } catch (e) { console.error("sendRecord", e instanceof Error ? e.message.slice(0, 80) : ""); }
  }
@@ -131,27 +210,27 @@
    if (isSend) await sendRecord(payload, j, null, meta);
    return j;
  }
-@@ -4202,7 +4228,10 @@
+@@ -4202,7 +4237,10 @@
            : plan.tpl === ha.tpl.release ? "check_arrive_release" : "check_arrive_office", ref: S(row.id) });
          if (!(r.failedMessageList || []).length) return { ok: true, why: "", how: "ata" };
          console.error("arrive ata failed", JSON.stringify((r.failedMessageList || [])[0]).slice(0, 200));
 -      } catch (e3) { console.error("arrive ata", e3); }
 +      } catch (e3) {
 +        console.error("arrive ata", e3);
-+        if (sendUnknown(e3)) return { ok: false, why: IDEM_CHECK, how: "ata", unknown: true };   // v54: 받았는지 모르면 문자로 바로 대신 안 보냄
++        if (sendUnknown(e3)) return { ok: false, why: IDEM_CHECK, how: "ata", unknown: true, unsure: true };   // v54: 받았는지 모르면 문자로 바로 대신 안 보냄
 +      }
        /* 알림톡 요청이 거절되면 아래 문자로 이어서 보냅니다 */
      }
      void way;
-@@ -4216,6 +4245,7 @@
+@@ -4216,6 +4254,7 @@
        { shop: S(office.code), tpl: "check_arrive_sms", ref: S(row.id) });
      return { ok: true, why: "", how: fileId ? "mms" : smsType(text).toLowerCase() };
    } catch (e) {
-+    if (sendUnknown(e)) return { ok: false, why: IDEM_CHECK, how: way, unknown: true };
++    if (sendUnknown(e)) return { ok: false, why: IDEM_CHECK, how: way, unknown: true, unsure: true };
      return { ok: false, why: e instanceof Error ? e.message : String(e), how: way };
    }
  }
-@@ -4319,7 +4349,7 @@
+@@ -4319,7 +4358,7 @@
    /* 보내기 — 첫 사진을 문자에 붙입니다 */
    const s = await notifyOne(w.office, conf, saved, vkey, S(rec.photo));
    await db.from("check_deliv").update({
@@ -160,7 +239,7 @@
      err: s.why, sent_at: s.ok ? new Date().toISOString() : null,
    }).eq("id", saved.id);
  
-@@ -4408,7 +4438,7 @@
+@@ -4408,12 +4447,14 @@
      const ph = await photoB64(id);
      const s = await notifyOne(w.office, conf, r, vkey, ph);
      await db.from("check_deliv").update({
@@ -168,8 +247,23 @@
 +      state: s.ok ? "보냄" : ((s as any).unknown ? "확인 중" : "못 보냄"), how: s.how || r.how, err: s.why, view_key: vkey,
        sent_at: s.ok ? new Date().toISOString() : r.sent_at,
      }).eq("id", id);
-     out.push({ id, ok: s.ok, why: s.why });
-@@ -4514,17 +4544,17 @@
+-    out.push({ id, ok: s.ok, why: s.why });
++    out.push({ id, ok: s.ok, why: s.why, unsure: !!(s as any).unknown });
+   }
+-  return { ok: true, results: out };
++  /* v54: 확인 중(결과 모름)은 «못 보냄»과 따로 셈 — 체크 v56.7 · 기사 앱 v30 이름(unsure) */
++  const sentN = out.filter((x) => x.ok).length, unsureN = out.filter((x) => x.unsure).length;
++  return { ok: true, results: out, sent: sentN, bad: out.length - sentN - unsureN, unsure: unsureN };
+ }
+ 
+ /* ───────── v34: 딜러 등록 대기 (체크/기획/2026-10-17_딜러등록대기_설계.md · 보안 의견 ①~⑨) ─────────
+@@ -4509,29 +4550,29 @@
+     const ids = mine.map((r: any) => S(r.id));
+     await db.from("check_deliv").update({ dealer_id: dealerId }).eq("office_id", office.id).in("id", ids);
+     /* 다시 보내기 — 서버가 저장된 기록으로 글을 다시 만듦(⑦ · notifyOne 안에서 cleanVars). 이미 «보냄» 은 건너뜀(③) */
+-    let sent = 0, failed = 0;
++    let sent = 0, failed = 0, unsure = 0;
+     if (it?.resend !== false) {
        const since = Date.now() - RESEND_HOURS * 3600e3;
        for (const r0 of mine.filter((r: any) => new Date(S(r.arrived_at)).getTime() >= since)) {
          const { data: r } = await db.from("check_deliv").select("*").eq("office_id", office.id).eq("id", r0.id).maybeSingle();
@@ -189,8 +283,17 @@
 +          state: s.ok ? "보냄" : ((s as any).unknown ? "확인 중" : "못 보냄"), how: s.how || r.how, err: s.why, view_key: vkey,
            sent_at: s.ok ? new Date().toISOString() : r.sent_at,
          }).eq("id", r.id);
-         if (s.ok) sent++; else failed++;
-@@ -4859,6 +4889,7 @@
+-        if (s.ok) sent++; else failed++;
++        if (s.ok) sent++; else if ((s as any).unknown) unsure++; else failed++;   // v54: 확인 중은 따로
+       }
+     }
+     await log(ctx, "딜러 등록 승인", { tel: phoneMask(tel), name, dealerId, records: ids.length, sent, failed });   // ④ 감사 기록
+-    results.push({ tel: phoneMask(tel), ok: true, dealerId, sent, failed });
++    results.push({ tel: phoneMask(tel), ok: true, dealerId, sent, failed, unsure });
+   }
+   return { ok: true, results };
+ }
+@@ -4859,6 +4900,7 @@
     (제품 · 검사소 · 사람 · 기능 · rid)를 한 줄로 잡고, 같은 열쇠가 다시 오면 다시 하지 않고 처음 답을 그대로 돌려줌.
     처음 것이 처리 중이면 «처리 중이에요». 실패하면 줄을 지워 다시 하기가 되게. 표가 없으면(SQL 26 전) 예전처럼. */
  const IDEM_BUSY = "처리 중이에요. 잠시 뒤 다시 확인해 주세요.";
@@ -198,7 +301,7 @@
  /** 저장할 답에서 비밀값 칸을 뺌(보안 방 · 비밀번호·열쇠·토큰이 표에 남지 않게) — 이름에 pw/pass/secret/token/key/sid 가 든 칸 */
  function idemScrub(v: unknown, depth = 0): unknown {
    if (depth > 6 || v === null || typeof v !== "object") return v;
-@@ -4870,42 +4901,82 @@
+@@ -4870,42 +4912,82 @@
    }
    return o;
  }
@@ -287,7 +390,7 @@
 +    throw e;
    }
 +  if (send && mark.unk) {                            // 일부라도 결과를 모름 → 답에 «확인 중» 표시 · 줄은 unknown
-+    const res = out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, checkMsg: IDEM_CHECK } : out;
++    const res = out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, unsure: true, checkMsg: IDEM_CHECK } : out;
 +    await fin("unknown", idemScrub(res ?? null));
 +    return res;
 +  }
@@ -298,7 +401,7 @@
 +  if (!(await fin("done", idemScrub(out ?? null)))) {
 +    if (send) {                                      // 보냈는데 «끝남»을 못 남김 → «확인 중»(줄은 run 으로 남아 5분 뒤에도 «확인 중»)
 +      await fin("unknown", { checking: true });
-+      return out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, checkMsg: IDEM_CHECK } : out;
++      return out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, unsure: true, checkMsg: IDEM_CHECK } : out;
 +    }
 +  }
 +  if (Math.random() < 0.02) db.from("cgg_idem").delete().in("state", ["done", "retry"]).lt("at", new Date(Date.now() - IDEM_DAY_MS).toISOString()).then(() => {}, () => {});
@@ -306,12 +409,12 @@
  }
  Deno.serve(async (req) => {
    if (req.method === "OPTIONS") {
-@@ -4934,6 +5005,8 @@
+@@ -4934,6 +5016,8 @@
        return new Response(JSON.stringify({ __err: e.message, __need: e.need, __tick: e.tick }), { headers: JSON_HEAD });
      if (e instanceof Error && (e as any).need === "pwchange")   // v30: 기사 임시 비밀번호 → 비밀번호 바꾸기 화면
        return new Response(JSON.stringify({ __err: e.message, __need: "pwchange" }), { headers: JSON_HEAD });
 +    if (e instanceof Error && e.message === IDEM_CHECK)   // v54: 화면이 «확인 중»을 «못 보냄»과 따로 보여 주게
-+      return new Response(JSON.stringify({ __err: IDEM_CHECK, __checking: true }), { headers: JSON_HEAD });
++      return new Response(JSON.stringify({ __err: IDEM_CHECK, __checking: true, __unsure: true }), { headers: JSON_HEAD });
      return err(userMsg(e instanceof Error ? e.message : String(e)));   // v31: 영어·코드·원문 숨김
    }
  });

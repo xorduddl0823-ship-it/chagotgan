@@ -10,6 +10,7 @@
 //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
 //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
 // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
+// sb29 (2026-10-19) «확인 중» 이름 unsure(체크 v56.7·기사 v30 과 같음) · 발송 기록 result «unknown»(확인 중) ·
 // sb29 (2026-10-19) 출시마감 3차: 문자 보내기(sendMsg)는 «한 번만 표»를 못 잡으면 보내지 않음(«잠시 뒤 다시») · 문자 업체가 받았는지 모름(시간 초과·응답 끊김·완료 저장 실패)은 «확인 중»으로 두고 자동으로 다시 보내지 않음 · 알림톡 응답을 모를 때는 문자로 바로 대신 보내지 않음 · 실패 확정만 같은 rid 로 다시 · 줄은 지우지 않고 조건을 건 한 번의 바꾸기로 다시 잡음 · 화면은 몸통 맨 위 rid 하나(sendKey 따로 안 받음)
 // sb28 (2026-10-19) 보안 방(중간): rid 는 쓰기 목록 기능만 · 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시.
 // sb28 (2026-10-19) 기록·알림톡 마감: 발송 기록(wash_sendlog) 새 줄은 받는 번호 가림 · 글 대신 길이만 · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 업체+사람+기능+rid · 체크 v53 과 같음).
@@ -800,13 +801,14 @@ async function sendRecord(payload: any, resp: any, err: unknown, meta?: SendMeta
       const f = failed.find((x: any) => dg(x && x.to) === to);
       const hit = okList.find((x: any) => dg(x && x.to) === to) || okList[i] || null;
       const bad = !!err || !!f;
+      const unsure = !f && sendUnknown(err);   // sb29: 받았는지 모름 → «확인 중»(실패로 세지 않음)
       const code = String((f && f.statusCode) || "");
       return {
         product: SEND_PRODUCT, shop: String((meta && meta.shop) || "").slice(0, 40),
         tpl: String((meta && meta.tpl) || (ko ? "ata" : "sms")).slice(0, 40),
         to_mask: sendMask(to), via: ko ? "ata" : (String((m && m.type) || "").toLowerCase() || "auto"),
         msg_id: bad ? "" : String((hit && hit.messageId) || "").slice(0, 60), group_id: gid.slice(0, 60),
-        result: bad ? "fail" : "wait", status_code: code.slice(0, 20),
+        result: unsure ? "unknown" : (bad ? "fail" : "wait"), status_code: code.slice(0, 20),
         err: bad ? sendErrEasy(code, String((f && (f.statusMessage || f.reason)) || ""), err) : "",
         vars: ko && ko.variables ? Object.keys(ko.variables).map((k) => k.replace(/^#\{|\}$/g, "").slice(0, 20)).slice(0, 20) : [],
         ref: String((meta && meta.ref) || "").slice(0, 60), scheduled: !!(payload && payload.scheduledDate),
@@ -1500,7 +1502,7 @@ async function sendMsg(shop: string, json: string) {
     const m = e instanceof Error ? e.message : String(e);
     if (sendUnknown(e)) {         // sb29(3차): 문자 업체가 받았는지 모름 → «확인 중» · 깎은 것은 그대로(나갔을 수 있음) · 자동으로 다시 안 보냄
       await sendLog(shop, { type: o.type, to: o.to, kind: o.kind, ok: false, error: "확인 중", text: o.text, ref: o.ref });
-      return { ok: false, checking: true, error: IDEM_CHECK };
+      return { ok: false, checking: true, unsure: true, error: IDEM_CHECK };
     }
     await msgUndo(gate);          // 안 나갔으니 미리 깎은 것을 돌려줍니다
     await sendLog(shop, { type: o.type, to: o.to, kind: o.kind, ok: false, error: m, text: o.text, ref: o.ref });
@@ -5715,7 +5717,7 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
       .lt("at", new Date(Date.parse(ymdAdd(to, 1) + "T00:00:00+09:00")).toISOString())
       .order("at", { ascending: false }).limit(3000);
     const PROD: Record<string, string> = { wash: "워시", check: "체크", dealer: "딜러", cgg: "통합" };
-    const RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기", skip: "안 보냄" };
+    const RES: Record<string, string> = { ata: "알림톡 도착", sms: "문자 대체", sent: "문자 도착", fail: "실패", wait: "대기", skip: "안 보냄", unknown: "확인 중" };
     const back = (m: Record<string, string>, v: unknown) => { const k = Object.keys(m).find((x) => m[x] === String(v)); return k || String(v || ""); };
     if (f.product) q = q.eq("product", back(PROD, f.product));
     if (f.shop) q = q.eq("shop", String(f.shop).toUpperCase().slice(0, 40));
@@ -7052,7 +7054,7 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
     if (e4) console.error("idem fin", state, String((e4 as any).code || ""));
     return !e4 && Array.isArray(data) && data.length === 1;
   };
-  const checking = (o: unknown) => o && typeof o === "object" && !Array.isArray(o) ? { ...(o as any), checking: true, checkMsg: IDEM_CHECK } : o;
+  const checking = (o: unknown) => o && typeof o === "object" && !Array.isArray(o) ? { ...(o as any), checking: true, unsure: true, checkMsg: IDEM_CHECK } : o;
   const mark: SendMark = { ok: 0, no: 0, unk: 0 };
   let out: unknown;
   try {
@@ -7165,7 +7167,7 @@ Deno.serve(async (req) => {
     return out({ result: await f(shop, args, ss) });
   } catch (e) {
     const em = e instanceof Error ? e.message : String(e);
-    if (em === IDEM_CHECK) return out({ __err: em, __checking: true });   // sb29: 화면이 «확인 중»을 «못 보냄»과 따로 보여 주게
+    if (em === IDEM_CHECK) return out({ __err: em, __checking: true, __unsure: true });   // sb29: 화면이 «확인 중»을 «못 보냄»과 따로 보여 주게
     /* sb14: 본사(관리) 말고는 영어·코드·원문을 숨김 */
     return out(hqRaw ? { __err: em, __raw: true } : { __err: em });
   }
