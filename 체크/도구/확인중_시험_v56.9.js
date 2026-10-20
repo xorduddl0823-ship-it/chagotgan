@@ -192,8 +192,8 @@ function makeServer(){
   const g2=await barTxt(); ok('v54 한 건 다시 보내기 실패 → «보내지 못했어요»', /보내지 못했어요/.test(g2), g2.replace(/\n/g,' '));
   // G3 매일 자동 잠금
   SRV.db.blockAuto=true; await p.reload(); await W(1500); await go('remind');
-  const g3=await p.evaluate(()=>{ const c=document.getElementById('rmAuto'); return {dis:!!(c&&c.disabled), chk:!!(c&&c.checked), t:document.getElementById('main').innerText.indexOf('알림톡 승인 전이라')>=0}; });
-  ok('v54 autoBlocked → «매일 자동» 칸 잠김 · 안내 글', g3.dis && !g3.chk && g3.t, JSON.stringify(g3));
+  const g3=await p.evaluate(()=>{ const c=document.getElementById('rmAuto'), m=document.getElementById('main').innerText; return {dis:!!(c&&c.disabled), chk:!!(c&&c.checked), t:m.indexOf('알림톡 승인 전이라')>=0, old:m.indexOf('자동으로 보낼 때도')>=0}; });
+  ok('v54 autoBlocked → «매일 자동» 칸 잠김 · 안내 글 · 겹치는 예전 글 숨김', g3.dis && !g3.chk && g3.t && !g3.old, JSON.stringify(g3));
   SRV.db.blockAuto=false;
 
   /* ── 5. 기록 저장 실패 ↔ 발송 실패 따로 · 저장된 기록은 발송 실패로 없어지지 않음 ── */

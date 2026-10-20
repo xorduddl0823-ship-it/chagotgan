@@ -5419,7 +5419,7 @@ PAGE.remind=function(){
       (RRULE.autoBlocked?'<span class="note" style="color:var(--warn)">알림톡 승인 전이라 «매일 자동»은 아직 켤 수 없어요. 손으로 보내기는 돼요.</span>':'')+   /* v56.9: 서버 autoBlocked */
       (own?'<button class="btn primary" id="rmSave">규칙 저장</button>':'')+
     '</div>'+
-    (RRULE.ataReady ? "" : '<p class="note" style="margin:6px 0 0">재검사 알림톡이 <b>카카오 승인되기 전</b>에는 자동으로 보낼 때도 <b>문자</b>로 나가요(문자 요금이 들어요).</p>'))+
+    ((RRULE.ataReady || RRULE.autoBlocked) ? "" : '<p class="note" style="margin:6px 0 0">재검사 알림톡이 <b>카카오 승인되기 전</b>에는 자동으로 보낼 때도 <b>문자</b>로 나가요(문자 요금이 들어요).</p>'))+
   card("보낼 대상","",
     tableBlock("rmd",[
       {k:"dealer",t:"딜러",name:true,fmt:function(v){return '<b>'+esc(v)+'</b>';}},
@@ -6248,9 +6248,9 @@ function pendWire(){
         var R=(res&&res.results)||[], okN=R.filter(function(x){return x.ok;}).length, sent=0, failN=0;
         var unN=0; R.forEach(function(x){ sent+=Number(x.sent)||0; failN+=Number(x.failed)||0; unN+=Number(x.unsure)||0; });   /* v56.9: 확인 중 */
         var bad=R.filter(function(x){return !x.ok;});
-        bar(won(okN)+"명을 등록했어요."+(resend?" 알림 "+won(sent)+"건을 다시 보냈어요."+(failN?" "+won(failN)+"건은 못 보냈어요.":"")+(unN?" 확인 중 "+won(unN)+"건 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요.":""):"")+
+        bar(won(okN)+"명을 등록했어요."+(resend?(sent?" 알림 "+won(sent)+"건을 다시 보냈어요.":"")+(failN?" "+won(failN)+"건은 못 보냈어요.":"")+(unN?" 확인 중 "+won(unN)+"건 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요.":""):"")+
           (bad.length?" 등록 못 한 "+won(bad.length)+"줄 — "+bad.slice(0,2).map(function(x){ return String(x.why||""); }).join(" / "):""),
-          (bad.length||failN)?"err":"ok");
+          (bad.length||failN)?"err":unN?"info":"ok");   /* v56.9: 확인 중이면 끝남(초록) 아님 */
         DEALERS=[]; refresh(["deliv","set"]);
       }).catch(function(e){ busy(false); var b=$("pnErr"); if(b){ b.hidden=false; b.textContent=String((e&&e.message)||"처리하지 못했어요. 다시 시도해 주세요."); } });
     };

@@ -25,10 +25,14 @@ rep('      if(Array.isArray(r.results)){', '      if(fn!=="deliv_resend" && Arra
 rep('R.forEach(function(x){ sent+=Number(x.sent)||0; failN+=Number(x.failed)||0; });',
     'var unN=0; R.forEach(function(x){ sent+=Number(x.sent)||0; failN+=Number(x.failed)||0; unN+=Number(x.unsure)||0; });   /* v56.9: 확인 중 */')
 rep('''(resend?" 알림 "+won(sent)+"건을 다시 보냈어요."+(failN?" "+won(failN)+"건은 못 보냈어요.":""):"")+''',
-    '''(resend?" 알림 "+won(sent)+"건을 다시 보냈어요."+(failN?" "+won(failN)+"건은 못 보냈어요.":"")+(unN?" 확인 중 "+won(unN)+"건 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요.":""):"")+''')
+    '''(resend?(sent?" 알림 "+won(sent)+"건을 다시 보냈어요.":"")+(failN?" "+won(failN)+"건은 못 보냈어요.":"")+(unN?" 확인 중 "+won(unN)+"건 — 보낸 기록에서 확인해 주세요. 다시 보내지 마세요.":""):"")+''')
+rep('''          (bad.length||failN)?"err":"ok");
+        DEALERS=[]; refresh(["deliv","set"]);''', '''          (bad.length||failN)?"err":unN?"info":"ok");   /* v56.9: 확인 중이면 끝남(초록) 아님 */
+        DEALERS=[]; refresh(["deliv","set"]);''')
 # ③ 매일 자동 — 알림톡 승인 전 잠금
 rep('''      '<label class="chip"><input type="checkbox" id="rmAuto"'+(RRULE.auto?" checked":"")+(own?"":" disabled")+'> 매일 아침 9시쯤 자동으로 보내기</label>'+''',
     '''      '<label class="chip"><input type="checkbox" id="rmAuto"'+(RRULE.auto&&!RRULE.autoBlocked?" checked":"")+(own&&!RRULE.autoBlocked?"":" disabled")+'> 매일 아침 9시쯤 자동으로 보내기</label>'+
       (RRULE.autoBlocked?'<span class="note" style="color:var(--warn)">알림톡 승인 전이라 «매일 자동»은 아직 켤 수 없어요. 손으로 보내기는 돼요.</span>':'')+   /* v56.9: 서버 autoBlocked */''')
+rep("""    (RRULE.ataReady ? "" : '<p class="note""", """    ((RRULE.ataReady || RRULE.autoBlocked) ? "" : '<p class="note""")   # v56.9: 매일 자동이 잠겼으면 «자동으로 보낼 때도 문자» 글 숨김
 open(OUT, "w", encoding="utf-8").write(s)
 print("만듦:", os.path.relpath(OUT, ROOT), hashlib.sha256(s.encode()).hexdigest()[:12])
