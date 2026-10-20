@@ -24,7 +24,7 @@ FILES = [
     ("index.html", open(BASE + "체크/2_차곳간_체크_index_%s.html" % V, "rb").read()),
     ("_headers", headers.encode("utf-8")),
     ("d/index.html", open(NEW + "d/index.html", "rb").read()),
-    ("driver/index.html", open(BASE + "체크/driver/index_%s.html" % ({"v56.6":"v29","v56.7":"v30","v56.8":"v31"}.get(V,"v28")), "rb").read()),   # v56.6: 기사 앱 v29
+    ("driver/index.html", open(BASE + "체크/driver/index_%s.html" % ({"v56.6":"v29","v56.7":"v30","v56.8":"v31","v56.9":"v31"}.get(V,"v28")), "rb").read()),   # v56.6: 기사 앱 v29
     ("r/index.html", open(ADD + "r/index.html", "rb").read()),
     ("v/index.html", open(NEW + "v/index.html", "rb").read()),
 ]
