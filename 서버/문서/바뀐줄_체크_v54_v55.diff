@@ -1,0 +1,213 @@
+--- "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v54.ts"	2026-10-19 11:53:42.388146787 +0000
++++ "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v55.ts"	2026-10-21 15:59:29.390610995 +0000
+@@ -13,6 +13,7 @@
+ //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
+ //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
+ //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
++//  v55 (2026-10-21) 대표님: 문자 업체 고르기 — 비밀값 MSG_VENDOR = solapi | bizgo(없거나 다른 값이면 solapi) · 비즈고(인포뱅크 OMNI) 보내기·알림톡→문자 대체(한 요청 안) · 업체별 템플릿 코드(ata_cfg.bizgo) · rid 는 처음 고른 업체로만 · 결과 채우기는 워시 sb30(sendFill)이 함께 함
+ //  v54 (2026-10-19) 재검사 «매일 자동»은 check_remind 템플릿 코드가 있어야 켜고 돎(없으면 저장 거절 · 매일 자동 0건 · 손으로 보내기는 그대로) · «확인 중» 이름 unsure(체크 v56.7·기사 v30) · 보낸 기록 «확인 중» ·
+ //  v54 (2026-10-19) 출시마감 3차: 보내기(청구서·밀린 달·재검사·도착 알림)는 «한 번만 표»를 못 잡으면 보내지 않음(«잠시 뒤 다시») · 문자 업체가 받았는지 모름(시간 초과·응답 끊김·완료 저장 실패)은 «확인 중»으로 두고 자동으로 다시 보내지 않음 · 알림톡 응답을 모를 때는 문자로 바로 대신 보내지 않음 · 실패 확정만 같은 rid 로 다시 · 줄은 지우지 않고 조건을 건 한 번의 바꾸기로 다시 잡음
+ //  v53 (2026-10-19) 보안 방: 저장하는 답에서 비밀값 칸 뺌 · 5분 넘은 «처리 중»은 다시 · 기록·알림톡 마감: 알림톡 변수에 빈 값(«-»)이 있으면 대체 문구 문자로(워시와 같음) · 쓰기 요청의 rid(24자)로 «한 번 누름 = 한 번 처리»(SQL 26 cgg_idem · 검사소+사람+기능+rid) ·
+@@ -136,7 +137,7 @@
+   { auth: { persistSession: false } },
+ );
+ 
+-const VER = "check-api v54 · 2026-10-19 (보내기 한 번만 · 확인 중)";
++const VER = "check-api v55 · 2026-10-21 (문자 업체 고르기 · 솔라피/비즈고)";
+ const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
+ 
+ /* ───────── 작은 도구들 ───────── */
+@@ -183,15 +184,19 @@
+   await db.from("check_deliv_fail").delete().eq("key", key);
+ }
+ /* v29: 본사 알림톡 설정 (워시 서버와 같은 칸 wash_hq.ata_cfg · 1분 기억) — 비어 있으면 문자 */
+-let _ata: { at: number; pf: string; tpl: Record<string, string> } = { at: 0, pf: "", tpl: {} };
++let _ata: { at: number; pf: string; tpl: Record<string, string>; vendor?: string } = { at: 0, pf: "", tpl: {} };
+ async function hqAta() {
+-  if (Date.now() - _ata.at < 60000) return _ata;
++  /* v55: 문자 업체별 템플릿 코드 — 솔라피는 ata_cfg.tpl · pfId, 비즈고는 ata_cfg.bizgo.tpl · senderKey(또는 비밀값 BIZGO_SENDER_KEY) · 워시 sb30 과 같음 */
++  const vd = msgVendor();
++  if (_ata.vendor === vd && Date.now() - _ata.at < 60000) return _ata;
+   let c: any = {};
+   try { const { data } = await db.from("wash_hq").select("ata_cfg").eq("id", 1).maybeSingle(); c = (data && data.ata_cfg) || {}; }
+   catch (_) { /* 칸이 없으면 문자 */ }
+   const tpl: Record<string, string> = {};
+-  Object.keys((c && c.tpl) || {}).forEach((k) => { const v = S(c.tpl[k]); if (v) tpl[k] = v; });
+-  _ata = { at: Date.now(), pf: S(c.pfId) || S(Deno.env.get("PF_ID")), tpl };
++  const src = vd === "bizgo" ? ((c && c.bizgo) || {}) : c;
++  Object.keys((src && src.tpl) || {}).forEach((k) => { const v = S(src.tpl[k]); if (v) tpl[k] = v; });
++  _ata = { at: Date.now(), tpl, vendor: vd,
++           pf: vd === "bizgo" ? (S(Deno.env.get("BIZGO_SENDER_KEY")) || S(src && src.senderKey)) : (S(c.pfId) || S(Deno.env.get("PF_ID"))) };
+   return _ata;
+ }
+ 
+@@ -4095,8 +4100,83 @@
+ }
+ /* v54(3차): 이 요청(rid) 안에서 문자 업체에 보낸 결과를 «받음(ok) · 거절 확정(no) · 모름(unk)» 으로 셉니다.
+    모름 = 시간 초과 · 연결 끊김 · 업체 쪽 5xx · 답을 못 읽음 — 받았을 수도 있어서 «못 보냄 확정»이 아니에요. */
+-type SendMark = { ok: number; no: number; unk: number };
++type SendMark = { ok: number; no: number; unk: number; vendor?: MsgVendor; idem?: string; seq?: number };
+ const SEND_MARK = new AsyncLocalStorage<SendMark>();
++/* ═════ 문자 업체 고르기 (v55 · 대표님 10/21) ═════
++   비밀값 MSG_VENDOR = solapi | bizgo — 없거나 다른 값이면 늘 solapi.
++   비즈고(인포뱅크 BIZGO · OMNI API) 출처: https://github.com/icomm-api/bizgo-api-spec (dist/openapi.yaml · data/error-codes.json)
++   · 보내기 POST /api/comm/v1/send/omni · 머리 «Authorization: <API Key>»(접두어 없음) · 서버 IP 를 비즈고 콘솔에 등록해야 함
++   · messageFlow [{alimtalk}, {sms|mms}] — 앞이 실패하면 비즈고가 뒤로 대신 보냄(한 요청 = 한 rid 안)
++   · 성공 = common.authCode A000 이고 data.code A000 이고 수신자 data.data.destinations[].code A000(msgKey 받음)
++   · 결과 GET /api/comm/v1/report/inquiry/{msgKey}(30일) · reportCode 10000 = 휴대폰 도착
++   · idempotencyKey(200자) + idempotencyTtl(0~86400) — 같은 키 다시 오면 수신자 code A301
++   부르는 곳은 솔라피 모양 그대로(solapi()) — 여기서 비즈고 모양으로 바꿔 보내고 답을 솔라피 모양으로 돌려줍니다.
++   비밀값 이름: MSG_VENDOR · BIZGO_API_KEY · BIZGO_SENDER_KEY(카카오 발신프로필 키 · 없으면 관리 설정 ata_cfg.bizgo.senderKey) · BIZGO_ENV(sandbox 면 시험 서버) */
++type MsgVendor = "solapi" | "bizgo";
++const BIZGO_HOSTS = { prod: "https://mars.ibapi.kr", sandbox: "https://sandbox-mars.ibapi.kr" };
++function vendorEnv(): MsgVendor { return String(Deno.env.get("MSG_VENDOR") ?? "").trim().toLowerCase() === "bizgo" ? "bizgo" : "solapi"; }
++/** 이 요청이 쓸 업체 — rid 가 붙은 보내기는 처음 고른 업체로 고정(SEND_MARK.vendor), 아니면 비밀값 */
++function msgVendor(): MsgVendor { const m = SEND_MARK.getStore(); return (m && m.vendor) || vendorEnv(); }
++function bizgoBase() { return String(Deno.env.get("BIZGO_ENV") ?? "").trim().toLowerCase() === "sandbox" ? BIZGO_HOSTS.sandbox : BIZGO_HOSTS.prod; }
++function bizgoKey() { return String(Deno.env.get("BIZGO_API_KEY") ?? "").trim(); }
++const bzDigits = (v: unknown) => String(v ?? "").replace(/[^0-9]/g, "");
++/** 솔라피 메시지 한 통 → 비즈고 messageFlow (알림톡이면 [알림톡, 대체 문자]) */
++function bizgoFlow(m: any): any[] {
++  const from = bzDigits(m && m.from), text = String((m && m.text) ?? "");
++  const type = String((m && m.type) || "").toUpperCase();
++  const plain = (type === "SMS" || (!type && smsBytes(text) <= 90))
++    ? { sms: { from, text } }
++    : { mms: Object.assign({ from, text }, m && m.subject ? { title: String(m.subject).slice(0, 50) } : {}) };   // LMS(사진 없음)
++  const ko = m && m.kakaoOptions;
++  if (!ko) return [plain];
++  const flow: any[] = [{ alimtalk: { senderKey: String(ko.pfId || ""), templateCode: String(ko.templateId || ""), msgType: "AT", sendType: "template" } }];
++  if (ko.disableSms === false) flow.push(plain);       // 알림톡이 안 되면 같은 요청 안에서 대체 문구 문자
++  return flow;
++}
++function bizgoWords(m: any): Record<string, string> {
++  const v = (m && m.kakaoOptions && m.kakaoOptions.variables) || {};
++  const o: Record<string, string> = {};
++  Object.keys(v).forEach((k) => { o[k] = String(v[k] ?? ""); });   // 이름 모양은 솔라피와 같게 «#{이름}» (비즈고에 물어볼 것 ①)
++  return o;
++}
++/** 비즈고로 보내고 솔라피 모양 답({status, body})을 돌려줌 — 연결이 끊기면 그대로 던짐(solapi() 가 «모름»으로 셈) */
++async function bizgoSend(payload: any): Promise<{ status: number; body: string }> {
++  const no = (why: string, code = "") => ({ status: 400, body: JSON.stringify({ errorCode: code, errorMessage: why }) });   // 안 보냄 확정
++  const key = bizgoKey();
++  if (!key) return no("비즈고 열쇠(BIZGO_API_KEY)가 없어요");
++  if (payload && payload.scheduledDate) return no("예약 문자는 지금 솔라피에서만 돼요");
++  const msgs: any[] = Array.isArray(payload && payload.messages) ? payload.messages : [];
++  const mark = SEND_MARK.getStore();
++  const okList: any[] = [], failed: any[] = [];
++  let gid = "";
++  for (const m of msgs) {
++    if (m && m.kakaoOptions && (!m.kakaoOptions.pfId || !m.kakaoOptions.templateId)) return no("비즈고 알림톡 설정(발신프로필 키·템플릿 코드)이 없어요");
++    const words = bizgoWords(m);
++    const body: any = { destinations: [Object.assign({ to: bzDigits(m && m.to) }, Object.keys(words).length ? { replaceWords: words } : {})],
++                        messageFlow: bizgoFlow(m) };
++    if (mark && mark.idem) { mark.seq = (mark.seq || 0) + 1; body.idempotencyKey = mark.idem + "-" + mark.seq; body.idempotencyTtl = 86400; }
++    const res = await fetch(bizgoBase() + "/api/comm/v1/send/omni", {
++      method: "POST", headers: { Authorization: key, "Content-Type": "application/json" },
++      body: JSON.stringify(body), signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
++    });
++    const t = await res.text();
++    if (res.status >= 500) return { status: res.status, body: "비즈고 " + res.status };                 // 받았는지 모름
++    let j: any;
++    try { j = JSON.parse(t); } catch (_) { return { status: 502, body: "비즈고 답을 읽지 못함" }; }       // 받았는지 모름
++    const auth = String((j && j.common && j.common.authCode) || ""), code = String((j && j.data && j.data.code) || "");
++    if (auth !== "A000" || code !== "A000") return { status: res.status >= 400 ? res.status : 400, body: JSON.stringify({ errorCode: code || auth, errorMessage: String((j && j.data && j.data.result) || (j && j.common && j.common.authResult) || "") }) };
++    const d = ((j.data.data && j.data.data.destinations) || [])[0] || {};
++    if (String(d.code) === "A000" && d.msgKey) { okList.push({ messageId: "bz:" + String(d.msgKey), to: bzDigits(m.to) }); if (!gid) gid = "bz:" + String(d.msgKey); }
++    else if (String(d.code) === "A301") return { status: 502, body: "비즈고 같은 요청 이미 처리됨(A301)" };   // 앞서 받았을 수 있음 → 모름
++    else failed.push({ to: bzDigits(m.to), statusCode: String(d.code || "fail"), statusMessage: String(d.result || "") });
++  }
++  return { status: 200, body: JSON.stringify({ groupInfo: { groupId: gid }, messageList: okList, failedMessageList: failed }) };
++}
++/** 이 요청의 rid 지문(업체 쪽 idempotencyKey 앞부분) */
++async function idemFinger(s: string) {
++  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
++  return "cgg-" + [...h].slice(0, 20).map((b) => b.toString(16).padStart(2, "0")).join("");
++}
+ const SEND_TIMEOUT_MS = 20000;
+ function sendUnknown(e: unknown) { return !!(e && (e as any).sendUnknown); }
+ async function solapi(method: string, path: string, payload?: unknown, meta?: SendMeta) {
+@@ -4104,14 +4184,23 @@
+   const mark = isSend ? SEND_MARK.getStore() : undefined;
+   const unk = (e: any) => { if (isSend) { e.sendUnknown = true; if (mark) mark.unk++; } return e; };
+   let res: Response, body = "";
++  const viaBizgo = msgVendor() === "bizgo";
++  if (viaBizgo && !isSend && /^\/storage\//.test(path)) return {};                         // 비즈고: 사진 올리기 없음 → 사진 없이 LMS
++  if (viaBizgo && !isSend && method === "DELETE") throw new Error("비즈고는 예약 취소를 아직 못 해요");
+   try {
+-    res = await fetch("https://api.solapi.com" + path, {
+-      method,
+-      headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
+-      body: payload ? JSON.stringify(payload) : undefined,
+-      signal: isSend ? AbortSignal.timeout(SEND_TIMEOUT_MS) : undefined,
+-    });
+-    body = await res.text();
++    if (isSend && viaBizgo) {
++      const r = await bizgoSend(payload);
++      res = new Response(r.body, { status: r.status });
++      body = r.body;
++    } else {
++      res = await fetch("https://api.solapi.com" + path, {
++        method,
++        headers: { Authorization: await solapiAuth(), "Content-Type": "application/json" },
++        body: payload ? JSON.stringify(payload) : undefined,
++        signal: isSend ? AbortSignal.timeout(SEND_TIMEOUT_MS) : undefined,
++      });
++      body = await res.text();
++    }
+   } catch (e) {
+     const e2 = unk(e instanceof Error ? e : new Error(String(e)));   // 요청이 닿았는지 모름
+     if (isSend) await sendRecord(payload, null, e2, meta);
+@@ -4934,14 +5023,16 @@
+   if (!key.tenant || !key.who) { if (send) throw new Error(IDEM_LATER); return await run(); }
+   const mine = (q: any) => q.eq("product", "check").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
+   const at = new Date().toISOString();                                       // 이 처리의 표시(나중에 끝낼 때 «내 줄»인지 확인)
+-  const { error } = await db.from("cgg_idem").insert({ ...key, state: "run", at });
++  let vend: MsgVendor = vendorEnv();                                        // v55: 처음 고른 문자 업체(줄에 적어 둠)
++  const { error } = await db.from("cgg_idem").insert({ ...key, state: "run", at, result: { vendor: vend } });
+   if (error && S((error as any).code) === "23505") {
+     const { data: had, error: e2 } = await mine(db.from("cgg_idem").select("state,result,at")).maybeSingle();
+     if (e2 || !had) throw new Error(IDEM_BUSY);
+     const age = Date.now() - Date.parse(S(had.at));
++    if (had.result && (had.result.vendor === "bizgo" || had.result.vendor === "solapi")) vend = had.result.vendor;   // 한 번 보낸 rid 는 처음 업체로만
+     if (had.state === "done" && (send || !(age > IDEM_DAY_MS))) return had.result;   // 같은 누름 → 처음 답 그대로(다시 처리 안 함)
+     if (had.state === "unknown" || (send && had.state === "run" && age > IDEM_STALE_MS)) throw new Error(IDEM_CHECK);
+-    let q = mine(db.from("cgg_idem").update({ state: "run", at, result: null, done_at: null }));
++    let q = mine(db.from("cgg_idem").update({ state: "run", at, result: { vendor: vend }, done_at: null }));
+     if (had.state === "retry") q = q.eq("state", "retry").eq("at", had.at);                                   // 실패 확정 → 다시
+     else if (!send && had.state === "run" && age > IDEM_STALE_MS) q = q.eq("state", "run").eq("at", had.at);  // 기록만: 끊긴 «처리 중»
+     else if (!send && had.state === "done") q = q.eq("state", "done").eq("at", had.at);                       // 기록만: 하루 지난 열쇠
+@@ -4959,16 +5050,16 @@
+     if (e4) console.error("idem fin", state, S((e4 as any).code));
+     return !e4 && Array.isArray(data) && data.length === 1;
+   };
+-  const mark: SendMark = { ok: 0, no: 0, unk: 0 };
++  const mark: SendMark = { ok: 0, no: 0, unk: 0, vendor: vend, idem: await idemFinger([key.product, key.tenant, key.who, key.fn, rid].join("|")) };
+   let out: unknown;
+   try {
+     out = await SEND_MARK.run(mark, run);
+   } catch (e) {
+     if (send && (mark.ok || mark.unk)) {             // 이미 받았거나 받았는지 모름 → «확인 중» · 자동 재발송 없음
+-      await fin("unknown", { checking: true });
++      await fin("unknown", { checking: true, vendor: vend });
+       throw new Error(IDEM_CHECK);
+     }
+-    await fin("retry", null);                        // 받지 않음 확정 → 같은 rid 로 다시 하기 가능(지우지 않음)
++    await fin("retry", { vendor: vend });                        // 받지 않음 확정 → 같은 rid 로 다시 하기 가능(지우지 않음)
+     throw e;
+   }
+   if (send && mark.unk) {                            // 일부라도 결과를 모름 → 답에 «확인 중» 표시 · 줄은 unknown
+@@ -4977,12 +5068,12 @@
+     return res;
+   }
+   if (send && !mark.ok) {                           // 문자 업체가 하나도 받지 않음(확정) → 같은 rid 로 다시 해도 안전
+-    await fin("retry", null);
++    await fin("retry", { vendor: vend });
+     return out;
+   }
+   if (!(await fin("done", idemScrub(out ?? null)))) {
+     if (send) {                                      // 보냈는데 «끝남»을 못 남김 → «확인 중»(줄은 run 으로 남아 5분 뒤에도 «확인 중»)
+-      await fin("unknown", { checking: true });
++      await fin("unknown", { checking: true, vendor: vend });
+       return out && typeof out === "object" && !Array.isArray(out) ? { ...(out as any), checking: true, unsure: true, checkMsg: IDEM_CHECK } : out;
+     }
+   }
