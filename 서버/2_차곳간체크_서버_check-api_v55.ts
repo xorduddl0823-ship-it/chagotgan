@@ -187,7 +187,7 @@ async function officeAttemptOk(key: string) {
 let _ata: { at: number; pf: string; tpl: Record<string, string>; vendor?: string } = { at: 0, pf: "", tpl: {} };
 async function hqAta() {
   /* v55: 문자 업체별 템플릿 코드 — 솔라피는 ata_cfg.tpl · pfId, 비즈고는 ata_cfg.bizgo.tpl · senderKey(또는 비밀값 BIZGO_SENDER_KEY) · 워시 sb30 과 같음 */
-  const vd = msgVendor();
+  const vd = await msgVendor();
   if (_ata.vendor === vd && Date.now() - _ata.at < 60000) return _ata;
   let c: any = {};
   try { const { data } = await db.from("wash_hq").select("ata_cfg").eq("id", 1).maybeSingle(); c = (data && data.ata_cfg) || {}; }
@@ -4103,7 +4103,7 @@ async function sendRecord(payload: any, resp: any, err: unknown, meta?: SendMeta
 type SendMark = { ok: number; no: number; unk: number; vendor?: MsgVendor; idem?: string; seq?: number };
 const SEND_MARK = new AsyncLocalStorage<SendMark>();
 /* ═════ 문자 업체 고르기 (v55 · 대표님 10/21) ═════
-   비밀값 MSG_VENDOR = solapi | bizgo — 없거나 다른 값이면 늘 solapi.
+   고르는 곳: 관리(본사) 화면 → 표 cgg_msg_vendor(SQL 28 · 워시·체크 따로) · 비밀값 MSG_VENDOR 는 비상용 강제값 · 없거나 이상하면 늘 solapi.
    비즈고(인포뱅크 BIZGO · OMNI API) 출처: https://github.com/icomm-api/bizgo-api-spec (dist/openapi.yaml · data/error-codes.json)
    · 보내기 POST /api/comm/v1/send/omni · 머리 «Authorization: <API Key>»(접두어 없음) · 서버 IP 를 비즈고 콘솔에 등록해야 함
    · messageFlow [{alimtalk}, {sms|mms}] — 앞이 실패하면 비즈고가 뒤로 대신 보냄(한 요청 = 한 rid 안)
@@ -4111,12 +4111,46 @@ const SEND_MARK = new AsyncLocalStorage<SendMark>();
    · 결과 GET /api/comm/v1/report/inquiry/{msgKey}(30일) · reportCode 10000 = 휴대폰 도착
    · idempotencyKey(200자) + idempotencyTtl(0~86400) — 같은 키 다시 오면 수신자 code A301
    부르는 곳은 솔라피 모양 그대로(solapi()) — 여기서 비즈고 모양으로 바꿔 보내고 답을 솔라피 모양으로 돌려줍니다.
-   비밀값 이름: MSG_VENDOR · BIZGO_API_KEY · BIZGO_SENDER_KEY(카카오 발신프로필 키 · 없으면 관리 설정 ata_cfg.bizgo.senderKey) · BIZGO_ENV(sandbox 면 시험 서버) */
+   비밀값 이름: MSG_VENDOR(비상용) · BIZGO_API_KEY · BIZGO_SENDER_KEY(카카오 발신프로필 키 · 없으면 관리 설정 ata_cfg.bizgo.senderKey) · BIZGO_ENV(sandbox 면 시험 서버) */
 type MsgVendor = "solapi" | "bizgo";
 const BIZGO_HOSTS = { prod: "https://mars.ibapi.kr", sandbox: "https://sandbox-mars.ibapi.kr" };
-function vendorEnv(): MsgVendor { return String(Deno.env.get("MSG_VENDOR") ?? "").trim().toLowerCase() === "bizgo" ? "bizgo" : "solapi"; }
-/** 이 요청이 쓸 업체 — rid 가 붙은 보내기는 처음 고른 업체로 고정(SEND_MARK.vendor), 아니면 비밀값 */
-function msgVendor(): MsgVendor { const m = SEND_MARK.getStore(); return (m && m.vendor) || vendorEnv(); }
+/* 업체 고르기(대표님 10/21 바뀐 점): 관리(본사) 화면에서 워시·체크를 따로 골라 표 cgg_msg_vendor(SQL 28)에 저장 → 보낼 때 여기서 읽음(30초 기억).
+   · 표가 없거나 읽기 실패 · 값이 이상하면 늘 solapi
+   · 비상용 강제값: 비밀값 MSG_VENDOR 가 solapi|bizgo 이면 표보다 먼저(관리 화면을 못 열 때 대표님이 Supabase 에서 바로 되돌리는 용도)
+   · 비즈고로 되어 있는데 열쇠(BIZGO_API_KEY)가 없으면 솔라피로 보내고 hq_audit 에 남김(10분에 한 번) */
+const VENDOR_PRODUCT = "check";
+let _vendorBox: { at: number; v: MsgVendor } = { at: 0, v: "solapi" };
+let _vendorWarnAt = 0;
+function vendorForce(): MsgVendor | "" {
+  const v = String(Deno.env.get("MSG_VENDOR") ?? "").trim().toLowerCase();
+  return v === "bizgo" || v === "solapi" ? v : "";
+}
+async function vendorStored(force = false): Promise<MsgVendor> {
+  if (!force && Date.now() - _vendorBox.at < 30000) return _vendorBox.v;
+  let v: MsgVendor = "solapi";
+  try {
+    const { data, error } = await db.from("cgg_msg_vendor").select("vendor").eq("product", VENDOR_PRODUCT).maybeSingle();
+    if (!error && data && (data.vendor === "bizgo" || data.vendor === "solapi")) v = data.vendor;
+  } catch (_) { /* 표가 없으면 솔라피 */ }
+  _vendorBox = { at: Date.now(), v };
+  return v;
+}
+/** 지금 고른 문자 업체 — 강제값 → 관리 화면 값 → solapi · 비즈고인데 열쇠가 없으면 솔라피로 */
+async function vendorPick(): Promise<MsgVendor> {
+  let v: MsgVendor = vendorForce() || await vendorStored();
+  if (v === "bizgo" && !bizgoKey()) {
+    v = "solapi";
+    if (Date.now() - _vendorWarnAt > 600000) {
+      _vendorWarnAt = Date.now();
+      console.error("msgVendor fallback", VENDOR_PRODUCT, "bizgo key missing");
+      db.from("hq_audit").insert({ who: "server", action: "msgVendorFallback", product: VENDOR_PRODUCT, target_phone: "",
+        result: "비즈고 열쇠가 없어 솔라피로 보냄" }).then(() => {}, () => {});
+    }
+  }
+  return v;
+}
+/** 이 요청이 쓸 업체 — rid 가 붙은 보내기는 처음 고른 업체로 고정(SEND_MARK.vendor), 아니면 지금 고른 업체 */
+async function msgVendor(): Promise<MsgVendor> { const m = SEND_MARK.getStore(); return (m && m.vendor) || await vendorPick(); }
 function bizgoBase() { return String(Deno.env.get("BIZGO_ENV") ?? "").trim().toLowerCase() === "sandbox" ? BIZGO_HOSTS.sandbox : BIZGO_HOSTS.prod; }
 function bizgoKey() { return String(Deno.env.get("BIZGO_API_KEY") ?? "").trim(); }
 const bzDigits = (v: unknown) => String(v ?? "").replace(/[^0-9]/g, "");
@@ -4184,7 +4218,7 @@ async function solapi(method: string, path: string, payload?: unknown, meta?: Se
   const mark = isSend ? SEND_MARK.getStore() : undefined;
   const unk = (e: any) => { if (isSend) { e.sendUnknown = true; if (mark) mark.unk++; } return e; };
   let res: Response, body = "";
-  const viaBizgo = msgVendor() === "bizgo";
+  const viaBizgo = (await msgVendor()) === "bizgo";
   if (viaBizgo && !isSend && /^\/storage\//.test(path)) return {};                         // 비즈고: 사진 올리기 없음 → 사진 없이 LMS
   if (viaBizgo && !isSend && method === "DELETE") throw new Error("비즈고는 예약 취소를 아직 못 해요");
   try {
@@ -5023,7 +5057,7 @@ async function idemRun(tenant: string, who: string, fn: string, rid: string, run
   if (!key.tenant || !key.who) { if (send) throw new Error(IDEM_LATER); return await run(); }
   const mine = (q: any) => q.eq("product", "check").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
   const at = new Date().toISOString();                                       // 이 처리의 표시(나중에 끝낼 때 «내 줄»인지 확인)
-  let vend: MsgVendor = vendorEnv();                                        // v55: 처음 고른 문자 업체(줄에 적어 둠)
+  let vend: MsgVendor = await vendorPick();                                        // v55: 처음 고른 문자 업체(줄에 적어 둠)
   const { error } = await db.from("cgg_idem").insert({ ...key, state: "run", at, result: { vendor: vend } });
   if (error && S((error as any).code) === "23505") {
     const { data: had, error: e2 } = await mine(db.from("cgg_idem").select("state,result,at")).maybeSingle();

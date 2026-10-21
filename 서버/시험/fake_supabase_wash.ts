@@ -18,7 +18,7 @@ class Q {
   constructor(public t: string) {}
   select(c = "*", o: any = {}) { if (this.op === "select") this.cols = c; else this.ret = true; this.head = !!o.head; this.cnt = !!o.count; return this; }
   insert(p: any) { this.op = "insert"; this.payload = p; return this; }
-  upsert(p: any) { this.op = "upsert"; this.payload = p; return this; }
+  upsert(p: any, o: { onConflict?: string } = {}) { this.op = "upsert"; this.payload = p; (this as any).conflict = o.onConflict || ""; return this; }
   update(p: any) { this.op = "update"; this.payload = p; return this; }
   delete() { this.op = "delete"; return this; }
   eq(k: string, v: any) { this.filters.push((r) => val(r, k) === v); return this; }
@@ -79,7 +79,12 @@ class Q {
         }
         return { data: null, error: null };
       }
-      for (const p of [].concat(this.payload)) tbl.push({ ...(p as Row) });
+      /* sb30 시험: onConflict 를 준 upsert 는 같은 열쇠 줄을 바꿈(cgg_msg_vendor 등) — 안 주면 예전처럼 덧붙임 */
+      const ck = (this as any).conflict ? String((this as any).conflict).split(",").map((x: string) => x.trim()) : [];
+      for (const p of [].concat(this.payload) as Row[]) {
+        const hit0 = this.op === "upsert" && ck.length ? tbl.find((r) => ck.every((k: string) => r[k] === p[k])) : null;
+        if (hit0) Object.assign(hit0, p); else tbl.push({ ...(p as Row) });
+      }
       return { data: null, error: null };
     }
     if (this.op === "update") {

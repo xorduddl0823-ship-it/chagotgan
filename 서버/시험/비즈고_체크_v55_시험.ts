@@ -96,6 +96,20 @@ check("비즈고에 check_remind 코드 없음 → 매일 자동 거절(솔라�
 store.wash_hq[0].ata_cfg.bizgo.tpl.check_remind = "BZ_REMIND";
 const rs2 = await call("remindRuleSave", [{ steps: [30, 15, 7], auto: true }]);
 check("비즈고 코드가 생기면 켜짐", rs2.result?.ok === true, rs2);
+
+console.log("⑤ 관리 화면 값(표 cgg_msg_vendor)으로 고름 — 체크 줄만 봄");
+Deno.env.delete("MSG_VENDOR");
+(store as any).cgg_msg_vendor = [{ product: "wash", vendor: "solapi" }, { product: "check", vendor: "bizgo" }];
+(store as any).hq_audit = [];
+fresh(); b0 = bz.length; s0 = sol;
+const d1 = await bill(rid());
+check("표: 체크=비즈고(워시=솔라피는 상관없음) → 비즈고로", d1.result?.sent === 1 && bz.length === b0 + 1 && sol === s0, d1);
+Deno.env.delete("BIZGO_API_KEY");
+fresh(); b0 = bz.length; s0 = sol;
+const d2 = await bill(rid());
+check("비즈고인데 열쇠 없음 → 솔라피로 보내고 hq_audit 에 남김", d2.result?.sent === 1 && sol === s0 + 1 && bz.length === b0 &&
+  (store as any).hq_audit.some((x: any) => x.action === "msgVendorFallback" && x.product === "check"), [d2, (store as any).hq_audit]);
+Deno.env.set("BIZGO_API_KEY", "BZKEY-test-only");
 check("판 v55", /v55/.test(JSON.stringify(await call("ping"))));
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
