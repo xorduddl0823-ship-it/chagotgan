@@ -1,6 +1,6 @@
 // 격리 시험 환경 공통 값 — 가짜 업체·열쇠·번호(운영 자료 아님). 세 서버와 시험기 실행기가 같은 값을 씀.
 export const V = {
-  WA_SHOP: "TSTA", WB_SHOP: "TSTB", WA_REC: "recA1", WA_PHOTO: "sb/TSTA/202610/a1.jpg", WA_BIZ: "8761202709",
+  WA_SHOP: "TSTA", WB_SHOP: "TSTB", WA_REC: "recA1", WA_PHOTO: "sb/TSTA/202610/a1.jpg", WA_BIZ: "1234567890",
   WA_TOKEN: "wa".repeat(24), WB_TOKEN: "wb".repeat(24), WA_PHONE: "01000000011", WB_PHONE: "01000000012",
   CA_OFFICE: "TESTA", CB_OFFICE: "TESTB", CA_TOKEN: "chk_" + "ca".repeat(22), CB_TOKEN: "chk_" + "cb".repeat(22),
   CA_INVOICE: "invA1", CA_YM: "2026-10", CA_DELIV_PHOTO: "phA1", CA_CAR: "carA1",

@@ -17,8 +17,7 @@ one "회귀 체크 v54 도착 알림(대체 문자·확인 중)" dc 알림톡_�
 one "회귀 체크 v54 도착·출고 안내"              dc 체크v34_도착_출고안내_시험.ts
 one "회귀 워시 sb29 중복 사업자번호"             dw 중복사업자번호_워시_sb29_시험.ts
 one "회귀 체크 v54 중복 사업자번호"             dc 체크v53_중복사업자번호_시험.ts
-v33(){ o=$(CHECK_SRC="$C" deno run -A --no-lock --import-map="$T/import_map_check.json" "$T/체크v33_청구서보내기_재검사알림_시험.ts" 2>&1); echo "$o"; echo "$o" | grep -q "37개 통과, 1개 실패"; }
-one "회귀 체크 v54 재검사·청구서(v33 시험 · «판 v33» 1개만 실패가 정상)" v33
+one "회귀 체크 v54 재검사·청구서(v33 시험 · 판 이름은 v54 로 맞춤)" dc 체크v33_청구서보내기_재검사알림_시험.ts
 one "회귀 딜러 d9 업체 격리"                    dd 업체격리_딜러_d9_시험.ts
 if [ -n "${PGHOST:-}" ] && command -v psql >/dev/null; then
   one "DB SQL 26 상태 넷·동시 다시 잡기(진짜 PostgreSQL)" bash "$T/sql/멱등키_DB_시험.sh"

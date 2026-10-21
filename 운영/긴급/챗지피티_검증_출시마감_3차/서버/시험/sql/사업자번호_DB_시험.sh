@@ -22,18 +22,18 @@ $P -f "$Q/급한고침_사업자번호_잠금.sql" >/dev/null 2>&1
 $P -f "$Q/24_사업자번호_겹침_막기.sql" >/dev/null 2>&1; $P -f "$Q/24_사업자번호_겹침_막기.sql" >/tmp/cgg24.out 2>&1
 ok "24번 두 번 실행해도 오류 없음 · 모두 켜짐" "$(none "$(grep -c 'ERROR' /tmp/cgg24.out)")" "$(grep ERROR /tmp/cgg24.out | head -2)"
 echo "■ 서버 계정(service_role)으로 남의 번호 넣기"
-ok "B 업체에 A 번호" "$(err "update wash_shops set biz_no='876-12-02709' where shop='WT01'")" ""
-ok "새 업체를 A 번호로" "$(err "insert into wash_shops (shop,name,biz_no) values ('NEW1','새','8761202709')")" ""
-ok "다른 종사업장(0002)이라도 승인 없으면 거절" "$(err "update wash_shops set biz_no='8761202709', biz_sub='0002' where shop='WT01'")" ""
-ok "체크 검사소에 A 번호(팝빌 번호로)" "$(err "update check_office set popbill_corp='8761202709' where code='GAON'")" ""
+ok "B 업체에 A 번호" "$(err "update wash_shops set biz_no='123-45-67890' where shop='WT01'")" ""
+ok "새 업체를 A 번호로" "$(err "insert into wash_shops (shop,name,biz_no) values ('NEW1','새','1234567890')")" ""
+ok "다른 종사업장(0002)이라도 승인 없으면 거절" "$(err "update wash_shops set biz_no='1234567890', biz_sub='0002' where shop='WT01'")" ""
+ok "체크 검사소에 A 번호(팝빌 번호로)" "$(err "update check_office set popbill_corp='1234567890' where code='GAON'")" ""
 ok "본사 번호" "$(err "update wash_shops set biz_no='1112233333' where shop='WT01'")" ""
 echo "■ 본사 승인 뒤"
-$P -c "insert into check_office (code,name) values ('NEWC','새검사소'); insert into biz_share_ok (product, code, biz_no, biz_sub, by_who) values ('check','NEWC','8761202709','0000','시험')" >/dev/null
-$S -c "update check_office set biz_no='8761202709' where code='NEWC'" >/dev/null 2>&1
-ok "승인된 체크 검사소는 같은 번호(다른 제품) 연결됨" "$($P -Atc "select count(*) from check_office where code='NEWC' and biz_no='8761202709'")" ""
-$P -c "insert into biz_share_ok (product, code, biz_no, biz_sub, by_who) values ('wash','WT01','8761202709','0002','시험')"
-ok "승인돼도 같은 제품 · 같은 키(번호+0000)는 금지" "$(err "update wash_shops set biz_no='8761202709', biz_sub='0000' where shop='WT01'")" ""
-$S -c "update wash_shops set biz_no='8761202709', biz_sub='0002' where shop='WT01'" >/dev/null 2>&1
+$P -c "insert into check_office (code,name) values ('NEWC','새검사소'); insert into biz_share_ok (product, code, biz_no, biz_sub, by_who) values ('check','NEWC','1234567890','0000','시험')" >/dev/null
+$S -c "update check_office set biz_no='1234567890' where code='NEWC'" >/dev/null 2>&1
+ok "승인된 체크 검사소는 같은 번호(다른 제품) 연결됨" "$($P -Atc "select count(*) from check_office where code='NEWC' and biz_no='1234567890'")" ""
+$P -c "insert into biz_share_ok (product, code, biz_no, biz_sub, by_who) values ('wash','WT01','1234567890','0002','시험')"
+ok "승인돼도 같은 제품 · 같은 키(번호+0000)는 금지" "$(err "update wash_shops set biz_no='1234567890', biz_sub='0000' where shop='WT01'")" ""
+$S -c "update wash_shops set biz_no='1234567890', biz_sub='0002' where shop='WT01'" >/dev/null 2>&1
 ok "승인된 다른 종사업장(0002)은 들어감" "$($P -Atc "select count(*) from wash_shops where shop='WT01' and biz_sub='0002'")" ""
 $P -c "update wash_shops set biz_no=null, biz_sub=null where shop='WT01'; delete from biz_share_ok where code='WT01'" >/dev/null
 echo "■ 동시에 같은 번호"
@@ -49,17 +49,17 @@ ok "번호를 안 바꾸는 저장은 그대로" "$($P -Atc "select count(*) fro
 $P -c "update wash_shops set biz_no='9990001111' where shop='RACE2'" >/dev/null 2>&1
 ok "본사(SQL Editor)는 고칠 수 있음" "$($P -Atc "select count(*) from wash_shops where shop='RACE2' and biz_no='9990001111'")" ""
 echo "■ 25 정리안(B만 · 연습/진짜/되돌리기)"
-$P -f "$D/가짜_운영표.sql" >/dev/null 2>&1; $P -c "update wash_shops set biz_no='876-12-02709', ceo='정대봉', pb_id='x' where shop='WT01'" >/dev/null
+$P -f "$D/가짜_운영표.sql" >/dev/null 2>&1; $P -c "update wash_shops set biz_no='123-45-67890', ceo='정대봉', pb_id='x' where shop='WT01'" >/dev/null
 ok "업체코드 안 넣으면 멈춤" "$(some "$($P -f "$Q/25_중복사업자번호_정리안_승인뒤.sql" 2>&1 | grep -c '멈춤')")" ""
 sed "s/여기에_B_업체코드/WT01/" "$Q/25_중복사업자번호_정리안_승인뒤.sql" > /tmp/cgg25b.sql
 $P -f /tmp/cgg25b.sql >/dev/null 2>&1
-ok "연습(rollback)은 아무것도 안 바꿈" "$($P -Atc "select count(*) from wash_shops where shop='WT01' and biz_no='876-12-02709'")" ""
+ok "연습(rollback)은 아무것도 안 바꿈" "$($P -Atc "select count(*) from wash_shops where shop='WT01' and biz_no='123-45-67890'")" ""
 sed 's/^rollback;   -- ← 연습.*/commit;/' /tmp/cgg25b.sql > /tmp/cgg25c.sql; $P -f /tmp/cgg25c.sql >/dev/null 2>&1
-ok "진짜: B 업체표·화면설정만 비움 · A 그대로" "$($P -Atc "select ((select count(*) from wash_shops where shop='WT01' and biz_no is null and pb_id is null)=1 and (select count(*) from wash_shops where shop='BRO1' and biz_no='8761202709')=1 and (select data->'supplier'->>'bizNo' from wash_docs where shop='WT01' and id='config')='' and (select data->'supplier'->>'bizNo' from wash_docs where shop='BRO1' and id='config')='8761202709')::int")" ""
+ok "진짜: B 업체표·화면설정만 비움 · A 그대로" "$($P -Atc "select ((select count(*) from wash_shops where shop='WT01' and biz_no is null and pb_id is null)=1 and (select count(*) from wash_shops where shop='BRO1' and biz_no='1234567890')=1 and (select data->'supplier'->>'bizNo' from wash_docs where shop='WT01' and id='config')='' and (select data->'supplier'->>'bizNo' from wash_docs where shop='BRO1' and id='config')='1234567890')::int")" ""
 sed -n '/── 되돌리기/,$p' "$Q/25_중복사업자번호_정리안_승인뒤.sql" | sed 's/^-- //' | grep -v '되돌리기' > /tmp/cgg25r.sql; $P -f /tmp/cgg25r.sql >/dev/null 2>&1
-ok "되돌리기로 원래대로" "$($P -Atc "select ((select biz_no from wash_shops where shop='WT01')='876-12-02709' and (select data->'supplier'->>'bizNo' from wash_docs where shop='WT01' and id='config')='876-12-02709')::int")" ""
+ok "되돌리기로 원래대로" "$($P -Atc "select ((select biz_no from wash_shops where shop='WT01')='123-45-67890' and (select data->'supplier'->>'bizNo' from wash_docs where shop='WT01' and id='config')='123-45-67890')::int")" ""
 echo "■ 운영에 이미 겹친 줄이 있을 때(업체표에도 B가 A 번호) — 24번이 실패하지 않고 새 줄만 막음"
-$P -f "$D/가짜_운영표.sql" >/dev/null 2>&1; $P -c "update wash_shops set biz_no='876-12-02709' where shop='WT01'" >/dev/null
+$P -f "$D/가짜_운영표.sql" >/dev/null 2>&1; $P -c "update wash_shops set biz_no='123-45-67890' where shop='WT01'" >/dev/null
 $P -f "$Q/급한고침_사업자번호_잠금.sql" >/dev/null 2>&1
 before=$($P -Atc "select md5(string_agg(t::text, '|' order by t::text)) from (select shop,name,biz_no,ceo,pb_id from wash_shops) t")
 $P -f "$Q/24_사업자번호_겹침_막기.sql" >/tmp/cgg24b.out 2>&1
@@ -68,7 +68,7 @@ after=$($P -Atc "select md5(string_agg(t::text, '|' order by t::text)) from (sel
 ok "기존 줄(겹친 A·B 포함)은 한 글자도 안 바뀜" "$([ "$before" = "$after" ] && echo 1 || echo 0)" ""
 ok "색인은 켜짐 · 겹친 두 곳만 빼 둠" "$($P -Atc "select (pg_get_indexdef('wash_shops_biz_uq'::regclass) like '%<> ALL%' and pg_get_indexdef('wash_shops_biz_uq'::regclass) like '%BRO1%' and pg_get_indexdef('wash_shops_biz_uq'::regclass) like '%WT01%')::int")" ""
 ok "겹친 두 곳이 승인 대기로 표시됨" "$($P -Atc "select (count(*)=2)::int from biz_share_req where state='wait' and memo like '24번 실행 때%'")" ""
-ok "세 번째 업체는 그 번호 거절" "$(err "insert into wash_shops (shop,name,biz_no) values ('NEW3','셋째','8761202709')")" ""
+ok "세 번째 업체는 그 번호 거절" "$(err "insert into wash_shops (shop,name,biz_no) values ('NEW3','셋째','1234567890')")" ""
 $S -c "update wash_shops set name='브라더광택2' where shop='BRO1'" >/dev/null 2>&1
 ok "겹친 A의 다른 칸 저장은 그대로 됨(손님 영업 안 멈춤)" "$($P -Atc "select count(*) from wash_shops where shop='BRO1' and name='브라더광택2'")" ""
 $P -f "$Q/24_사업자번호_겹침_막기.sql" >/dev/null 2>&1; $P -f "$Q/24_사업자번호_겹침_막기.sql" >/dev/null 2>&1

@@ -20,11 +20,11 @@ grant usage on all sequences in schema public to service_role;
 insert into wash_hq values (1, '1112233333');
 -- A = 진짜 손님(브라더광택) · B = 대표님 시험(워시테스트)
 insert into wash_shops (shop,name,owner_phone,ceo,biz_no,plan,biz_ok_at,created_at) values
- ('BRO1','브라더광택','01012345678','정대봉','8761202709','pro', now(), now() - interval '2 day'),
+ ('BRO1','브라더광택','01012345678','정대봉','1234567890','pro', now(), now() - interval '2 day'),
  ('WT01','워시테스트','01066555545','이택영', null,'trial', null, now() - interval '5 day');
 insert into wash_docs values
- ('BRO1', false, 'settings', 'config', '{"supplier":{"bizName":"브라더광택","bizNo":"8761202709","ceo":"정대봉"}}'),
- ('WT01', false, 'settings', 'config', '{"supplier":{"bizName":"브라더 세차 광백","bizNo":"876-12-02709","ceo":"정대봉"}}'),
+ ('BRO1', false, 'settings', 'config', '{"supplier":{"bizName":"브라더광택","bizNo":"1234567890","ceo":"정대봉"}}'),
+ ('WT01', false, 'settings', 'config', '{"supplier":{"bizName":"브라더 세차 광백","bizNo":"123-45-67890","ceo":"정대봉"}}'),
  ('WT01', false, 'settings', 'bak_1', '{"supplier":{"bizName":"워시테스트","bizNo":"","ceo":"이택영"}}'),
  ('BRO1', false, 'intakes', 'i1', '{"plate":"11가1111"}'),
  ('WT01', false, 'intakes', 't1', '{"plate":"22가2222"}');

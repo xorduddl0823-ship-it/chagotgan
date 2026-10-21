@@ -30,7 +30,7 @@ declare
   b_shop  text := '여기에_B_업체코드';     -- 23번 결과의 B 업체코드(예: WT01)
   b_name  text := '워시테스트';
   b_tail4 text := '5545';                 -- B 대표 휴대폰 끝 4자리
-  num     text := '8761202709';           -- 정리할 사업자번호
+  num     text := '1234567890';           -- 정리할 사업자번호
   ok int; n1 int := 0; n2 int := 0;
 begin
   select count(*) into ok from wash_shops
@@ -64,8 +64,8 @@ select s.shop as 업체, s.name as 이름,
                    from wash_docs d where d.shop = s.shop and d.col = 'settings' and d.id = 'config' and not d.demo), '-') as 화면설정_번호
   from wash_shops s
  where s.shop in (select key1 from biz_fix_20261019)
-    or regexp_replace(coalesce(s.biz_no,''),'[^0-9]','','g') = '8761202709'
-    or s.shop in (select d.shop from wash_docs d where d.col = 'settings' and regexp_replace(coalesce(d.data->'supplier'->>'bizNo',''),'[^0-9]','','g') = '8761202709');
+    or regexp_replace(coalesce(s.biz_no,''),'[^0-9]','','g') = '1234567890'
+    or s.shop in (select d.shop from wash_docs d where d.col = 'settings' and regexp_replace(coalesce(d.data->'supplier'->>'bizNo',''),'[^0-9]','','g') = '1234567890');
 
 rollback;   -- ← 연습. 승인 뒤 진짜로 하려면 이 줄을 commit; 으로 바꿔요.
 

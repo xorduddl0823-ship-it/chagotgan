@@ -8,7 +8,7 @@ Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake");
 Deno.env.set("OPEN_SIGNUP", "1");
 const far = new Date(Date.now() + 864e5).toISOString();
 const A = "a".repeat(48), B = "b".repeat(48), ADM = "c".repeat(48), C1 = "d".repeat(48), C2 = "e".repeat(48);
-const NUM = "8761202709";   // 시험용 번호(실제 업체 자료 아님)
+const NUM = "1234567890";   // 시험용 번호(실제 업체 자료 아님)
 Object.assign(store, {
   wash_hq: [{ id: 1, biz_no: "1112233333" }], biz_share_req: [], biz_share_ok: [], hq_audit: [], cgg_access: [], wash_viewcode: [], wash_otp: [], cgg_sendlog: [], wash_invites: [],
   wash_shops: [
@@ -52,7 +52,7 @@ const lastWrite = () => [...rpcLog].reverse().find((x) => x.fn === "wash_write")
 const MSG = /이미 등록된 사업자번호예요/;
 
 console.log("① 남의 번호 넣기 — 서버 업체표");
-let r = await call("shopBiz", [{ bizNo: "876-12-02709", ceo: "가대표" }], B, "SHB1");
+let r = await call("shopBiz", [{ bizNo: "123-45-67890", ceo: "가대표" }], B, "SHB1");
 check("B가 A 번호로 저장 → 거절 · 확정 안내 글", !!r.__err && MSG.test(r.__err) && !shopRow("SHB1").biz_no, r);
 r = await call("shopBiz", [{ bizNo: "1112233333" }], B, "SHB1");
 check("본사 번호도 거절", !!r.__err && !shopRow("SHB1").biz_no, r);
@@ -89,7 +89,7 @@ check("거절하면 번호 안 들어감 · 상태 거절 · 기록", r.result?.
 
 console.log("② 남의 번호 넣기 — 화면 설정(«우리 사업장»)");
 rpcLog.length = 0;
-r = await call("apiSet", ["settings", "config", JSON.stringify({ supplier: { bizName: "브라더 세차 광백", bizNo: "876-12-02709", ceo: "가대표" }, x: 1 })], B, "SHB1");
+r = await call("apiSet", ["settings", "config", JSON.stringify({ supplier: { bizName: "브라더 세차 광백", bizNo: "123-45-67890", ceo: "가대표" }, x: 1 })], B, "SHB1");
 let w = lastWrite()?.p_rows?.[0]?.data ?? {};
 check("B 설정 저장은 되지만 남의 사업자번호는 지워서 저장 (화면에 안 남음)", r.result?.ok === true && w.supplier?.bizNo === "" && w.x === 1, w);
 rpcLog.length = 0;

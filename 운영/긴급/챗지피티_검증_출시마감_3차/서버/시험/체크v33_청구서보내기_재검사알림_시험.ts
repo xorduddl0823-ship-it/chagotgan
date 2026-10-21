@@ -175,7 +175,7 @@ check("remindOff({carIds, off}) 다시 넣기", r.n === 1 && store.check_car.fin
 r = await call("invoiceView", ["k" + inv("i2").view_key]);
 check("invoiceView 답에 invoice·rows·office 도 함께", !!r.invoice && r.invoice.total_amount === 50000 && Array.isArray(r.rows) && !!r.office && r.total === 50000, r);
 r = await call("ping");
-check("판 v33", /v33/.test(JSON.stringify(r)), r);
+check("판 v54(묶음 판에 맞춤)", /v54/.test(JSON.stringify(r)), r);
 
 console.log(`\n결과: ${pass}개 통과, ${fail}개 실패`);
 if (fail) Deno.exit(1);

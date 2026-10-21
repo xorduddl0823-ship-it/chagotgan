@@ -6,7 +6,7 @@ Deno.env.set("SUPABASE_URL", "http://fake.local");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake");
 const SRC = Deno.env.get("CHECK_SRC") ?? "../2_차곳간체크_서버_check-api_v53.ts";
 const day = new Date(Date.now() + 86400000).toISOString();
-const NUM = "8761202709";   // 시험용 번호(실제 업체 자료 아님)
+const NUM = "1234567890";   // 시험용 번호(실제 업체 자료 아님)
 Object.assign(store, {
   check_office: [
     { id: "oA", code: "OFFA", name: "시험검사소A", biz_no: NUM, popbill_corp: NUM, popbill_userid: "testpbA", tel: "031-000-0001" },
@@ -44,7 +44,7 @@ const off = (id: string) => store.check_office.find((o: any) => o.id === id);
 const MSG = /이미 등록된 사업자번호예요/;
 
 console.log("① 남의 번호·팝빌 아이디");
-let r = await call("officeSave", [{ biz_no: "876-12-02709" }], TK("b"));
+let r = await call("officeSave", [{ biz_no: "123-45-67890" }], TK("b"));
 check("B가 A 사업자번호로 저장 → 거절 · 확정 안내 글", !!r.__err && MSG.test(r.__err) && !off("oB").biz_no, r);
 r = await call("officeSave", [{ biz_no: "5556677777" }], TK("b"));
 check("워시 업체 번호도 거절", !!r.__err && !off("oB").biz_no, r);

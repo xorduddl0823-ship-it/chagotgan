@@ -8,7 +8,7 @@
 -- 조사할 번호는 맨 위 한 곳(p.n)에만 적혀 있어요.
 -- ============================================================
 
-with p as (select '8761202709'::text as n),
+with p as (select '1234567890'::text as n),
 mask as (select 1)
 -- ① 10/15 잠금 SQL이 운영에 실행됐는지 (켜짐/꺼짐)
 select '① 잠금·색인' as 표, x.항목, x.상태, null::text as c3, null::text as c4, null::text as c5, null::text as c6, null::text as c7
