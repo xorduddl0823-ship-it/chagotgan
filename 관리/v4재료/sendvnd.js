@@ -1,22 +1,22 @@
 /* ═══════ 알림 › 문자 · 알림톡 보내는 업체 (관리 v4.9.1 · 대표님 10/21) ═══════
    워시 · 체크를 따로 «솔라피 / 비즈고» 중에서 골라요. 바꾸면 이후 보내는 것부터 적용돼요.
-   서버 창구(이름 · 요청 · 답 모양)는 서버 방이 알려 줘요. 받으면 아래 SVND_API 두 이름만 채워요.
-   비어 있으면 화면 틀만 보이고 바꾸기 단추는 잠겨요 — 이 화면은 서버 함수를 만들지 않아요.
+   서버 창구 (워시 서버 sb30 · 서버 방 1affe7d · SQL 28 cgg_msg_vendor):
+     hqMsgVendor([])                                   → {ok, wash:"solapi"|"bizgo", check, force, bizgo:{key, sender, tpls, ok}, need?}
+     hqMsgVendorSet([{product:"wash"|"check", vendor:"solapi"|"bizgo"}]) → 위와 같은 모양 (본사만 · hq_audit 에 전→후)
+   force = 서버의 비상 설정이 있으면 그 업체가 먼저예요(화면에서 고른 값보다 앞). need = 서버 준비(SQL 28)가 아직.
    서버가 거절하면(예: «비즈고 준비가 안 됐어요») 그 글을 그대로 보여 줘요. */
-var SVND_API = {get:"", set:""};
-var SVND = {busy:false, err:"", rows:null, note:""};
+var SVND_API = {get:"hqMsgVendor", set:"hqMsgVendorSet"};
+var SVND = {busy:false, err:"", rows:null, note:"", st:null};
 var SVND_PROD = [["wash","워시"],["check","체크"]];
 var SVND_NAME = {solapi:"솔라피", bizgo:"비즈고"};
-function svndRow(r, p){   /* 답 모양이 정해지기 전이라 흔한 꼴을 모두 받아요 — 정해지면 이 함수만 좁혀요 */
-  var x = r && (r[p] || (Array.isArray(r.list)?r.list.filter(function(y){ return y && y.product===p; })[0]:null));
-  if(typeof x==="string") x = {vendor:x};
-  x = x || {};
-  return {vendor:String(x.vendor||x.provider||""), at:String(x.at||x.updatedAt||x.updated_at||""), by:String(x.by||x.who||x.updatedBy||"")};
+function svndRow(r, p){   /* 서버 답 {wash:"solapi", check:"bizgo", …} — 모르는 값은 «—» */
+  var v = r && SVND_NAME[r[p]] ? String(r[p]) : "";
+  return {vendor:v, at:String((r&&r[p+"At"])||""), by:String((r&&r[p+"By"])||"")};
 }
 function svndLoad(){
   if(!SVND_API.get){ SVND.rows=null; svndDraw(); return; }
   if(SVND.busy) return; SVND.busy=true;
-  api(SVND_API.get,[]).then(function(r){ SVND.err=""; SVND.rows={}; SVND_PROD.forEach(function(p){ SVND.rows[p[0]]=svndRow(r,p[0]); }); },
+  api(SVND_API.get,[]).then(function(r){ SVND.err=""; SVND.rows={}; SVND.st=r||{}; SVND_PROD.forEach(function(p){ SVND.rows[p[0]]=svndRow(r,p[0]); }); },
     function(e){ SVND.rows=null; SVND.err=emsg(e,"불러오지 못했어요. 다시 시도해 주세요."); })
   .then(function(){ SVND.busy=false; svndDraw(); });
 }
@@ -27,11 +27,14 @@ function svndDraw(){
     '<p class="lead" style="margin:2px 0 12px">워시와 체크가 문자 · 알림톡을 어느 업체로 보낼지 따로 골라요. 바꾸면 이후 보내는 것부터 적용돼요.</p>'+
     (!SVND_API.get?'<div class="hint" style="margin:0 0 10px">서버 준비가 끝나면 여기서 바꿀 수 있어요. 지금은 바꿀 수 없어요.</div>':'')+
     (SVND.err?'<div class="hint" style="margin:0 0 10px;color:var(--stop)">'+esc(SVND.err)+'</div>':'')+
+    (SVND.st&&SVND.st.need?'<div class="hint" style="margin:0 0 10px;color:var(--chk)">서버 준비가 아직 덜 됐어요(SQL 28). 지금은 모두 솔라피로 보내요.</div>':'')+
+    (SVND.st&&SVND.st.force?'<div class="hint" style="margin:0 0 10px;color:var(--chk)">서버 비상 설정이 켜져 있어서, 여기서 고른 값보다 «'+esc(SVND_NAME[SVND.st.force]||SVND.st.force)+'»가 먼저 쓰여요.</div>':'')+
+    (SVND.st&&SVND.st.bizgo&&!SVND.st.bizgo.ok&&!SVND.note?'<div class="hint" style="margin:0 0 10px">비즈고는 아직 준비 전이에요 — '+[!SVND.st.bizgo.key&&"열쇠",!SVND.st.bizgo.sender&&"발신프로필 키",!SVND.st.bizgo.tpls&&"템플릿 코드"].filter(Boolean).join(" · ")+'가 없어요.</div>':'')+
     (SVND.note?'<div class="hint" style="margin:0 0 10px;color:var(--stop)">'+esc(SVND.note)+'</div>':'')+
     SVND_PROD.map(function(p){ var r=(SVND.rows&&SVND.rows[p[0]])||{vendor:"",at:"",by:""}, cur=r.vendor;
       return '<div class="svnd-row"><b class="pn">'+esc(p[1])+'</b>'+
         '<span class="now">지금 <span class="cgg-st '+(cur?"done":"run")+'">'+esc(SVND_NAME[cur]||cur||"—")+'</span></span>'+
-        '<span class="at">'+(r.at?esc(dt(r.at,true)):"바꾼 기록 없음")+(r.by?' · '+esc(r.by):'')+'</span>'+
+        '<span class="at">'+(r.at?esc(dt(r.at,true))+(r.by?' · '+esc(r.by):''):'')+'</span>'+
         '<span class="sw" role="group" aria-label="'+esc(p[1])+' 보내는 업체">'+["solapi","bizgo"].map(function(v){
           return '<button type="button" class="btn sm'+(cur===v?' primary':'')+'" data-svnd="'+p[0]+'" data-v="'+v+'" aria-pressed="'+(cur===v)+'"'+(ready&&cur!==v?'':' disabled')+'>'+SVND_NAME[v]+'</button>'; }).join("")+'</span></div>'; }).join("")+
     '</div>';
@@ -41,6 +44,6 @@ function svndDraw(){
       confirmBox(pn+" 문자 업체를 "+SVND_NAME[v]+"로 바꿔요",
         "제품: "+pn+"\n지금: "+(SVND_NAME[cur]||cur||"—")+"\n바꿀 업체: "+SVND_NAME[v]+"\n적용: 이후 보내는 것부터 적용돼요", SVND_NAME[v]+"로 바꾸기", false, function(){
         SVND.note="";
-        api(SVND_API.set,[p,v]).then(function(){ toast(pn+" 문자 업체를 "+SVND_NAME[v]+"로 바꿨어요"); svndLoad(); },
+        api(SVND_API.set,[{product:p, vendor:v}]).then(function(){ toast(pn+" 문자 업체를 "+SVND_NAME[v]+"로 바꿨어요"); svndLoad(); },
           function(e){ SVND.note=emsg(e,"바꾸지 못했어요. 다시 시도해 주세요."); toast(SVND.note,true); svndDraw(); }); }); }; });
 }
