@@ -190,6 +190,7 @@ check("이상한 제품 이름 → 거절", /워시·체크/.test(badp.__err || 
 const au0 = store.hq_audit.length;
 st = await call("hqMsgVendorSet", [{ product: "wash", vendor: "bizgo" }], undefined, ADM, "ADMIN");
 check("본사가 워시=비즈고로 바꿈 · 체크는 그대로 솔라피", st.result?.wash === "bizgo" && st.result?.check === "solapi" && store.cgg_msg_vendor.find((x: any) => x.product === "wash")?.vendor === "bizgo", st);
+check("보기에 바꾼 때·바꾼 사람(뒤 4자리만) · 체크는 바꾼 적 없음", !!st.result?.washAt && st.result?.washBy === "****9999" && !JSON.stringify(st.result).includes("01099999999") && st.result?.checkAt === "" && st.result?.checkBy === "", st.result);
 const au = store.hq_audit.slice(au0);
 check("hq_audit 에 누가·전→후(try → ok)", au.length === 2 && au.every((x: any) => x.action === "msgVendorSet" && x.product === "wash" && x.who === "01099999999" && x.detail?.before === "solapi" && x.detail?.after === "bizgo") && au[0].result === "try" && au[1].result === "ok", au);
 s0 = sol; b0 = bz.length;

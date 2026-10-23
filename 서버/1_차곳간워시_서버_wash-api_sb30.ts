@@ -1999,11 +1999,19 @@ async function bizgoReady() {
   return { key: !!bizgoKey(), sender: !!bz.pfId, tpls, ok: !!bizgoKey() && !!bz.pfId && tpls > 0 };
 }
 async function msgVendorState() {
-  const out: any = { ok: true, wash: "solapi", check: "solapi", force: vendorForce(), bizgo: await bizgoReady() };
+  const out: any = { ok: true, wash: "solapi", check: "solapi", washAt: "", washBy: "", checkAt: "", checkBy: "", force: vendorForce(), bizgo: await bizgoReady() };
+  /* 바꾼 사람은 가림 — 전화번호면 뒤 4자리만(****1234) · 그 밖은 «-» */
+  const who = (v: unknown) => { const d = digits(v); return d.length >= 4 ? "****" + d.slice(-4) : (String(v ?? "").trim() ? "-" : ""); };
   try {
-    const { data, error } = await sb.from("cgg_msg_vendor").select("product,vendor");
+    const { data, error } = await sb.from("cgg_msg_vendor").select("product,vendor,updated_at,by_who");
     if (error) out.need = "SQL 28";
-    (data || []).forEach((r: any) => { if ((r.product === "wash" || r.product === "check") && (r.vendor === "bizgo" || r.vendor === "solapi")) out[r.product] = r.vendor; });
+    (data || []).forEach((r: any) => {
+      if ((r.product === "wash" || r.product === "check") && (r.vendor === "bizgo" || r.vendor === "solapi")) {
+        out[r.product] = r.vendor;
+        out[r.product + "At"] = String(r.updated_at || "");
+        out[r.product + "By"] = who(r.by_who);
+      }
+    });
   } catch (_) { out.need = "SQL 28"; }
   _vendorBox = { at: Date.now(), v: out.wash };      // 관리 화면에서 본 값으로 이 서버 기억도 새로
   return out;
@@ -6551,7 +6559,8 @@ const UFN: Record<string, (shop: string, a: any[], ss: any) => Promise<unknown>>
              vendor: await vendorPick(), bizgo: { senderSet: !!bz.pfId, tpls: Object.fromEntries(keys.map((k) => [k, bz.tpl[k] || ""])) },
              ready: Object.keys(ATA_TPL), stats };
   },
-  /* sb30(대표님 10/21): 문자 업체 고르기 보기 — [] → { ok, wash, check, force, bizgo:{key, sender, tpls, ok} }
+  /* sb30(대표님 10/21): 문자 업체 고르기 보기 — [] → { ok, wash, check, washAt, washBy, checkAt, checkBy, force, bizgo:{key, sender, tpls, ok} }
+     washAt/checkAt = 바꾼 때(ISO) · washBy/checkBy = 바꾼 사람(뒤 4자리만 «****1234») · 바꾼 적 없으면 ""
      wash/check = 관리 화면에서 고른 값(표 cgg_msg_vendor · 없으면 "solapi") · force = 비상용 비밀값 MSG_VENDOR(있으면 이게 먼저) */
   hqMsgVendor: async (shop, _a, ss) => {
     hqOnly(shop, ss);

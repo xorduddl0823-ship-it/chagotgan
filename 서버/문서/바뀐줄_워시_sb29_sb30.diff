@@ -1,5 +1,5 @@
 --- "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb29.ts"	2026-10-19 11:52:52.379309108 +0000
-+++ "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb30.ts"	2026-10-21 23:56:49.209891117 +0000
++++ "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb30.ts"	2026-10-23 00:07:48.979618903 +0000
 @@ -10,6 +10,7 @@
  //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
  //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
@@ -213,7 +213,7 @@
        const j: any = await solapi("GET", "/messages/v4/list?messageId=" + encodeURIComponent(String(r.msg_id)));
        const ml = j && j.messageList;
        const m = Array.isArray(ml) ? ml[0] : (ml && typeof ml === "object" ? (ml[String(r.msg_id)] || ml[Object.keys(ml)[0]]) : null);
-@@ -1823,19 +1974,40 @@
+@@ -1823,19 +1974,48 @@
     sb5 알림톡 (카카오) — 템플릿 코드는 관리 설정(wash_hq.ata_cfg.tpl)에서 읽습니다.
     ata_cfg = { pfId?: "채널 ID(없으면 비밀값 PF_ID)", tpl: { otp: "KA01TP…", charge: "…", … } }
     ========================================================= */
@@ -247,11 +247,19 @@
 +  return { key: !!bizgoKey(), sender: !!bz.pfId, tpls, ok: !!bizgoKey() && !!bz.pfId && tpls > 0 };
 +}
 +async function msgVendorState() {
-+  const out: any = { ok: true, wash: "solapi", check: "solapi", force: vendorForce(), bizgo: await bizgoReady() };
++  const out: any = { ok: true, wash: "solapi", check: "solapi", washAt: "", washBy: "", checkAt: "", checkBy: "", force: vendorForce(), bizgo: await bizgoReady() };
++  /* 바꾼 사람은 가림 — 전화번호면 뒤 4자리만(****1234) · 그 밖은 «-» */
++  const who = (v: unknown) => { const d = digits(v); return d.length >= 4 ? "****" + d.slice(-4) : (String(v ?? "").trim() ? "-" : ""); };
 +  try {
-+    const { data, error } = await sb.from("cgg_msg_vendor").select("product,vendor");
++    const { data, error } = await sb.from("cgg_msg_vendor").select("product,vendor,updated_at,by_who");
 +    if (error) out.need = "SQL 28";
-+    (data || []).forEach((r: any) => { if ((r.product === "wash" || r.product === "check") && (r.vendor === "bizgo" || r.vendor === "solapi")) out[r.product] = r.vendor; });
++    (data || []).forEach((r: any) => {
++      if ((r.product === "wash" || r.product === "check") && (r.vendor === "bizgo" || r.vendor === "solapi")) {
++        out[r.product] = r.vendor;
++        out[r.product + "At"] = String(r.updated_at || "");
++        out[r.product + "By"] = who(r.by_who);
++      }
++    });
 +  } catch (_) { out.need = "SQL 28"; }
 +  _vendorBox = { at: Date.now(), v: out.wash };      // 관리 화면에서 본 값으로 이 서버 기억도 새로
 +  return out;
@@ -259,7 +267,7 @@
  /* 템플릿별 변수와 대체 문구 — 2026-10-10 확정본(알림톡/00_확정본_13개_원문.md)과 글자까지 같게.
     통과 8개: 입고안내·출고안내·추가작업·청구서·입금확인(업체→거래처, 화면이 보냄) · 결제완료·충전완료·인증번호(서버가 보냄) */
  const ATA_TPL: Record<string, { name: string; vars: string[]; sms: string }> = {
-@@ -1901,8 +2073,9 @@
+@@ -1901,8 +2081,9 @@
    const out: Record<string, string> = {}, missing: string[] = [];
    (ATA_TPL[key]?.vars || []).forEach((n) => {
      const x = v[n] !== undefined ? v[n] : v["#{" + n + "}"];
@@ -271,7 +279,7 @@
    });
    return { vars: out, missing };
  }
-@@ -1926,7 +2099,7 @@
+@@ -1926,7 +2107,7 @@
    if (names.indexOf("업체전화") >= 0) v["업체전화"] = telOf((sh && (sh.sms_from || sh.owner_phone)) || "");
    delete v["#{업체명}"]; delete v["#{업체전화}"];
    /* sb8: 상사명이 비면 «개인» (「홍길동님(-)」 안 되게) */
@@ -280,7 +288,7 @@
    /* sb8: 접속주소는 화면 값을 버리고 열쇠 없는 직원용 주소로만 */
    if (names.indexOf("접속주소") >= 0) { v["접속주소"] = STAFF_URL; delete v["#{접속주소}"]; }
    if (names.indexOf("보기코드") < 0) return;
-@@ -6351,7 +6524,8 @@
+@@ -6351,7 +6532,8 @@
    /* sb7: 알림톡 템플릿 코드 보기 — 관리 화면(v4.1) 모양 [ym?] → {ok, pfSet, tpls:{키:코드}, stats} */
    hqAta: async (shop, a, ss) => {
      hqOnly(shop, ss);
@@ -290,14 +298,15 @@
      const ym = /^\d{4}-\d{2}$/.test(String(a[0] || "")) ? String(a[0])
        : (() => { const d = new Date(Date.now() + 9 * 3600e3); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - 1); return d.toISOString().slice(0, 7); })();
      const stats: any = { ym, ata: { cnt: 0, won: 0 }, sms: { cnt: 0, won: 0 }, lms: { cnt: 0, won: 0 }, mms: { cnt: 0, won: 0 } };
-@@ -6374,8 +6548,40 @@
+@@ -6374,8 +6556,41 @@
      } catch (_) { stats.error = "발송 기록을 읽지 못했습니다"; }
      const keys = ATA_KEYS;
      return { ok: true, pfSet: !!c.pfId, tpls: Object.fromEntries(keys.map((k) => [k, c.tpl[k] || ""])),
 +             vendor: await vendorPick(), bizgo: { senderSet: !!bz.pfId, tpls: Object.fromEntries(keys.map((k) => [k, bz.tpl[k] || ""])) },
               ready: Object.keys(ATA_TPL), stats };
    },
-+  /* sb30(대표님 10/21): 문자 업체 고르기 보기 — [] → { ok, wash, check, force, bizgo:{key, sender, tpls, ok} }
++  /* sb30(대표님 10/21): 문자 업체 고르기 보기 — [] → { ok, wash, check, washAt, washBy, checkAt, checkBy, force, bizgo:{key, sender, tpls, ok} }
++     washAt/checkAt = 바꾼 때(ISO) · washBy/checkBy = 바꾼 사람(뒤 4자리만 «****1234») · 바꾼 적 없으면 ""
 +     wash/check = 관리 화면에서 고른 값(표 cgg_msg_vendor · 없으면 "solapi") · force = 비상용 비밀값 MSG_VENDOR(있으면 이게 먼저) */
 +  hqMsgVendor: async (shop, _a, ss) => {
 +    hqOnly(shop, ss);
@@ -331,7 +340,7 @@
    /* sb7: 저장 — [{키:코드}] (ATA_KEYS(13개 + check_arrive)만 · 빈 값은 지움 · 64자) */
    hqAtaSave: async (shop, a, ss) => {
      hqOnly(shop, ss);
-@@ -6384,15 +6590,23 @@
+@@ -6384,15 +6599,23 @@
      const tpl: Record<string, string> = {};
      ATA_KEYS.forEach((k) => { const x = String((src && src[k]) || "").trim(); if (x) tpl[k] = x.slice(0, 64); });
      const next: any = { tpl };
@@ -360,7 +369,7 @@
      return { ok: true };
    },
    /* 손으로 한 통 보내기 — [업체(또는 "ME"), 문구번호] */
-@@ -7029,14 +7243,16 @@
+@@ -7029,14 +7252,16 @@
    if (!key.tenant || !key.who) { if (send) throw new Error(IDEM_LATER); return await run(); }
    const mine = (q: any) => q.eq("product", "wash").eq("tenant", key.tenant).eq("who", key.who).eq("fn", key.fn).eq("rid", rid);
    const at = new Date().toISOString();                                       // 이 처리의 표시(나중에 끝낼 때 «내 줄»인지 확인)
@@ -379,7 +388,7 @@
      if (had.state === "retry") q = q.eq("state", "retry").eq("at", had.at);                                   // 실패 확정 → 다시
      else if (!send && had.state === "run" && age > IDEM_STALE_MS) q = q.eq("state", "run").eq("at", had.at);  // 기록만: 끊긴 «처리 중»
      else if (!send && had.state === "done") q = q.eq("state", "done").eq("at", had.at);                       // 기록만: 하루 지난 열쇠
-@@ -7055,16 +7271,16 @@
+@@ -7055,16 +7280,16 @@
      return !e4 && Array.isArray(data) && data.length === 1;
    };
    const checking = (o: unknown) => o && typeof o === "object" && !Array.isArray(o) ? { ...(o as any), checking: true, unsure: true, checkMsg: IDEM_CHECK } : o;
@@ -399,7 +408,7 @@
      throw e;
    }
    if (send && mark.unk) {                            // 결과를 모름 → 답에 «확인 중» 표시 · 줄은 unknown
-@@ -7073,11 +7289,11 @@
+@@ -7073,11 +7298,11 @@
      return res;
    }
    if (send && !mark.ok) {                            // 문자 업체가 하나도 받지 않음(확정) → 같은 rid 로 다시 해도 안전
