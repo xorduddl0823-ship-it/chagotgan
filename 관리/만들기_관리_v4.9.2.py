@@ -37,9 +37,9 @@ rep('''  var todos = memoTodos.concat([''',
     [BSR.wait||0,"사업자번호 승인 요청", BSR.wait?"같은 번호로 두 번째 업체 · 제품을 쓰려는 요청":"같은 번호로 두 번째 업체 · 제품", go("bizreq"),"imp"],''')
 rep('''    desc:"오늘 "+(now.getMonth()+1)+"월 "+now.getDate()+"일 · "+pad2(now.getHours())+":"+pad2(now.getMinutes())+" 기준",''',
     '''    desc:"오늘 "+(now.getMonth()+1)+"월 "+now.getDate()+"일 · "+pad2(now.getHours())+":"+pad2(now.getMinutes())+" 기준",
-    notice:BSR.wait?('<b>사업자번호 승인 요청 '+(Number(BSR.wait)||0)+'건</b>이 기다리고 있어요. <button type="button" class="cgg-btn sm" id="bsGo">보러 가기</button>'):"",''')
+    notice:BSR.wait?'<div id="bsHomeBand"></div>':"",''')
 rep('''  /* 숫자 칸을 누르면 그 화면으로 (v4.8.3 그대로) */''',
-    '''  if($("bsGo")) $("bsGo").onclick=function(){ jgo("bizreq"); };
+    '''  if($("bsHomeBand")) CGG.todoBand($("bsHomeBand"),{count:BSR.wait, text:"사업자번호 승인 요청 "+(Number(BSR.wait)||0)+"건이 기다리고 있어요", tone:"chk", go:"해결하러 가기", onGo:function(){ jgo("bizreq"); }});
   /* 숫자 칸을 누르면 그 화면으로 (v4.8.3 그대로) */''')
 rep('''  shops:"업체별 요금제 · 이용 기한 · 상태를 보고,''', '''  shops:"업체별 요금제 · 이용 기한 · 상태를 보고, 같은 사업자번호 승인 요청을 처리하고,''')
 open(OUT, "w", encoding="utf-8").write(s)
