@@ -45,6 +45,9 @@ var F_USERS=[{phone:"admin",name:"한본사",shop:"ADMIN",shopName:"차곳간 �
  {phone:"01000002222",name:"박바다",shop:"SAEBIT",shopName:"새빛 성능장",role:"owner",active:true,last_login:dd(-1)+"T18:00:00",created_at:"2026-09-30"},
  {phone:"01000005555",name:"최들판",shop:"HANBIT",shopName:"한빛광택",role:"staff",active:false,last_login:dd(-20)+"T10:00:00",created_at:"2026-07-02"}];
 var F_MV={wash:"solapi",check:"solapi"};
+var F_BSR=[{id:3,at:dd(0)+"T09:12:00",product:"워시",code:"NEWW2",name:"한빛광택 2호점",bizNo:"0000000101",bizSub:"0000",who:"01000001111",state:"대기",decidedAt:"",memo:"",usedBy:["워시 HANBIT 한빛광택"]},
+ {id:2,at:dd(-1)+"T15:40:00",product:"체크",code:"SAEBIT",name:"새빛 성능검사소",bizNo:"0000000103",bizSub:"0001",who:"01000002222",state:"대기",decidedAt:"",memo:"",usedBy:["워시 SAEBIT 새빛 성능장"]},
+ {id:1,at:dd(-3)+"T11:00:00",product:"워시",code:"DURI2",name:"두리휠 서구점",bizNo:"0000000102",bizSub:"0000",who:"01000003333",state:"거절",decidedAt:dd(-2)+"T10:00:00",memo:"다른 사업자로 보임",usedBy:["워시 DURI 두리휠"]}];
 var F_PAYS=[{id:1,shop:"HANBIT",shopName:"한빛광택",amount:55000,status:"paid",period:YM0,paid_at:dd(-2)},
  {id:2,shop:"BAREUN",shopName:"바른 카모터스",amount:99000,status:"paid",period:YM0,paid_at:dd(-1)},
  {id:4,shop:"SAEBIT",shopName:"새빛 성능장",amount:66000,status:"paid",period:YM0,paid_at:dd(-1),product:"check"},
@@ -142,6 +145,9 @@ function FAKE(fn,a){
       {tag:"홈페이지",at:dd(-4)+"T20:10:00",shop:"DURI",shopName:"두리휠",kind:"월 요금",method:"카드",amount:77000,status:"paid",period:"~11/11",orderId:"CGG-HOME-0004",from:"홈페이지",first:true},
       {tag:"계좌 입금",at:dd(-6)+"T14:00:00",shop:"DURI",shopName:"두리휠",kind:"월 요금",method:"계좌이체",amount:77000,status:"입금 전",period:"",orderId:"",from:"관리",payId:3},
       {tag:"딜러 청구서",at:dd(-7)+"T18:00:00",shop:"HANBIT",shopName:"한빛광택",kind:"청구서",dealer:"대성상사",month:"2026-09",amount:1430000,refOnly:true,status:"입금 확인됨"}]};
+    case "hqBizShareList": { var st={"wait":"대기","ok":"승인","no":"거절"}[a&&a[0]]||""; return {ok:true,list:F_BSR.filter(function(x){ return !st||x.state===st; })}; }
+    case "hqBizShareDecide": { var bx=F_BSR.filter(function(x){ return x.id===Number(a[0]); })[0]; if(!bx) throw new Error("요청을 찾지 못했습니다"); if(bx.state!=="대기") throw new Error("이미 처리한 요청입니다");
+      if(a[1]===true&&bx.id===3) throw new Error("같은 제품에 같은 사업자번호·종사업장번호를 쓰는 곳이 이미 있어 승인할 수 없습니다"); bx.state=a[1]===true?"승인":"거절"; bx.memo=String(a[2]||""); bx.decidedAt=dd(0)+"T10:00:00"; return {ok:true,state:bx.state}; }
     case "hqMsgVendor": return {ok:true,wash:F_MV.wash,check:F_MV.check,force:"",bizgo:{key:false,sender:false,tpls:0,ok:false}};
     case "hqMsgVendorSet": { var mv=(a&&a[0])||{}; if(mv.vendor==="bizgo") throw new Error("비즈고 준비가 안 됐어요 — 열쇠(BIZGO_API_KEY) · 발신프로필 키 · 템플릿 코드를 먼저 넣어 주세요"); F_MV[mv.product]=mv.vendor; return {ok:true,wash:F_MV.wash,check:F_MV.check,force:"",bizgo:{key:false,sender:false,tpls:0,ok:false}}; }
     case "hqAta": return {ok:true,pfSet:true,ready:["intake","release","extra_work","bill","deposit_ok","pay_done","cash_done","auth","staff_link"],tpls:{auth:"KA01TP000000AUTH01",intake:"KA01TP000000IN0001",release:"KA01TP000000REL001",bill:"KA01TP000000BILL01",deposit_ok:"KA01TP000000DEP001"},
