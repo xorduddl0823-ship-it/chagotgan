@@ -1,0 +1,41 @@
+--- "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb30.ts"	2026-10-23 00:07:48.979618903 +0000
++++ "\354\204\234\353\262\204/1_\354\260\250\352\263\263\352\260\204\354\233\214\354\213\234_\354\204\234\353\262\204_wash-api_sb31.ts"	2026-10-25 07:41:30.918211794 +0000
+@@ -10,6 +10,7 @@
+ //   ANTHROPIC_ADMIN_KEY(선택), CF_API_TOKEN(선택), CF_ACCOUNT_ID(선택), SB_PAT(선택)
+ //     └ 관리 「유지비」 자동 읽기에만 씁니다. 없으면 그 줄만 «직접 적기» 로 남습니다.
+ // ※ 배포할 때 'Verify JWT' 는 꺼 주세요 (로그인 열쇠로 따로 확인합니다)
++// sb31 (2026-10-25) 관리 방·총괄: 본사 «같은 사업자번호 승인 요청» 목록(hqBizShareList)에 사업자번호는 가려서(앞 3 · 끝 2자리) · 요청한 사람 번호는 뒤 4자리만 — 승인·거절은 요청번호로 그대로
+ // sb30 (2026-10-21) 대표님: 문자 업체 고르기 — 비밀값 MSG_VENDOR = solapi | bizgo(없거나 다른 값이면 solapi) · 비즈고(인포뱅크 OMNI) 보내기·알림톡→문자 대체(한 요청 안)·결과 조회 · 업체별 템플릿 코드(ata_cfg.bizgo) · rid 는 처음 고른 업체로만 · 알림톡 변수 «-»도 빈 칸(상사명 «개인»)
+ // sb29 (2026-10-19) «확인 중» 이름 unsure(체크 v56.7·기사 v30 과 같음) · 발송 기록 result «unknown»(확인 중) ·
+ // sb29 (2026-10-19) 출시마감 3차: 문자 보내기(sendMsg)는 «한 번만 표»를 못 잡으면 보내지 않음(«잠시 뒤 다시») · 문자 업체가 받았는지 모름(시간 초과·응답 끊김·완료 저장 실패)은 «확인 중»으로 두고 자동으로 다시 보내지 않음 · 알림톡 응답을 모를 때는 문자로 바로 대신 보내지 않음 · 실패 확정만 같은 rid 로 다시 · 줄은 지우지 않고 조건을 건 한 번의 바꾸기로 다시 잡음 · 화면은 몸통 맨 위 rid 하나(sendKey 따로 안 받음)
+@@ -161,7 +162,7 @@
+ import { crypto as stdCrypto } from "jsr:@std/crypto@1";
+ import { encodeBase64, decodeBase64 } from "jsr:@std/encoding@1/base64";
+ 
+-const VER = "sb30";
++const VER = "sb31";
+ const sb = createClient(
+   Deno.env.get("SUPABASE_URL")!,
+   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+@@ -1992,6 +1993,9 @@
+   _ataBox = { at: Date.now(), v: { pfId: pf, tpl }, vendor: vd };
+   return _ataBox.v;
+ }
++/* sb31: 사업자번호 가림(앞 3자리 · 끝 2자리만 «876-**-***09») · 사람 번호는 뒤 4자리만(«****1234») */
++function bizMask(v: unknown) { const n = digits(v); return n.length >= 5 ? n.slice(0, 3) + "-**-***" + n.slice(-2) : (n ? "***" : ""); }
++function phoneTail(v: unknown) { const d = digits(v); return d.length >= 4 ? "****" + d.slice(-4) : (String(v ?? "").trim() ? "-" : ""); }
+ /* sb30: 비즈고 준비 — 열쇠 · 발신프로필 키 · 템플릿 코드 1개 이상(관리 화면에서 비즈고를 고를 수 있는 조건) */
+ async function bizgoReady() {
+   const bz = await ataCfg(true, "bizgo");
+@@ -5801,8 +5805,9 @@
+       (co || []).forEach((c: any) => { const n = digits(c.biz_no) || digits(c.popbill_corp); if (c.code) names["check:" + c.code] = String(c.name || ""); if (nums.includes(n)) (users[n] = users[n] || []).push("체크 " + c.code + " " + String(c.name || "") + (bizSub(c.biz_sub) !== "0000" ? " (종 " + bizSub(c.biz_sub) + ")" : "")); });
+     } catch (_) { /* 이름은 없어도 됨 */ }
+     return { ok: true, list: rows.map((r) => ({ id: Number(r.id), at: String(r.at || ""), product: r.product === "check" ? "체크" : "워시",
+-      code: String(r.code), name: names[r.product + ":" + r.code] || "", bizNo: String(r.biz_no), bizSub: String(r.biz_sub || "0000"),
+-      who: String(r.who || ""), state: r.state === "ok" ? "승인" : r.state === "no" ? "거절" : "대기",
++      /* sb31(관리 방 · 총괄): 목록에는 가린 번호만 — 승인·거절은 요청번호(id)로 하고 서버가 표에서 번호를 다시 읽으니 문제없음 */
++      code: String(r.code), name: names[r.product + ":" + r.code] || "", bizNo: bizMask(r.biz_no), bizSub: String(r.biz_sub || "0000"),
++      who: phoneTail(r.who), state: r.state === "ok" ? "승인" : r.state === "no" ? "거절" : "대기",
+       decidedAt: String(r.decided_at || ""), memo: String(r.memo || ""), usedBy: users[String(r.biz_no)] || [] })) };
+   },
+   /* sb28: 승인 요청 처리 — [요청번호, 승인(true)/거절(false), 메모] · 승인하면 그때 그 업체(검사소)에 번호를 넣음 · hq_audit 에 남김 */
