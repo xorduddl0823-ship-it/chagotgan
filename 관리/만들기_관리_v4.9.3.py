@@ -7,6 +7,7 @@
   단추 잇기 코드 글자는 한 글자도 안 바꿔요 → 돈 계산 · 서버 요청 · 확인 창은 그대로예요.
 - 대상 표 12개: tShops · tUsers · tPays · tInv · exShopT · pgT · tExp · tTax · tCw · tPR · tPW · tBiz
   (공지사항 · 잠금 표 · 사업자번호 승인 요청은 이미 바깥 칸 하나에서 받고 있어 그대로)
+- 결제 내역 옛 표(tPays)만 단추 고르는 글자를 줄 안 단추로 좁혀요 — 쪽 넘김 단추도 같은 이름표(data-p)라서 (검사 일꾼)
 """
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,10 +50,13 @@ rep("""    restore(old);
     bind();
     (TBIND[o.id]||[]).forEach(function(f){ try{ f(); }catch(e){} });""")
 
+# 결제 내역 표(tPays)의 줄 단추 이름표 data-p 가 표 아래 쪽 넘김 단추(data-p)와 같아요 — 줄 안 단추로만 좁혀요 (검사 일꾼)
+rep('Array.prototype.forEach.call($("tPays").querySelectorAll("button[data-p]"),',
+    'Array.prototype.forEach.call($("tPays").querySelectorAll(".cgg-acts-cell button[data-p],.cgg-mrow .ra button[data-p]"),')
 TARGETS = [   # (단추 잇기 코드 시작 글자, 표 이름)
     ('Array.prototype.forEach.call($("tShops").querySelectorAll("button[data-x]"),', "tShops"),
     ('Array.prototype.forEach.call($("tUsers").querySelectorAll("button[data-u]"),', "tUsers"),
-    ('Array.prototype.forEach.call($("tPays").querySelectorAll("button[data-p]"),', "tPays"),
+    ('Array.prototype.forEach.call($("tPays").querySelectorAll(".cgg-acts-cell button[data-p],.cgg-mrow .ra button[data-p]"),', "tPays"),
     ('Array.prototype.forEach.call($("tInv").querySelectorAll("button[data-i]"),', "tInv"),
     ('Array.prototype.forEach.call(document.querySelectorAll("[data-tog]"),', "exShopT"),
     ('Array.prototype.forEach.call(document.querySelectorAll("[data-refund]"),', "pgT"),

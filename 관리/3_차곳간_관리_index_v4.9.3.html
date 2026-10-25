@@ -4821,7 +4821,7 @@ function viewPaysOld(){
         return '<button class="btn sm" data-p="'+esc(r.id)+'">처리</button>'; }}
     ]
   });
-  tBind("tPays", function(){ Array.prototype.forEach.call($("tPays").querySelectorAll("button[data-p]"),function(b){
+  tBind("tPays", function(){ Array.prototype.forEach.call($("tPays").querySelectorAll(".cgg-acts-cell button[data-p],.cgg-mrow .ra button[data-p]"),function(b){
     b.onclick=function(e){ e.stopPropagation(); paySheet(b.getAttribute("data-p")); }; }); });
 }
 
