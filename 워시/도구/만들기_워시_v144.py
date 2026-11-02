@@ -1,8 +1,7 @@
 """워시 v143.1 → v144. 대표님 11/1 «통합이 아예 안 되어 있다» — 통합 디자인 11판(디자인/완성_미리보기.html · 공통 1.13.2)대로 모양만
 쓰는 법: python3 워시/도구/만들기_워시_v144.py  (v143.1 판 위에 덧붙임 — v143.1 은 덮어쓰지 않아요)
   바꾸지 않는 것: 돈 셈(돈 지문 그대로) · 서버 요청과 답 · 로그인 · rid · «확인 중» 처리.
-  1) 홈 숫자 4칸 = 11판 · 체크와 같은 «이번 달 차량 · 이번 달 청구 · 이번 달 입금 · 받을 금액»(숫자 검정, 아래 작은 글만 오름 초록 · 내림 빨강)
-     매니저(돈 화면 없음)는 지금처럼 «오늘 입고 · 작업 중 · 오늘 출고 · 거래 상사».
+  1) 홈 숫자 4칸 이름은 그대로(10/18 결정: 모양 · 자리는 같게, 이름은 제품 일에 맞게 — 총괄 11/1)
   2) 홈 할 일 아이콘 = 일 종류마다(자재 상자 · 작업 차 · 입금 지갑 · 청구서/계산서 문서 · 알림 종) — 11판과 같게
   3) 월별 청구서 = 11판 차례: 제목은 자료 문장(«10월 청구서 N명 · 0원») · 숫자 4칸은 카드 없이 · 표 아래 단추 3개 + «더 보기» ·
      «2. 청구서 보내기»와 «알림톡 미리보기» 두 칸(PC 나란히 · 폰 위아래)
@@ -31,31 +30,7 @@ function decideMode(init){
 
 # 1) 홈 숫자 4칸
 rep('''    kpis:jKpiItems(c.rows.reduce(function(t,r){return t+(r.total||0);},0)),''',
-'''    kpis:mgr?jKpiItems(c.rows.reduce(function(t,r){return t+(r.total||0);},0)):wKpi144(c),   /* v144 11판 4칸 */''')
-rep('''/* v122: CGG.kpis 에 넘길 값 — {label, value, unit, delta, down, spark, color} */''',
-'''/* v144 11판 · 체크와 같은 홈 4칸 — 이번 달 차량 · 이번 달 청구 · 이번 달 입금 · 받을 금액 (지난달과 견줌 · 7달 그래프 · 숫자는 검정)
-   값은 홈이 이미 셈한 c(rows · billed · paid · dueAmt)를 그대로 써요 — 새 돈 셈 없음 */
-function wKpi144(c){
-  var today=new Date(),M7=[],mi;
-  for(mi=6;mi>=0;mi--){var md=new Date(today.getFullYear(),today.getMonth()-mi,1);M7.push(md.getFullYear()+"-"+String(md.getMonth()+1).padStart(2,"0"));}
-  function mOf(r){return r.month||mKey(r.createdAt);}
-  function inM(k){return S.records.filter(function(r){return mOf(r)===k;});}
-  var cars=M7.map(function(k){return inM(k).length;});
-  var bill=M7.map(function(k){return inM(k).filter(function(r){var st=statusOf(r);return st==="출고"||st==="수금완료";}).reduce(function(t,r){return t+(Number(r.total)||0);},0);});
-  var got=M7.map(function(k){return inM(k).filter(function(r){return statusOf(r)==="수금완료";}).reduce(function(t,r){return t+(Number(r.total)||0);},0);});
-  var due=M7.map(function(k,i){return bill[i]-got[i];});
-  function pct(now,before){if(!before)return {delta:"",vs:"지난달 자료 없음"};var p=Math.round((now-before)/before*100);return {delta:(p>0?"+":p<0?"−":"±")+Math.abs(p)+"%",down:p<0,vs:"지난달보다"};}
-  function cnt(now,before){var x=now-before;return {delta:(x>0?"+":x<0?"−":"±")+Math.abs(x)+"대",down:x<0,vs:"지난달보다"};}
-  function it(label,val,unit,d,sp){return {label:label,value:val,unit:unit,delta:d.delta,down:d.down,vs:d.vs,spark:sp,color:"#0B2545"};}
-  var nCar=(c.rows||[]).length,nBill=Number(c.billed||0),nGot=Number(c.paid||0),nDue=Number(c.dueAmt||0);
-  return [
-    it("이번 달 차량",String(nCar),"대",cnt(nCar,cars[5]),cars),
-    it("이번 달 청구",nBill.toLocaleString("ko-KR"),"원",pct(nBill,bill[5]),bill),
-    it("이번 달 입금",nGot.toLocaleString("ko-KR"),"원",pct(nGot,got[5]),got),
-    it("받을 금액",nDue.toLocaleString("ko-KR"),"원",pct(nDue,due[5]),due)];
-}
-/* v122: CGG.kpis 에 넘길 값 — {label, value, unit, delta, down, spark, color} */''')
-
+'''    kpis:jKpiItems(c.rows.reduce(function(t,r){return t+(r.total||0);},0)),''')
 # 2) 할 일 아이콘 — 일 종류마다
 rep('''    return {tone:t[4]==="imp"?"stop":(memo?"chk":"run"),icon:memo?"file":"car",title:strip(t[1])+(memo?"":" "+t[0]+"건"),sub:strip(t[2])};});''',
 '''    var ti=strip(t[1]),kd=memo?["file","chk"]:wTodoIc(ti);   /* v144 11판: 일 종류마다 아이콘 */
@@ -129,7 +104,7 @@ rep('''.dashhead h2 em,.jsay em{font-style:normal;color:inherit}''', '''.dashhea
 .w144more>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;margin:0}
 .w144acts .w144more>summary.btn{padding:0 14px;height:43px;font-size:14.5px;border-radius:11px;background:var(--surface2);border:1px solid var(--line);box-sizing:border-box}   /* 옆 단추와 같은 모양 */
 .w144more>summary::-webkit-details-marker{display:none}
-.w144menu{position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:240px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;display:flex;flex-direction:column;gap:6px}
+.w144menu{position:absolute;z-index:30;bottom:calc(100% + 6px);left:0;min-width:240px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;display:flex;flex-direction:column;gap:6px}
 .w144menu .btn{width:100%;justify-content:flex-start}
 .w144two{background:none;border:0;box-shadow:none;padding:0}
 .w144two>.dash{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
@@ -137,7 +112,7 @@ rep('''.dashhead h2 em,.jsay em{font-style:normal;color:inherit}''', '''.dashhea
 .w144right>summary{font-size:16px;font-weight:800;list-style:none;margin-bottom:10px}
 .w144right>summary::-webkit-details-marker{display:none}
 .w144two .bm-go{position:static;margin-top:14px;border-radius:14px}
-@media (max-width:800px){.w144two>.dash{grid-template-columns:minmax(0,1fr)}}''')
+@media (max-width:800px){.w144two>.dash{grid-template-columns:minmax(0,1fr)}.w144more{display:block;width:100%}.w144menu{position:static;margin-top:6px;box-shadow:none}}   /* 폰: 더 보기는 아래로 펼침(체크 v57 과 같게) */''')
 _i = s.rfind("</body>"); s = s[:_i] + '''<script>/* v144 보내기 줄을 «2. 청구서 보내기» 칸 맨 아래로 (id 는 그대로라 하는 일은 같아요) */
 (function(){try{var g=document.getElementById("bmGo"),t=document.getElementById("w144goSlot");if(g&&t)t.appendChild(g);}catch(e){}})();</script>
 ''' + s[_i:]

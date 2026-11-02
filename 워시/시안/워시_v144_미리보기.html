@@ -5294,7 +5294,7 @@ function wHome(c){
     todo:{items:items,total:c.todos.length,
       onPick:function(i){var t=pk[i];if(t){t[3]();window.scrollTo(0,0);}},
       onAll:function(){todoSheet(c.todos,c.todoBtn);}},
-    kpis:mgr?jKpiItems(c.rows.reduce(function(t,r){return t+(r.total||0);},0)):wKpi144(c),   /* v144 11판 4칸 */
+    kpis:jKpiItems(c.rows.reduce(function(t,r){return t+(r.total||0);},0)),
     cal:{y:c.Y,m:c.M,today:isNow?now.getDate():0,days:days,amtLabel:"그날 들어온 차 금액",
       legend:[["in","입고","run"],["out","출고","done"],["memo","메모","chk"]],
       onMove:function(d){if(d<0)$("calPrev").click();else if(d>0)$("calNext").click();else $("calNow").click();},
@@ -13929,27 +13929,6 @@ function jTrend(now,before,unit){
   if(!d)return '<span class="tr eq">지난주와 같아요</span>';
   return '<span class="tr'+(d<0?" dn":"")+'">'+(d>0?"+":"−")+Math.abs(d).toLocaleString("ko-KR")+unit+' <span>지난주보다</span></span>';
 }
-/* v144 11판 · 체크와 같은 홈 4칸 — 이번 달 차량 · 이번 달 청구 · 이번 달 입금 · 받을 금액 (지난달과 견줌 · 7달 그래프 · 숫자는 검정)
-   값은 홈이 이미 셈한 c(rows · billed · paid · dueAmt)를 그대로 써요 — 새 돈 셈 없음 */
-function wKpi144(c){
-  var today=new Date(),M7=[],mi;
-  for(mi=6;mi>=0;mi--){var md=new Date(today.getFullYear(),today.getMonth()-mi,1);M7.push(md.getFullYear()+"-"+String(md.getMonth()+1).padStart(2,"0"));}
-  function mOf(r){return r.month||mKey(r.createdAt);}
-  function inM(k){return S.records.filter(function(r){return mOf(r)===k;});}
-  var cars=M7.map(function(k){return inM(k).length;});
-  var bill=M7.map(function(k){return inM(k).filter(function(r){var st=statusOf(r);return st==="출고"||st==="수금완료";}).reduce(function(t,r){return t+(Number(r.total)||0);},0);});
-  var got=M7.map(function(k){return inM(k).filter(function(r){return statusOf(r)==="수금완료";}).reduce(function(t,r){return t+(Number(r.total)||0);},0);});
-  var due=M7.map(function(k,i){return bill[i]-got[i];});
-  function pct(now,before){if(!before)return {delta:"",vs:"지난달 자료 없음"};var p=Math.round((now-before)/before*100);return {delta:(p>0?"+":p<0?"−":"±")+Math.abs(p)+"%",down:p<0,vs:"지난달보다"};}
-  function cnt(now,before){var x=now-before;return {delta:(x>0?"+":x<0?"−":"±")+Math.abs(x)+"대",down:x<0,vs:"지난달보다"};}
-  function it(label,val,unit,d,sp){return {label:label,value:val,unit:unit,delta:d.delta,down:d.down,vs:d.vs,spark:sp,color:"#0B2545"};}
-  var nCar=(c.rows||[]).length,nBill=Number(c.billed||0),nGot=Number(c.paid||0),nDue=Number(c.dueAmt||0);
-  return [
-    it("이번 달 차량",String(nCar),"대",cnt(nCar,cars[5]),cars),
-    it("이번 달 청구",nBill.toLocaleString("ko-KR"),"원",pct(nBill,bill[5]),bill),
-    it("이번 달 입금",nGot.toLocaleString("ko-KR"),"원",pct(nGot,got[5]),got),
-    it("받을 금액",nDue.toLocaleString("ko-KR"),"원",pct(nDue,due[5]),due)];
-}
 /* v122: CGG.kpis 에 넘길 값 — {label, value, unit, delta, down, spark, color} */
 function jKpiItems(monthAmt){
   var tmp=document.createElement("div");tmp.innerHTML=jKpis(monthAmt);
@@ -20022,7 +20001,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
 .w144more>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;margin:0}
 .w144acts .w144more>summary.btn{padding:0 14px;height:43px;font-size:14.5px;border-radius:11px;background:var(--surface2);border:1px solid var(--line);box-sizing:border-box}   /* 옆 단추와 같은 모양 */
 .w144more>summary::-webkit-details-marker{display:none}
-.w144menu{position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:240px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;display:flex;flex-direction:column;gap:6px}
+.w144menu{position:absolute;z-index:30;bottom:calc(100% + 6px);left:0;min-width:240px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;display:flex;flex-direction:column;gap:6px}
 .w144menu .btn{width:100%;justify-content:flex-start}
 .w144two{background:none;border:0;box-shadow:none;padding:0}
 .w144two>.dash{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
@@ -20030,7 +20009,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
 .w144right>summary{font-size:16px;font-weight:800;list-style:none;margin-bottom:10px}
 .w144right>summary::-webkit-details-marker{display:none}
 .w144two .bm-go{position:static;margin-top:14px;border-radius:14px}
-@media (max-width:800px){.w144two>.dash{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:800px){.w144two>.dash{grid-template-columns:minmax(0,1fr)}.w144more{display:block;width:100%}.w144menu{position:static;margin-top:6px;box-shadow:none}}   /* 폰: 더 보기는 아래로 펼침(체크 v57 과 같게) */
    /* v137 제목 숫자는 기본 글자색(1.12) */
 .dashhead .sub2{margin:6px 0 0;font-size:14px;color:var(--muted)}
 .dashhead .jacts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
