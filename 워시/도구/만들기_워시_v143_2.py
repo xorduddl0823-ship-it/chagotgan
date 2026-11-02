@@ -73,7 +73,8 @@ rep('''.dashhead h2 em,.jsay em{font-style:normal;color:inherit}''', '''.dashhea
 rep('''  function savePartners(o, r, prog){
     var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),''',
 '''  /* v143.2 묶어 넣기 — 상사와 그 상사 딜러를 한 묶음(서버 한 번 = 한꺼번에 저장)으로 300줄씩.
-     묶음 하나가 다 들어가거나 하나도 안 들어가요(창을 닫아도 «상사만 있고 딜러는 없음» 같은 반쪽이 없게). [멈추기] = 지금 묶음까지 */
+     묶음 하나가 다 들어가거나 하나도 안 들어가요(창을 닫아도 «상사만 있고 딜러는 없음» 같은 반쪽이 없게). [멈추기] = 지금 묶음까지
+     (딜러가 300명 넘는 상사 하나는 여러 묶음으로 나뉘어요 — 상사는 첫 묶음에 같이 들어가요) */
   function savePartnersBatch(o, r, prog, ctl){
     var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),
         ds=r.list.filter(function(x){ return x.st==="new" && x.d; }), total=cs.length+ds.length;
@@ -89,17 +90,20 @@ rep('''  function savePartners(o, r, prog){
       while(it.length>300){ chunks.push(it.splice(0,300)); }
       cur=cur.concat(it); });
     if(cur.length) chunks.push(cur);
-    var done=0, okD=0, fails=[], saved={}, left=0, stopped=false;
+    var done=0, okD=0, fails=[], saved={}, badC={}, left=0, stopped=false;
     return chunks.reduce(function(p,ch){ return p.then(function(){
       if(ctl && ctl.stop){ stopped=true; ch.forEach(function(it){ if(it.kind==="dealer") left++; }); return; }
       return Promise.resolve(o.api.saveBatch(ch.map(function(it){ return {kind:it.kind, row:it.row}; }))).then(function(){
           ch.forEach(function(it){ if(it.kind==="dealer") okD++; else saved[key(it.src.name)]=1; }); },
-        function(e){ var why=(o.fail?o.fail(e):"")||"저장하지 못했어요. 다시 올려 주세요.";
-          ch.forEach(function(it){ if(it.kind==="dealer") fails.push({line:it.src.line, c:it.src.c, why:why}); }); })
+        function(e){ var why=(o.fail?o.fail(e):"")||"저장하지 못했어요. 다시 올려 주세요.",
+            raw=String((e&&(e.message||e.error||e.__err))||"").slice(0,120);
+          if(raw&&raw!==why) why+=" — 서버 글: "+raw;
+          ch.forEach(function(it){ if(it.kind==="dealer") fails.push({line:it.src.line, c:it.src.c, why:why}); else badC[key(it.src.name)]=why; }); })
         .then(function(){ done+=ch.length; prog && prog(done, total); }); }); }, Promise.resolve())
       .then(function(){
         var oc=r.list.filter(function(x){ return x.st==="new" && !x.d; }), ocOk=0;
-        oc.forEach(function(x){ if(saved[key(x.c.comp)]) ocOk++; else if(stopped && !fails.some(function(f){ return key((f.c||{}).comp)===key(x.c.comp); })) left++;
+        oc.forEach(function(x){ var k=key(x.c.comp);
+          if(saved[k]) ocOk++; else if(badC[k]) fails.push({line:x.line, c:x.c, why:badC[k]}); else if(stopped) left++;
           else fails.push({line:x.line, c:x.c, why:"상사를 만들지 못했어요. 다시 올려 주세요."}); });
         return {n:okD+ocOk, fails:fails.sort(function(a,b){ return a.line-b.line; }), stopped:stopped, left:left}; });
   }
@@ -110,12 +114,12 @@ rep('''        api:{saveCompany:function(c){return wPtSaveCompany(c);},saveDeale
 '''        api:{saveCompany:function(c){return wPtSaveCompany(c);},saveDealer:function(d){return wPtSaveDealer(d,true);},
           saveBatch:function(items){return wPtSaveBatch(items);}},   /* v143.2 상사+딜러 한 묶음씩 */''')
 # 넣는 중 [멈추기] — 지금 묶음까지 넣고 멈춰요(넣은 줄은 남고, 다시 올리면 «이미 있음»)
-rep('''      save:function(r, prog){ return savePartners(o, r, prog); },''','''      save:function(r, prog, ctl){ return savePartners(o, r, prog, ctl); },''')
+rep('''      save:function(r, prog){ return savePartners(o, r, prog); },''','''      save:function(r, prog, ctl){ return savePartners(o, r, prog, ctl); }, canStop:!!(o.api && o.api.saveBatch),''')
 rep('''    Promise.resolve(o.save(r, function(i, t){ if(pg) pg.textContent="넣는 중이에요… "+i+" / "+t; })).then(function(res){
       var fails=(res&&res.fails)||[], ok=(res&&res.n)||0;
       unblk(); closeD();
       o.done && o.done(ok+"줄을 넣었어요."+(fails.length?" "+fails.length+"줄은 못 넣었어요.":""));''','''    var ctl={stop:false}, sbn=null;   /* v143.2 넣는 중 멈추기 */
-    if(o.kind==="partners"){ sbn=document.createElement("button"); sbn.type="button"; sbn.className="cgg-btn"; sbn.textContent="멈추기";
+    if(o.kind==="partners" && o.canStop && pg && pg.parentNode){ sbn=document.createElement("button"); sbn.type="button"; sbn.className="cgg-btn"; sbn.textContent="멈추기";
       sbn.style.marginTop="8px"; sbn.onclick=function(){ ctl.stop=true; sbn.disabled=true; sbn.textContent="지금 묶음까지 넣고 멈춰요…"; };
       pg.parentNode.insertBefore(sbn, pg.nextSibling); }
     Promise.resolve(o.save(r, function(i, t){ if(pg) pg.textContent="넣는 중이에요… "+i+" / "+t; }, ctl)).then(function(res){
@@ -134,7 +138,7 @@ function wPtSaveBatch(items){
     if(cs.length){var ci={};cs.forEach(function(o){ci[o.id]=1;});S.comps=S.comps.filter(function(x){return !ci[x.id];}).concat(cs);}
     if(ds.length){var di={};ds.forEach(function(o){di[o.id]=1;});S.dealers=S.dealers.filter(function(x){return !di[x.id];}).concat(ds);}}
   if(!S.db){keep();return Promise.resolve();}
-  return saveMany(rows,{quiet:true}).then(keep);
+  return saveMany(rows,{quiet:true,noFallback:true}).then(keep);
 }
 function wPtCompObj(c){   /* 새 상사(엑셀) — wPtSaveCompany 의 새 상사와 같은 칸 */
   var o={id:"c_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),taxType:TAXTYPES[0]};
@@ -157,14 +161,20 @@ function wPtDealerObj(nd){   /* 새 딜러(엑셀) — wPtSaveDealer(nd,true) �
 function wPtSaveCompany(c){''')
 # saveMany 에 quiet(엑셀 넣기는 못 넣은 줄 표로 알리니 빨간 띠에는 안 올림)
 rep('''function saveMany(rows){''', '''function saveMany(rows,opt){''')
+rep('''    },function(){
+      /* 옛 Code.gs — 하나씩 저장해요 */''', '''    },function(e0){
+      if(opt&&opt.noFallback)throw e0;   /* v143.2 묶어 넣기: 하나씩 다시 보내지 않아요(일부만 들어가는 반쪽 막기) */
+      /* 옛 Code.gs — 하나씩 저장해요 */''')
 rep('''      wSaveFail(r.col,r.id,"set",r.data,e);});''', '''      if(!(opt&&opt.quiet))wSaveFail(r.col,r.id,"set",r.data,e);});''')
 # ③ 진짜 까닭: 답을 못 받은 것(인터넷)과 서버가 거절한 것을 나눠요 · 서버 글 원문(짧게)은 «자세히»에
-rep("""  return map[c]||kmsg(e,"저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");""",
-"""  if(map[c])return map[c];
-  if(e&&e.unknown&&!/처리 중|확인 중/.test(String(e.message||"")))return "인터넷 연결이 끊겼거나 서버 답을 받지 못했어요. 연결을 확인하고 다시 해 주세요.";   /* v143.2 */
-  return kmsg(e,"서버가 저장을 받지 않았어요(인터넷 문제 아님). «자세히»의 서버 글을 차곳간에 알려 주세요.");""")
+rep("""function hhmm(t){""","""/* v143.2 저장 띠 전용 까닭 — 답을 못 받은 것(인터넷)과 서버가 거절한 것을 나눠요 (다른 화면의 errMsg 글은 그대로) */
+function wSaveMsg(e){
+  if(e&&e.unknown&&!/처리 중|확인 중/.test(String(e.message||"")))return "인터넷 연결이 끊겼거나 서버 답을 받지 못했어요. 연결을 확인하고 다시 해 주세요.";
+  var c=e&&e.code?e.code:"";if(c)return errMsg(e);
+  return kmsg(e,"서버가 저장을 받지 않았어요(인터넷 문제 아님). «자세히»의 서버 글을 차곳간에 알려 주세요.");}
+function hhmm(t){""")
 rep("""  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e),at:Date.now()};""",
-    """  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e),raw:String((e&&(e.message||e.error||e.__err))||"").slice(0,120),net:!!(e&&e.unknown),at:Date.now()};""")
+    """  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:wSaveMsg(e),raw:String((e&&(e.message||e.error||e.__err))||"").slice(0,120),net:!!(e&&e.unknown),at:Date.now()};""")
 rep("""      return '<div><b>'+esc(wSaveWhat(x))+'</b><small>'+esc(x.why||"까닭을 받지 못했어요")+(x.at?" · "+esc(hhmm(x.at)):"")+'</small></div>';}).join("")+""",
     """      return '<div><b>'+esc(wSaveWhat(x))+'</b><small>'+esc(x.why||"까닭을 받지 못했어요")+(x.at?" · "+esc(hhmm(x.at)):"")+'</small>'+
         (x.raw&&x.raw!==x.why?'<small class="wsv-raw">서버 글: '+esc(x.raw)+'</small>':'')+'</div>';}).join("")+""")
@@ -191,7 +201,7 @@ rep("""#wSaveBar .wsv-x{margin-left:auto;flex:none;background:none;border:0;colo
 @media (min-width:1000px){#wSaveChip{bottom:calc(20px + env(safe-area-inset-bottom,0px))}}""")
 
 # ④ 입고 · 출고 알림 켜기/끄기 — 홈(오늘 할 일 위) · 현장 화면(사진 칸 아래). 대표만 · 확인 창 (체크 «도착 알림» 줄과 같은 모양)
-rep("""function autoInOn(){return sendCfg().autoIn!==false;}""", """function autoInOn(){return sendCfg().autoIn!==false;}
+rep("""function autoInOn(){return sendCfg().autoIn!==false;}   /* v119: 기본 켜짐 (끈 업체만 꺼짐) */""", """function autoInOn(){return sendCfg().autoIn!==false;}   /* v119: 기본 켜짐 (끈 업체만 꺼짐) */
 /* v143.2 알림 켜기/끄기 줄 */
 function wAlarmEl(){
   var c=sendCfg(),own=isOwner(),d=document.createElement("div");d.className="card wal";
@@ -206,8 +216,9 @@ function wAlarmEl(){
     if(!isOwner())return toast("대표만 바꿀 수 있어요",true);
     var k=b.getAttribute("data-wal"),on=sendCfg()[k]!==false,nm=k==="autoIn"?"입고 알림":"출고 알림";
     ask(on?(nm+"을 끌까요?\\n\\n끄는 동안 차가 "+(k==="autoIn"?"들어와도":"출고돼도")+" 딜러에게 알림이 안 나가요."):(nm+"을 다시 켤까요?\\n\\n"+(k==="autoIn"?"차가 들어오면":"출고하면")+" 딜러에게 알림톡이 나가요."),function(){
-      var o=Object.assign({},sendCfg());o[k]=!on;S.cfg=Object.assign({},S.cfg);S.cfg.send=o;
-      saveCfg({what:nm+(on?" 끄기":" 켜기")}).then(function(){toast(nm+(on?"을 껐어요":"을 켰어요"));},function(e){toast(errMsg(e),true);})
+      var prev=S.cfg,o=Object.assign({},sendCfg());o[k]=!on;S.cfg=Object.assign({},S.cfg);S.cfg.send=o;
+      saveCfg({what:nm+(on?" 끄기":" 켜기")}).then(function(){toast(nm+(on?"을 껐어요":"을 켰어요"));},
+        function(e){S.cfg=prev;try{S.cfgSaved=JSON.parse(JSON.stringify(prev));}catch(x){}toast(nm+"을 바꾸지 못했어요 — "+wSaveMsg(e),true);})
         .then(function(){try{renderAll();}catch(e){}});
     },on?"끄기":"켜기",on);};});
   return d;
@@ -234,7 +245,7 @@ rep("""#wSaveBar .wsv-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}""
 .wal-st{font-size:13px;font-weight:700;color:var(--muted)}
 .wal-sw{position:relative;flex:none;width:56px;height:42px;background:none;border:0;padding:0;cursor:pointer}
 .wal-sw i{position:absolute;left:2px;top:6px;width:52px;height:30px;border-radius:15px;background:var(--line);transition:background .15s}
-.wal-sw i::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.wal-sw i::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
 .wal-sw[aria-checked="true"] i{background:var(--done)}.wal-sw[aria-checked="true"] i::after{left:25px}
 .wal-sw:disabled{opacity:.5;cursor:not-allowed}
 .wal-sw:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:15px}

@@ -1,12 +1,12 @@
 --- "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.1.html"	2026-10-19 10:10:07.581410158 +0000
-+++ "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.2.html"	2026-11-02 04:43:03.582137783 +0000
++++ "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.2.html"	2026-11-02 04:58:33.182116521 +0000
 @@ -3975,10 +3975,15 @@
      Array.prototype.forEach.call(xb, function(b){ b.disabled=true; });
      function unblk(){ document.removeEventListener("keydown", blk, true); if(dim) dim.removeEventListener("click", blk, true);
        Array.prototype.forEach.call(xb, function(b){ b.disabled=false; }); }
 -    Promise.resolve(o.save(r, function(i, t){ if(pg) pg.textContent="넣는 중이에요… "+i+" / "+t; })).then(function(res){
 +    var ctl={stop:false}, sbn=null;   /* v143.2 넣는 중 멈추기 */
-+    if(o.kind==="partners"){ sbn=document.createElement("button"); sbn.type="button"; sbn.className="cgg-btn"; sbn.textContent="멈추기";
++    if(o.kind==="partners" && o.canStop && pg && pg.parentNode){ sbn=document.createElement("button"); sbn.type="button"; sbn.className="cgg-btn"; sbn.textContent="멈추기";
 +      sbn.style.marginTop="8px"; sbn.onclick=function(){ ctl.stop=true; sbn.disabled=true; sbn.textContent="지금 묶음까지 넣고 멈춰요…"; };
 +      pg.parentNode.insertBefore(sbn, pg.nextSibling); }
 +    Promise.resolve(o.save(r, function(i, t){ if(pg) pg.textContent="넣는 중이에요… "+i+" / "+t; }, ctl)).then(function(res){
@@ -19,13 +19,14 @@
        if(fails.length) CGG.dialog({size:"form", title:"못 넣은 줄이 있어요", desc:"나머지는 다 넣었어요. 아래 줄만 다시 올려 주세요.",
          body:'<div class="csu-tbl"><table><thead><tr><th>줄</th><th>내용</th><th>까닭</th></tr></thead><tbody>'+
            fails.slice(0,SHOW).map(function(x){ return '<tr><td class="n">'+x.line+'</td><td>'+esc(o.label(x.c))+'</td><td class="w">'+esc(x.why)+'</td></tr>'; }).join("")+'</tbody></table></div>',
-@@ -4065,7 +4070,39 @@
+@@ -4065,7 +4070,43 @@
      var nn=Object.keys(newComps).length;
      return {list:list, comps:newComps, skips:skips, extra:nn?"새 상사 "+nn+"곳 포함":""};
    }
 -  function savePartners(o, r, prog){
 +  /* v143.2 묶어 넣기 — 상사와 그 상사 딜러를 한 묶음(서버 한 번 = 한꺼번에 저장)으로 300줄씩.
-+     묶음 하나가 다 들어가거나 하나도 안 들어가요(창을 닫아도 «상사만 있고 딜러는 없음» 같은 반쪽이 없게). [멈추기] = 지금 묶음까지 */
++     묶음 하나가 다 들어가거나 하나도 안 들어가요(창을 닫아도 «상사만 있고 딜러는 없음» 같은 반쪽이 없게). [멈추기] = 지금 묶음까지
++     (딜러가 300명 넘는 상사 하나는 여러 묶음으로 나뉘어요 — 상사는 첫 묶음에 같이 들어가요) */
 +  function savePartnersBatch(o, r, prog, ctl){
 +    var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),
 +        ds=r.list.filter(function(x){ return x.st==="new" && x.d; }), total=cs.length+ds.length;
@@ -41,17 +42,20 @@
 +      while(it.length>300){ chunks.push(it.splice(0,300)); }
 +      cur=cur.concat(it); });
 +    if(cur.length) chunks.push(cur);
-+    var done=0, okD=0, fails=[], saved={}, left=0, stopped=false;
++    var done=0, okD=0, fails=[], saved={}, badC={}, left=0, stopped=false;
 +    return chunks.reduce(function(p,ch){ return p.then(function(){
 +      if(ctl && ctl.stop){ stopped=true; ch.forEach(function(it){ if(it.kind==="dealer") left++; }); return; }
 +      return Promise.resolve(o.api.saveBatch(ch.map(function(it){ return {kind:it.kind, row:it.row}; }))).then(function(){
 +          ch.forEach(function(it){ if(it.kind==="dealer") okD++; else saved[key(it.src.name)]=1; }); },
-+        function(e){ var why=(o.fail?o.fail(e):"")||"저장하지 못했어요. 다시 올려 주세요.";
-+          ch.forEach(function(it){ if(it.kind==="dealer") fails.push({line:it.src.line, c:it.src.c, why:why}); }); })
++        function(e){ var why=(o.fail?o.fail(e):"")||"저장하지 못했어요. 다시 올려 주세요.",
++            raw=String((e&&(e.message||e.error||e.__err))||"").slice(0,120);
++          if(raw&&raw!==why) why+=" — 서버 글: "+raw;
++          ch.forEach(function(it){ if(it.kind==="dealer") fails.push({line:it.src.line, c:it.src.c, why:why}); else badC[key(it.src.name)]=why; }); })
 +        .then(function(){ done+=ch.length; prog && prog(done, total); }); }); }, Promise.resolve())
 +      .then(function(){
 +        var oc=r.list.filter(function(x){ return x.st==="new" && !x.d; }), ocOk=0;
-+        oc.forEach(function(x){ if(saved[key(x.c.comp)]) ocOk++; else if(stopped && !fails.some(function(f){ return key((f.c||{}).comp)===key(x.c.comp); })) left++;
++        oc.forEach(function(x){ var k=key(x.c.comp);
++          if(saved[k]) ocOk++; else if(badC[k]) fails.push({line:x.line, c:x.c, why:badC[k]}); else if(stopped) left++;
 +          else fails.push({line:x.line, c:x.c, why:"상사를 만들지 못했어요. 다시 올려 주세요."}); });
 +        return {n:okD+ocOk, fails:fails.sort(function(a,b){ return a.line-b.line; }), stopped:stopped, left:left}; });
 +  }
@@ -60,27 +64,28 @@
      var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),
          ds=r.list.filter(function(x){ return x.st==="new" && x.d; }), bad={}, total=cs.length+ds.length, step=0;
      function tick(){ step++; prog && prog(step, total); }
-@@ -4084,7 +4121,7 @@
+@@ -4084,7 +4125,7 @@
        hint:"같은 사람은 두 번 안 들어가요. 처음 보는 상사는 같이 만들어요.",
        label:function(c){ return [c.comp, c.name, c.tel].filter(Boolean).join(" · "); },
        check:function(recs){ return checkPartners(o, recs); },
 -      save:function(r, prog){ return savePartners(o, r, prog); },
-+      save:function(r, prog, ctl){ return savePartners(o, r, prog, ctl); },
++      save:function(r, prog, ctl){ return savePartners(o, r, prog, ctl); }, canStop:!!(o.api && o.api.saveBatch),
        done:o.done, fail:o.fail}); }
  
    /* ════════ 배달 장소(목적지) ════════ */
-@@ -4310,7 +4347,9 @@
-     quota_exceeded:"저장 공간이 가득 찼어요",resource_exhausted:"저장 요청이 너무 많아요",
-     invalid_argument:"저장 내용 형식이 잘못됐어요",unavailable:"저장 서버에 연결되지 않아요",
-     revoked:"저장 권한이 끊겼어요. 화면을 새로 열어 주세요",transform_error:"저장 준비 중 문제가 생겼어요"};
--  return map[c]||kmsg(e,"저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
-+  if(map[c])return map[c];
-+  if(e&&e.unknown&&!/처리 중|확인 중/.test(String(e.message||"")))return "인터넷 연결이 끊겼거나 서버 답을 받지 못했어요. 연결을 확인하고 다시 해 주세요.";   /* v143.2 */
-+  return kmsg(e,"서버가 저장을 받지 않았어요(인터넷 문제 아님). «자세히»의 서버 글을 차곳간에 알려 주세요.");
+@@ -4313,6 +4354,11 @@
+   return map[c]||kmsg(e,"저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
  }
  var DB_OK=false;
++/* v143.2 저장 띠 전용 까닭 — 답을 못 받은 것(인터넷)과 서버가 거절한 것을 나눠요 (다른 화면의 errMsg 글은 그대로) */
++function wSaveMsg(e){
++  if(e&&e.unknown&&!/처리 중|확인 중/.test(String(e.message||"")))return "인터넷 연결이 끊겼거나 서버 답을 받지 못했어요. 연결을 확인하고 다시 해 주세요.";
++  var c=e&&e.code?e.code:"";if(c)return errMsg(e);
++  return kmsg(e,"서버가 저장을 받지 않았어요(인터넷 문제 아님). «자세히»의 서버 글을 차곳간에 알려 주세요.");}
  function hhmm(t){var d=new Date(t||Date.now());
-@@ -4326,6 +4365,7 @@
+   return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+ function setDbState(ok,why){
+@@ -4326,6 +4372,7 @@
    el._why=why||"";
    el.onclick=function(){
      if(ok)toast("저장이 잘 연결돼 있어요");
@@ -88,7 +93,7 @@
      else{banner("저장이 안 되는 이유: "+(el._why||"확인 필요")+" — 화면을 새로 열거나, 권한 창이 뜨면 허용해 주세요.");toast(el._why||"저장 연결 안 됨",true);}
    };
  }
-@@ -4703,7 +4743,7 @@
+@@ -4703,7 +4750,7 @@
    Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
      b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
  }
@@ -97,7 +102,7 @@
  /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
  var LAYOUTS=["top","side","icon"];
  function layoutMode(){
-@@ -5154,6 +5194,9 @@
+@@ -5154,6 +5201,9 @@
        sub:"작업 항목별 · 금액 많은 차례",items:ri.map(function(x){return {label:x.name,value:x.n+"대",pct:(x.amt||0)/mx};})}});   /* 도움 카드는 워시 «이 화면 사용법»(jPage) 하나만 */
    /* 정산(이번 달 입금)은 매니저에게 보이지 않아요 */
    if(mgr){var mc=host.querySelector(".cgg-homeside .cgg-side");if(mc)mc.remove();}
@@ -107,7 +112,7 @@
    /* v138 이번 달 어디까지 왔나 (체크와 같은 4칸 · 대표만) — 왼쪽부터 차례대로 */
    if(!mgr&&c.steps){
      var st=c.steps,pc=function(a,b){return b>0?Math.max(0,Math.min(100,Math.round(a/b*100))):0;};
-@@ -5477,7 +5520,7 @@
+@@ -5477,7 +5527,7 @@
    return saveMany(rows).then(function(){trimBaks();});
  }
  /* 여러 건을 서버 한 번으로 저장해요 (옛 Code.gs면 하나씩 저장) */
@@ -116,7 +121,7 @@
    rows=(rows||[]).filter(function(r){return r&&r.col&&r.id;});
    if(!rows.length)return Promise.resolve();
    var prevs=rows.map(function(r){var c=GS.cache[r.col]||{};return {had:Object.prototype.hasOwnProperty.call(c,r.id),v:c[r.id]};});
-@@ -5488,7 +5531,7 @@
+@@ -5488,7 +5538,7 @@
    /* v142 끝내 저장하지 못하면 화면을 저장 전으로 되돌리고 실패 띠에 올려요 */
    function undo(e){
      rows.forEach(function(r,i){var c=GS.cache[r.col];if(c&&c[r.id]===r.data){if(prevs[i].had)c[r.id]=prevs[i].v;else delete c[r.id];}
@@ -125,7 +130,17 @@
      Object.keys(cols).forEach(fireSubs);
      throw e;}
    function ok(v){rows.forEach(function(r){wSaveOk(r.col,r.id);});return v;}
-@@ -7158,6 +7201,7 @@
+@@ -5501,7 +5551,8 @@
+       var v=typeof t==="string"?(function(){try{return JSON.parse(t);}catch(e){return null;}})():t;
+       if(v&&v.rev)GS.rev=String(v.rev);
+       return v;
+-    },function(){
++    },function(e0){
++      if(opt&&opt.noFallback)throw e0;   /* v143.2 묶어 넣기: 하나씩 다시 보내지 않아요(일부만 들어가는 반쪽 막기) */
+       /* 옛 Code.gs — 하나씩 저장해요 */
+       return Promise.all(rows.map(function(r){
+         return gsCall("apiSet",[r.col,r.id,JSON.stringify(r.data)]);}));
+@@ -7158,6 +7209,7 @@
  /* ===== 오늘 ===== */
  /* ===== 현장 홈 ===== */
  function renderFHome(){
@@ -133,12 +148,10 @@
    var open=S.records.filter(function(r){return statusOf(r)==="입고";});
    $("fhNIn").textContent=S.records.filter(function(r){return sameDay(r.createdAt);}).length;
    $("fhNOut").textContent=S.records.filter(function(r){return r.outAt&&sameDay(r.outAt);}).length;
-@@ -9877,7 +9921,28 @@
- }
+@@ -9878,6 +9930,28 @@
  /* ===== 입고 알림톡 (v118 · 서버 sb7 intake · 확정본 «차곳간_입고안내») =====
     업체명 · 업체전화는 서버가 채워요. 본사 알림톡이 안 되면 확정본 대체 문구로 문자. */
--function autoInOn(){return sendCfg().autoIn!==false;}   /* v119: 기본 켜짐 (끈 업체만 꺼짐) */
-+function autoInOn(){return sendCfg().autoIn!==false;}
+ function autoInOn(){return sendCfg().autoIn!==false;}   /* v119: 기본 켜짐 (끈 업체만 꺼짐) */
 +/* v143.2 알림 켜기/끄기 줄 */
 +function wAlarmEl(){
 +  var c=sendCfg(),own=isOwner(),d=document.createElement("div");d.className="card wal";
@@ -153,17 +166,18 @@
 +    if(!isOwner())return toast("대표만 바꿀 수 있어요",true);
 +    var k=b.getAttribute("data-wal"),on=sendCfg()[k]!==false,nm=k==="autoIn"?"입고 알림":"출고 알림";
 +    ask(on?(nm+"을 끌까요?\n\n끄는 동안 차가 "+(k==="autoIn"?"들어와도":"출고돼도")+" 딜러에게 알림이 안 나가요."):(nm+"을 다시 켤까요?\n\n"+(k==="autoIn"?"차가 들어오면":"출고하면")+" 딜러에게 알림톡이 나가요."),function(){
-+      var o=Object.assign({},sendCfg());o[k]=!on;S.cfg=Object.assign({},S.cfg);S.cfg.send=o;
-+      saveCfg({what:nm+(on?" 끄기":" 켜기")}).then(function(){toast(nm+(on?"을 껐어요":"을 켰어요"));},function(e){toast(errMsg(e),true);})
++      var prev=S.cfg,o=Object.assign({},sendCfg());o[k]=!on;S.cfg=Object.assign({},S.cfg);S.cfg.send=o;
++      saveCfg({what:nm+(on?" 끄기":" 켜기")}).then(function(){toast(nm+(on?"을 껐어요":"을 켰어요"));},
++        function(e){S.cfg=prev;try{S.cfgSaved=JSON.parse(JSON.stringify(prev));}catch(x){}toast(nm+"을 바꾸지 못했어요 — "+wSaveMsg(e),true);})
 +        .then(function(){try{renderAll();}catch(e){}});
 +    },on?"끄기":"켜기",on);};});
 +  return d;
 +}
-+function wAlarmMount(parent,before){if(!parent)return;var old=parent.querySelector(":scope > .wal");if(old)old.remove();parent.insertBefore(wAlarmEl(),before||null);}   /* v119: 기본 켜짐 (끈 업체만 꺼짐) */
++function wAlarmMount(parent,before){if(!parent)return;var old=parent.querySelector(":scope > .wal");if(old)old.remove();parent.insertBefore(wAlarmEl(),before||null);}
  function inVars(r){
    return {"딜러명":r.dealer||"","상사명":r.company||"","업체명":shopLabel(),"차량번호":r.plate||"",
      "작업내용":workFull(r),"입고일시":dtKo(r.createdAt||nowIso()),"업체전화":shopTel()};
-@@ -10563,6 +10628,35 @@
+@@ -10563,6 +10637,35 @@
  var WPT_BIZ='사업자등록증(또는 홈택스 출력물) 사진이에요. 적힌 내용을 읽어 JSON 하나로만 답하세요. 다른 말은 쓰지 마세요.\n'+
    '형식: {"bizNo":"000-00-00000","bizName":"상호","ceo":"대표자","addr":"사업장 주소","upte":"업태","jongmok":"종목","tel":"전화번호","email":"이메일"}\n'+
    '- 없는 값은 빈 문자열로 두세요.\n- 이메일 · 전화번호는 인쇄된 칸이 아니어도(손글씨 · 덧붙인 글 · «세금계산서 메일주소» 같은 메모) 사진 어디에 있든 읽어 주세요.';
@@ -176,7 +190,7 @@
 +    if(cs.length){var ci={};cs.forEach(function(o){ci[o.id]=1;});S.comps=S.comps.filter(function(x){return !ci[x.id];}).concat(cs);}
 +    if(ds.length){var di={};ds.forEach(function(o){di[o.id]=1;});S.dealers=S.dealers.filter(function(x){return !di[x.id];}).concat(ds);}}
 +  if(!S.db){keep();return Promise.resolve();}
-+  return saveMany(rows,{quiet:true}).then(keep);
++  return saveMany(rows,{quiet:true,noFallback:true}).then(keep);
 +}
 +function wPtCompObj(c){   /* 새 상사(엑셀) — wPtSaveCompany 의 새 상사와 같은 칸 */
 +  var o={id:"c_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),taxType:TAXTYPES[0]};
@@ -199,7 +213,7 @@
  function wPtSaveCompany(c){
    var old=c.id?S.comps.filter(function(x){return String(x.id)===String(c.id);})[0]:null;
    var o=Object.assign({},old||{id:"c_"+Date.now()+"_"+Math.random().toString(36).slice(2,6),taxType:TAXTYPES[0]});
-@@ -10613,7 +10707,8 @@
+@@ -10613,7 +10716,8 @@
      $("wPtCsvTpl").onclick=function(){CGG_CSVUP.download("양식_거래처.csv",W133_TPL_P);};
      $("wPtCsv").onclick=function(){
        CGG_CSVUP.partners({owner:isOwner(),store:w134Store(),tplText:W133_TPL_P,dealers:wPtDealers(),companies:wPtCompanies(),later:false,
@@ -209,7 +223,7 @@
          done:function(m){toast(m);renderParties();try{refreshDatalists();}catch(e){}},
          fail:function(e){return errMsg(e);}});
      };
-@@ -17023,26 +17118,53 @@
+@@ -17023,26 +17127,53 @@
      return {id:k,exists:true,data:function(){return m[k];}};})};
  }
  /* v142 저장 실패 모음 — 같은 기록(종류 · id)은 한 줄로. [다시 하기]는 같은 id 로 다시 보내요(서버가 덮어써서 두 번 안 생겨요) */
@@ -228,7 +242,7 @@
  function wSaveFail(name,id,op,obj,e){
    if(GS.demo&&!S.db)return;
 -  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e)};
-+  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e),raw:String((e&&(e.message||e.error||e.__err))||"").slice(0,120),net:!!(e&&e.unknown),at:Date.now()};
++  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:wSaveMsg(e),raw:String((e&&(e.message||e.error||e.__err))||"").slice(0,120),net:!!(e&&e.unknown),at:Date.now()};
    wSaveBar();
  }
  function wSaveBar(){
@@ -269,7 +283,7 @@
    $("wSaveRetry").onclick=function(){
      if(WSAVE.busy)return;
      WSAVE.busy=true; var bt=this; bt.disabled=true; bt.textContent="다시 저장하는 중…";
-@@ -17060,7 +17182,8 @@
+@@ -17060,7 +17191,8 @@
      })).then(function(r){
        WSAVE.busy=false; wSaveBar();
        var ok=r.filter(Boolean).length;
@@ -279,7 +293,7 @@
        try{renderAll();}catch(e){}
      });
    };
-@@ -19828,6 +19951,34 @@
+@@ -19828,6 +19960,34 @@
  .dashhead > .jhd{flex:1 1 420px;min-width:0}
  .dashhead h2{margin:0;font-size:28px;font-weight:900;letter-spacing:-.8px;line-height:1.3;text-wrap:balance;color:var(--text)}
  .dashhead h2 em,.jsay em{font-style:normal;color:inherit}
@@ -303,7 +317,7 @@
 +.wal-st{font-size:13px;font-weight:700;color:var(--muted)}
 +.wal-sw{position:relative;flex:none;width:56px;height:42px;background:none;border:0;padding:0;cursor:pointer}
 +.wal-sw i{position:absolute;left:2px;top:6px;width:52px;height:30px;border-radius:15px;background:var(--line);transition:background .15s}
-+.wal-sw i::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
++.wal-sw i::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
 +.wal-sw[aria-checked="true"] i{background:var(--done)}.wal-sw[aria-checked="true"] i::after{left:25px}
 +.wal-sw:disabled{opacity:.5;cursor:not-allowed}
 +.wal-sw:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:15px}

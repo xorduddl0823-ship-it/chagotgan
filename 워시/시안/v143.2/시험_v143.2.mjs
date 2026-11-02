@@ -104,6 +104,23 @@ const W=(p,ms)=>p.waitForTimeout(ms);
   ok('② 멈추면 일부만 넣고 «멈췄어요 · 남은 줄은 다시 올리면 이어서»',R.dealers>0&&R.dealers<12679&&/멈췄어요/.test(R.toast),JSON.stringify(R));
   ok('② 상사만 있고 그 딜러는 없는 반쪽 없음',R.orphan===0,'반쪽 '+R.orphan+'곳');
   ok('② 페이지 오류 없음',!p._errs.length,p._errs.slice(0,2).join(' | ')); await p.close(); }
+
+// ② 묶음 하나가 실패 → 하나씩 다시 보내지 않음 · 못 넣은 줄 표에 까닭
+{ const p=await page('',1440,1000);
+  await p.evaluate(()=>{const S=__t.SS();S.setSub='parties';__t.tab('settings');}); await W(p,1200);
+  await p.evaluate(()=>document.getElementById('wPtCsv').click()); await W(p,600);
+  const [fc]=await Promise.all([p.waitForEvent('filechooser'),p.evaluate(()=>{const b=[...document.querySelectorAll('.cgg-dim:not([hidden]) button')].find(x=>x.textContent.trim()==='파일 고르기');b.click();})]);
+  await fc.setFiles(SP+'/t1432/dealerList.csv'); await W(p,4000);
+  await p.evaluate(()=>{window.__RIDS=[];window.__FAIL=1;const b=document.querySelector('.cgg-dim:not([hidden]) [data-dok]');b&&b.click();});
+  for(let i=0;i<80;i++){ await W(p,500); if(await p.evaluate(()=>{const g=document.getElementById('csuProg');return !g||g.hidden||!g.isConnected;}))break; }
+  await W(p,800);
+  const R=await p.evaluate(()=>{const R=window.__RIDS||[];const d=document.querySelector('.cgg-dim:not([hidden]) .cgg-dlg');
+    const DB=__PV.DB();const cs=Object.values(DB.companies||{}).filter(x=>/^시험상사/.test(x.name)).map(x=>x.name);const ds=Object.values(DB.dealers||{}).filter(x=>/^딜러\d{5}$/.test(x.name));const have={};ds.forEach(x=>have[x.company]=1);
+    return {one:R.filter(x=>x.fn==='apiSet').length,many:R.filter(x=>x.fn==='apiSetMany').length,dlg:d?d.innerText.slice(0,220):'',orphan:cs.filter(n=>!have[n]).length,dl:ds.length};});
+  ok('② 묶음이 실패해도 하나씩 다시 보내지 않음',R.one===0,'한 줄 '+R.one+'번 · 묶음 '+R.many+'번');
+  ok('② «못 넣은 줄» 창에 까닭(서버 글)',/못 넣은 줄/.test(R.dlg)&&/인터넷 연결이 끊겼어요/.test(R.dlg),R.dlg.replace(/\n/g,' ').slice(0,140));
+  ok('② 실패 묶음 뒤에도 반쪽 없음 · 나머지는 들어감',R.orphan===0&&R.dl>12000,JSON.stringify({orphan:R.orphan,dl:R.dl}));
+  await p.close(); }
 await b.close();
 const sum=`실행 ${pass+fail} · 통과 ${pass} · 실패 ${fail} · 건너뜀 0`; console.log(sum);
 import fs from 'fs'; fs.writeFileSync(SP+'/t1432/result.txt',out.join('\n')+'\n'+sum+'\n');
