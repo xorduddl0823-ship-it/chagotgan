@@ -1,0 +1,187 @@
+--- "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.1.html"	2026-10-19 10:10:07.581410158 +0000
++++ "\354\233\214\354\213\234/1_\354\260\250\352\263\263\352\260\204_\354\233\214\354\213\234_index_v143.2.html"	2026-11-02 04:31:32.738153584 +0000
+@@ -4065,7 +4065,37 @@
+     var nn=Object.keys(newComps).length;
+     return {list:list, comps:newComps, skips:skips, extra:nn?"새 상사 "+nn+"곳 포함":""};
+   }
++  /* v143.2 묶어 넣기 — 300줄씩 서버 한 번(같은 id 덮어쓰기). 묶음이 안 되면 그 묶음 줄만 «못 넣은 줄» */
++  function batchSave(list, mk, kind, fail, prog){
++    var N=list.length, done=0, ok=0, fails=[], CH=300, chunks=[];
++    for(var i=0;i<N;i+=CH) chunks.push(list.slice(i,i+CH));
++    return chunks.reduce(function(p,ch){ return p.then(function(){
++      var rows=ch.map(mk);
++      return Promise.resolve(o0.api.saveBatch(kind, rows)).then(function(){ ok+=ch.length; },
++        function(){ ch.forEach(function(x){ x.failWhy=x.failWhy||fail; fails.push(x); }); })
++        .then(function(){ done+=ch.length; prog && prog(done); }); }); }, Promise.resolve())
++      .then(function(){ return {n:ok, fails:fails}; }); }
++  var o0=null;
++  function savePartnersBatch(o, r, prog){
++    o0=o;
++    var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),
++        ds=r.list.filter(function(x){ return x.st==="new" && x.d; }), total=cs.length+ds.length, bad={};
++    return batchSave(cs, function(c){ return {name:c.name, no:c.no, ceo:c.ceo, email:c.email, tel:c.tel, addr:c.addr}; }, "company", "상사를 만들지 못했어요.",
++        function(n){ prog && prog(n, total); })
++      .then(function(rc){
++        rc.fails.forEach(function(c){ bad[key(c.name)]=1; });
++        var ds2=ds.filter(function(x){ if(bad[key(x.d.comp)]){ x.failWhy="소속 상사를 만들지 못해 딜러도 넣지 않았어요."; return false; } return true; });
++        var skipped=ds.filter(function(x){ return ds2.indexOf(x)<0; });
++        return batchSave(ds2, function(x){ return x.d; }, "dealer", "저장하지 못했어요. 다시 올려 주세요.",
++            function(n){ prog && prog(cs.length+n+skipped.length, total); })
++          .then(function(rd){
++            var oc=r.list.filter(function(x){ return x.st==="new" && !x.d; }), cf=[];
++            oc.forEach(function(x){ if(bad[key(x.c.comp)]) cf.push({line:x.line, c:x.c, why:"상사를 만들지 못했어요. 다시 올려 주세요."}); });
++            var df=rd.fails.concat(skipped).map(function(x){ return {line:x.line, c:x.c, why:x.failWhy||"저장하지 못했어요. 다시 올려 주세요."}; });
++            return {n:rd.n+oc.length-cf.length, fails:cf.concat(df).sort(function(a,b){ return a.line-b.line; })}; });
++      }); }
+   function savePartners(o, r, prog){
++    if(o.api && o.api.saveBatch) return savePartnersBatch(o, r, prog);   /* v143.2 */
+     var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),
+         ds=r.list.filter(function(x){ return x.st==="new" && x.d; }), bad={}, total=cs.length+ds.length, step=0;
+     function tick(){ step++; prog && prog(step, total); }
+@@ -4326,6 +4356,7 @@
+   el._why=why||"";
+   el.onclick=function(){
+     if(ok)toast("저장이 잘 연결돼 있어요");
++    else if(typeof WSAVE!=="undefined"&&Object.keys(WSAVE.fail).length){WSAVE.hide=false;wSaveBar();var wb=$("wSaveBar");if(wb)wb.scrollIntoView({block:"nearest"});}   /* v143.2 닫은 띠 다시 열기 */
+     else{banner("저장이 안 되는 이유: "+(el._why||"확인 필요")+" — 화면을 새로 열거나, 권한 창이 뜨면 허용해 주세요.");toast(el._why||"저장 연결 안 됨",true);}
+   };
+ }
+@@ -4703,7 +4734,7 @@
+   Array.prototype.forEach.call($("sheet").querySelectorAll("[data-go]"),function(b){
+     b.onclick=function(){closeSheet();S.tab=b.getAttribute("data-go");decideMode(false);window.scrollTo(0,0);};});
+ }
+-var APP_VER="워시 v143.1 · UI 3.0 · 2026-10-19";
++var APP_VER="워시 v143.2 · UI 3.0 · 2026-11-02";
+ /* 메뉴 배치: 가로(top) → 세로(side) → 아이콘만(icon) */
+ var LAYOUTS=["top","side","icon"];
+ function layoutMode(){
+@@ -5477,7 +5508,7 @@
+   return saveMany(rows).then(function(){trimBaks();});
+ }
+ /* 여러 건을 서버 한 번으로 저장해요 (옛 Code.gs면 하나씩 저장) */
+-function saveMany(rows){
++function saveMany(rows,opt){
+   rows=(rows||[]).filter(function(r){return r&&r.col&&r.id;});
+   if(!rows.length)return Promise.resolve();
+   var prevs=rows.map(function(r){var c=GS.cache[r.col]||{};return {had:Object.prototype.hasOwnProperty.call(c,r.id),v:c[r.id]};});
+@@ -5488,7 +5519,7 @@
+   /* v142 끝내 저장하지 못하면 화면을 저장 전으로 되돌리고 실패 띠에 올려요 */
+   function undo(e){
+     rows.forEach(function(r,i){var c=GS.cache[r.col];if(c&&c[r.id]===r.data){if(prevs[i].had)c[r.id]=prevs[i].v;else delete c[r.id];}
+-      wSaveFail(r.col,r.id,"set",r.data,e);});
++      if(!(opt&&opt.quiet))wSaveFail(r.col,r.id,"set",r.data,e);});
+     Object.keys(cols).forEach(fireSubs);
+     throw e;}
+   function ok(v){rows.forEach(function(r){wSaveOk(r.col,r.id);});return v;}
+@@ -10563,6 +10594,33 @@
+ var WPT_BIZ='사업자등록증(또는 홈택스 출력물) 사진이에요. 적힌 내용을 읽어 JSON 하나로만 답하세요. 다른 말은 쓰지 마세요.\n'+
+   '형식: {"bizNo":"000-00-00000","bizName":"상호","ceo":"대표자","addr":"사업장 주소","upte":"업태","jongmok":"종목","tel":"전화번호","email":"이메일"}\n'+
+   '- 없는 값은 빈 문자열로 두세요.\n- 이메일 · 전화번호는 인쇄된 칸이 아니어도(손글씨 · 덧붙인 글 · «세금계산서 메일주소» 같은 메모) 사진 어디에 있든 읽어 주세요.';
++/* v143.2 엑셀 넣기 — 새 상사 · 새 딜러 자료를 만들어 한 번에 저장(apiSetMany · saveMany 가 화면 캐시도 한 번에) */
++function wPtSaveBatch(kind,rows){
++  var docs=rows.map(function(x){return kind==="company"?wPtCompObj(x):wPtDealerObj(x);});
++  if(!S.db){return Promise.resolve();}
++  return saveMany(docs.map(function(o){return {col:kind==="company"?"companies":"dealers",id:o.id,data:o};}),{quiet:true}).then(function(){
++    if(kind==="company"){var ids={};docs.forEach(function(o){ids[o.id]=1;});S.comps=S.comps.filter(function(x){return !ids[x.id];}).concat(docs);}
++    else{var di={};docs.forEach(function(o){di[o.id]=1;});S.dealers=S.dealers.filter(function(x){return !di[x.id];}).concat(docs);}
++  });
++}
++function wPtCompObj(c){   /* 새 상사(엑셀) — wPtSaveCompany 의 새 상사와 같은 칸 */
++  var o={id:"c_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),taxType:TAXTYPES[0]};
++  o.name=String(c.name||"").trim();o.bizName=o.name;
++  if(c.no!=null)o.bizNo=c.no?fmtBizNo(c.no):"";
++  if(c.ceo!=null)o.ceo=c.ceo;
++  if(c.tel!=null)o.mainPhone=c.tel?ccwPhoneFmt(c.tel):"";
++  ["addr","email","upte","jongmok"].forEach(function(k){if(c[k]!=null)o[k]=c[k];});
++  o.updatedAt=nowIso();return o;
++}
++function wPtDealerObj(nd){   /* 새 딜러(엑셀) — wPtSaveDealer(nd,true) 와 같은 칸 */
++  var o={id:"d_"+Date.now()+"_"+Math.random().toString(36).slice(2,8)};
++  o.name=nd.name;o.phone=nd.tel?ccwPhoneFmt(nd.tel):"";o.company=nd.comp||"";
++  if(nd.tax==="none"){o.taxType=TAXTYPES[1];o.type="staff";}
++  else{o.taxType=TAXTYPES[0];o.type=(nd.tax==="own")?"biz":"staff";}
++  if(nd.tax==="own"&&nd.biz){var b=nd.biz;o.bizName=b.name||"";o.bizNo=b.no?fmtBizNo(b.no):"";o.ceo=b.ceo||"";
++    ["addr","email","upte","jongmok"].forEach(function(k){if(b[k]!=null)o[k]=b[k];});}
++  o.updatedAt=nowIso();return o;
++}
+ function wPtSaveCompany(c){
+   var old=c.id?S.comps.filter(function(x){return String(x.id)===String(c.id);})[0]:null;
+   var o=Object.assign({},old||{id:"c_"+Date.now()+"_"+Math.random().toString(36).slice(2,6),taxType:TAXTYPES[0]});
+@@ -10613,7 +10671,8 @@
+     $("wPtCsvTpl").onclick=function(){CGG_CSVUP.download("양식_거래처.csv",W133_TPL_P);};
+     $("wPtCsv").onclick=function(){
+       CGG_CSVUP.partners({owner:isOwner(),store:w134Store(),tplText:W133_TPL_P,dealers:wPtDealers(),companies:wPtCompanies(),later:false,
+-        api:{saveCompany:function(c){return wPtSaveCompany(c);},saveDealer:function(d){return wPtSaveDealer(d,true);}},
++        api:{saveCompany:function(c){return wPtSaveCompany(c);},saveDealer:function(d){return wPtSaveDealer(d,true);},
++          saveBatch:function(kind,rows){return wPtSaveBatch(kind,rows);}},   /* v143.2 300줄씩 묶어서 */
+         done:function(m){toast(m);renderParties();try{refreshDatalists();}catch(e){}},
+         fail:function(e){return errMsg(e);}});
+     };
+@@ -17023,26 +17082,47 @@
+     return {id:k,exists:true,data:function(){return m[k];}};})};
+ }
+ /* v142 저장 실패 모음 — 같은 기록(종류 · id)은 한 줄로. [다시 하기]는 같은 id 로 다시 보내요(서버가 덮어써서 두 번 안 생겨요) */
+-var WSAVE={fail:{},busy:false};
++var WSAVE={fail:{},busy:false,hide:false};
++/* v143.2 기록 종류 이름 (띠 «자세히») */
++var WSAVE_COL={intakes:"입고 · 출고 기록",outbox:"보낸 기록(알림)",settings:"설정",dealers:"딜러",companies:"상사",bills:"청구서",
++  memos:"메모",staff:"직원",materials:"자재",matlogs:"자재 기록",trash:"휴지통",taxdocs:"세금계산서",vendors:"매입 거래처"};
++function wSaveWhat(x){var n=WSAVE_COL[x.name]||x.name,o=x.obj||{};
++  var t=o.plate||o.name||o.dealer||o.title||o.to||"";
++  return n+(x.op==="del"?" 지우기":"")+(t?" · "+String(t).slice(0,20):"");}
+ function wSaveOk(name,id){
+   if(!WSAVE.fail[name+"/"+id])return;
+   delete WSAVE.fail[name+"/"+id]; wSaveBar();
+ }
+ function wSaveFail(name,id,op,obj,e){
+   if(GS.demo&&!S.db)return;
+-  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e)};
++  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e),at:Date.now()};
+   wSaveBar();
+ }
+ function wSaveBar(){
+   var keys=Object.keys(WSAVE.fail), b=$("wSaveBar");
+-  if(!keys.length){ if(b)b.remove(); try{setDbState(true);}catch(e){} return; }
++  if(!keys.length){ if(b)b.remove(); WSAVE.hide=false; try{setDbState(true);}catch(e){} return; }
+   try{setDbState(false,"저장하지 못한 기록 "+keys.length+"건");}catch(e){}
++  if(WSAVE.hide){ if(b)b.hidden=true; return; }   /* v143.2 닫아도 기록은 남아요 — 머리말 «저장 안 됨»을 누르면 다시 열려요 */
+   if(!b){ b=document.createElement("div"); b.id="wSaveBar"; b.className="banner stop"; b.setAttribute("role","alert");
+     var bn=$("banner"); if(bn&&bn.parentNode)bn.parentNode.insertBefore(b,bn.nextSibling); else document.body.insertBefore(b,document.body.firstChild); }
+   var f=WSAVE.fail[keys[0]];
+-  b.title=f.why||"";
+-  b.innerHTML='<b>저장 못 한 기록 '+keys.length+'건</b> — 인터넷을 확인하고 [다시 하기]를 눌러 주세요. '+
+-    '<button type="button" class="btn primary" id="wSaveRetry" style="margin-left:6px"'+(WSAVE.busy?' disabled':'')+'>'+(WSAVE.busy?'다시 저장하는 중…':'다시 하기')+'</button>';
++  b.hidden=false; b.title=f.why||"";
++  b.innerHTML='<div class="wsv-top"><b>저장 못 한 기록 '+keys.length+'건</b> — 인터넷을 확인하고 [다시 하기]를 눌러 주세요.'+
++    '<button type="button" class="wsv-x" id="wSaveClose" aria-label="띠 닫기">닫기 ✕</button></div>'+
++    '<div class="wsv-btns"><button type="button" class="btn primary" id="wSaveRetry"'+(WSAVE.busy?' disabled':'')+'>'+(WSAVE.busy?'다시 저장하는 중…':'다시 하기')+'</button>'+
++    '<button type="button" class="btn" id="wSaveMore"'+(WSAVE.busy?' disabled':'')+'>자세히</button>'+
++    '<button type="button" class="btn" id="wSaveDrop"'+(WSAVE.busy?' disabled':'')+'>버리기</button></div>'+
++    '<div class="wsv-list" id="wSaveList" hidden>'+keys.slice(0,20).map(function(k){var x=WSAVE.fail[k];
++      return '<div><b>'+esc(wSaveWhat(x))+'</b><small>'+esc(x.why||"까닭을 받지 못했어요")+(x.at?" · "+esc(hhmm(x.at)):"")+'</small></div>';}).join("")+
++      (keys.length>20?'<div><small>외 '+(keys.length-20)+'건</small></div>':'')+'</div>';
++  $("wSaveClose").onclick=function(){WSAVE.hide=true;b.hidden=true;toast("띠를 닫았어요. 기록은 남아 있어요 — 위 «저장 안 됨»을 누르면 다시 열려요");};
++  $("wSaveMore").onclick=function(){var l=$("wSaveList");if(l)l.hidden=!l.hidden;};
++  $("wSaveDrop").onclick=function(){
++    ask("저장 못 한 기록 "+keys.length+"건을 버릴까요?\n\n화면을 서버에 있는 자료로 다시 불러와요. 버린 기록은 되살릴 수 없어요.",function(){
++      WSAVE.fail={};WSAVE.hide=false;WSAVE.inIdem=null;wSaveBar();
++      Promise.resolve(GS.load?GS.load(true):null).then(function(){try{renderAll();}catch(e){}toast("버렸어요. 서버 자료로 다시 불러왔어요");},
++        function(){toast("다시 불러오지 못했어요 — 새로고침해 주세요",true);});
++    },"버리기",true);};
+   $("wSaveRetry").onclick=function(){
+     if(WSAVE.busy)return;
+     WSAVE.busy=true; var bt=this; bt.disabled=true; bt.textContent="다시 저장하는 중…";
+@@ -19828,6 +19908,13 @@
+ .dashhead > .jhd{flex:1 1 420px;min-width:0}
+ .dashhead h2{margin:0;font-size:28px;font-weight:900;letter-spacing:-.8px;line-height:1.3;text-wrap:balance;color:var(--text)}
+ .dashhead h2 em,.jsay em{font-style:normal;color:inherit}
++/* v143.2 저장 못 한 기록 띠 — 닫기 · 자세히 · 버리기 */
++#wSaveBar .wsv-top{display:flex;align-items:flex-start;gap:8px}
++#wSaveBar .wsv-top>b{flex:none}
++#wSaveBar .wsv-x{margin-left:auto;flex:none;background:none;border:0;color:inherit;font:inherit;font-weight:800;cursor:pointer;padding:2px 4px;min-height:32px}
++#wSaveBar .wsv-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
++#wSaveBar .wsv-list{margin-top:8px;display:flex;flex-direction:column;gap:6px}
++#wSaveBar .wsv-list small{display:block;font-weight:500}
+    /* v137 제목 숫자는 기본 글자색(1.12) */
+ .dashhead .sub2{margin:6px 0 0;font-size:14px;color:var(--muted)}
+ .dashhead .jacts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
