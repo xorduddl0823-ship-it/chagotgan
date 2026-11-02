@@ -50,6 +50,60 @@ const W=(p,ms)=>p.waitForTimeout(ms);
   ok('② 300줄씩 묶어 보냄(서버 부르기 약 46번 · 한 줄씩 0번)',R.many>=44&&R.many<=50&&R.one===0,'묶음 '+R.many+'번 · 한 줄 '+R.one+'번 · '+sec+'초');
   ok('② 이미 있던 딜러는 두 번 안 들어감',R.dupKim===1);
   ok('② 페이지 오류 없음',!p._errs.length,p._errs.slice(0,2).join(' | ')); await p.close(); }
+
+// ③ 진짜 까닭 — 답 못 받음(인터넷) / 서버 거절(영어 원문)
+{ const p=await page('',390,844);
+  const r=await p.evaluate(async()=>{ const w=__t.recs().find(x=>x.status==='입고'); window.__LOSE={apiSet:1};
+    await __t.saveRec(Object.assign({},w,{memo:'망'})).catch(()=>0); await new Promise(r=>setTimeout(r,300));
+    const a=Object.values(__t.W().fail)[0]||{}; window.__FAILEN=1;
+    const w2=__t.recs().filter(x=>x.status==='입고')[1]; await __t.saveRec(Object.assign({},w2,{memo:'거절'})).catch(()=>0); await new Promise(r=>setTimeout(r,300));
+    const b=Object.values(__t.W().fail).find(x=>x.id===w2.id)||{}; return {a:a.why,b:b.why,raw:b.raw}; });
+  ok('③ 답을 못 받으면 «인터넷 연결이 끊겼거나 서버 답을 받지 못했어요»',/인터넷 연결이 끊겼거나/.test(r.a||''),r.a);
+  ok('③ 서버가 거절하면 «서버가 저장을 받지 않았어요(인터넷 문제 아님)» + 서버 글',/서버가 저장을 받지 않았어요/.test(r.b||'')&&/row-level/.test(r.raw||''),r.b+' / '+r.raw);
+  await p.evaluate(()=>{window.__FAILEN=1;document.getElementById('wSaveRetry').click();}); await W(p,1200);
+  const t=await p.evaluate(()=>{const x=document.querySelector('#toast.show,.cgg-toast:not([hidden])');return x?x.textContent:'';});
+  ok('③ 다시 하기가 또 안 되면 알림 글도 진짜 까닭',/서버가 저장을 받지 않았어요|인터넷 연결이 끊겼거나/.test(t)&&!/인터넷 연결을 확인해 주세요$/.test(t),t);
+  await p.evaluate(()=>document.getElementById('wSaveClose').click()); await W(p,300);
+  const c=await p.evaluate(()=>{const c=document.getElementById('wSaveChip');return c&&!c.hidden?{t:c.textContent,h:c.getBoundingClientRect().height}:null;});
+  ok('③ 폰: 닫으면 아래 «저장 못 한 기록 N건» 단추(42px 이상)',!!c&&c.h>=42,JSON.stringify(c));
+  await p.evaluate(()=>document.getElementById('wSaveChip').click()); await W(p,300);
+  ok('③ 그 단추로 띠 다시 열림',await p.evaluate(()=>!document.getElementById('wSaveBar').hidden&&document.getElementById('wSaveChip').hidden));
+  const hs=await p.evaluate(()=>['wSaveClose','wSaveRetry','wSaveMore','wSaveDrop'].map(id=>Math.round(document.getElementById(id).getBoundingClientRect().height)));
+  ok('③ 띠 단추 높이 42px 이상',hs.every(h=>h>=42),hs.join(','));
+  ok('③ 페이지 오류 없음',!p._errs.length,p._errs.join(' | ')); await p.close(); }
+// ④ 알림 켜기/끄기
+{ const p=await page('',1440,1000);
+  const h=await p.evaluate(()=>{const w=document.querySelector('#vHome .wal');const t=w&&w.nextElementSibling;return {has:!!w,rows:w?w.querySelectorAll('.wal-row').length:0,next:t?t.innerText.slice(0,10):''};});
+  ok('④ 홈 «오늘 할 일» 바로 위에 입고 · 출고 알림 두 줄',h.has&&h.rows===2&&/오늘 할 일/.test(h.next),JSON.stringify(h));
+  await p.evaluate(()=>document.querySelector('#vHome .wal [data-wal="autoIn"]').click()); await W(p,300);
+  const ask=await p.evaluate(()=>{const a=document.getElementById('askbox');return a&&a.classList.contains('show')?a.innerText:'';});
+  ok('④ 끄기 전에 확인 창',/입고 알림을 끌까요/.test(ask),ask.replace(/\n/g,' ').slice(0,60));
+  await p.evaluate(()=>document.getElementById('askYes').click()); await W(p,1200);
+  const r=await p.evaluate(()=>{const c=(__PV.DB().settings||{}).config||{};const w=document.querySelector('#vHome .wal');const row=w&&w.querySelector('.wal-row');
+    return {saved:(c.send||{}).autoIn,off:row&&row.classList.contains('off'),txt:row&&row.innerText.replace(/\n/g,' ')};});
+  ok('④ 끄면 서버 설정에 저장 · 줄이 «꺼져 있어요»',r.saved===false&&r.off&&/꺼져 있어요/.test(r.txt),JSON.stringify(r));
+  const sw=await p.evaluate(()=>Math.round(document.querySelector('#vHome .wal-sw').getBoundingClientRect().height));
+  ok('④ 스위치 누르는 칸 42px',sw>=42,sw+'px');
+  await p.evaluate(()=>{const b=document.getElementById('btnMode');b&&b.click();}); await W(p,900);
+  const f=await p.evaluate(()=>{const s=document.getElementById('vFHome');const w=s&&s.querySelector(':scope > .wal');return {has:!!w,vis:!!(w&&w.offsetParent),off:!!(w&&w.querySelector('.wal-row.off'))};});
+  ok('④ 현장 화면에도 같은 줄(꺼진 상태 그대로)',f.has&&f.vis&&f.off,JSON.stringify(f));
+  ok('④ 페이지 오류 없음',!p._errs.length,p._errs.join(' | ')); await p.close(); }
+// ② 멈추기 — 지금 묶음까지 · 상사만 있고 딜러 없는 반쪽 없음
+{ const p=await page('',1440,1000);
+  await p.evaluate(()=>{const S=__t.SS();S.setSub='parties';__t.tab('settings');}); await W(p,1200);
+  await p.evaluate(()=>document.getElementById('wPtCsv').click()); await W(p,600);
+  const [fc]=await Promise.all([p.waitForEvent('filechooser'),p.evaluate(()=>{const b=[...document.querySelectorAll('.cgg-dim:not([hidden]) button')].find(x=>x.textContent.trim()==='파일 고르기');b.click();})]);
+  await fc.setFiles(SP+'/t1432/dealerList.csv'); await W(p,4000);
+  await p.evaluate(()=>{const b=document.querySelector('.cgg-dim:not([hidden]) [data-dok]');b&&b.click();}); await W(p,700);
+  const sb=await p.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.textContent==='멈추기');if(b){b.click();return true;}return false;});
+  for(let i=0;i<60;i++){ await W(p,500); if(await p.evaluate(()=>{const g=document.getElementById('csuProg');return !g||g.hidden||!g.isConnected;}))break; }
+  const R=await p.evaluate(()=>{const DB=__PV.DB();const cs=Object.values(DB.companies||{}).filter(x=>/^시험상사/.test(x.name)).map(x=>x.name);
+    const ds=Object.values(DB.dealers||{}).filter(x=>/^딜러\d{5}$/.test(x.name));const have={};ds.forEach(d=>have[d.company]=1);
+    return {comps:cs.length,dealers:ds.length,orphan:cs.filter(n=>!have[n]).length,toast:(document.querySelector('#toast.show,.cgg-toast:not([hidden])')||{}).textContent||''};});
+  ok('② [멈추기] 단추가 넣는 중에 눌림',sb);
+  ok('② 멈추면 일부만 넣고 «멈췄어요 · 남은 줄은 다시 올리면 이어서»',R.dealers>0&&R.dealers<12679&&/멈췄어요/.test(R.toast),JSON.stringify(R));
+  ok('② 상사만 있고 그 딜러는 없는 반쪽 없음',R.orphan===0,'반쪽 '+R.orphan+'곳');
+  ok('② 페이지 오류 없음',!p._errs.length,p._errs.slice(0,2).join(' | ')); await p.close(); }
 await b.close();
 const sum=`실행 ${pass+fail} · 통과 ${pass} · 실패 ${fail} · 건너뜀 0`; console.log(sum);
 import fs from 'fs'; fs.writeFileSync(SP+'/t1432/result.txt',out.join('\n')+'\n'+sum+'\n');

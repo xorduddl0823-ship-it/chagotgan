@@ -72,50 +72,69 @@ rep('''.dashhead h2 em,.jsay em{font-style:normal;color:inherit}''', '''.dashhea
 # ② 거래처 엑셀: 300줄씩 묶어 저장 (api.saveBatch 가 있으면)
 rep('''  function savePartners(o, r, prog){
     var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),''',
-'''  /* v143.2 묶어 넣기 — 300줄씩 서버 한 번(같은 id 덮어쓰기). 묶음이 안 되면 그 묶음 줄만 «못 넣은 줄» */
-  function batchSave(list, mk, kind, fail, prog){
-    var N=list.length, done=0, ok=0, fails=[], CH=300, chunks=[];
-    for(var i=0;i<N;i+=CH) chunks.push(list.slice(i,i+CH));
-    return chunks.reduce(function(p,ch){ return p.then(function(){
-      var rows=ch.map(mk);
-      return Promise.resolve(o0.api.saveBatch(kind, rows)).then(function(){ ok+=ch.length; },
-        function(){ ch.forEach(function(x){ x.failWhy=x.failWhy||fail; fails.push(x); }); })
-        .then(function(){ done+=ch.length; prog && prog(done); }); }); }, Promise.resolve())
-      .then(function(){ return {n:ok, fails:fails}; }); }
-  var o0=null;
-  function savePartnersBatch(o, r, prog){
-    o0=o;
+'''  /* v143.2 묶어 넣기 — 상사와 그 상사 딜러를 한 묶음(서버 한 번 = 한꺼번에 저장)으로 300줄씩.
+     묶음 하나가 다 들어가거나 하나도 안 들어가요(창을 닫아도 «상사만 있고 딜러는 없음» 같은 반쪽이 없게). [멈추기] = 지금 묶음까지 */
+  function savePartnersBatch(o, r, prog, ctl){
     var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),
-        ds=r.list.filter(function(x){ return x.st==="new" && x.d; }), total=cs.length+ds.length, bad={};
-    return batchSave(cs, function(c){ return {name:c.name, no:c.no, ceo:c.ceo, email:c.email, tel:c.tel, addr:c.addr}; }, "company", "상사를 만들지 못했어요.",
-        function(n){ prog && prog(n, total); })
-      .then(function(rc){
-        rc.fails.forEach(function(c){ bad[key(c.name)]=1; });
-        var ds2=ds.filter(function(x){ if(bad[key(x.d.comp)]){ x.failWhy="소속 상사를 만들지 못해 딜러도 넣지 않았어요."; return false; } return true; });
-        var skipped=ds.filter(function(x){ return ds2.indexOf(x)<0; });
-        return batchSave(ds2, function(x){ return x.d; }, "dealer", "저장하지 못했어요. 다시 올려 주세요.",
-            function(n){ prog && prog(cs.length+n+skipped.length, total); })
-          .then(function(rd){
-            var oc=r.list.filter(function(x){ return x.st==="new" && !x.d; }), cf=[];
-            oc.forEach(function(x){ if(bad[key(x.c.comp)]) cf.push({line:x.line, c:x.c, why:"상사를 만들지 못했어요. 다시 올려 주세요."}); });
-            var df=rd.fails.concat(skipped).map(function(x){ return {line:x.line, c:x.c, why:x.failWhy||"저장하지 못했어요. 다시 올려 주세요."}; });
-            return {n:rd.n+oc.length-cf.length, fails:cf.concat(df).sort(function(a,b){ return a.line-b.line; })}; });
-      }); }
-  function savePartners(o, r, prog){
-    if(o.api && o.api.saveBatch) return savePartnersBatch(o, r, prog);   /* v143.2 */
+        ds=r.list.filter(function(x){ return x.st==="new" && x.d; }), total=cs.length+ds.length;
+    var G={}, order=[];
+    function g(k){ if(!G[k]){ G[k]={c:null,d:[]}; order.push(k); } return G[k]; }
+    cs.forEach(function(c){ g(key(c.name)).c=c; });
+    ds.forEach(function(x){ g(key(x.d.comp)).d.push(x); });
+    var chunks=[], cur=[];
+    order.forEach(function(k){ var it=[], gg=G[k];
+      if(gg.c) it.push({kind:"company", row:{name:gg.c.name, no:gg.c.no, ceo:gg.c.ceo, email:gg.c.email, tel:gg.c.tel, addr:gg.c.addr}, src:gg.c});
+      gg.d.forEach(function(x){ it.push({kind:"dealer", row:x.d, src:x}); });
+      if(cur.length && cur.length+it.length>300){ chunks.push(cur); cur=[]; }
+      while(it.length>300){ chunks.push(it.splice(0,300)); }
+      cur=cur.concat(it); });
+    if(cur.length) chunks.push(cur);
+    var done=0, okD=0, fails=[], saved={}, left=0, stopped=false;
+    return chunks.reduce(function(p,ch){ return p.then(function(){
+      if(ctl && ctl.stop){ stopped=true; ch.forEach(function(it){ if(it.kind==="dealer") left++; }); return; }
+      return Promise.resolve(o.api.saveBatch(ch.map(function(it){ return {kind:it.kind, row:it.row}; }))).then(function(){
+          ch.forEach(function(it){ if(it.kind==="dealer") okD++; else saved[key(it.src.name)]=1; }); },
+        function(e){ var why=(o.fail?o.fail(e):"")||"저장하지 못했어요. 다시 올려 주세요.";
+          ch.forEach(function(it){ if(it.kind==="dealer") fails.push({line:it.src.line, c:it.src.c, why:why}); }); })
+        .then(function(){ done+=ch.length; prog && prog(done, total); }); }); }, Promise.resolve())
+      .then(function(){
+        var oc=r.list.filter(function(x){ return x.st==="new" && !x.d; }), ocOk=0;
+        oc.forEach(function(x){ if(saved[key(x.c.comp)]) ocOk++; else if(stopped && !fails.some(function(f){ return key((f.c||{}).comp)===key(x.c.comp); })) left++;
+          else fails.push({line:x.line, c:x.c, why:"상사를 만들지 못했어요. 다시 올려 주세요."}); });
+        return {n:okD+ocOk, fails:fails.sort(function(a,b){ return a.line-b.line; }), stopped:stopped, left:left}; });
+  }
+  function savePartners(o, r, prog, ctl){
+    if(o.api && o.api.saveBatch) return savePartnersBatch(o, r, prog, ctl);   /* v143.2 */
     var cs=Object.keys(r.comps).map(function(k){ return r.comps[k]; }),''')
 rep('''        api:{saveCompany:function(c){return wPtSaveCompany(c);},saveDealer:function(d){return wPtSaveDealer(d,true);}},''',
 '''        api:{saveCompany:function(c){return wPtSaveCompany(c);},saveDealer:function(d){return wPtSaveDealer(d,true);},
-          saveBatch:function(kind,rows){return wPtSaveBatch(kind,rows);}},   /* v143.2 300줄씩 묶어서 */''')
+          saveBatch:function(items){return wPtSaveBatch(items);}},   /* v143.2 상사+딜러 한 묶음씩 */''')
+# 넣는 중 [멈추기] — 지금 묶음까지 넣고 멈춰요(넣은 줄은 남고, 다시 올리면 «이미 있음»)
+rep('''      save:function(r, prog){ return savePartners(o, r, prog); },''','''      save:function(r, prog, ctl){ return savePartners(o, r, prog, ctl); },''')
+rep('''    Promise.resolve(o.save(r, function(i, t){ if(pg) pg.textContent="넣는 중이에요… "+i+" / "+t; })).then(function(res){
+      var fails=(res&&res.fails)||[], ok=(res&&res.n)||0;
+      unblk(); closeD();
+      o.done && o.done(ok+"줄을 넣었어요."+(fails.length?" "+fails.length+"줄은 못 넣었어요.":""));''','''    var ctl={stop:false}, sbn=null;   /* v143.2 넣는 중 멈추기 */
+    if(o.kind==="partners"){ sbn=document.createElement("button"); sbn.type="button"; sbn.className="cgg-btn"; sbn.textContent="멈추기";
+      sbn.style.marginTop="8px"; sbn.onclick=function(){ ctl.stop=true; sbn.disabled=true; sbn.textContent="지금 묶음까지 넣고 멈춰요…"; };
+      pg.parentNode.insertBefore(sbn, pg.nextSibling); }
+    Promise.resolve(o.save(r, function(i, t){ if(pg) pg.textContent="넣는 중이에요… "+i+" / "+t; }, ctl)).then(function(res){
+      var fails=(res&&res.fails)||[], ok=(res&&res.n)||0;
+      unblk(); if(sbn) sbn.remove(); closeD();
+      if(res&&res.stopped) o.done && o.done(ok+"줄을 넣고 멈췄어요. 남은 "+res.left+"줄은 같은 파일을 다시 올리면 이어서 넣어요(넣은 줄은 «이미 있음»으로 건너뛰어요).");
+      else o.done && o.done(ok+"줄을 넣었어요."+(fails.length?" "+fails.length+"줄은 못 넣었어요.":""));''')
+
 # 상사 · 딜러 자료 만들기(저장 없이)와 묶어 저장
 rep('''function wPtSaveCompany(c){''', '''/* v143.2 엑셀 넣기 — 새 상사 · 새 딜러 자료를 만들어 한 번에 저장(apiSetMany · saveMany 가 화면 캐시도 한 번에) */
-function wPtSaveBatch(kind,rows){
-  var docs=rows.map(function(x){return kind==="company"?wPtCompObj(x):wPtDealerObj(x);});
-  if(!S.db){return Promise.resolve();}
-  return saveMany(docs.map(function(o){return {col:kind==="company"?"companies":"dealers",id:o.id,data:o};}),{quiet:true}).then(function(){
-    if(kind==="company"){var ids={};docs.forEach(function(o){ids[o.id]=1;});S.comps=S.comps.filter(function(x){return !ids[x.id];}).concat(docs);}
-    else{var di={};docs.forEach(function(o){di[o.id]=1;});S.dealers=S.dealers.filter(function(x){return !di[x.id];}).concat(docs);}
-  });
+function wPtSaveBatch(items){
+  var cs=[],ds=[];
+  items.forEach(function(it){if(it.kind==="company")cs.push(wPtCompObj(it.row));else ds.push(wPtDealerObj(it.row));});
+  var rows=cs.map(function(o){return {col:"companies",id:o.id,data:o};}).concat(ds.map(function(o){return {col:"dealers",id:o.id,data:o};}));
+  function keep(){   /* 화면 목록도 바로 (서버 연결이 없는 시연에서도) */
+    if(cs.length){var ci={};cs.forEach(function(o){ci[o.id]=1;});S.comps=S.comps.filter(function(x){return !ci[x.id];}).concat(cs);}
+    if(ds.length){var di={};ds.forEach(function(o){di[o.id]=1;});S.dealers=S.dealers.filter(function(x){return !di[x.id];}).concat(ds);}}
+  if(!S.db){keep();return Promise.resolve();}
+  return saveMany(rows,{quiet:true}).then(keep);
 }
 function wPtCompObj(c){   /* 새 상사(엑셀) — wPtSaveCompany 의 새 상사와 같은 칸 */
   var o={id:"c_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),taxType:TAXTYPES[0]};
@@ -139,4 +158,87 @@ function wPtSaveCompany(c){''')
 # saveMany 에 quiet(엑셀 넣기는 못 넣은 줄 표로 알리니 빨간 띠에는 안 올림)
 rep('''function saveMany(rows){''', '''function saveMany(rows,opt){''')
 rep('''      wSaveFail(r.col,r.id,"set",r.data,e);});''', '''      if(!(opt&&opt.quiet))wSaveFail(r.col,r.id,"set",r.data,e);});''')
+# ③ 진짜 까닭: 답을 못 받은 것(인터넷)과 서버가 거절한 것을 나눠요 · 서버 글 원문(짧게)은 «자세히»에
+rep("""  return map[c]||kmsg(e,"저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");""",
+"""  if(map[c])return map[c];
+  if(e&&e.unknown&&!/처리 중|확인 중/.test(String(e.message||"")))return "인터넷 연결이 끊겼거나 서버 답을 받지 못했어요. 연결을 확인하고 다시 해 주세요.";   /* v143.2 */
+  return kmsg(e,"서버가 저장을 받지 않았어요(인터넷 문제 아님). «자세히»의 서버 글을 차곳간에 알려 주세요.");""")
+rep("""  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e),at:Date.now()};""",
+    """  WSAVE.fail[name+"/"+id]={name:name,id:id,op:op,obj:obj,why:errMsg(e),raw:String((e&&(e.message||e.error||e.__err))||"").slice(0,120),net:!!(e&&e.unknown),at:Date.now()};""")
+rep("""      return '<div><b>'+esc(wSaveWhat(x))+'</b><small>'+esc(x.why||"까닭을 받지 못했어요")+(x.at?" · "+esc(hhmm(x.at)):"")+'</small></div>';}).join("")+""",
+    """      return '<div><b>'+esc(wSaveWhat(x))+'</b><small>'+esc(x.why||"까닭을 받지 못했어요")+(x.at?" · "+esc(hhmm(x.at)):"")+'</small>'+
+        (x.raw&&x.raw!==x.why?'<small class="wsv-raw">서버 글: '+esc(x.raw)+'</small>':'')+'</div>';}).join("")+""")
+rep("""      if(ok===r.length)toast(ok+"건을 저장했어요"); else toast((r.length-ok)+"건은 아직 저장하지 못했어요 — 인터넷 연결을 확인해 주세요",true);""",
+    """      var k1=Object.keys(WSAVE.fail)[0],f1=k1?WSAVE.fail[k1]:null;   /* v143.2 진짜 까닭 */
+      if(ok===r.length)toast(ok+"건을 저장했어요"); else toast((r.length-ok)+"건은 아직 저장하지 못했어요 — "+((f1&&f1.why)||"«자세히»를 봐 주세요"),true);""")
+# 닫은 띠 다시 열기 — 폰은 머리말이 숨으니 아래쪽 작은 단추로
+rep("""  if(WSAVE.hide){ if(b)b.hidden=true; return; }   /* v143.2 닫아도 기록은 남아요 — 머리말 «저장 안 됨»을 누르면 다시 열려요 */""",
+    """  var chip=$("wSaveChip");
+  if(WSAVE.hide){ if(b)b.hidden=true;
+    if(!chip){ chip=document.createElement("button"); chip.type="button"; chip.id="wSaveChip"; document.body.appendChild(chip);
+      chip.onclick=function(){WSAVE.hide=false;wSaveBar();var wb=$("wSaveBar");if(wb)wb.scrollIntoView({block:"nearest"});}; }
+    chip.hidden=false; chip.textContent="저장 못 한 기록 "+keys.length+"건 ▴"; return; }   /* v143.2 닫아도 기록은 남아요 — 아래 단추로 다시 열기 */
+  if(chip)chip.hidden=true;""")
+rep("""  if(!keys.length){ if(b)b.remove(); WSAVE.hide=false; try{setDbState(true);}catch(e){} return; }""",
+    """  if(!keys.length){ if(b)b.remove(); var ch0=$("wSaveChip"); if(ch0)ch0.remove(); WSAVE.hide=false; try{setDbState(true);}catch(e){} return; }""")
+rep("""toast("띠를 닫았어요. 기록은 남아 있어요 — 위 «저장 안 됨»을 누르면 다시 열려요");""",
+    """wSaveBar();toast("띠를 닫았어요. 기록은 남아 있어요 — 아래 «저장 못 한 기록» 단추로 다시 열어요");""")
+rep("""#wSaveBar .wsv-x{margin-left:auto;flex:none;background:none;border:0;color:inherit;font:inherit;font-weight:800;cursor:pointer;padding:2px 4px;min-height:32px}""",
+    """#wSaveBar .wsv-x{margin-left:auto;flex:none;background:none;border:0;color:inherit;font:inherit;font-weight:800;cursor:pointer;padding:0 10px;min-height:42px}
+#wSaveBar .btn{min-height:42px}
+#wSaveBar .wsv-raw{opacity:.8;word-break:break-all}
+#wSaveChip{position:fixed;z-index:9000;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));min-height:42px;padding:0 16px;border-radius:21px;border:1px solid var(--danger);background:var(--danger-soft);color:var(--danger);font:inherit;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
+@media (min-width:1000px){#wSaveChip{bottom:calc(20px + env(safe-area-inset-bottom,0px))}}""")
+
+# ④ 입고 · 출고 알림 켜기/끄기 — 홈(오늘 할 일 위) · 현장 화면(사진 칸 아래). 대표만 · 확인 창 (체크 «도착 알림» 줄과 같은 모양)
+rep("""function autoInOn(){return sendCfg().autoIn!==false;}""", """function autoInOn(){return sendCfg().autoIn!==false;}
+/* v143.2 알림 켜기/끄기 줄 */
+function wAlarmEl(){
+  var c=sendCfg(),own=isOwner(),d=document.createElement("div");d.className="card wal";
+  function row(k,nm,desc){var on=c[k]!==false;
+    return '<div class="wal-row'+(on?'':' off')+'"><span class="wal-ic" aria-hidden="true">'+((window.CGG&&CGG.ic)?CGG.ic("bell"):"")+'</span>'+
+      '<span class="wal-tx"><b>'+nm+'</b><small>'+(on?desc:'꺼져 있어요 — 알림이 안 나가요')+'</small></span>'+
+      '<span class="wal-st">'+(on?'켜짐':'꺼짐')+'</span>'+
+      '<button type="button" class="wal-sw" role="switch" aria-checked="'+on+'" data-wal="'+k+'" aria-label="'+nm+'"'+(own?'':' disabled')+'><i></i></button></div>';}
+  d.innerHTML=row("autoIn","입고 알림","차가 들어오면 딜러에게 알림톡이 나가요")+row("autoOut","출고 알림","출고하면 딜러에게 알림톡이 나가요")+
+    (own?'':'<div class="wal-lock">대표만 바꿀 수 있어요</div>');
+  Array.prototype.forEach.call(d.querySelectorAll("[data-wal]"),function(b){b.onclick=function(){
+    if(!isOwner())return toast("대표만 바꿀 수 있어요",true);
+    var k=b.getAttribute("data-wal"),on=sendCfg()[k]!==false,nm=k==="autoIn"?"입고 알림":"출고 알림";
+    ask(on?(nm+"을 끌까요?\\n\\n끄는 동안 차가 "+(k==="autoIn"?"들어와도":"출고돼도")+" 딜러에게 알림이 안 나가요."):(nm+"을 다시 켤까요?\\n\\n"+(k==="autoIn"?"차가 들어오면":"출고하면")+" 딜러에게 알림톡이 나가요."),function(){
+      var o=Object.assign({},sendCfg());o[k]=!on;S.cfg=Object.assign({},S.cfg);S.cfg.send=o;
+      saveCfg({what:nm+(on?" 끄기":" 켜기")}).then(function(){toast(nm+(on?"을 껐어요":"을 켰어요"));},function(e){toast(errMsg(e),true);})
+        .then(function(){try{renderAll();}catch(e){}});
+    },on?"끄기":"켜기",on);};});
+  return d;
+}
+function wAlarmMount(parent,before){if(!parent)return;var old=parent.querySelector(":scope > .wal");if(old)old.remove();parent.insertBefore(wAlarmEl(),before||null);}""")
+rep("""  /* 정산(이번 달 입금)은 매니저에게 보이지 않아요 */
+  if(mgr){var mc=host.querySelector(".cgg-homeside .cgg-side");if(mc)mc.remove();}""",
+    """  /* 정산(이번 달 입금)은 매니저에게 보이지 않아요 */
+  if(mgr){var mc=host.querySelector(".cgg-homeside .cgg-side");if(mc)mc.remove();}
+  /* v143.2 알림 켜기/끄기 — «오늘 할 일» 바로 위 */
+  try{var tdh=Array.prototype.filter.call(host.querySelectorAll(".cgg-sech"),function(x){return /오늘 할 일/.test(x.textContent);})[0];
+    if(tdh&&tdh.parentNode)wAlarmMount(tdh.parentNode.parentNode,tdh.parentNode);}catch(e){}""")
+rep("""function renderFHome(){""", """function renderFHome(){
+  try{var fsec=$("vFHome"),fn=fsec&&fsec.querySelector(".fhnums");if(fn)wAlarmMount(fsec,fn);}catch(e){}   /* v143.2 알림 켜기/끄기 */""")
+rep("""#wSaveBar .wsv-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}""", """#wSaveBar .wsv-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* v143.2 알림 켜기/끄기 줄 (체크 «도착 알림»과 같은 모양) */
+.wal{padding:6px 16px;margin:0 0 16px}
+.wal-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.wal-row+.wal-row{border-top:1px solid var(--line)}
+.wal-row.off{background:var(--danger-soft);margin:0 -10px;padding:10px;border-radius:12px}
+.wal-ic{display:inline-flex;color:var(--muted)}.wal-ic svg{width:20px;height:20px}
+.wal-tx{flex:1;min-width:0}.wal-tx b{display:block;font-size:15px}.wal-tx small{color:var(--muted);font-size:13px}
+.wal-row.off .wal-tx small{color:var(--danger);font-weight:700}
+.wal-st{font-size:13px;font-weight:700;color:var(--muted)}
+.wal-sw{position:relative;flex:none;width:56px;height:42px;background:none;border:0;padding:0;cursor:pointer}
+.wal-sw i{position:absolute;left:2px;top:6px;width:52px;height:30px;border-radius:15px;background:var(--line);transition:background .15s}
+.wal-sw i::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.wal-sw[aria-checked="true"] i{background:var(--done)}.wal-sw[aria-checked="true"] i::after{left:25px}
+.wal-sw:disabled{opacity:.5;cursor:not-allowed}
+.wal-sw:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:15px}
+.wal-lock{font-size:12.5px;color:var(--muted);padding:0 0 8px}
+@media (prefers-reduced-motion:reduce){.wal-sw i,.wal-sw i::after{transition:none}}""")
+
 open(OUT, "w", encoding="utf-8").write(s); print("OK", OUT, len(s))
