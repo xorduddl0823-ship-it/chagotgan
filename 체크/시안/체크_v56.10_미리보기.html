@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#1668C4">
 <title>체크 v56.10 미리보기</title>
-<!-- 체크 v56.10 (v56.9 + 배달 도착 알림 켜기/끄기 · 11/2) · 체크 v56.9 (v56.8 + 서버 v54 답 모양 · 다시 보내기 sent · 승인 알림 확인 중 · 매일 자동 잠금) · 체크 v56.8 (v56.7 + 처리 중 · 확인 중이면 같은 rid · 서버 v54 이름) · 체크 v56.7 (v56.6 + 알림 «확인 중» · 출시마감 3차 10/19) · 체크 v56.6 (v56.5 + 기록 저장 믿음 · 알림 결과 · 대표님 10/19 최우선) · 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
+<!-- 체크 v56.10 (v56.9 + 배달 도착 알림 켜기/끄기 · 가온 정비 장부 받기 · 나스와 맞춰 보기 · 11/2) · 체크 v56.9 (v56.8 + 서버 v54 답 모양 · 다시 보내기 sent · 승인 알림 확인 중 · 매일 자동 잠금) · 체크 v56.8 (v56.7 + 처리 중 · 확인 중이면 같은 rid · 서버 v54 이름) · 체크 v56.7 (v56.6 + 알림 «확인 중» · 출시마감 3차 10/19) · 체크 v56.6 (v56.5 + 기록 저장 믿음 · 알림 결과 · 대표님 10/19 최우선) · 체크 v56.5 (v56.4 + 홈택스 파일 50건씩 · 대표님 10/19) · 체크 v56.4 (v56.3 + 화면 글 «발급» → «발행» · 대표님 10/19) · 체크 v56.3 (v56.2 + 공통 부품 1.13.2 · 표 정렬 · 고르기 칸 · 한글 찾기 · 발행 말) · 체크 v56.2 (공통 1.13.1 · 보낸 기록) · 체크 v56 (v55.1 + 디자인 통합 2단계: 공통 부품 1.12 · 대조표 74줄 · 알림톡 잠금 · 밀린 달 한꺼번에 · 매일 자동 풀기) · 체크 v55.1 (v55 + 배달 · 입금 기간만큼 받아 오기) · 체크 v55 (v54 + 공통 화면 시안 A: 세금계산서 · 입·출금 내역 · 배달 · 설정) · 체크 v54 (v53 + TEST 고침: 청구서 지우기 · 없는 신청인 · 보험료 칸) · 체크 v53 (v52 + 입금 전 발급 없앰 · 정산 기록 → 세금계산서 › 달마다 장부) · 화면 통합 (공통 부품 cgg-j4 1.10 · 엑셀 올리기 csvup 1.0) · 2026-10-18 · 만든 도구: 체크/도구/만들기_체크_v50.py → 만들기_체크_v51.py -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231668C4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script>
 /* ═══ 미리보기 전용 — 서버로 가는 요청을 가로채서 지어낸 자료로 답합니다 (실제 서버 연결 없음) ═══ */
@@ -5060,7 +5060,7 @@ var OPEN_BILL=null, OPEN_KIND="fee";
 function detailRows(b){
   var fee=[], rep=[];
   (b.rows||[]).forEach(function(r){
-    var o={ dealer:r.dealer_name||"", goods:r.item||"", unit:r.unit||0,
+    var o={ dealer:r.dealer_name||"", goods:r.item||"", unit:r.unit||0, plate:(r.car&&r.car.plate)||"", date:String((r.car&&r.car.check_date)||"").slice(5,10),   /* v56.10 */
             amount:r.amount||0, reason:r.item||"", qty:r.qty||1,
             kind: r.kind==="ext" ? "전산외" : r.kind==="repair" ? "정비" : "검사" };
     if(r.kind==="repair") rep.push(o); else fee.push(o);
@@ -5076,6 +5076,7 @@ function billDetail(){
   var rows=isFee?d.fee:d.rep;
   var cols = isFee ? [
       {k:"dealer",t:"신청인",name:true,fmt:function(v){return '<b>'+esc(v)+'</b>';}},
+      {k:"plate",t:"차량번호"}, {k:"date",t:"검사일"},   /* v56.10: 나스와 한 줄씩 */
       {k:"goods",t:"상품명",fmt:function(v){return '<span class="tag" style="background:var(--brand-soft);color:var(--brand)">'+esc(v)+'</span>';}},
       {k:"kind",t:"갈래"},
       {k:"unit",t:"단가",num:true,fmt:function(v){return won(v);}},
@@ -5241,7 +5242,7 @@ PAGE.bill=function(){
               '<select id="billSendF">'+[["","전체"],["notsent","안 보낸 곳만"],["notopen","안 열어본 곳만"],["unpaid","입금 대기만"]]
                 .map(function(o){ return '<option value="'+o[0]+'"'+(BILL_F===o[0]?" selected":"")+'>'+o[1]+'</option>'; }).join("")+'</select>',
       tools:'<button class="btn" id="bPrint">미리보기 · 인쇄</button><button class="btn" id="bPng">그림으로 받기</button>'+   /* v50: 아래 단추 줄 → 표 위 */
-            '<button class="btn" id="bXls">엑셀 (요약)</button><button class="btn" id="bXlsAll">엑셀 (명세 포함)</button>'+
+            '<button class="btn" id="bXls">엑셀 (요약)</button><button class="btn" id="bXlsAll">엑셀 (명세 포함)</button><button class="btn" id="bCarXls">엑셀 (차 한 대씩)</button>'+
             '<button class="btn" id="bMove">고른 청구서 → 다른 청구처로</button><button class="btn" id="bUnsend">선택한 곳 보냄 표시 지우기</button>'+
             '<button class="btn danger" id="bDel">선택한 줄 지우기</button>'})+
     '<p class="note">청구처 이름을 누르면 <b>검사비 내역 · 정비비 내역</b>이 아래에 펼쳐져요. 묶인 딜러(+ 이름)로도 찾기가 돼요. '+
@@ -5355,6 +5356,7 @@ AFTER.bill=function(){
   var bg=$("bPng"); if(bg) bg.onclick=function(){ billOut("png"); };
   var bx=$("bXls"); if(bx) bx.onclick=function(){ billOut("xls"); };
   var ba=$("bXlsAll"); if(ba) ba.onclick=function(){ billOut("xlsAll"); };
+  var bc=$("bCarXls"); if(bc) bc.onclick=function(){ if(window.chkV5610Car) chkV5610Car.xls(); };   /* v56.10 */
   var rl=$("bReload"); if(rl) rl.onclick=function(){ refresh(["bill"]); };
   var fx=$("bFix"); if(fx) fx.onclick=function(){ go("files"); };
   var mk=$("bMake");
@@ -6940,6 +6942,8 @@ function readExcel(file){
       try{
         if(typeof XLSX==="undefined"){ bad(new Error("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.")); return; }   /* v39 */
         var wb=XLSX.read(new Uint8Array(fr.result), {type:"array"});
+        var rb=(typeof window.chkRepairBook==="function") ? window.chkRepairBook(wb, file.name) : null;   /* v56.10: 가온 정비 장부 */
+        if(rb){ if(rb.err) bad(new Error(rb.err)); else done(rb); return; }
         var best=null;
         wb.SheetNames.forEach(function(nm){
           if(/작성안내|안내|도움말|설명/.test(nm)) return;
@@ -7026,7 +7030,7 @@ function putExcels(files, where){
       busy(false);
       say(where, (done.length? "다 올렸어요 — "+done.join(" · ")+(/보험/.test(done.join(" "))?" (대조까지 끝냈어요)":"") : "")+
                  (bad.length? (done.length?" / ":"")+"안 된 것 : "+bad.join(" / ") : ""),
-          bad.length?"err":"ok");
+          bad.length?"err":(done.join(" ").indexOf("확인 필요")>=0?"warn":"ok"));   /* v56.10: 정비 장부 메모 줄 = 주황 «확인 필요» */
       refresh(["set","up","bill","ins"]);
       return;
     }
@@ -7038,8 +7042,9 @@ function putExcels(files, where){
       /* 정비비 · 청구보험료는 파일 이름에 달이 있으면 그 달로 넣습니다 */
       var ym=ST.ym;
       if(kind==="청구보험료"||kind==="정비비"){ var g=ymFromName(f.name); if(g) ym=g; }
+      if(res.ym) ym=res.ym;   /* v56.10: 정비 장부는 고른 달 시트 그대로 */
       return putOne(kind, res.rows, f.name, where, ym).then(function(n){
-        done.push(kind+" "+won(n)+"줄"+(ym!==ST.ym?" ("+ymText(ym)+"분)":"")); next();
+        done.push(kind+" "+won(n)+"줄"+(ym!==ST.ym?" ("+ymText(ym)+"분)":"")+(res.note?" — "+res.note:"")); next();
       });
     }).catch(function(e){ bad.push((e&&e.message)||f.name); next(); });
   })();
@@ -12836,6 +12841,107 @@ CR.sendlog="설정 › 알림 › 보낸 기록";
   try{ new MutationObserver(function(){ if(tm) return; tm=setTimeout(function(){ tm=0; try{ place(); }catch(e){} },40); })
     .observe(document.body,{childList:true,subtree:true}); }catch(e){}
   window.chkV5610={place:place, ask:ask, ready:ready, on:on};
+})();
+</script>
+<script>
+/* ═══ 체크 v56.10 — 가온 정비 장부 받기 (총괄 11/2 · 대표님 «정비비 엑셀이 안 올라가요»)
+   가온 장부 모양: 시트가 달마다(«2601정비» … «2610 정비» · 띄어쓰기 섞임 · 빈 시트 있음) ·
+   열 «날짜 · 차량 · 차명 · 상사 · 이름 · 사유 · 금액» · 머리줄이 1줄째가 아닐 수 있음 · 맨 아래 합계 줄 · «○○ 청구제외 150,000» 같은 메모 줄
+   ① 위쪽 달 칸(지금 고른 달)과 같은 «YYMM정비» 시트만 읽어요(예전에는 줄이 가장 많은 시트를 골라 다른 달이 들어갈 수 있었음)
+   ② 열 이름을 서버가 읽는 이름으로(날짜→작업일 · 차량→차량번호 · 이름→신청인 · 사유→작업내용 · 상사→회사명)
+   ③ 날짜가 없는 줄(합계 · 메모)은 넣지 않고 «확인 필요»로 보여 줘요 — 청구제외 · 선납 메모는 사람이 보고 정해요
+   ④ 거래처에 없는 이름은 청구서에서 빠지니 이름을 알려 줘요
+   돈 셈은 서버 그대로(정비비 = 장부 금액 그대로) — 이 파일은 읽기 · 알려 주기만 해요. ═══ */
+(function(){
+  var SHEET_RE=/^\s*(\d{2})\s*(\d{2})\s*정비/;
+  var ALIAS={"날짜":"작업일","작업일":"작업일","일자":"작업일","정비일":"작업일",
+    "차량":"차량번호","차량번호":"차량번호","차번":"차량번호",
+    "차명":"차명","차종":"차명",
+    "상사":"회사명","상사명":"회사명","회사명":"회사명","매매상사":"회사명",
+    "이름":"신청인","신청인":"신청인","딜러":"신청인","딜러명":"신청인",
+    "사유":"작업내용","작업내용":"작업내용","내용":"작업내용","정비내용":"작업내용",
+    "금액":"금액","정비비":"금액"};
+  function clean(v){ return String(v==null?"":v).replace(/[\u0000-\u001f]/g," ").trim(); }
+  function num(v){ return typeof xNum==="function" ? xNum(v) : (Number(String(v==null?"":v).replace(/[^0-9.-]/g,""))||0); }
+  function date(v, ym){ var d=typeof xDate==="function" ? xDate(v) : ""; if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    var m=clean(v).match(/^(\d{1,2})\s*[.\/\-월]\s*(\d{1,2})\s*일?\.?$/);   /* «10/3» · «10.03» · «10월 3일» — 해는 고른 달의 해 */
+    return (m && ym) ? ym.slice(0,4)+"-"+("0"+m[1]).slice(-2)+"-"+("0"+m[2]).slice(-2) : ""; }
+  function wonT(n){ return typeof won==="function" ? won(n) : String(n); }
+  try{ var st=document.createElement("style"); st.textContent=".msg.warn{background:var(--warn-soft,#fff4e0);color:var(--warn,#b45309);border-color:var(--warn,#b45309)}"; document.head.appendChild(st); }catch(e){}
+  window.chkRepairBook=function(wb, fname){
+    if(!wb || !wb.SheetNames) return null;
+    var books=wb.SheetNames.filter(function(n){ return SHEET_RE.test(n); });
+    if(!books.length) return null;                                   /* 가온 장부 모양이 아니면 예전대로 */
+    var ym=String((typeof ST!=="undefined"&&ST&&ST.ym)||""), tag=ym.slice(2,4)+ym.slice(5,7);
+    var nm=books.filter(function(n){ var m=n.match(SHEET_RE); return m && m[1]+m[2]===tag; })[0];
+    if(!nm) return {err:fname+" 에 «"+tag+"정비» 시트가 없어요. 위쪽 달 칸을 맞는 달로 바꾼 뒤 다시 넣어 주세요. (있는 시트: "+books.join(" · ")+")"};
+    var aoa=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1, raw:true, defval:""});
+    if(!aoa.some(function(l){ return (l||[]).some(function(v){ return clean(v)!==""; }); })) return {err:"«"+nm+"» 시트에 넣을 정비 줄이 없어요(빈 시트예요)."};
+    var hr=-1, map={};
+    for(var i=0;i<Math.min(aoa.length,15);i++){
+      var m={}, have={};
+      (aoa[i]||[]).forEach(function(h,c){ var k=ALIAS[clean(h).replace(/\s/g,"")]; if(k && !have[k]){ m[c]=k; have[k]=1; } });
+      if(have["금액"] && have["신청인"] && Object.keys(have).length>=4){ hr=i; map=m; break; }
+    }
+    if(hr<0) return {err:"«"+nm+"» 시트에서 열 이름(날짜 · 차량 · 이름 · 사유 · 금액) 줄을 못 찾았어요."};
+    var rows=[], memo=[], sumSkip=0, total=0;
+    for(var j=hr+1;j<aoa.length;j++){
+      var line=aoa[j]||[], o={}, any=false;
+      Object.keys(map).forEach(function(c){ var k=map[c], v=line[c]; if(clean(v)!=="") any=true; o[k]=(k==="금액")?num(v):(k==="작업일"?date(v,ym):clean(v)); });
+      if(!any) continue;
+      var txt=line.map(clean).filter(Boolean).join(" ");
+      if(o["작업일"] && o["금액"]>0 && o["신청인"]){
+        rows.push({"작업일":o["작업일"], "검사일":o["작업일"], "차량번호":o["차량번호"]||"", "차명":o["차명"]||"", "회사명":o["회사명"]||"",
+                   "신청인":o["신청인"], "작업내용":o["작업내용"]||"정비비", "금액":o["금액"]});
+        total+=o["금액"];
+      } else if(/합\s*계|총\s*계|소\s*계/.test(txt)){ sumSkip++; }
+      else memo.push(txt.slice(0,40));
+    }
+    if(!rows.length) return {err:"«"+nm+"» 시트에 넣을 정비 줄이 없어요(빈 시트예요)."};
+    var names={}, miss=[];
+    try{ (DEALERS||[]).forEach(function(d){ names[clean(d.name)]=1; }); }catch(e){}
+    if(Object.keys(names).length) rows.forEach(function(r){ if(!names[r["신청인"]] && miss.indexOf(r["신청인"])<0) miss.push(r["신청인"]); });
+    var note="«"+nm+"» 시트 "+wonT(rows.length)+"건 · "+wonT(total)+"원"+
+      (memo.length?" · 확인 필요 "+wonT(memo.length)+"줄(넣지 않았어요): "+memo.slice(0,5).join(" / ")+(memo.length>5?" 외 "+wonT(memo.length-5)+"줄":""):"")+
+      (miss.length?" · 거래처에 없는 이름 "+wonT(miss.length)+"명: "+miss.slice(0,10).join(", ")+(miss.length>10?" 외":"")+" — 청구서에서 빠져요. 설정 › 거래처에 넣어 주세요":"");
+    return {sheet:nm, rows:rows, cols:["검사일","차량번호","차명","회사명","신청인","작업내용","금액"], ym:ym, note:note, warn:!!(memo.length||miss.length)};
+  };
+})();
+</script>
+<script>
+/* ═══ 체크 v56.10 — 나스 청구서와 한 줄씩 맞춰 보기 (총괄 11/2 · 운영 v56.9 에서 33,000원 차이)
+   «차 한 대씩 엑셀»: 청구처 · 신청인 · 차량번호 · 검사일 · 상품명 · 갈래 · 금액 · 확인 (서버 invoiceRows 가 이미 주는 car.plate · check_date)
+   «확인» 칸: 같은 달에 같은 차량번호가 두 줄 · 상품명에 «선납»이 있는데 금액이 매겨짐
+   돈 셈은 그대로 — 읽어서 보여 주기만 해요(billLoadRows · billTargets 를 부르기만 함). ═══ */
+(function(){
+  function plate(x){ return String(x||"").replace(/\s/g,""); }
+  function carXls(){
+    if(typeof XLSX==="undefined"){ bar("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침(F5)해 주세요.","err"); return; }
+    var L=(BILLS||[]).slice();   /* 나스와 맞춰 보려면 이 달 전부 — 고른 줄 · 거르기 · 100곳 제한 없이 */
+    if(!L.length){ tell("청구서가 없어요","먼저 «청구서 만들기»를 눌러 주세요."); return; }
+    bar("청구서 "+won(L.length)+"곳 내역을 불러오는 중이에요…","info",true); busy(true);
+    billLoadRows(L).then(function(){
+      busy(false);
+      var out=[], seen={};
+      L.forEach(function(b){ (b.rows||[]).forEach(function(r){
+        if(r.kind==="repair") return;
+        var c=r.car||{}, p=plate(c.plate), d=String(c.check_date||"").slice(0,10);
+        var o={b:b.name, who:r.dealer_name||"", p:c.plate||"", d:d, g:r.item||"", k:r.kind==="ext"?"전산외":"검사", a:Number(r.amount)||0, chk:[]};
+        if(p){ (seen[p]=seen[p]||[]).push(o); }
+        if(/선납/.test(o.g) && o.a>0) o.chk.push("상품명에 선납이 있는데 금액이 들어갔어요");
+        out.push(o); }); });
+      Object.keys(seen).forEach(function(p){ if(seen[p].length>1) seen[p].forEach(function(o){ o.chk.push("같은 차량번호가 "+seen[p].length+"줄 있어요"); }); });
+      var flag=out.filter(function(o){ return o.chk.length; }).length;
+      var rows=[["청구처","신청인","차량번호","검사일","상품명","갈래","금액","확인"]].concat(
+        out.map(function(o){ return [o.b,o.who,o.p,o.d,o.g,o.k,o.a,o.chk.join(" · ")]; }));
+      var wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "차 한 대씩");
+      XLSX.writeFile(wb, "차곳간체크_차한대씩_"+ST.ym+".xlsx");
+      var t="차 한 대씩 엑셀을 받았어요 — 이 달 청구처 "+won(L.length)+"곳 전부 · "+won(out.length)+"대. 0원 딜러(청구서를 안 만든 곳) 차는 들어 있지 않아요.";
+      if(flag) bar(t+" 확인 필요 "+won(flag)+"줄 — 엑셀 «확인» 칸을 봐 주세요.","warn",true); else bar(t,"ok",true);
+    }).catch(function(e){ busy(false); fail(e); });
+  }
+  window.chkV5610Car={xls:carXls};
 })();
 </script>
 
