@@ -46,6 +46,10 @@ class Q {
       const e = (store as any).__idemFail(this.op, this.payload);
       if (e) return { data: null, error: e };
     }
+    /* v56 시험: SQL 31 전 흉내 — check_deliv_conf 에 arrive_on 칸이 없음(store.__noArriveCol) */
+    if (this.t === "check_deliv_conf" && (store as any).__noArriveCol &&
+        (String(this.cols).includes("arrive_on") || (this.payload && JSON.stringify(this.payload).includes("arrive_on"))))
+      return { data: null, error: { code: "42703", message: 'column "arrive_on" does not exist' } };
     const tbl = store[this.t];
     if (!tbl) return { data: null, error: { message: `relation "${this.t}" does not exist` } };
     const hit = tbl.filter((r) => this.filters.every((f) => f(r)));

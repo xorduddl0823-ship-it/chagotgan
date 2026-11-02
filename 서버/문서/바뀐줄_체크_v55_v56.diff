@@ -1,0 +1,132 @@
+--- "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v55.ts"	2026-10-21 23:55:23.882620920 +0000
++++ "\354\204\234\353\262\204/2_\354\260\250\352\263\263\352\260\204\354\262\264\355\201\254_\354\204\234\353\262\204_check-api_v56.ts"	2026-11-02 04:31:47.425252597 +0000
+@@ -13,6 +13,7 @@
+ //    SOLAPI_KEY, SOLAPI_SECRET              ← 티와이컴퍼니 솔라피 계정
+ //  검사소마다 다른 값은 비밀값이 아니라 check_office 표에 둡니다:
+ //    biz_no(사업자번호) · popbill_userid(팝빌 회원아이디) · sms_from(보내는 번호)
++//  v56 (2026-11-02) 대표님·체크 방: 배달 «도착 알림 켜기/끄기» — check_deliv_conf.arrive_on(SQL 31 · 없으면 켬) · 대표만 바꿈(check_log 에 전→후) · 꺼져 있으면 도착 기록만 하고 알림은 안 보냄(발송결과 «꺼짐» · alarmOff) · 사무실 «다시 보내기»는 꺼져 있어도 보냄 · 승인 뒤 자동 다시 보내기는 «꺼짐» 줄을 건너뜀
+ //  v55 (2026-10-21) 대표님: 문자 업체 고르기 — 비밀값 MSG_VENDOR = solapi | bizgo(없거나 다른 값이면 solapi) · 비즈고(인포뱅크 OMNI) 보내기·알림톡→문자 대체(한 요청 안) · 업체별 템플릿 코드(ata_cfg.bizgo) · rid 는 처음 고른 업체로만 · 결과 채우기는 워시 sb30(sendFill)이 함께 함
+ //  v54 (2026-10-19) 재검사 «매일 자동»은 check_remind 템플릿 코드가 있어야 켜고 돎(없으면 저장 거절 · 매일 자동 0건 · 손으로 보내기는 그대로) · «확인 중» 이름 unsure(체크 v56.7·기사 v30) · 보낸 기록 «확인 중» ·
+ //  v54 (2026-10-19) 출시마감 3차: 보내기(청구서·밀린 달·재검사·도착 알림)는 «한 번만 표»를 못 잡으면 보내지 않음(«잠시 뒤 다시») · 문자 업체가 받았는지 모름(시간 초과·응답 끊김·완료 저장 실패)은 «확인 중»으로 두고 자동으로 다시 보내지 않음 · 알림톡 응답을 모를 때는 문자로 바로 대신 보내지 않음 · 실패 확정만 같은 rid 로 다시 · 줄은 지우지 않고 조건을 건 한 번의 바꾸기로 다시 잡음
+@@ -137,7 +138,7 @@
+   { auth: { persistSession: false } },
+ );
+ 
+-const VER = "check-api v55 · 2026-10-21 (문자 업체 고르기 · 솔라피/비즈고)";
++const VER = "check-api v56 · 2026-11-02 (도착 알림 켜기/끄기)";
+ const JSON_HEAD = { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" };
+ 
+ /* ───────── 작은 도구들 ───────── */
+@@ -3575,7 +3576,12 @@
+ async function delivConf(officeId: string) {
+   const { data } = await db.from("check_deliv_conf").select("*").eq("office_id", officeId).maybeSingle();
+   return data ?? { way: "sms", fallback: false, sms_text: "", from_tel: "",
+-                   ai_on: true, ai_max_day: 400, photo_on: true };
++                   ai_on: true, ai_max_day: 400, photo_on: true, arrive_on: true };
++}
++/** v56: SQL 31(arrive_on 칸)을 돌렸는지 — 화면이 «서버 준비 중»으로 스위치를 잠글지 정함 */
++async function arriveReady() {
++  const { error } = await db.from("check_deliv_conf").select("arrive_on").limit(1);
++  return !error;
+ }
+ 
+ /* v23: 기사 비밀번호 — 새로 정하는 비밀번호는 6자 이상 (이미 쓰던 4~5자 비밀번호는 그대로 로그인 가능) */
+@@ -3693,7 +3699,7 @@
+     위도: "", 경도: "", "위치정확도(m)": "",
+     사진ID: main ? S(main.id) : "", 추가사진ID: more.join(","),
+     번호판읽기: S(r.plate_ocr) ? (S(r.plate_ocr) === S(r.plate) ? "자동" : "고침") : "직접",
+-    발송방법: S(r.how).toUpperCase(), 발송결과: S(r.state) === "보냄" ? "성공" : (S(r.state) === "못 보냄" ? "실패" : (S(r.state) === "확인 중" ? "확인 중" : "")),
++    발송방법: S(r.how).toUpperCase(), 발송결과: S(r.state) === "보냄" ? "성공" : (S(r.state) === "못 보냄" ? "실패" : (S(r.state) === "확인 중" ? "확인 중" : (S(r.state) === "꺼짐" ? "꺼짐" : ""))),
+     발송사유: S(r.err), 메시지ID: "", 보낸일시: r.sent_at ? fmtTs(new Date(new Date(r.sent_at).getTime() + KST)) : "",
+     상태: S(r.state) === "취소" ? "취소" : (r.trashed ? "삭제" : ""), 메모: S(r.memo),
+     _view: S(r.view_key), _viewAt: r.view_at ? fmtTs(new Date(new Date(r.view_at).getTime() + KST)) : "",
+@@ -4410,6 +4416,7 @@
+     })),
+     cars: [], today: rows, shared: { freq, recent },
+     test: false, testTo: "", gps: true, how: S(conf.way).toUpperCase(),
++    arrive_on: conf.arrive_on !== false,      // v56: 기사 앱 «지금 알림 꺼짐» 띠
+     dupMin: 10, syncAt: "",
+   };
+ }
+@@ -4478,6 +4485,14 @@
+     try { await photoPut(saved.id, more[i], i + 1); } catch (_) { /* 넘어갑니다 */ }
+   }
+ 
++  /* v56: 도착 알림이 꺼져 있으면 기록만 하고 보내지 않음 */
++  if (conf.arrive_on === false) {
++    await db.from("check_deliv").update({ state: "꺼짐", err: "도착 알림 꺼짐" }).eq("id", saved.id);
++    const { data: fin0 } = await db.from("check_deliv").select("*").eq("id", saved.id).maybeSingle();
++    const { data: ph0 } = await db.from("check_deliv_photo").select("id,deliv_id,ord").eq("deliv_id", saved.id);
++    await log({ office: w.office, who: w.who, role: "driver" } as Ctx, "차량 도착", { plate, dest: S(rec.dest), ok: false, alarmOff: true });
++    return { ok: true, alarmOff: true, row: rowOut(fin0, ph0 ?? []) };
++  }
+   /* 보내기 — 첫 사진을 문자에 붙입니다 */
+   const s = await notifyOne(w.office, conf, saved, vkey, S(rec.photo));
+   await db.from("check_deliv").update({
+@@ -4513,7 +4528,8 @@
+     dests: (dests ?? []).map((d) => ({ 목적지: S(d.name), 분류: S(d.kind), 사용: d.active ? "Y" : "N" })),
+     dealerN: dealerN ?? 0, carN: carN ?? 0, trashN: trashN ?? 0, trashDays: 30, extraN: 0,
+     conf: { way: S(conf.way), fallback: conf.fallback === true,
+-            photo_on: conf.photo_on !== false, from_tel: S(conf.from_tel) } };
++            photo_on: conf.photo_on !== false, from_tel: S(conf.from_tel),
++            arrive_on: conf.arrive_on !== false, arrive_ready: await arriveReady() } };
+ }
+ async function deliv_one(_c: Ctx, pin: string, id: string) {
+   const w = await delivWho(pin);
+@@ -4678,10 +4694,10 @@
+       const since = Date.now() - RESEND_HOURS * 3600e3;
+       for (const r0 of mine.filter((r: any) => new Date(S(r.arrived_at)).getTime() >= since)) {
+         const { data: r } = await db.from("check_deliv").select("*").eq("office_id", office.id).eq("id", r0.id).maybeSingle();
+-        if (!r || S(r.state) === "보냄" || S(r.state) === "취소" || S(r.state) === "확인 중" || r.trashed === true) continue;   // v54: «확인 중»은 자동으로 다시 안 보냄
++        if (!r || S(r.state) === "보냄" || S(r.state) === "취소" || S(r.state) === "확인 중" || S(r.state) === "꺼짐" || r.trashed === true) continue;   // v54: «확인 중»은 자동으로 다시 안 보냄
+         /* 보안 낮음(a5e1b14): 승인을 동시에 두 번 눌러도 한 번만 — 조건부로 먼저 잡고 잡힌 것만 보냄 */
+         const { data: got } = await db.from("check_deliv").update({ state: "보내는 중" })
+-          .eq("office_id", office.id).eq("id", r.id).neq("state", "보냄").neq("state", "취소").neq("state", "보내는 중").neq("state", "확인 중").select("id");
++          .eq("office_id", office.id).eq("id", r.id).neq("state", "보냄").neq("state", "취소").neq("state", "보내는 중").neq("state", "확인 중").neq("state", "꺼짐").select("id");
+         if (!got || !got.length) continue;
+         const vkey = S(r.view_key) || viewKey();
+         /* 사진 읽기·보내기에서 오류가 나도 «보내는 중» 에 남지 않게 «못 보냄» 으로 (보안 참고 ②) */
+@@ -4754,6 +4770,7 @@
+     sms_text: S(c.sms_text), ata_tpl: S(c.ata_tpl), from_tel: S(c.from_tel),
+     ai_on: c.ai_on !== false, ai_max_day: N(c.ai_max_day) || 400,
+     photo_on: c.photo_on !== false,
++    arrive_on: c.arrive_on !== false, arrive_ready: await arriveReady(),   // v56: 도착 알림 켜기/끄기 · SQL 31 전이면 arrive_ready false
+     ai_ready: !!Deno.env.get("ANTHROPIC_KEY"), sms_ready: !!Deno.env.get("SOLAPI_KEY"),
+   } };
+ }
+@@ -4762,9 +4779,15 @@
+   if (w.role !== "owner") throw new Error("배달 알림 설정은 대표님만 바꿀 수 있습니다.");   // v32(보안 M2·M3)
+   /* v32(보안 M2): 알림톡 채널(ata_pf)은 본사 채널만 써서 받지 않음 · 보내는 번호는 이 검사소 번호만 */
+   const ok = ["way", "fallback", "sms_text", "ata_tpl", "from_tel",
+-              "ai_on", "ai_max_day", "photo_on"];
++              "ai_on", "ai_max_day", "photo_on", "arrive_on"];
+   const up: Record<string, unknown> = { office_id: w.office.id, updated_at: new Date().toISOString() };
+   for (const k of ok) if (patch?.[k] !== undefined) up[k] = patch[k];
++  let arriveBefore: boolean | null = null;
++  if (up.arrive_on !== undefined) {                     // v56: 켬/끔만 · 바꾼 사람·시각은 check_log 에
++    up.arrive_on = up.arrive_on !== false;
++    if (!(await arriveReady())) throw new Error("서버를 준비하는 중이에요(설정 31번). 차곳간(010-9559-3663)으로 알려 주세요.");   // 영어가 있으면 userMsg 가 글을 숨겨서 한글로
++    arriveBefore = (await delivConf(w.office.id)).arrive_on !== false;
++  }
+   if (up.from_tel !== undefined && S(up.from_tel) && !officeFroms(w.office).includes(onlyDigits(up.from_tel)))
+     throw new Error("보내는 번호는 검사소에 등록된 번호(문자 발신번호·대표 전화)만 쓸 수 있습니다.");
+   if (up.ata_tpl !== undefined && S(up.ata_tpl) && !Object.values((await hqAta()).tpl).includes(S(up.ata_tpl)))
+@@ -4772,6 +4795,8 @@
+   if (up.ai_max_day !== undefined) up.ai_max_day = Math.max(0, Math.min(1000, N(up.ai_max_day) || 0));
+   const { error } = await db.from("check_deliv_conf").upsert(up, { onConflict: "office_id" });
+   if (error) throw new Error(error.message);
++  if (arriveBefore !== null && arriveBefore !== up.arrive_on)
++    await log({ office: w.office, who: w.who, role: w.role } as Ctx, up.arrive_on ? "도착 알림 켬" : "도착 알림 끔", { before: arriveBefore, after: up.arrive_on });
+   return { ok: true };
+ }
+ async function deliv_accounts(_c: Ctx, pin: string) {
+@@ -5101,7 +5126,8 @@
+     await fin("unknown", idemScrub(res ?? null));
+     return res;
+   }
+-  if (send && !mark.ok) {                           // 문자 업체가 하나도 받지 않음(확정) → 같은 rid 로 다시 해도 안전
++  const failedOut = !!(out && typeof out === "object" && (out as any).ok === false);
++  if (send && !mark.ok && (mark.no > 0 || failedOut)) {   // 받지 않음 확정(거절 · 보내기 전 실패) → 같은 rid 로 다시 해도 안전 · v56: 보낼 것 없이 끝난 일(알림 꺼짐 기록)은 «끝남»
+     await fin("retry", { vendor: vend });
+     return out;
+   }
