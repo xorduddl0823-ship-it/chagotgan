@@ -97,6 +97,7 @@ FAKE = r'''<script>
         step: left<=3?3:left<=7?7:left<=15?15:30, sentAt: (i%4===1||RM_SENT["car"+i]) ? f(now)+"T09:10:00" : ""}); }
     return out;
   }
+  function dcf(){ var c={way:"ata", fallback:true, photo_on:true}; if(!window.__NOARRIVE) c.arrive_on=!(window.__DCF && window.__DCF.arrive_on===false); return c; }   /* v56.10 · __NOARRIVE=서버 v54(칸 없음) 흉내 */
   function answer(fn, a){
     a=a||[];
     switch(fn){
@@ -126,7 +127,9 @@ FAKE = r'''<script>
       case "carHealth": return {};
       case "popInfo": return {linked:false};
       case "bankList": case "popBanks": return [];
-      case "deliv_list": if(a[3]) return {rows:[], dests:[], conf:{way:"ata", fallback:true, photo_on:true}, trashN:0, ver:"미리보기"};   /* v57 시안: 지어낸 배달 7건 */
+      case "deliv_conf": return {ok:true, conf:dcf()};   /* v56.10: 도착 알림 켜기/끄기 */
+      case "deliv_saveConf": if(a[1] && typeof a[1].arrive_on==="boolean" && !window.__NOARRIVE){ if(!window.__DCF) window.__DCF={}; window.__DCF.arrive_on=a[1].arrive_on; } return {ok:true};
+      case "deliv_list": if(a[3]) return {rows:[], dests:[], conf:dcf(), trashN:0, ver:"미리보기"};   /* v57 시안: 지어낸 배달 7건 */
         var DV7=[["김하늘","하늘모터스","12가3400","아반떼","하늘모터스 매장","09:10","기사 A","성공","ATA"],["이푸름","푸른카","18가3442","카니발","푸른카","15:10","기사 A","성공","ATA"],
                  ["최다온","다온상사","17가3435","K5","다온상사","14:10","기사 B","성공","ATA"],["정새날","새날모터스","16가3428","벤츠 E","새날모터스","13:10","기사 A","성공","LMS"],
                  ["박바름","바른오토","15가3421","쏘렌토","바른오토","12:10","기사 B","실패",""],["한별빛","별빛오토","14가3414","BMW 5","별빛오토","11:10","기사 A","성공","ATA"],["오하늘","하늘모터스","13가3407","그랜저","하늘 2주차장","10:10","기사 B","성공","ATA"]];
@@ -134,7 +137,7 @@ FAKE = r'''<script>
         return {ok:true, rows:DV7.map(function(x,i){ return {배달ID:"dv"+i, 도착일시:dday+" "+x[5], 딜러:x[0], 상사:x[1], 딜러연락처:"010-0000-00"+(10+i), 차량번호:x[2], 차명:x[3], 목적지:x[4], 기사:x[6],
           발송방법:x[8], 발송결과:x[7], 발송사유:x[7]==="실패"?"받는 번호가 올바르지 않아요":"", 보낸일시:x[7]==="성공"?dday+" "+x[5]:"", 상태:"", 메모:"", 사진ID:"", 추가사진ID:"", 번호판읽기:"자동"}; }),
           dests:[{목적지:"하늘모터스 매장",분류:"상사",사용:"Y"},{목적지:"푸른카",분류:"상사",사용:"Y"},{목적지:"다온상사",분류:"상사",사용:"Y"},{목적지:"하늘 2주차장",분류:"주차장",사용:"Y"}],
-          conf:{way:"ata", fallback:true, photo_on:true}, trashN:0, ver:"미리보기", dealerN:8, carN:7, extraN:0};
+          conf:dcf(), trashN:0, ver:"미리보기", dealerN:8, carN:7, extraN:0};
       case "deliv_accounts": return {rows:[]};
       case "deliv_ping": return {ok:true, ver:"미리보기"};
       case "staffList": return STAFF;
