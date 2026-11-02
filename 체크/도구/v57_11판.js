@@ -13,9 +13,9 @@
 details.v57-more{position:relative;display:inline-block}
 details.v57-more>summary{list-style:none;cursor:pointer}
 details.v57-more>summary::-webkit-details-marker{display:none}
-details.v57-more>.v57-menu{position:absolute;left:0;bottom:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;gap:6px;min-width:240px;padding:8px;background:var(--card,#fff);border:1px solid var(--ln2);border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,.14)}
+details.v57-more>.v57-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;gap:6px;min-width:240px;padding:8px;background:var(--card,#fff);border:1px solid var(--ln2);border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,.14)}
 details.v57-more>.v57-menu>button{width:100%;justify-content:flex-start}
-@media (max-width:600px){ details.v57-more{display:block;width:100%} details.v57-more>summary{width:100%;justify-content:center;min-height:42px} details.v57-more>.v57-menu{position:static;margin-top:6px;box-shadow:none} }
+@media (max-width:600px){ details.v57-more>summary{min-height:42px} }
 /* 홈 숫자 카드 4개는 검정 숫자(11판) */
 #chkHome .cgg-kpis .cgg-kpi strong{color:var(--text)!important}
 /* 배달 숫자 카드 뜻 색(11판): 알림 보냄 초록 · 못 보냄 빨강(0이면 흐림) */
